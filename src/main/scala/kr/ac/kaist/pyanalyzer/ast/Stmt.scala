@@ -5,13 +5,13 @@ sealed trait Stmt extends Node
 // Simple statements
 sealed trait SimpleStmt extends Stmt
 // TODO define subs
-case class Assignment(id: Name, expr: Expr) extends SimpleStmt
+case class Assignment(id: Id, expr: Expr) extends SimpleStmt
 // TODO appropriate modeling of star_expressions and star_expression
 case class StarExprs(exprs: List[Expr]) extends SimpleStmt
 case class ReturnStmt(exprs: StarExprs) extends SimpleStmt
 
 trait ImportStmt extends SimpleStmt
-case class ImportName(ns: List[Name]) extends ImportStmt
+case class ImportName(ns: List[String]) extends ImportStmt
 // TODO define import_from
 case class ImportFrom() extends ImportStmt
 
@@ -26,8 +26,8 @@ case class YieldStmt(expr: Expr) extends SimpleStmt
 case class AssertStmt(check: Expr, raise: Expr ) extends SimpleStmt
 case object BreakStmt extends SimpleStmt
 case object ContinueStmt extends SimpleStmt
-case class GlobalStmt(ns: List[Name]) extends SimpleStmt
-case class NonlocalStmt(ns: List[Name]) extends SimpleStmt
+case class GlobalStmt(ns: List[Id]) extends SimpleStmt
+case class NonlocalStmt(ns: List[Id]) extends SimpleStmt
 
 // Compound statements
 sealed trait CompoundStmt extends Stmt
