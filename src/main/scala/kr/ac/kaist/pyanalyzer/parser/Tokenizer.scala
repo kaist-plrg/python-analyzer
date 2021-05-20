@@ -63,7 +63,7 @@ trait Tokenizers extends RegexParsers {
   
   // identifier
   lazy val id_start = """\D""".r
-  lazy val id_continue = ".".r
+  lazy val id_continue = """\w""".r
   lazy val identifier: Parser[Id] = (id_start ~ id_continue.*) ^^ {
     case st ~ cts => Id(st + cts.mkString(""))
   }
@@ -73,10 +73,8 @@ trait Tokenizers extends RegexParsers {
   // lazy val keywords = "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" ").map(_.r).reduce(_ | _)
 
   // literals
-  lazy val shortStrCode = "[\"\']".r
-  lazy val longStrCode = "[(\"\"\")(\'\'\')]".r
-  lazy val shortString = shortStrCode ~> ".*".r <~ shortStrCode
-  lazy val longString = longStrCode ~> ".*".r <~ longStrCode
+  lazy val shortString = "['\"].*['\"]".r
+  lazy val longString = "[(''')(\"\"\")].*[(''')(\"\"\")]".r
   lazy val stringLiteral: Parser[StrLiteral] = (shortString | longString) ^^ {
     case s => StrLiteral(s)
   }
@@ -85,7 +83,10 @@ trait Tokenizers extends RegexParsers {
 
   // TODO bytesLiteral
   // TODO format string
-  lazy val decInteger: Parser[(String, Int)] = """[([1-9](_\d)*)(0+(_?0)*)]""".r ^^ { (_, 10) }
+  lazy val digit = "[0-9]".r
+  lazy val nonZeroDigit = "[1-9]".r
+  lazy val decInteger: Parser[(String, Int)] = "[0-9]+".r ^^ { (_, 10) } 
+  //lazy val decInteger: Parser[(String, Int)] = """[([1-9](_\d)*)(0+(_?0)*)]""".r ^^ { (_, 10) }
   lazy val binInteger: Parser[(String, Int)] = "[(0b)(0B)](_?[0-1])+".r ^^ { (_, 2) }
   lazy val octInteger: Parser[(String, Int)] = "[(0o)(0O)](_?[0-7])+".r ^^ { (_, 8) }
   lazy val hexInteger: Parser[(String, Int)] = "[(0x)(0X)](_?[0-7[a-f][A-F]])+".r ^^ { (_, 16) }
@@ -106,13 +107,19 @@ trait Tokenizers extends RegexParsers {
     case s => ImagLiteral(s.toString.toDouble)
   }
 
-  // Operators
-  /*lazy val operator: Parser[Op] = """[+-*(**)/(//)%@(<<)(>>)&\|^~(:=)<>(<=)(>=)(==)(!=)]""".r ^^ {
-    case s => Op(s)
-  }*/
+  // operator
+  lazy val op = """[+-]""".r ^^ {
+    case s => Op(s
+      )
+  }
+
+  // delimiter
+  lazy val delim = """[()\[\]{}]""".r ^^ {
+    case s => Delim(s)    
+  }
 
   // parseAll
-  lazy val token: Parser[Token] = identifier | integer | floatNumber | imagNumber 
+  lazy val token: Parser[Token] =  op | integer | floatNumber | imagNumber | stringLiteral | delim | identifier
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }
