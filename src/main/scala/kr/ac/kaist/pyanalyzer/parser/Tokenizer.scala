@@ -13,14 +13,16 @@ case class IndentParsers(lineParser: String => List[Token]) {
   def doDedent(n: Int): Int = {
     var k = 0
     var sum = 0
-    while (sum <= n) {
-      val indent = stack.pop
+    while (sum < n) {
+      val indent = stack.pop()
       k += 1
       sum += indent
       if (sum > n) {
         throw IndentError(sum, n) // TODO : precise info for exception
       }
     }
+    // only exits loop when sum == n
+    curIndent -= sum
     k
   }
 
@@ -33,11 +35,11 @@ case class IndentParsers(lineParser: String => List[Token]) {
     if (newIndent > curIndent) {
       val delta = newIndent - curIndent
       doIndent(delta) 
-      lineParser(trimmed) :+ Indent
+      Indent +: lineParser(trimmed)
     } else if (newIndent < curIndent) {
       val delta = curIndent - newIndent
       val count = doDedent(delta)
-      lineParser(trimmed) ++ List.fill(count)(Dedent)
+      List.fill(count)(Dedent) ++ lineParser(trimmed) 
     } else {
       lineParser(trimmed)
     }
