@@ -1,9 +1,57 @@
 package kr.ac.kaist.pyanalyzer.parser
 
 import scala.util.parsing.combinator._
+import scala.collection.mutable.Stack
+
+case class IndentError(expected: Int, actual: Int) extends Exception
+object IndentParser extends IndentParsers (Tokenizer.parseText)
+case class IndentParsers(lineParser: String => List[Token]) {
+  val stack = Stack[Int]()
+  var curIndent = 0 
+
+  def doIndent(n: Int): Unit = { stack.push(n); curIndent += n }
+  def doDedent(n: Int): Int = {
+    var k = 0
+    var sum = 0
+    while (sum <= n) {
+      val indent = stack.pop
+      k += 1
+      sum += indent
+      if (sum > n) {
+        throw IndentError(sum, n) // TODO : precise info for exception
+      }
+    }
+    k
+  }
+
+  def trimLeft(line: String): String = line.replaceAll("""^\s+""", "")
+  def getIndent(line: String): Int = line.length - trimLeft(line).length
+  
+  def parseLine(line: String): List[Token] = {
+    val trimmed = trimLeft(line)
+    val newIndent = getIndent(line) 
+    if (newIndent > curIndent) {
+      val delta = newIndent - curIndent
+      doIndent(delta) 
+      lineParser(trimmed) :+ Indent
+    } else if (newIndent < curIndent) {
+      val delta = curIndent - newIndent
+      val count = doDedent(delta)
+      lineParser(trimmed) ++ List.fill(count)(Dedent)
+    } else {
+      lineParser(trimmed)
+    }
+  }
+
+  def parseLines(lines: List[String]): List[Token] =
+    lines.flatMap(line => parseLine(line) :+ Newline)
+
+  def parse(text: String): List[Token] = parseLines(text.split("\n").toList)
+}
 
 // TODO change to Parser[Token]
-trait Tokenizer extends RegexParsers {
+object Tokenizer extends Tokenizers
+trait Tokenizers extends RegexParsers {
   // line, comments, indents, whitespaces
   lazy val line = ".*\n".r
   lazy val comments = "#.*\n".r
@@ -48,10 +96,21 @@ trait Tokenizer extends RegexParsers {
   lazy val exponent = "[eE][+-]".r ~ digitPart
   lazy val pointFloat = digitPart.? ~ fraction | digitPart ~ ".".r
   lazy val exponentFloat = (digitPart | pointFloat) ~ exponent
-  lazy val floatNumber = pointFloat | exponentFloat
+  lazy val floatNumber: Parser[FloatLiteral] = (pointFloat | exponentFloat) ^^ { 
+    case s => FloatLiteral(s.toString.toDouble) // TODO why type error when no toString? 
+  }
 
-  lazy val imagNumber = (floatNumber | digitPart) ~ "[jJ]".r
+  lazy val imagNumber: Parser[ImagLiteral] = ((floatNumber | digitPart) <~ "[jJ]".r) ^^ {
+    case s => ImagLiteral(s.toString.toDouble)
+  }
 
   // Operators
+  /*lazy val operator: Parser[Op] = """[+-*(**)/(//)%@(<<)(>>)&\|^~(:=)<>(<=)(>=)(==)(!=)]""".r ^^ {
+    case s => Op(s)
+  }*/
 
+  // parseAll
+  lazy val token: Parser[Token] = identifier | integer | floatNumber | imagNumber 
+  lazy val tokens: Parser[List[Token]] = rep(token)
+  def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }
