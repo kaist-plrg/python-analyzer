@@ -82,9 +82,12 @@ trait Tokenizers extends RegexParsers {
   lazy val doubleQuote = "[(''')(\"\"\")].*[(''')(\"\"\")]".r
   lazy val stringPrefix = "r".r | "u".r | "R".r | "U".r | "f".r | "F".r |
     "fr".r | "Fr".r | "fR".r | "rf".r | "rF".r | "Rf".r | "RF".r
-  lazy val stringLiteral: Parser[StrLiteral] = opt(stringPrefix) ~> (singleQuote | doubleQuote) ^^ StrLiteral
-  lazy val bytesPrefix = "b".r | "B".r | "br".r | "bR".r | "BR".r | "rb".r | "rB".r | "Rb".r | "RB".r
-  lazy val bytesLiteral: Parser[BytesLiteral] = bytesPrefix ~> (singleQuote | doubleQuote) ^^ BytesLiteral
+  lazy val stringLiteral: Parser[StrLiteral] = opt(stringPrefix) ~>
+    (singleQuote | doubleQuote) ^^ StrLiteral
+  lazy val bytesPrefix = "b".r | "B".r | "br".r | "bR".r | "BR".r |
+    "rb".r | "rB".r | "Rb".r | "RB".r
+  lazy val bytesLiteral: Parser[BytesLiteral] = bytesPrefix ~>
+    (singleQuote | doubleQuote) ^^ BytesLiteral
 
   // TODO escape character how?
 
