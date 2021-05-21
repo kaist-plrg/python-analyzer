@@ -82,12 +82,12 @@ trait Tokenizers extends RegexParsers {
   lazy val tripleQuote = "['\"]{3}".r
   lazy val shortQuote = quote ~> "[^'\"]*".r <~ quote
   lazy val longQuote = tripleQuote ~> "[^'\"]*".r <~ tripleQuote
-  lazy val stringPrefix = "r".r | "u".r | "R".r | "U".r | "f".r | "F".r |
-    "fr".r | "Fr".r | "fR".r | "rf".r | "rF".r | "Rf".r | "RF".r
+  lazy val stringPrefix = List("fr", "Fr", "fR", "FR", "rf", "rF", "Rf",
+    "RF", "r", "u", "R", "U", "f", "F").mkString("|").r
   lazy val stringLiteral: Parser[StrLiteral] = opt(stringPrefix) ~>
     (longQuote | shortQuote) ^^ StrLiteral
-  lazy val bytesPrefix = "b".r | "B".r | "br".r | "bR".r | "BR".r |
-    "rb".r | "rB".r | "Rb".r | "RB".r
+  lazy val bytesPrefix = List("br", "Br", "bR", "BR","rb", "rB", "Rb",
+    "RB", "b", "B").mkString("|").r
   lazy val bytesLiteral: Parser[BytesLiteral] = bytesPrefix ~>
     (longQuote | shortQuote) ^^ BytesLiteral
 
@@ -144,7 +144,7 @@ trait Tokenizers extends RegexParsers {
   ).mkString("|").r ^^ { case s => Delim(s) }
 
   // parseAll
-  lazy val literal: Parser[Token] = integer | floatNumber | imagNumber | stringLiteral
+  lazy val literal: Parser[Token] = integer | floatNumber | imagNumber | stringLiteral | bytesLiteral
   lazy val token: Parser[Token] = opBeforeDelim | delim | op | keyword | literal | identifier
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get

@@ -9,6 +9,7 @@ object Token {
     case Id(s) => s"id($s) "
     case Keyword(s) => s + " "
     case StrLiteral(s) => s"lit:$s "
+    case BytesLiteral(b) => s"lit:$b "
     case IntLiteral(i) => s"lit:$i "
     case FloatLiteral(f) => s"lit:$f "
     case ImagLiteral(i) => s"lit:${i}j "
