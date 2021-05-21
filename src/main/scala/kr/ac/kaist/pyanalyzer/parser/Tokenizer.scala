@@ -93,7 +93,6 @@ trait Tokenizers extends RegexParsers {
 
   // TODO escape character how?
 
-  // TODO bytesLiteral
   // TODO format string
   lazy val digit = "[0-9]".r
   lazy val nonZeroDigit = "[1-9]".r

@@ -29,14 +29,33 @@ case object ContinueStmt extends SimpleStmt
 case class GlobalStmt(ns: List[Id]) extends SimpleStmt
 case class NonlocalStmt(ns: List[Id]) extends SimpleStmt
 
+trait Suite
+
 // Compound statements
 sealed trait CompoundStmt extends Stmt
 
-case object FunDefStmt extends CompoundStmt
-case object IfStmt extends CompoundStmt
-case object ClassDefStmt extends CompoundStmt
-case object WithStmt extends CompoundStmt
-case object ForStmt extends CompoundStmt
-case object TryStmt extends CompoundStmt
-case object WhileStmt extends CompoundStmt
-case object MatchStmt extends CompoundStmt
+case class FunDefStmt(
+    deco: List[Expr],
+    fname: Id,
+    params: List[ParamDec],
+    annotation: Expr,
+    bodySu: Suite
+  ) extends CompoundStmt
+case class IfStmt(cond: Expr, thenSu: Suite, elifSu: List[Suite],
+  elseSu: Option[Suite]) extends CompoundStmt
+case class ClassDefStmt(deco: List[Expr], classname: Id,
+  parents: List[Id], bodySu: Suite) extends CompoundStmt
+case class WithStmt(items: List[(Expr, Option[Expr])],
+  bodySu: Suite) extends CompoundStmt
+case class ForStmt(target: List[Expr], list: List[Expr], bodySu: Suite,
+  elseSu: Option[Suite]) extends CompoundStmt
+case class TryStmt(
+    bodySu: Suite,
+    exceptionTuple: List[(Option[Expr], Option[Id], Suite)],
+    elseSu: Option[Suite],
+    finallySu: Option[Suite]
+  ) extends CompoundStmt
+case class WhileStmt(cond: Expr, bodySu: Suite,
+  elseSu: Option[Suite]) extends CompoundStmt
+case class MatchStmt(expr: Expr, cases: List[Suite]) extends CompoundStmt
+// TODO Coroutine
