@@ -108,18 +108,31 @@ trait Tokenizers extends RegexParsers {
   }
 
   // operator
-  lazy val op = """[+-]""".r ^^ {
-    case s => Op(s
-      )
+  lazy val op = List(
+    "\\+", "-", "\\*", "\\*\\*", "/", "//", "%", "@",
+    "<<", ">>", "&", "\\|", "\\^", "~",
+    "<", ">", "<=", ">=", "==", "!=",
+  ).mkString("|").r ^^ {
+    case s => Op(s)
+  }
+
+  // some operator contians delimiters, so need to be tokenized first
+  lazy val opBeforeDelim = List(
+    ":="
+  ).mkString("|").r ^^ {
+    case s => Op(s)
   }
 
   // delimiter
-  lazy val delim = """[()\[\]{}]""".r ^^ {
-    case s => Delim(s)    
-  }
+  lazy val delim = List(
+    "\\(", "\\)", "\\[", "\\]", "\\{", "\\}", 
+    ",", ":", "\\.", ";", "@", "=", "->",
+    "\\+=", "-=", "\\*=", "/=", "//=", "%=", "@=",
+    "&=", "\\|=", "\\^=", ">>=", "<<=", "\\*\\*=",
+  ).mkString("|").r ^^ { case s => Delim(s) }
 
   // parseAll
-  lazy val token: Parser[Token] =  op | integer | floatNumber | imagNumber | stringLiteral | delim | identifier
+  lazy val token: Parser[Token] =  opBeforeDelim | delim | op | integer | floatNumber | imagNumber | stringLiteral | identifier
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }

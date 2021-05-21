@@ -2,7 +2,7 @@ package kr.ac.kaist.pyanalyzer.parser
 
 // 2. Lexical analysis
 abstract class Token(name: String, content: String) {
-  override def toString: String = "{" + this.name + ":"  + this.content + "}"
+  override def toString: String = "{" + this.name + "[" + this.content + "]}"
 }
 
 case object Newline extends Token("NEWLINE", "\n")
