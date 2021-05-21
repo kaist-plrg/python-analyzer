@@ -63,8 +63,8 @@ trait Tokenizers extends RegexParsers {
   
   // identifier
   lazy val id_start = """\D""".r
-  lazy val id_continue = """\w""".r
-  lazy val identifier: Parser[Id] = (id_start ~ id_continue.*) ^^ {
+  lazy val id_continue = """\w*""".r
+  lazy val identifier: Parser[Id] = (id_start ~ id_continue) ^^ {
     case st ~ cts => Id(st + cts.mkString(""))
   }
 
