@@ -19,7 +19,7 @@ object Token {
   def printTokens(tokens: List[Token]): Unit = tokens.foreach(t => print(toPrettyString(t)))
 }
 abstract class Token(name: String, content: String) {
-  override def toString: String = "{" + this.name + "[" + this.content + "]}"
+  override def toString: String = content
 }
 
 case object Newline extends Token("NEWLINE", "\n")

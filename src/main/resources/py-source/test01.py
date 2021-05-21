@@ -4,6 +4,8 @@ asdf asdf asdf
 
 def someFunction(arg):
     print(arg)
+    print("hello" + "world")
+    print("""asdfasdf""")
     return 42
 x = {a : 1}
 
