@@ -68,9 +68,14 @@ trait Tokenizers extends RegexParsers {
     case st ~ cts => Id(st + cts.mkString(""))
   }
 
-
   // keywords
-  // lazy val keywords = "False None True and as assert async await break class continue def del elif else except finally for from global if import in is lambda nonlocal not or pass raise return try while with yield".split(" ").map(_.r).reduce(_ | _)
+  lazy val keyword = List(
+    "False", "None", "True", "and", "as", "assert", "async",
+    "await", "break", "class", "continue", "def", "del", "elif",
+    "else", "except", "finally", "for", "from", "global", "if",
+    "import", "in", "is", "lambda", "nonlocal", "not", "or",
+    "pass", "raise", "return", "try", "while", "with", "yield",
+  ).mkString("|").r ^^ { case s => Keyword(s)}
 
   // literals
   lazy val shortString = "['\"].*['\"]".r
@@ -132,7 +137,8 @@ trait Tokenizers extends RegexParsers {
   ).mkString("|").r ^^ { case s => Delim(s) }
 
   // parseAll
-  lazy val token: Parser[Token] =  opBeforeDelim | delim | op | integer | floatNumber | imagNumber | stringLiteral | identifier
+  lazy val literal: Parser[Token] = integer | floatNumber | imagNumber | stringLiteral
+  lazy val token: Parser[Token] = opBeforeDelim | delim | op | keyword | literal | identifier
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }
