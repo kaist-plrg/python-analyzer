@@ -1,4 +1,4 @@
-package kr.ac.kaist.pyanalyzer.ast
+package kr.ac.kaist.pyanalyzer.parser.ast
 
 // 6. Expression
 trait Expr extends Node

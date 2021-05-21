@@ -1,3 +1,3 @@
-package kr.ac.kaist.pyanalyzer.ast
+package kr.ac.kaist.pyanalyzer.parser.ast
 
 trait Node

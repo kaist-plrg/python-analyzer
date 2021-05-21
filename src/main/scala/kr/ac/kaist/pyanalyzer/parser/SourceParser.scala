@@ -13,5 +13,9 @@ object SourceParser {
     IndentParser.parse(source)
   }
 
-  def apply(filename: String): List[Token] = parseText(readSource(filename))
+  def apply(filename: String): List[Token] = {
+    val source = readSource(filename)
+    val tokens = parseText(source)
+    tokens
+  }
 }
