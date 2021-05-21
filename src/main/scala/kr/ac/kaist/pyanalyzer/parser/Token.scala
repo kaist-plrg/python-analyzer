@@ -28,6 +28,7 @@ case class Id(s: String) extends Token("id", s)
 case class Keyword(s: String) extends Token("keyword", s) 
 
 case class StrLiteral(s: String) extends Token("string literal", s)
+case class BytesLiteral(b: String) extends Token("bytes literal", b)
 case class IntLiteral(i: Int) extends Token("int literal", i.toString)
 case class FloatLiteral(f: Double) extends Token("float literal", f.toString)
 case class ImagLiteral(i: Double) extends Token("imag literal", i.toString)
