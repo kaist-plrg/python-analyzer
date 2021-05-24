@@ -39,4 +39,49 @@ trait TokenListParsers extends Parsers {
       val pos = TokenPosition(1, 1, stringList.head)
     }
   }
+
+  private def firstMap[T](in: Input, f: Token => ParseResult[T]): ParseResult[T] = {
+    if (in.atEnd) Failure("EOF", in)
+    else f(in.first)
+  }
+  
+  // TODO write good failure messages
+  // identifiers
+  lazy val id: Parser[String] = Parser(in => firstMap(in, _ match {
+    case Id(name) => Success(name, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  // literals
+  lazy val stringLiteral: Parser[String] = Parser(in => firstMap(in, _ match {
+    case StrLiteral(s) => Success(s, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  lazy val bytesLiteral: Parser[String] = Parser(in => firstMap(in, _ match {
+    case BytesLiteral(b) => Success(b, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  lazy val intLiteral: Parser[Int] = Parser(in => firstMap(in, _ match {
+    case IntLiteral(i) => Success(i, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  lazy val floatLiteral: Parser[Double] = Parser(in => firstMap(in, _ match {
+    case FloatLiteral(f) => Success(f, in.rest)
+    case t => Failure(s"", in) 
+  }))
+
+  lazy val imagLiteral: Parser[Double] = Parser(in => firstMap(in, _ match {
+    case ImagLiteral(i) => Success(i, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  // statements
+  lazy val statements: Parser[List[Stmt]] = rep(statement)
+  lazy val statement: Parser[Stmt] = compoundStmt | simpleStmt
+  
+  lazy val compoundStmt: Parser[Stmt] = ???
+  lazy val simpleStmt: Parser[Stmt] = ???
 }

@@ -5,24 +5,15 @@ trait Expr extends Node
 
 // 6.3 Primaries
 trait Primary extends Expr
-case class AttrRef(prim: Primary, ref: Id) extends Primary
-case class Subscript(prim: Primary, exprs: List[Expr]) extends Primary
+case class EAttrRef(prim: Primary, ref: Id) extends Primary
+case class ESubscript(prim: Primary, exprs: List[Expr]) extends Primary
 // TODO model Slice
 trait Slice extends Node
 case class Slicing(prim: Primary, slices: List[Slice]) extends Primary
 // TODO argument list is modeled differently in reference. model appropriately
 case class Call(prim: Primary, args: List[Expr]) extends Primary
 
-// 6.2. Atoms
-trait Atom extends Primary
-case object Identifier extends Atom
-
-trait Literal extends Expr
-case class StringLiteral(s: String) extends Literal
-case class BytesLiteral(b: Seq[Byte]) extends Literal
-case class IntLiteral(n: Int) extends Literal
-case class FloatLiteral(f: Double) extends Literal
-case class ImagLiteral(j: Double) extends Literal
+// atoms and literals defined in Atom.scala
 
 // 6.4-6.13 Arithmetic, Bitwise, Comparison
 case class PowerExpr(base: Expr, exp: UnaryExpr) extends Expr
