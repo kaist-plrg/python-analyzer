@@ -47,8 +47,8 @@ trait TokenListParsers extends Parsers {
   
   // TODO write good failure messages
   // identifiers
-  lazy val id: Parser[String] = Parser(in => firstMap(in, _ match {
-    case Id(name) => Success(name, in.rest)
+  lazy val id: Parser[AId] = Parser(in => firstMap(in, _ match {
+    case Id(name) => Success(AId(name), in.rest)
     case t => Failure(s"", in)
   }))
 
@@ -68,40 +68,39 @@ trait TokenListParsers extends Parsers {
     case t => Failure(s"", in)
   }))
 
-  // literal
-  lazy val literal : Parser[Atom] = (stringLiteral | bytesLiteral | intLiteral | floatLiteral | imagLiteral) ^^ {
-    case s => ???
-  }
-  lazy val stringLiteral: Parser[String] = Parser(in => firstMap(in, _ match {
-    case StrLiteral(s) => Success(s, in.rest)
+  lazy val namedLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
+    case Keyword(s) if s == ATrue => Success(ATrue, in.rest)
+    case Keyword(s) if s == AFalse => Success(AFalse, in.rest)
+    case Keyword(s) if s == ANone => Success(ANone, in.rest)
+    case _ => Failure(s"", in)
+  }))
+  
+  lazy val stringLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
+    case StrLiteral(s) => Success(AStringLiteral(s), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val bytesLiteral: Parser[String] = Parser(in => firstMap(in, _ match {
-    case BytesLiteral(b) => Success(b, in.rest)
+  lazy val bytesLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
+    case BytesLiteral(b) => Success(ABytesLiteral(b), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val intLiteral: Parser[Int] = Parser(in => firstMap(in, _ match {
-    case IntLiteral(i) => Success(i, in.rest)
+  lazy val intLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
+    case IntLiteral(i) => Success(AIntLiteral(i.toInt), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val floatLiteral: Parser[Double] = Parser(in => firstMap(in, _ match {
-    case FloatLiteral(f) => Success(f, in.rest)
+  lazy val floatLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
+    case FloatLiteral(f) => Success(AFloatLiteral(f.toDouble), in.rest)
     case t => Failure(s"", in) 
   }))
 
-  lazy val imagLiteral: Parser[Double] = Parser(in => firstMap(in, _ match {
-    case ImagLiteral(i) => Success(i, in.rest)
+  lazy val imagLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
+    case ImagLiteral(i) => Success(AImagLiteral(i.toDouble), in.rest)
     case t => Failure(s"", in)
   }))
 
-  implicit def text(s: String): Parser[String] = {
-    Parser(in => {
-      (keyword | op | delim)(in)
-    })
-  }
+  implicit def text(s: String): Parser[String] = Parser(op | delim | keyword)
 
   // statements
   lazy val statements: Parser[List[Stmt]] = rep(statement)
@@ -119,63 +118,100 @@ trait TokenListParsers extends Parsers {
     case e1 ~ l => ??? 
   }
 
-  lazy val orTest: Parser[Expr] = andTest | orTest ~ keyword ~ andTest ^^ {
-    case e1 ~ e2 => ??? 
+  lazy val orExpr: Parser[Expr] = andExpr ~ rep("or" ~> andExpr) ^^ {
+    case e ~ le => ListOfBinaryExpr(COr, e, le)
   }
-  lazy val andTest: Parser[Expr] = notTest | andTest ~ keyword ~ notTest ^^ {
-    case e1 ~ "and" ~ e2 => ??? 
+  lazy val andExpr: Parser[Expr] = notExpr ~ rep("and" ~> notExpr) ^^ {
+    case e ~ le => ListOfBinaryExpr(CAnd, e, le)
   }
-  lazy val notTest: Parser[Expr] = comparison | keyword ~ notTest ^^ {
-    case "not" ~ e => ??? 
+  lazy val notExpr: Parser[Expr] = "not" ~> notExpr ^^ {
+    case e => UnaryExpr(CNot, e)
+  } | compExpr
+
+  lazy val cop: Parser[COp] = (
+    "==" ^^^ CEq |
+    "!=" ^^^ CNeq |
+    "<=" ^^^ CLte |
+    "<" ^^^ CLt |
+    ">=" ^^^ CGte |
+    ">" ^^^ CGt |
+    "not in" ^^^ CNotIn |
+    "in" ^^^ CIn |
+    "is not" ^^^ CIsNot |
+    "is" ^^^ CIs
+  )
+
+  lazy val ListOfBinaryExpr = (op: Op, expr: Expr, le: List[Expr]) =>
+    le.foldLeft(expr)((tempRes, e) => BinaryExpr(op, tempRes, e))
+
+  lazy val compExpr: Parser[Expr] = bOrExpr ~ rep(cop ~ bOrExpr) ^^ {
+    case be ~ l if l.isEmpty => be
+    case be ~ (h :: t) =>
+      t.foldLeft((BinaryExpr(h._1, be, h._2), h._2)) ((tup, e) => {
+        val (tempRes, lhs) = tup
+        val ~(op, rhs) = e
+        (BinaryExpr(CAnd, tempRes, BinaryExpr(op, lhs, rhs)), rhs)
+      }
+    )._1
+  }
+    
+
+  lazy val bOrExpr: Parser[Expr] = opt(bOrExpr <~ "|") ~ bXorExpr ^^ {
+    case None ~ e => e
+    case Some(e1) ~ e2 => BinaryExpr(OBXor, e1, e2)
+  }
+  lazy val bAndExpr: Parser[Expr] = opt(bAndExpr <~ "&") ~ shiftExpr ^^ {
+    case None ~ e => e
+    case Some(e1) ~ e2 => BinaryExpr(OBAnd, e1, e2)
+  }
+  lazy val bXorExpr: Parser[Expr] = opt(bXorExpr <~ "^") ~ bAndExpr ^^ {
+    case None ~ e => e
+    case Some(e1) ~ e2 => BinaryExpr(OBXor, e1, e2)
   }
 
-  lazy val comparison: Parser[Expr] = orExpr ~ rep(compOp ~ orExpr) ^^ {
-    case e ~ l => ??? 
-  }
+  lazy val bop: Parser[BOp] = (
+    "<<" ^^^ OLShift |
+    ">>" ^^^ ORShift |
+    "+" ^^^ OPlus |
+    "-" ^^^ OSub |
+    "*" ^^^ OMul |
+    "/" ^^^ ODiv |
+    "//" ^^^ OIDiv |
+    "%" ^^^ OMod |
+    "@" ^^^ OMMul
+  )
+
+  lazy val uop: Parser[UOp] = (
+    "+" ^^^ OUPlus |
+    "-" ^^^ OUMinus |
+    "~" ^^^ OUInv
+  )
+
+  lazy val shiftExpr: Parser[Expr] = shiftExpr ~ bop ~ aExpr ^^ {
+    case e1 ~ b ~ e2 => BinaryExpr(b, e1, e2)
+  } | aExpr
+
+  lazy val aExpr: Parser[Expr] = aExpr ~ bop ~ mExpr ^^ {
+    case e1 ~ b ~ e2 => BinaryExpr(b, e1, e2)
+  } | mExpr
+  lazy val mExpr: Parser[Expr] = mExpr ~ bop ~ uExpr ^^ {
+    case e1 ~ b ~ e2 => BinaryExpr(b, e1, e2)
+  } | uExpr
   
-  private val compOpList = List("<", ">", "==", ">=", "<=", "!=") //TODO how to add "is, not, in" ?
-  lazy val compOp: Parser[Op] = op ^^ {
-    case s if compOpList contains s => CompareOp(s)
+  lazy val uExpr: Parser[Expr] = uop ~ uExpr ^^ {
+    case u ~ e => UnaryExpr(u, e)
+  } | power
+
+  lazy val power: Parser[Expr] = (awaitExpr | primary) ~ opt("**" ~> uExpr) ^^ {
+    case e1 ~ None => e1
+    case e1 ~ Some(e2) => BinaryExpr(OPow, e1, e2)
   }
 
-  lazy val andExpr: Parser[Expr] = shiftExpr | andExpr ~ op ~ shiftExpr ^^ {
-    case e1 ~ "&" ~ e2 => ???
-  }
-  lazy val xorExpr: Parser[Expr] = andExpr | xorExpr ~ op ~ andExpr ^^ {
-    case e1 ~ "^" ~ e2 => ???
-  }
-  lazy val orExpr: Parser[Expr] = xorExpr | orExpr ~ op ~ xorExpr ^^ {
-    case e1 ~ "|" ~ e2 => ???
-  }
-
-  lazy val shiftExpr: Parser[Expr] = aExpr | shiftExpr ~ op ~ aExpr ^^ {
-    case e1 ~ o ~ e2 if List("<<", ">>") contains o => ???  
-  }
-
-  lazy val aExpr: Parser[Expr] = mExpr | aExpr ~ op ~ mExpr ^^ {
-    case e1 ~ o ~ e2 if List("+", "-") contains o => ???
-  }
-  lazy val mExpr: Parser[Expr] = uExpr | mExpr ~ op ~ uExpr ^^ {
-    case e1 ~ o ~ e2 if List("*", "//", "/") contains o => ???
-  } | mExpr ~ op ~ mExpr ^^ {
-    case e1 ~ "@" ~ e2 => ???
-  }
-  
-  lazy val uExpr: Parser[Expr] = power | op ~ uExpr ^^ {
-    case o ~ uExpr if List("-", "+", "~") contains o => ???
-  }
-
-  lazy val power: Parser[Expr] = (awaitExpr | primary) ~ opt(op ~ uExpr) ^^ {
-    case e1 ~ None => ???
-    case e1 ~ Some("**" ~ e2) => ???
-  }
-
-  lazy val awaitExpr: Parser[Expr] = keyword ~ primary ^^ {
-    case "await" ~ primary => ???  
-  }
+  lazy val awaitExpr: Parser[Expr] = "await" ~> primary
 
   lazy val primary: Parser[Expr] = atom | attrRef | subscription | slicing | call
-  lazy val atom: Parser[Atom] = id ^^ { AId(_) } | literal | enclosure
+  lazy val atom: Parser[Atom] = id | namedLiteral | stringLiteral |
+      bytesLiteral | intLiteral | floatLiteral | imagLiteral | enclosure
   lazy val enclosure: Parser[Atom] = ???
   
   lazy val attrRef: Parser[Expr] = primary ~ delim ~ id ^^ {

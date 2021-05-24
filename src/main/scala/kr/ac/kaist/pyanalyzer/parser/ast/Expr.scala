@@ -17,9 +17,9 @@ case class Call(prim: Primary, args: List[Expr]) extends Primary
 // atoms and literals defined in Atom.scala
 
 // 6.4-6.13 Arithmetic, Bitwise, Comparison
-case class PowerExpr(base: Expr, exp: UnaryExpr) extends Expr
+case class PowerExpr(base: Expr, exp: Expr) extends Expr
 // TODO distinguish of unary and binary op
-case class UnaryExpr(op: Op, expr: UnaryExpr) extends Expr
+case class UnaryExpr(op: Op, expr: Expr) extends Expr
 // TODO precedence defined by parsing rule, see 6.17
 // possible binary op: *, @, //, /, %, +, -, <<, >>, &, ^, |, <, >, ==, >=, <=, != or, and
 case class BinaryExpr(op: Op, lhs: Expr, rhs: Expr) extends Expr
