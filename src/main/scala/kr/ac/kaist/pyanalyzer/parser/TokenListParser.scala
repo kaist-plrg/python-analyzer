@@ -127,4 +127,10 @@ trait TokenListParsers extends Parsers {
   lazy val xorExpr: Parser[Expr] = ???
   lazy val orExpr: Parser[Expr] = ???
 
+  implicit def literal(s: String): Parser[String] = {
+    Parser(in => {
+      val init = success[String]("")(in)
+      init
+    })
+  }
 }
