@@ -144,8 +144,7 @@ trait TokenListParsers extends Parsers {
 
   implicit def literal(s: String): Parser[String] = {
     Parser(in => {
-      val init = success[String]("")(in)
-      init
+      (keyword | op | delim)(in)
     })
   }
 
