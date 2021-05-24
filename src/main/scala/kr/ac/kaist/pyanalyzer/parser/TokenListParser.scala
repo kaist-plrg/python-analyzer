@@ -68,7 +68,10 @@ trait TokenListParsers extends Parsers {
     case t => Failure(s"", in)
   }))
 
-  // literals
+  // literal
+  lazy val literal : Parser[Atom] = (stringLiteral | bytesLiteral | intLiteral | floatLiteral | imagLiteral) ^^ {
+    case s => ???
+  }
   lazy val stringLiteral: Parser[String] = Parser(in => firstMap(in, _ match {
     case StrLiteral(s) => Success(s, in.rest)
     case t => Failure(s"", in)
@@ -106,6 +109,10 @@ trait TokenListParsers extends Parsers {
   lazy val condExpr: Parser[Expr] = ???
   lazy val lambdaExpr: Parser[Expr] = ???
   
+  lazy val exprList: Parser[List[Expr]] = expression ~ (op ~ expression).* ^^ {
+    case e1 ~ l => ??? 
+  }
+
   lazy val orTest: Parser[Expr] = andTest | orTest ~ keyword ~ andTest ^^ {
     case e1 ~ e2 => ??? 
   }
@@ -119,13 +126,21 @@ trait TokenListParsers extends Parsers {
   lazy val comparison: Parser[Expr] = orExpr ~ rep(compOp ~ orExpr) ^^ {
     case e ~ l => ??? 
   }
-  lazy val compOp: Parser[Op] = keyword ^^ {
-    case s => CompareOp(s)
+  
+  private val compOpList = List("<", ">", "==", ">=", "<=", "!=") //TODO how to add "is, not, in" ?
+  lazy val compOp: Parser[Op] = op ^^ {
+    case s if compOpList contains s => CompareOp(s)
   }
 
-  lazy val andExpr: Parser[Expr] = ???
-  lazy val xorExpr: Parser[Expr] = ???
-  lazy val orExpr: Parser[Expr] = ???
+  lazy val andExpr: Parser[Expr] = shiftExpr | andExpr ~ op ~ shiftExpr ^^ {
+    case e1 ~ "&" ~ e2 => ???
+  }
+  lazy val xorExpr: Parser[Expr] = andExpr | xorExpr ~ op ~ andExpr ^^ {
+    case e1 ~ "^" ~ e2 => ???
+  }
+  lazy val orExpr: Parser[Expr] = xorExpr | orExpr ~ op ~ xorExpr ^^ {
+    case e1 ~ "|" ~ e2 => ???
+  }
 
   implicit def literal(s: String): Parser[String] = {
     Parser(in => {
@@ -133,4 +148,52 @@ trait TokenListParsers extends Parsers {
       init
     })
   }
+
+  lazy val shiftExpr: Parser[Expr] = aExpr | shiftExpr ~ op ~ aExpr ^^ {
+    case e1 ~ o ~ e2 if List("<<", ">>") contains o => ???  
+  }
+
+  lazy val aExpr: Parser[Expr] = mExpr | aExpr ~ op ~ mExpr ^^ {
+    case e1 ~ o ~ e2 if List("+", "-") contains o => ???
+  }
+  lazy val mExpr: Parser[Expr] = uExpr | mExpr ~ op ~ uExpr ^^ {
+    case e1 ~ o ~ e2 if List("*", "//", "/") contains o => ???
+  } | mExpr ~ op ~ mExpr ^^ {
+    case e1 ~ "@" ~ e2 => ???
+  }
+  
+  lazy val uExpr: Parser[Expr] = power | op ~ uExpr ^^ {
+    case o ~ uExpr if List("-", "+", "~") contains o => ???
+  }
+
+  lazy val power: Parser[Expr] = (awaitExpr | primary) ~ opt(op ~ uExpr) ^^ {
+    case e1 ~ None => ???
+    case e1 ~ Some("**" ~ e2) => ???
+  }
+
+  lazy val awaitExpr: Parser[Expr] = keyword ~ primary ^^ {
+    case "await" ~ primary => ???  
+  }
+
+  lazy val primary: Parser[Expr] = atom | attrRef | subscription | slicing | call
+  lazy val atom: Parser[Atom] = id ^^ { AId(_) } | literal | enclosure
+  lazy val enclosure: Parser[Atom] = ???
+  
+  lazy val attrRef: Parser[Expr] = primary ~ delim ~ id ^^ {
+    case e1 ~ "." ~ e2 => ???
+  }
+  lazy val subscription: Parser[Expr] = primary ~ delim ~ exprList ~ delim ^^ {
+    case e1 ~ "(" ~ l ~ ")" => ???
+  }
+
+  lazy val slicing: Parser[Expr] = primary ~ delim ~ sliceList ~ delim ^^ {
+    case e1 ~ "[" ~ l ~ "]" => ???
+  }
+  lazy val sliceList: Parser[List[Expr]] = ???
+
+  lazy val call: Parser[Expr] = primary ~ delim ~ argList ~ delim ^^ {
+    case e1 ~ "(" ~ l ~ ")" => ??? 
+  }
+  lazy val argList: Parser[List[Expr]] = ???
+>>>>>>> ba752b9 (Skeleton for expr parser)
 }
