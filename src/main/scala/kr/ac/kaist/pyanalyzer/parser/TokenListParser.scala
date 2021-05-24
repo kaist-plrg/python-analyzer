@@ -52,6 +52,22 @@ trait TokenListParsers extends Parsers {
     case t => Failure(s"", in)
   }))
 
+  // keywords, op and delimiters
+  lazy val keyword: Parser[String] = Parser(in => firstMap(in, _ match {
+    case Keyword(s) => Success(s, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  lazy val op: Parser[String] = Parser(in => firstMap(in, _ match {
+    case Op(s) => Success(s, in.rest)
+    case t => Failure(s"", in)
+  }))
+
+  lazy val delim: Parser[String] = Parser(in => firstMap(in, _ match {
+    case Delim(s) => Success(s, in.rest)
+    case t => Failure(s"", in)
+  }))
+
   // literals
   lazy val stringLiteral: Parser[String] = Parser(in => firstMap(in, _ match {
     case StrLiteral(s) => Success(s, in.rest)
@@ -84,4 +100,31 @@ trait TokenListParsers extends Parsers {
   
   lazy val compoundStmt: Parser[Stmt] = ???
   lazy val simpleStmt: Parser[Stmt] = ???
+
+  // expressions
+  lazy val expression: Parser[Expr] = condExpr | lambdaExpr
+  lazy val condExpr: Parser[Expr] = ???
+  lazy val lambdaExpr: Parser[Expr] = ???
+  
+  lazy val orTest: Parser[Expr] = andTest | orTest ~ keyword ~ andTest ^^ {
+    case e1 ~ e2 => ??? 
+  }
+  lazy val andTest: Parser[Expr] = notTest | andTest ~ keyword ~ notTest ^^ {
+    case e1 ~ "and" ~ e2 => ??? 
+  }
+  lazy val notTest: Parser[Expr] = comparison | keyword ~ notTest ^^ {
+    case "not" ~ e => ??? 
+  }
+
+  lazy val comparison: Parser[Expr] = orExpr ~ rep(compOp ~ orExpr) ^^ {
+    case e ~ l => ??? 
+  }
+  lazy val compOp: Parser[Op] = keyword ^^ {
+    case s => CompareOp(s)
+  }
+
+  lazy val andExpr: Parser[Expr] = ???
+  lazy val xorExpr: Parser[Expr] = ???
+  lazy val orExpr: Parser[Expr] = ???
+
 }
