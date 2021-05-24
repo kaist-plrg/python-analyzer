@@ -97,6 +97,12 @@ trait TokenListParsers extends Parsers {
     case t => Failure(s"", in)
   }))
 
+  implicit def text(s: String): Parser[String] = {
+    Parser(in => {
+      (keyword | op | delim)(in)
+    })
+  }
+
   // statements
   lazy val statements: Parser[List[Stmt]] = rep(statement)
   lazy val statement: Parser[Stmt] = compoundStmt | simpleStmt
@@ -140,12 +146,6 @@ trait TokenListParsers extends Parsers {
   }
   lazy val orExpr: Parser[Expr] = xorExpr | orExpr ~ op ~ xorExpr ^^ {
     case e1 ~ "|" ~ e2 => ???
-  }
-
-  implicit def literal(s: String): Parser[String] = {
-    Parser(in => {
-      (keyword | op | delim)(in)
-    })
   }
 
   lazy val shiftExpr: Parser[Expr] = aExpr | shiftExpr ~ op ~ aExpr ^^ {
@@ -194,5 +194,4 @@ trait TokenListParsers extends Parsers {
     case e1 ~ "(" ~ l ~ ")" => ??? 
   }
   lazy val argList: Parser[List[Expr]] = ???
->>>>>>> ba752b9 (Skeleton for expr parser)
 }
