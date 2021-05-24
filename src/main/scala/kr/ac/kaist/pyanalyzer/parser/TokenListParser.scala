@@ -118,6 +118,8 @@ trait TokenListParsers extends Parsers {
     case e1 ~ l => ??? 
   }
 
+  lazy val ListOfBinaryExpr = (op: Op, expr: Expr, le: List[Expr]) =>
+    le.foldLeft(expr)((tempRes, e) => BinaryExpr(op, tempRes, e))
   lazy val orExpr: Parser[Expr] = andExpr ~ rep("or" ~> andExpr) ^^ {
     case e ~ le => ListOfBinaryExpr(COr, e, le)
   }
@@ -141,9 +143,6 @@ trait TokenListParsers extends Parsers {
     "is" ^^^ CIs
   )
 
-  lazy val ListOfBinaryExpr = (op: Op, expr: Expr, le: List[Expr]) =>
-    le.foldLeft(expr)((tempRes, e) => BinaryExpr(op, tempRes, e))
-
   lazy val compExpr: Parser[Expr] = bOrExpr ~ rep(cop ~ bOrExpr) ^^ {
     case be ~ l if l.isEmpty => be
     case be ~ (h :: t) =>
@@ -154,7 +153,6 @@ trait TokenListParsers extends Parsers {
       }
     )._1
   }
-    
 
   lazy val bOrExpr: Parser[Expr] = opt(bOrExpr <~ "|") ~ bXorExpr ^^ {
     case None ~ e => e
