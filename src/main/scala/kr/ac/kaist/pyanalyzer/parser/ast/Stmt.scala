@@ -30,6 +30,7 @@ case class GlobalStmt(ns: List[Id]) extends SimpleStmt
 case class NonlocalStmt(ns: List[Id]) extends SimpleStmt
 
 trait Suite
+trait ParamDec
 
 // Compound statements
 sealed trait CompoundStmt extends Stmt

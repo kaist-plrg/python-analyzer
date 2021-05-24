@@ -2,8 +2,11 @@ package kr.ac.kaist.pyanalyzer.parser
 
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
+import kr.ac.kaist.pyanalyzer.parser.ast._
 
-object TokenListParser extends TokenListParsers
+object TokenListParser extends TokenListParsers {
+  def apply(tokens: List[Token]): List[Stmt] = ??? 
+}
 trait TokenListParsers extends Parsers {
   type Elem = Token
   case class TokenPosition(column: Int, line: Int, protected val lineContents: String) extends Position
