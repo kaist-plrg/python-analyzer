@@ -133,6 +133,7 @@ trait TokenListParsers extends Parsers {
   lazy val condExpr: Parser[Expr] = orExpr ~ opt("if" ~> orExpr ~ ("else" ~> expr)) ^^ {
     case oe1 ~ Some(oe2 ~ e) => CondExpr(oe2, oe1, e)
     case oe ~ None => oe
+
   }
   lazy val lambdaExpr: Parser[Expr] = ("lambda" ~> lParam <~ ":") ~ expr ^^ {
     case param ~ e => LambdaExpr(param, e)
@@ -230,15 +231,14 @@ trait TokenListParsers extends Parsers {
 
   lazy val awaitExpr: Parser[Expr] = ("await" ~> primary) | primary
 
-  lazy val primary: Parser[Expr] = invalid_primary | attrRef | primary_gen |
-    call | slicing | atom
+  lazy val primary: Parser[Primary] = invalid_primary | attrRef | primary_gen | call | slicing | atom
   lazy val atom: Parser[Atom] = id | namedLiteral | stringLiteral |
       bytesLiteral | intLiteral | floatLiteral | imagLiteral | enclosure
   lazy val enclosure: Parser[Atom] = ???
 
-  lazy val invalid_primary: Parser[Expr] = ???
+  lazy val invalid_primary: Parser[Primary] = ???
 
-  lazy val primary_gen: Parser[Expr] = primary ~ genExpr ^^ {
+  lazy val primary_gen: Parser[Primary] = primary ~ genExpr ^^ {
     case e1 ~ e2 => ???
   }
 
@@ -249,19 +249,27 @@ trait TokenListParsers extends Parsers {
 
   lazy val forIfClause: Parser[List[Expr]] = ???
   
-  lazy val attrRef: Parser[Expr] = primary ~ ("." ~> id) ^^ {
-    case e1 ~ x => ???
+  lazy val attrRef: Parser[Primary] = primary ~ ("." ~> id) ^^ {
+    case p ~ i => EAttrRef(p, i) 
   }
-  lazy val subscription: Parser[Expr] = primary ~ delim ~ exprList ~ delim ^^ {
-    case e1 ~ "(" ~ l ~ ")" => ???
+  lazy val subscription: Parser[Primary] = primary ~ ("[" ~> exprList <~ "]") ^^ {
+    case p ~ l => ESubscript(p, l)
   }
 
-  lazy val slicing: Parser[Expr] = primary ~ delim ~ sliceList ~ delim ^^ {
-    case e1 ~ "[" ~ l ~ "]" => ???
+  lazy val slicing: Parser[Primary] = primary ~ ("[" ~> sliceList <~ "]") ^^ {
+    case p ~ l => Slicing(p, l)  
   }
-  lazy val sliceList: Parser[List[Expr]] = ???
+ 
+  lazy val sliceList: Parser[List[Expr]] = sliceItem ~ rep("," ~> sliceItem) <~ opt(",") ^^ {
+    case fst ~ rst => fst +: rst
+  }
+  lazy val sliceItem: Parser[Expr] = expr | properSlice
+  lazy val properSlice: Parser[Expr] = "[" ~> expr ~ (":" ~> expr ~ opt(":" ~> expr)) ^^ {
+    case lb ~ (ub ~ None) => Slice(lb, ub, AIntLiteral(1)) 
+    case lb ~ (ub ~ Some(s)) => Slice(lb, ub, s)
+  }
 
-  lazy val call: Parser[Expr] = primary ~ delim ~ argList ~ delim ^^ {
+  lazy val call: Parser[Primary] = primary ~ delim ~ argList ~ delim ^^ {
     case e1 ~ "(" ~ l ~ ")" => ??? 
   }
   lazy val argList: Parser[List[Expr]] = ???

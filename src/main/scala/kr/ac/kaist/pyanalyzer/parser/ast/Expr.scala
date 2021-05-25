@@ -1,7 +1,7 @@
 package kr.ac.kaist.pyanalyzer.parser.ast
 
 // 6. Expression
-trait Expr extends Node
+sealed trait Expr extends Node
 
 // 6.3 Primaries
 trait Primary extends Expr
@@ -9,8 +9,8 @@ case class EAttrRef(prim: Primary, ref: AId) extends Primary
 case class ESubscript(prim: Primary, exprs: List[Expr]) extends Primary
 
 // TODO model Slice
-trait Slice extends Node
-case class Slicing(prim: Primary, slices: List[Slice]) extends Primary
+case class Slice(lb: Expr, ub: Expr, stride: Expr) extends Expr
+case class Slicing(prim: Primary, slices: List[Expr]) extends Primary
 // TODO argument list is modeled differently in reference. model appropriately
 case class Call(prim: Primary, args: List[Expr]) extends Primary
 
