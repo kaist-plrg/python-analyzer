@@ -269,8 +269,37 @@ trait TokenListParsers extends Parsers {
     case lb ~ (ub ~ Some(s)) => Slice(lb, ub, s)
   }
 
+  // TODO should add comprehension
   lazy val call: Parser[Primary] = primary ~ ("(" ~> argList <~ ")") ^^ {
-    case e ~ le => ???
+    case p ~ pair => Call(p, pair._1, pair._2, EEmpty)
   }
-  lazy val argList: Parser[List[Expr]] = ???
+
+  // Call argument list - look at Expr.scala, case class Call
+  // arguments are largely divided into 
+  lazy val argList: Parser[(List[Expr], Map[AId, Expr], Option[Expr])] = posArgs ~ opt("," ~> starredAndKeywords) ~ opt("," ~> keywordArgs) ^^ {
+    case pargs ~ a2 ~ Some((kwargs, e)) => (pargs, kwargs, e)
+    case pargs ~ a2 ~ None => (pargs, Map.empty, None)
+  }
+  lazy val posArgs: Parser[List[Expr]] = repsep(posItem, ",")
+  lazy val posItem: Parser[Expr] = assignExpr | "*" ~> expr 
+
+  // TODO should add keywordargs
+  lazy val starredAndKeywords: Parser[List[Expr]] = repsep(("*" ~> expr), ",")
+
+  // TODO really messy here, should refactor
+  val kargsFolder: ( (Map[AId, Expr], Option[Expr]), Any) => (Map[AId, Expr], Option[Expr]) = (sum, res) => (sum, res) match {
+    case ( (map, exprOpt), (i: AId, e: Expr) ) => (map + (i -> e), exprOpt) // keywordItem case
+    case ( (map, exprOpt), (e: Expr) ) => (map, Some(e)) // "**" ~> expr case
+    case ( (map, exprOpt), _ ) => ??? // impossible
+  }
+  lazy val keywordArgs: Parser[(Map[AId, Expr], Option[Expr])] = repsep((keywordItem | "**" ~> expr), ",") ^^ (l => {
+    val initMap: Map[AId, Expr] = Map.empty
+    val initOpt: Option[Expr] = None
+    l.foldLeft( (initMap, initOpt) )(kargsFolder)
+  })
+
+  // TODO model keyword_item properly
+  lazy val keywordItem: Parser[(AId, Expr)] = id ~ ("=" ~> expr) ^^ {
+    case i ~ e => (i, e)
+  }
 }

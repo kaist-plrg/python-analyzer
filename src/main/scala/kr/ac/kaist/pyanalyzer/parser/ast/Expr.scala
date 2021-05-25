@@ -2,6 +2,7 @@ package kr.ac.kaist.pyanalyzer.parser.ast
 
 // 6. Expression
 sealed trait Expr extends Node
+case object EEmpty extends Expr
 
 // 6.3 Primaries
 trait Primary extends Expr
@@ -12,7 +13,7 @@ case class ESubscript(prim: Primary, exprs: List[Expr]) extends Primary
 case class Slice(lb: Expr, ub: Expr, stride: Expr) extends Expr
 case class Slicing(prim: Primary, slices: List[Expr]) extends Primary
 // TODO argument list is modeled differently in reference. model appropriately
-case class Call(prim: Primary, args: List[Expr]) extends Primary
+case class Call(prim: Primary, posArgs: List[Expr], keyArgs:Map[AId, Expr], keyRest: Expr) extends Primary
 
 // atoms and literals defined in Atom.scala
 
