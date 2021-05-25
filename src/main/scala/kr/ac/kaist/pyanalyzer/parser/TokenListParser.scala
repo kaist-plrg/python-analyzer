@@ -168,7 +168,7 @@ trait TokenListParsers extends Parsers {
   )
 
   lazy val compExpr: Parser[Expr] = bOrExpr ~ rep(cop ~ bOrExpr) ^^ {
-    case be ~ l if l.isEmpty => be
+    case be ~ Nil => be
     case be ~ (h :: t) =>
       t.foldLeft((BinaryExpr(h._1, be, h._2), h._2)) ((tup, e) => {
         val (tempRes, lhs) = tup
@@ -269,8 +269,8 @@ trait TokenListParsers extends Parsers {
     case lb ~ (ub ~ Some(s)) => Slice(lb, ub, s)
   }
 
-  lazy val call: Parser[Primary] = primary ~ delim ~ argList ~ delim ^^ {
-    case e1 ~ "(" ~ l ~ ")" => ??? 
+  lazy val call: Parser[Primary] = primary ~ ("(" ~> argList <~ ")") ^^ {
+    case e ~ le => ???
   }
   lazy val argList: Parser[List[Expr]] = ???
 }
