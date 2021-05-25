@@ -118,10 +118,7 @@ trait TokenListParsers extends Parsers {
   lazy val starExpr: Parser[Expr] = "*" ~> bOrExpr ^^ StarExpr | expr
 
   // TODO: conver it to tuple
-  // TODO: handle . in the spec
-  lazy val starNamedExprList: Parser[List[Expr]] = "," ~> rep1(starNamedExpr) <~ opt(",") ^^ {
-    case le => le
-}
+  lazy val starNamedExprList: Parser[List[Expr]] = listOfExpr(starNamedExpr)
   lazy val starNamedExpr: Parser[Expr] = "*" ~> bOrExpr ^^ StarExpr | namedExpr
 
   // TODO: handle ~ in the spec
