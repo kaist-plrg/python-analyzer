@@ -28,3 +28,6 @@ case class CondExpr(ifExpr: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr
 
 // 6.14 Lambdas
 case class LambdaExpr(parms: List[AId], expr: Expr) extends Expr
+
+// 6.15 stared expression
+case class StarExpr(expr: Expr) extends Expr

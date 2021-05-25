@@ -110,6 +110,20 @@ trait TokenListParsers extends Parsers {
   lazy val simpleStmt: Parser[Stmt] = ???
 
   // expressions
+  lazy val listOfExpr = (p: Parser[Expr]) => p ~ rep("," ~> p) <~ opt(",") ^^ {
+    case e ~ le => e :: le
+  }
+  // TODO: conver it to tuple
+  lazy val starExprList: Parser[List[Expr]] = listOfExpr(starExpr)
+  lazy val starExpr: Parser[Expr] = "*" ~> bOrExpr ^^ StarExpr | expr
+
+  // TODO: conver it to tuple
+  // TODO: handle . in the spec
+  lazy val starNamedExprList: Parser[List[Expr]] = "," ~> rep1(starNamedExpr) <~ opt(",") ^^ {
+    case le => le
+}
+  lazy val starNamedExpr: Parser[Expr] = "*" ~> bOrExpr ^^ StarExpr | namedExpr
+
   // TODO: handle ~ in the spec
   lazy val assignExpr: Parser[Expr] = id ~ (":=" ~> expr) ^^ {
     case x ~ e => AssignExpr(x, e)
@@ -127,11 +141,9 @@ trait TokenListParsers extends Parsers {
     case param ~ e => LambdaExpr(param, e)
   }
   lazy val lParam: Parser[List[AId]] = ???
-  
-  lazy val exprList: Parser[List[Expr]] = expr ~ (op ~ expr).* ^^ {
-    case e1 ~ l => ??? 
-  }
 
+  // TODO: conver it to tuple
+  lazy val exprList: Parser[List[Expr]] = listOfExpr(expr)
   lazy val ListOfBinaryExpr = (op: Op, expr: Expr, le: List[Expr]) =>
     le.foldLeft(expr)((tempRes, e) => BinaryExpr(op, tempRes, e))
   lazy val orExpr: Parser[Expr] = andExpr ~ rep("or" ~> andExpr) ^^ {
