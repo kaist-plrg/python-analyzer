@@ -200,20 +200,29 @@ trait TokenListParsers extends Parsers {
     case u ~ e => UnaryExpr(u, e)
   } | power
 
-  lazy val power: Parser[Expr] = (awaitExpr | primary) ~ opt("**" ~> uExpr) ^^ {
+  lazy val power: Parser[Expr] = awaitExpr ~ opt("**" ~> uExpr) ^^ {
     case e1 ~ None => e1
     case e1 ~ Some(e2) => BinaryExpr(OPow, e1, e2)
   }
 
-  lazy val awaitExpr: Parser[Expr] = "await" ~> primary
+  lazy val awaitExpr: Parser[Expr] = ("await" ~> primary) | primary
 
-  lazy val primary: Parser[Expr] = atom | attrRef | subscription | slicing | call
+  lazy val primary: Parser[Expr] = invalid_primary | attrRef | primary_gen |
+    call | slicing | atom
   lazy val atom: Parser[Atom] = id | namedLiteral | stringLiteral |
       bytesLiteral | intLiteral | floatLiteral | imagLiteral | enclosure
   lazy val enclosure: Parser[Atom] = ???
+
+  lazy val invalid_primary: Parser[Expr] = ???
+
+  lazy val primary_gen: Parser[Expr] = primary ~ genExpr ^^ {
+    case e1 ~ e2 => ???
+  }
+
+  lazy val genExpr: Parser[Expr] = ???
   
-  lazy val attrRef: Parser[Expr] = primary ~ delim ~ id ^^ {
-    case e1 ~ "." ~ e2 => ???
+  lazy val attrRef: Parser[Expr] = primary ~ ("." ~> id) ^^ {
+    case e1 ~ x => ???
   }
   lazy val subscription: Parser[Expr] = primary ~ delim ~ exprList ~ delim ^^ {
     case e1 ~ "(" ~ l ~ ")" => ???
