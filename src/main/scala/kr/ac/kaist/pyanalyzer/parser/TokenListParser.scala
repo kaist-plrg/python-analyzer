@@ -110,11 +110,25 @@ trait TokenListParsers extends Parsers {
   lazy val simpleStmt: Parser[Stmt] = ???
 
   // expressions
-  lazy val expression: Parser[Expr] = condExpr | lambdaExpr
-  lazy val condExpr: Parser[Expr] = ???
-  lazy val lambdaExpr: Parser[Expr] = ???
+  // TODO: handle ~ in the spec
+  lazy val assignExpr: Parser[Expr] = id ~ (":=" ~> expr) ^^ {
+    case x ~ e => AssignExpr(x, e)
+  }
+
+  lazy val namedExpr: Parser[Expr] = assignExpr | exprNeg
+
+  lazy val expr: Parser[Expr] = condExpr | lambdaExpr
+  lazy val exprNeg: Parser[Expr] = expr - ":="
+  lazy val condExpr: Parser[Expr] = orExpr ~ opt("if" ~> orExpr ~ ("else" ~> expr)) ^^ {
+    case oe1 ~ Some(oe2 ~ e) => CondExpr(oe2, oe1, e)
+    case oe ~ None => oe
+  }
+  lazy val lambdaExpr: Parser[Expr] = ("lambda" ~> lParam <~ ":") ~ expr ^^ {
+    case param ~ e => LambdaExpr(param, e)
+  }
+  lazy val lParam: Parser[List[AId]] = ???
   
-  lazy val exprList: Parser[List[Expr]] = expression ~ (op ~ expression).* ^^ {
+  lazy val exprList: Parser[List[Expr]] = expr ~ (op ~ expr).* ^^ {
     case e1 ~ l => ??? 
   }
 
@@ -219,7 +233,12 @@ trait TokenListParsers extends Parsers {
     case e1 ~ e2 => ???
   }
 
-  lazy val genExpr: Parser[Expr] = ???
+  lazy val genExpr: Parser[Expr] =  "(" ~> (assignExpr | exprNeg) ~
+    rep1(forIfClause) ^^ {
+    case e ~ lc => ???
+  }
+
+  lazy val forIfClause: Parser[Expr] = ???
   
   lazy val attrRef: Parser[Expr] = primary ~ ("." ~> id) ^^ {
     case e1 ~ x => ???
