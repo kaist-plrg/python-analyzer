@@ -339,7 +339,11 @@ trait TokenListParsers extends Parsers {
       case o ~ pl ~ Some(None) => o.toList ++ pl 
       // yes kwargs
       case o ~ pl ~ Some(Some(p)) => o.toList ++ pl ++ List(p) 
-    } | 
+    } ^^ { pl => pl.map({
+      case p: NormalParam => p.copy(keyOnly=true)
+      case p: ArbPosParam => p
+      case p: ArbKeyParam => p
+    })} | 
     doubleStarParam <~ opt(",") ^^ { List(_) }
 
   // parser for arbitrary positional parameter
@@ -347,16 +351,14 @@ trait TokenListParsers extends Parsers {
     case Some(i) => Some(ArbPosParam(i))
     case None => None
   }
-
   // parser for arbitrary keyword parameter
   lazy val doubleStarParam: Parser[Param] = "**" ~> param <~ opt(",") ^^ {
     case i => ArbKeyParam(i) 
   }
-
-  lazy val param: Parser[AId] = id // TODO add optional type expr `: expr`
   // parser for normal parameter
-  lazy val defparam: Parser[Param] = param ~ opt(expr) ^^ {
-    case i ~ None => ???
-    case i ~ Some(e) => ??? 
+  lazy val defparam: Parser[Param] = param ~ ("=" ~> opt(expr)) ^^ {
+    case i ~ oe => NormalParam(i, 0, oe, false)
   }
+  // parser for parameter id
+  lazy val param: Parser[AId] = id // TODO add optional type expr `: expr`
 }
