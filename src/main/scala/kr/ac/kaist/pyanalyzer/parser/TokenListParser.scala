@@ -102,14 +102,7 @@ trait TokenListParsers extends Parsers {
 
   implicit def text(s: String): Parser[String] = Parser(op | delim | keyword)
 
-  // statements
-  lazy val statements: Parser[List[Stmt]] = rep(statement)
-  lazy val statement: Parser[Stmt] = compoundStmt | simpleStmt
-  
-  lazy val compoundStmt: Parser[Stmt] = ???
-  lazy val simpleStmt: Parser[Stmt] = ???
-
-  // expressions
+    // expressions
   lazy val listOfExpr = (p: Parser[Expr]) => p ~ rep("," ~> p) <~ opt(",") ^^ {
     case e ~ le => e :: le
   }
@@ -135,10 +128,9 @@ trait TokenListParsers extends Parsers {
     case oe ~ None => oe
 
   }
-  lazy val lambdaExpr: Parser[Expr] = ("lambda" ~> lParam <~ ":") ~ expr ^^ {
-    case param ~ e => LambdaExpr(param, e)
+  lazy val lambdaExpr: Parser[Expr] = ("lambda" ~> paramList <~ ":") ~ expr ^^ {
+    case pl ~ e => LambdaExpr(pl, e)
   }
-  lazy val lParam: Parser[List[AId]] = ???
 
   // TODO: conver it to tuple
   lazy val exprList: Parser[List[Expr]] = listOfExpr(expr)
@@ -301,5 +293,70 @@ trait TokenListParsers extends Parsers {
   // TODO model keyword_item properly
   lazy val keywordItem: Parser[(AId, Expr)] = id ~ ("=" ~> expr) ^^ {
     case i ~ e => (i, e)
+  }
+
+  // Statements
+  lazy val statements: Parser[List[Stmt]] = rep(statement)
+  lazy val statement: Parser[Stmt] = compoundStmt | simpleStmt
+  
+  lazy val compoundStmt: Parser[Stmt] = ???
+  lazy val simpleStmt: Parser[Stmt] = ???
+  lazy val suite: Parser[Stmt] = funcdef // TODO add others
+
+  // TODO complete this
+  lazy val funcdef: Parser[Stmt] =
+    opt(decorators) ~ ("def" ~> id ~ ("(" ~> opt(paramList) <~ ")")) ~ (":" ~> suite) ^^ {
+      // TODO add yes decorator case
+      case None ~ (i ~ None) ~ s => ???
+      case None ~ (i ~ Some(pl)) ~ s => ???
+    }
+  lazy val decorators: Parser[List[Expr]] = ??? 
+  lazy val paramList: Parser[List[Param]] =
+    defparam ~ ("," ~> defparam).* ~ (("," ~ "/") ~> opt("," ~> opt(paramListNoPosonly))) ^^ {
+      // no posonly
+      case p ~ pl ~ None => p +: pl
+      case p ~ pl ~ Some(None) => p +: pl
+      // yes posonly
+      case p ~ pl ~ Some(Some(sl)) => (p +: pl) ++ sl
+    } |
+    paramListNoPosonly
+
+  lazy val paramListNoPosonly: Parser[List[Param]] =
+    defparam ~ ("," ~> defparam).* ~ opt("," ~> opt(paramListStarargs)) ^^ {
+      // no starparams
+      case p ~ pl ~ None => p +: pl
+      case p ~ pl ~ Some(None) => p +: pl
+      // yes starparams
+      case p ~ pl ~ Some(Some(sl)) => (p +: pl) ++ sl
+    } |
+    paramListStarargs
+
+  // parser for parameters appear after star or double-star
+  lazy val paramListStarargs: Parser[List[Param]] =
+    oneStarParam ~ ("," ~> defparam).* ~ opt("," ~> opt(doubleStarParam)) ^^ {
+      // no kwargs
+      case o ~ pl ~ None => o.toList ++ pl 
+      case o ~ pl ~ Some(None) => o.toList ++ pl 
+      // yes kwargs
+      case o ~ pl ~ Some(Some(p)) => o.toList ++ pl ++ List(p) 
+    } | 
+    doubleStarParam <~ opt(",") ^^ { List(_) }
+
+  // parser for arbitrary positional parameter
+  lazy val oneStarParam: Parser[Option[Param]] = ("*" ~> opt(param)) ^^ {
+    case Some(i) => Some(ArbPosParam(i))
+    case None => None
+  }
+
+  // parser for arbitrary keyword parameter
+  lazy val doubleStarParam: Parser[Param] = "**" ~> param <~ opt(",") ^^ {
+    case i => ArbKeyParam(i) 
+  }
+
+  lazy val param: Parser[AId] = id // TODO add optional type expr `: expr`
+  // parser for normal parameter
+  lazy val defparam: Parser[Param] = param ~ opt(expr) ^^ {
+    case i ~ None => ???
+    case i ~ Some(e) => ??? 
   }
 }
