@@ -5,22 +5,24 @@ sealed trait Op extends Node
 case class AugAssignOp(op: String) extends Op
 case class CompareOp(op: String) extends Op
 
+// binary operators
 sealed trait BOp extends Op
 case object OLShift extends BOp
 case object ORShift extends BOp
-case object OPlus extends BOp
+case object OAdd extends BOp
 case object OSub extends BOp
 case object OMul extends BOp
 case object ODiv extends BOp
 case object OIDiv extends BOp
 case object OMod extends BOp
-case object OMMul extends BOp
+case object OMMul extends BOp // TODO what this mean?
+case object OAt extends BOp
 case object OPow extends BOp
 case object OBAnd extends BOp
 case object OBOr extends BOp
 case object OBXor extends BOp
 
-
+// compare operators
 sealed trait COp extends Op
 case object CEq extends COp
 case object CNeq extends COp
@@ -33,11 +35,13 @@ case object CIn extends COp
 case object CIsNot extends COp
 case object CIs extends COp
 
-case object CNot extends COp
-case object CAnd extends COp
-case object COr extends COp
+// logical operators
+sealed trait LOp extends Op
+case object LNot extends LOp
+case object LAnd extends LOp
+case object LOr extends LOp
 
 sealed trait UOp extends Op
-case object OUPlus extends UOp
-case object OUMinus extends UOp
-case object OUInv extends UOp
+case object UPlus extends UOp
+case object UMinus extends UOp
+case object UInv extends UOp // bitwise inverse

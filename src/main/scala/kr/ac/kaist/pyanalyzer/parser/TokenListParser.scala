@@ -8,6 +8,9 @@ object TokenListParser extends TokenListParsers {
   def apply(tokens: List[Token]): List[Stmt] = ??? 
 }
 trait TokenListParsers extends Parsers {
+  ///////////////////////////////////////////////////////////////////
+  // Basic Parsers definition, token reader
+  ///////////////////////////////////////////////////////////////////
   type Elem = Token
   case class TokenPosition(column: Int, line: Int, protected val lineContents: String) extends Position
   abstract class TokenReader extends Reader[Token] { outer =>
@@ -40,6 +43,11 @@ trait TokenListParsers extends Parsers {
     }
   }
 
+  //////////////////////////////////////////////////////////////////
+  // Parsing rule definitions
+  // Python language specification - 10. Full grammar specification
+  //////////////////////////////////////////////////////////////////
+
   private def firstMap[T](in: Input, f: Token => ParseResult[T]): ParseResult[T] = {
     if (in.atEnd) Failure("EOF", in)
     else f(in.first)
@@ -69,12 +77,13 @@ trait TokenListParsers extends Parsers {
   }))
 
   lazy val namedLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
-    case Keyword(s) if s == ATrue => Success(ATrue, in.rest)
-    case Keyword(s) if s == AFalse => Success(AFalse, in.rest)
+    case Keyword(s) if s == ABool(true) => Success(ABool(true), in.rest)
+    case Keyword(s) if s == ABool(false) => Success(ABool(false), in.rest)
     case Keyword(s) if s == ANone => Success(ANone, in.rest)
     case _ => Failure(s"", in)
   }))
   
+  // literals, number, name(id)
   lazy val stringLiteral: Parser[Atom] = Parser(in => firstMap(in, _ match {
     case StrLiteral(s) => Success(AStringLiteral(s), in.rest)
     case t => Failure(s"", in)
@@ -100,28 +109,29 @@ trait TokenListParsers extends Parsers {
     case t => Failure(s"", in)
   }))
 
+  lazy val number: Parser[Atom] = intLiteral | floatLiteral | imagLiteral
+
   implicit def text(s: String): Parser[String] = Parser(op | delim | keyword)
 
-  lazy val number: Parser[Atom] = intLiteral | floatLiteral | imagLiteral
   ///////////////////////////////////////////////
   // expressions
-  lazy val starExpressions: Parser[List[Expr]] = repsep(starExpr, ",") <~ opt(",") ^^ { ??? }
+  ///////////////////////////////////////////////
+  
+  lazy val starExprs: Parser[List[Expr]] = repsep(starExpr, ",") <~ opt(",") ^^ { ??? }
   lazy val starExpr: Parser[Expr] =
     "*" ~> bitOr | namedExpr 
-  lazy val starNamedExpressions: Parser[List[Expr]] = repsep(starNamedExpr, ",") <~ opt(",") ^^ { ??? } 
+  lazy val starNamedExprs: Parser[List[Expr]] = repsep(starNamedExpr, ",") <~ opt(",") ^^ { ??? } 
   lazy val starNamedExpr: Parser[Expr] =
     "*" ~> bitOr | namedExpr
   lazy val assignExpr: Parser[Expr] = id ~ (":=" ~> commit(expression)) ^^ { ??? }
   lazy val namedExpr: Parser[Expr] =
     assignExpr | expression - ":="
-  lazy val expressions: Parser[List[Expr]] = repsep(expression, ",") <~ opt(",") ^^ {
-    ???
-  }
+  lazy val expressions: Parser[List[Expr]] = repsep(expression, ",") <~ opt(",") 
   lazy val expression: Parser[Expr] =
     lambdef |
     disjunction |
     disjunction ~ ("if" ~> disjunction ~ ("else" ~> expression)) ^^ {
-      ???
+      case ie ~ (te ~ ee) => CondExpr(ie, te, ee)
     }
   // lambda expressions
   lazy val lambdef: Parser[Expr] = ("lambda" ~> opt(lambdaParams <~ ":")) ~ expression ^^ {
@@ -185,84 +195,100 @@ trait TokenListParsers extends Parsers {
 
   // Expressions : production rules
   lazy val disjunction: Parser[Expr] =
-    conjunction ~ rep("or" ~> conjunction) ^^ {
-      ???
+    conjunction ~ rep1("or" ~> conjunction) ^^ {
+      case e ~ el => el.foldLeft(e)( (sum, elem) => BinaryExpr(LOr, sum, elem) )
     } | conjunction
   lazy val conjunction: Parser[Expr] =
-    inversion ~ rep("and" ~> inversion) ^^ {
-      ???
+    inversion ~ rep1("and" ~> inversion) ^^ {
+      case e ~ el => el.foldLeft(e)( (sum, elem) => BinaryExpr(LAnd, sum, elem) )
     } | inversion
-  lazy val inversion: Parser[Expr] = "not" ~> inversion | comparison
+  lazy val inversion: Parser[Expr] =
+    "not" ~> inversion ^^ {
+      case e => UnaryExpr(LNot, e)
+    } | comparison
   lazy val comparison: Parser[Expr] =
-    bitOr ~ rep(compareOpBitOrPair) ^^ {
-      ???
+    bitOr ~ rep1(compareOpBitOrPair) ^^ {
+      case e ~ el => el.foldLeft(e)( (sum, elem) => elem match {
+        case (op, e) => BinaryExpr(op, sum, e)
+      })
     } | bitOr
-  lazy val compareOpBitOrPair: Parser[Expr] =
+  lazy val compareOpBitOrPair: Parser[(Op, Expr)] =
     eqBitOr | noteqBitOr | lteBitOr | ltBitOr | gteBitOr | gtBitOr | notinBitOr | inBitOr | isnotBitOr | isBitOr
-  lazy val eqBitOr: Parser[Expr] = "==" ~> bitOr 
-  lazy val noteqBitOr: Parser[Expr] = "!=" ~> bitOr
-  lazy val lteBitOr: Parser[Expr] = "<=" ~> bitOr
-  lazy val ltBitOr: Parser[Expr] = "<" ~> bitOr
-  lazy val gteBitOr: Parser[Expr] = ">=" ~> bitOr
-  lazy val gtBitOr: Parser[Expr] = ">" ~> bitOr
-  lazy val notinBitOr: Parser[Expr] = ("not" ~ "in") ~> bitOr
-  lazy val inBitOr: Parser[Expr] = "in" ~> bitOr
-  lazy val isnotBitOr: Parser[Expr] = ("is" ~ "not") ~> bitOr
-  lazy val isBitOr: Parser[Expr] = "is" ~> bitOr
+  lazy val eqBitOr: Parser[(Op, Expr)] = "==" ~> bitOr ^^ { (CEq, _) }  
+  lazy val noteqBitOr: Parser[(Op, Expr)] = "!=" ~> bitOr ^^ { (CNeq, _) }
+  lazy val lteBitOr: Parser[(Op, Expr)] = "<=" ~> bitOr ^^ { (CLte, _) }
+  lazy val ltBitOr: Parser[(Op, Expr)] = "<" ~> bitOr ^^ { (CLt, _) }
+  lazy val gteBitOr: Parser[(Op, Expr)] = ">=" ~> bitOr ^^ { (CGte, _) }
+  lazy val gtBitOr: Parser[(Op, Expr)] = ">" ~> bitOr ^^ { (CGt, _) }
+  lazy val notinBitOr: Parser[(Op, Expr)] = ("not" ~ "in") ~> bitOr ^^ { (CNotIn, _) }
+  lazy val inBitOr: Parser[(Op, Expr)] = "in" ~> bitOr ^^ { (CIn, _) }
+  lazy val isnotBitOr: Parser[(Op, Expr)] = ("is" ~ "not") ~> bitOr ^^ { (CIsNot, _) }
+  lazy val isBitOr: Parser[(Op, Expr)] = "is" ~> bitOr ^^ { (CIs, _) }
+
   lazy val bitOr: Parser[Expr] = bitOr ~ ("|" ~> bitXor) ^^ {
-    ???
+    case e1 ~ e2 => BinaryExpr(OBOr, e1, e2)
   } | bitXor
   lazy val bitXor: Parser[Expr] = bitXor ~ ("^" ~> bitAnd) ^^ {
-    ???
+    case e1 ~ e2 => BinaryExpr(OBXor, e1, e2) 
   } | bitAnd
   lazy val bitAnd: Parser[Expr] = bitAnd ~ ("&" ~> shiftExpr) ^^ {
-    ???
+    case e1 ~ e2 => BinaryExpr(OBAnd, e1, e2)
   } | shiftExpr
   lazy val shiftExpr: Parser[Expr] = 
     shiftExpr ~ ("<<" ~> sum) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OLShift, e1, e2)
     } |
     shiftExpr ~ (">>" ~> sum) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(ORShift, e1, e2)
     } | sum
+
   lazy val sum: Parser[Expr] = 
     sum ~ ("+" ~> term) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OAdd, e1, e2)
     } |
     sum ~ ("-" ~> term) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OSub, e1, e2)
     } | term
   lazy val term: Parser[Expr] =
     term ~ ("*" ~> factor) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OMul, e1, e2) 
     } |
     term ~ ("/" ~> factor) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(ODiv, e1, e2)
     } |
     term ~ ("//" ~> factor) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OIDiv, e1, e2)
     } |
     term ~ ("%" ~> factor) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OMod, e1, e2)  
     } |
     term ~ ("@" ~> factor) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OAt, e1, e2)
     } | factor
   lazy val factor: Parser[Expr] =
-    "+" ~> factor | "-" ~> factor | "~" ~> factor | power 
+    "+" ~> factor ^^ { case e => UnaryExpr(UPlus, e) } |
+    "-" ~> factor ^^ { case e => UnaryExpr(UMinus, e) } |
+    "~" ~> factor ^^ {case e => UnaryExpr(UInv, e) } |
+    power 
   lazy val power: Parser[Expr] =
     awaitPrimary ~ ("**" ~> factor) ^^ {
-      ???
+      case e1 ~ e2 => BinaryExpr(OPow, e1, e2)
     } | awaitPrimary
   lazy val awaitPrimary: Parser[Expr] =
-    "await" ~> primary | primary
+    "await" ~> primary ^^ {
+      case e => AwaitExpr(e)
+    } | primary
   lazy val primary: Parser[Expr] =
     //invalidPrimary |
-    primary ~ ("." ~> id) ^^ { ??? } |
+    primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
     primary ~ genexp ^^ {???} |
-    primary ~ ("(" ~> opt(args) <~ ")") ^^ { ??? } |
+    primary ~ ("(" ~> opt(args) <~ ")") ^^ { 
+      case f ~ None => Call(f, Args(List(), List(), List(), List()))
+      case f ~ Some(args) => Call(f, args)
+    } |
     primary ~ ("[" ~> slices <~ "]") ^^ { ??? } |
     atom
+  // TODO slices
   lazy val slices: Parser[List[Expr]] =
     slice ~ not(",") ^^ { ??? } |
     repsep(slice, ",") ~ opt(",") ^^ { ??? }
@@ -273,9 +299,9 @@ trait TokenListParsers extends Parsers {
   
   // atoms : literal-like production
   lazy val atom: Parser[Expr] =
-    id ^^ { ??? } |
-    "True" ^^ { ??? } |
-    "False" ^^ { ??? } |
+    id  |
+    "True" ^^^ ABool(true) |
+    "False" ^^^  ABool(false) |
     strings |
     number |
     (tuple | group | genexp) |
@@ -283,21 +309,52 @@ trait TokenListParsers extends Parsers {
     (dict | set | dictcomp | setcomp)
 
   // TODO make primitive parser for these
-  lazy val strings: Parser[Expr] = ???
-  lazy val list: Parser[Expr] = "[" ~> opt(starNamedExpr) <~ "]" ^^ { ??? }
-  lazy val listcomp: Parser[Expr] = "[" ~> (namedExpr ~ forIfClauses) <~ "]" ^^ { ??? }  
-  lazy val tuple: Parser[Expr] = "(" ~> opt(starNamedExpr ~ ("," ~> opt(starNamedExpr))) <~ ")" ^^ { ??? }
+  // TODO complete comprehensions
+  lazy val strings: Parser[Expr] = stringLiteral
+  lazy val list: Parser[Expr] = "[" ~> opt(starNamedExprs) <~ "]" ^^ {
+    case Some(el) => ListDisplay(el) 
+    case None => ListDisplay(List())
+  }
+  lazy val listcomp: Parser[Expr] = "[" ~> (namedExpr ~ forIfClauses) <~ "]" ^^ { 
+    ??? 
+  }  
+  lazy val tuple: Parser[Expr] = "(" ~> opt(starNamedExpr ~ ("," ~> opt(starNamedExprs))) <~ ")" ^^ { 
+    // 0 elem
+    case None => TupleDisplay(List())
+    // 1 elem 
+    case Some(e ~ None) => TupleDisplay(List(e)) 
+    // 2+ elem
+    case Some(e ~ Some(el)) => TupleDisplay(e +: el)
+  }
   lazy val group: Parser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ { ??? }
   lazy val genexp: Parser[Expr] = "(" ~> (assignExpr | expression - ":=") ~ forIfClauses <~ ")" ^^ { ??? }
-  lazy val set: Parser[Expr] = "{" ~> starNamedExpr <~ "}" ^^ { ??? }
+  lazy val set: Parser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ {
+    case el => SetDisplay(el)
+  }
   lazy val setcomp: Parser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ { ??? } 
+  // TODO refactor this function
   lazy val dict: Parser[Expr] = 
-    "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^ { ??? }
+    "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^ {
+      case None => DictDisplay(List(), List())
+      case Some(kvs) => {
+        val folder: ((List[(Expr, Expr)], List[Expr]), Expr) => ((List[(Expr, Expr)], List[Expr])) =
+          (sum, elem) => elem match {
+            case KVPair(k, v) => sum match { case (kvl, gl) => (kvl :+ (k, v), gl) }
+            case e: Expr => sum match { case (kvl, gl) => (kvl, gl :+ e) }
+          }
+        val initKvl = List[(Expr, Expr)]()
+        val initGl = List[Expr]()
+        val (kvl, gl) = kvs.foldLeft( (initKvl, initGl) )(folder)
+        DictDisplay(kvl, gl)    
+      }
+    }
     // | "{" ~> invalidDoudlbeStarredKvpairs <~ "}" ^^ { ??? }
   lazy val dictcomp: Parser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ { ??? }
-  lazy val doubleStarredKvpairs: Parser[List[Expr]] = repsep(doubleStarredKvpair, ",") ~ opt(",") ^^ { ??? }
+  lazy val doubleStarredKvpairs: Parser[List[Expr]] = repsep(doubleStarredKvpair, ",") <~ opt(",")
   lazy val doubleStarredKvpair: Parser[Expr] = "**" ~> bitOr | kvPair 
-  lazy val kvPair: Parser[Expr] = expression ~ (":" ~> expression) ^^ { ??? }
+  lazy val kvPair: Parser[KVPair] = expression ~ (":" ~> expression) ^^ {
+    case e1 ~ e2 => KVPair(e1, e2)
+  }
   // Comprehensions
   // 
   lazy val forIfClauses: Parser[List[Expr]] = rep(forIfClause) 
@@ -308,31 +365,58 @@ trait TokenListParsers extends Parsers {
     }
   lazy val yieldExpr: Parser[Expr] =
     ("yield" ~ "from") ~> expression ^^ { ??? } |
-    "yeild" ~> opt(starExpressions) ^^ { ??? }
+    "yield" ~> opt(starExprs) ^^ { ??? }
   
+  //////////////////////////////////////////////////////////////////
   // arguments
-  lazy val arguments: Parser[List[Expr]] = args <~ (opt(",") - ")") ^^ {
-    ???
+  // Caution: very complex
+  /////////////////////////////////////////////////////////////////
+  lazy val arguments: Parser[Args] = args <~ (opt(",") ~ guard(")"))
+  lazy val exprToArg: Parser[Arg] = (assignExpr | expression <~ not(":=")) ^^ {
+    case e => PosArg(e)
   }
-  lazy val args: Parser[List[Param]] = 
-    repsep(starredExpr | (assignExpr | expression - ":=") - "=", ",") <~ opt(",") ^^ {
-      ???
-    } | kwargs
-  lazy val kwargs: Parser[List[Param]] =
-    repsep(kwargOrStarred, ",") <~ ("," ~ repsep(kwargOrDoubleStarred, ",")) ^^ {
-      ???
+  // helper function for positional arguments case 
+  def pargsToArgs: List[Arg] => Args = al => {
+    val (pl, prest) = al.foldLeft( (List[PosArg](), List[PosRest]()) )( (sum, elem) => elem match {
+      case a: PosArg => sum match { case (pl, prest) => (pl :+ a, prest) }
+      case a: PosRest => sum match { case (pl, prest) => (pl, prest :+ a) }
+      case _ => ??? // TODO raise exception, non-positional argument should not appear
+    })
+    Args(pl, prest, List(), List())
+  }
+  // helper function for keyword arguments case
+  def kwargsToArgs: List[Arg] => Args = al => {
+    val (kl, krest) = al.foldLeft( (List[KeyArg](), List[KeyRest]()) )( (sum, elem) => elem match {
+      case a: KeyArg => sum match { case (kl, krest) => (kl :+ a, krest) }
+      case a: KeyRest => sum match { case (kl, krest) => (kl, krest :+ a) }
+      case _ => ??? // TODO raise exception, non-keyword argument should not appear
+    })
+    Args(List(), List(), kl, krest)  
+  }
+  lazy val args: Parser[Args] = 
+    // positional and keywords arguments case
+    repsep(starredExpr | exprToArg <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
+      case el ~ None => pargsToArgs(el)
+      case el ~ Some(kl) => {
+        val pArgs = pargsToArgs(el)
+        val kArgs = kwargsToArgs(kl)
+        pArgs.copy(keyArgs=kArgs.keyArgs, keyRest=kArgs.keyRest)
+      }
+    } | kwargs ^^ kwargsToArgs // only keyword args case
+
+  lazy val kwargs: Parser[List[Arg]] =
+    repsep(kwargOrStarred, ",") ~ ("," ~> repsep(kwargOrDoubleStarred, ",")) ^^ {
+      case l1 ~ l2 => l1 ++ l2 
     } |
-    repsep(kwargOrStarred, ",") ^^ {
-      ???
-    } |
-    repsep(kwargOrDoubleStarred, ",") ^^ {
-      ???
-    }
-  lazy val starredExpr: Parser[Expr] = "*" ~> expression
-  lazy val kwargOrStarred: Parser[Expr] =
-    id ~ ("=" ~> expression) ^^ { ??? } | starredExpr
-  lazy val kwargOrDoubleStarred: Parser[Expr] = 
-    id ~ ("=" ~> expression) ^^ { ???} | "**" ~> expression
+    repsep(kwargOrStarred, ",") |
+    repsep(kwargOrDoubleStarred, ",")
+  lazy val starredExpr: Parser[PosRest] = "*" ~> expression ^^ { PosRest(_) }
+  lazy val kwargOrStarred: Parser[Arg] =
+    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | starredExpr
+  lazy val kwargOrDoubleStarred: Parser[Arg] = 
+    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | "**" ~> expression ^^ { KeyRest(_) }
+
+  //////////////////////////////////////////////////////////////////
 
   // targets
   // TODO complete this (last part of full grammar)
