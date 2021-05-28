@@ -234,8 +234,7 @@ trait TokenListParsers extends Parsers {
     case e1 ~ e2 => ???
   }
 
-  lazy val genExpr: Parser[Expr] =  "(" ~> (assignExpr | exprNeg) ~
-    forIfClause ^^ {
+  lazy val genExpr: Parser[Expr] =  "(" ~> (assignExpr | exprNeg) ~ forIfClause ^^ {
     case e ~ lc => ???
   }
 
