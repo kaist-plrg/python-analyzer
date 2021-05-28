@@ -3,6 +3,7 @@ package kr.ac.kaist.pyanalyzer
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.CmdParseREPL
+import scala.Console._
 
 object PyAnalyzer {
   // main entry point
@@ -29,14 +30,17 @@ object PyAnalyzer {
 
   case object CmdHelp extends Command {
     val name = "help"
-    def apply(params: List[String]): Unit = params match {
-      case Nil => println(help)
-      case cmd :: _ => 
-        println(s"$cmd: Command Not Found")
-        println(help)
+    def apply(params: List[String]): Unit = {
+      params match {
+        case cmd :: _ =>
+          println
+          println(s"${RED}[Error] $cmd: Command Not Found${RESET}")
+          case Nil =>
+      }
+      println
+      println("<Command List>")
+      println("\t* parse-repl: parse the expression on the REPL")
+      println
     }
   }
-
-  // TODO: help
-  val help = "hi"
 }
