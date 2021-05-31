@@ -322,7 +322,7 @@ trait TokenListParsers extends PackratParsers {
     case None => ListDisplay(List())
   }
   lazy val listcomp: PackratParser[Expr] = "[" ~> (namedExpr ~ forIfClauses) <~ "]" ^^ { 
-    ??? 
+    case e ~ complist => ListCompExpr(e, complist) 
   }  
   lazy val tuple: PackratParser[Expr] = "(" ~> opt(starNamedExpr ~ ("," ~> opt(starNamedExprs))) <~ ")" ^^ { 
     // 0 elem
@@ -366,12 +366,16 @@ trait TokenListParsers extends PackratParsers {
   lazy val forIfClauses: PackratParser[List[Expr]] = rep(forIfClause) 
   // comp_for
   lazy val forIfClause: PackratParser[Expr] =
-    (opt("async") ~ "for") ~> starTargets ~ ("in" ~> disjunction ~ ("if" ~> disjunction).*) ^^ {
-      ???
+    (opt("async") <~ "for") ~ starTargets ~ ("in" ~> disjunction ~ rep("if" ~> disjunction)) ^^ {
+      case Some(_) ~ target ~ (inExpr ~ ifExprs) => CompExpr(target, inExpr, ifExprs, true)   
+      case None ~ target ~ (inExpr ~ ifExprs) => CompExpr(target, inExpr, ifExprs, false)
     }
   lazy val yieldExpr: PackratParser[Expr] =
-    ("yield" ~ "from") ~> expression ^^ { ??? } |
-    "yield" ~> opt(starExprs) ^^ { ??? }
+    ("yield" ~ "from") ~> expression ^^ { case e => YieldExpr(List(e))} |
+    "yield" ~> opt(starExprs) ^^ { 
+      case Some(el) => YieldExpr(el)
+      case None => YieldExpr(List())
+    }
   
   //////////////////////////////////////////////////////////////////
   // arguments

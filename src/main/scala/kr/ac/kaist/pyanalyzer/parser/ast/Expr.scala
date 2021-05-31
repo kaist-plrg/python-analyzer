@@ -62,3 +62,8 @@ case class LambdaExpr(parms: List[Param], expr: Expr) extends Expr
 
 // 6.15 stared expression
 case class StarExpr(expr: Expr) extends Expr
+
+// Generator, Comprehension related
+case class CompExpr(target: List[Expr], inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
+case class YieldExpr(exprList: List[Expr]) extends Expr
+case class ListCompExpr(target: Expr, comp: List[Expr]) extends Expr
