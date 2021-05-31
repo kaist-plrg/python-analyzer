@@ -125,6 +125,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val starExpr: PackratParser[Expr] =
     "*" ~> bitOr | expression
   lazy val starNamedExprs: PackratParser[List[Expr]] = listOf(starNamedExpr)
+
   lazy val starNamedExpr: PackratParser[Expr] =
     "*" ~> bitOr | namedExpr
   lazy val assignExpr: PackratParser[Expr] = id ~ (":=" ~> commit(expression)) ^^ {
