@@ -31,7 +31,7 @@ case class NonlocalStmt(ns: List[AId]) extends SimpleStmt
 
 trait Suite
 trait Param
-case class NormalParam(id: AId, pos: Int, default: Option[Expr], keyOnly: Boolean) extends Param
+case class NormalParam(id: AId, default: Option[Expr]) extends Param
 // arbitrary positional and keyword args
 case class ArbPosParam(id: AId) extends Param
 case class ArbKeyParam(id: AId) extends Param
