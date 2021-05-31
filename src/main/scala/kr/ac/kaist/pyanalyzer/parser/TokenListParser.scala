@@ -223,7 +223,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val shiftExpr: PackratParser[Expr] = 
     shiftExpr ~ ("<<" ~> sum) ^^ {
       case e1 ~ e2 => BinaryExpr(OLShift, e1, e2)
-    } |
+    } | 
     shiftExpr ~ (">>" ~> sum) ^^ {
       case e1 ~ e2 => BinaryExpr(ORShift, e1, e2)
     } | sum
@@ -272,15 +272,18 @@ trait TokenListParsers extends PackratParsers {
       case f ~ None => Call(f, Args(List(), List(), List(), List()))
       case f ~ Some(args) => Call(f, args)
     } |
-    // primary ~ ("[" ~> slices <~ "]") ^^ { ??? } |
+    primary ~ ("[" ~> slices <~ "]") ^^ {
+      case p ~ sel => Slicing(p, sel)
+    } |
     atom
   // TODO slices
   lazy val slices: PackratParser[List[Expr]] =
-    slice ~ not(",") ^^ { ??? } |
-    repsep(slice, ",") ~ opt(",") ^^ { ??? }
+    slice <~ not(",") ^^ { case se => List(se) } |
+    repsep(slice, ",") <~ opt(",") ^^ { case sel => sel }
   lazy val slice: PackratParser[Expr] =
     opt(expression) ~ (":" ~> opt(expression)) ~ opt(":" ~> opt(expression)) ^^ {
-      ???
+      case o1 ~ o2 ~ None => Slice(o1, o2, None)
+      case o1 ~ o2 ~ Some(o3) => Slice(o1, o2, o3)
     } | namedExpr
   
   // atoms : literal-like production
@@ -312,12 +315,18 @@ trait TokenListParsers extends PackratParsers {
     // 2+ elem
     case Some(e ~ Some(el)) => TupleDisplay(e +: el)
   }
-  lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ { ??? }
-  lazy val genexp: PackratParser[Expr] = "(" ~> (assignExpr | expression - ":=") ~ forIfClauses <~ ")" ^^ { ??? }
+  lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ {
+    case e => GroupExpr(e)
+  }
+  lazy val genexp: PackratParser[Expr] = "(" ~> (assignExpr | expression - ":=") ~ forIfClauses <~ ")" ^^ {
+    case e ~ cel => GenExpr(e, cel)  
+  }
   lazy val set: PackratParser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ {
     case el => SetDisplay(el)
   }
-  lazy val setcomp: PackratParser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ { ??? } 
+  lazy val setcomp: PackratParser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ {
+    case e ~ complist => SetCompExpr(e, complist)
+  } 
   // TODO refactor this function
   lazy val dict: PackratParser[Expr] = 
     "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^ {
@@ -335,7 +344,9 @@ trait TokenListParsers extends PackratParsers {
       }
     }
     // | "{" ~> invalidDoudlbeStarredKvpairs <~ "}" ^^ { ??? }
-  lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ { ??? }
+  lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
+    case kv ~ complist => DictCompExpr(kv, complist) 
+  }
   lazy val doubleStarredKvpairs: PackratParser[List[Expr]] = repsep(doubleStarredKvpair, ",") <~ opt(",")
   lazy val doubleStarredKvpair: PackratParser[Expr] = "**" ~> bitOr | kvPair 
   lazy val kvPair: PackratParser[KVPair] = expression ~ (":" ~> expression) ^^ {
@@ -345,6 +356,7 @@ trait TokenListParsers extends PackratParsers {
   // 
   lazy val forIfClauses: PackratParser[List[Expr]] = rep(forIfClause) 
   // comp_for
+  // this returns CompExpr
   lazy val forIfClause: PackratParser[Expr] =
     (opt("async") <~ "for") ~ starTargets ~ ("in" ~> disjunction ~ rep("if" ~> disjunction)) ^^ {
       case Some(_) ~ target ~ (inExpr ~ ifExprs) => CompExpr(target, inExpr, ifExprs, true)   
