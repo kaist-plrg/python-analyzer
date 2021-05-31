@@ -14,7 +14,8 @@ object SourceParser {
     IndentParser.parse(source)
   }
 
-  def apply(filename: String): List[Stmt] = {
+  // TODO change Expr to Stm t
+  def apply(filename: String): Expr = {
     val source = readSource(filename)
     val tokens = parseText(source)
     val stmts = TokenListParser(tokens) 

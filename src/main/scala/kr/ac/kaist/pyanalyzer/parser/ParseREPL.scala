@@ -9,6 +9,7 @@ import org.jline.builtins.Completers.TreeCompleter._
 import org.jline.reader._
 import org.jline.terminal._
 import scala.Console._
+import scala.util.parsing.input.Reader
 
 case object CmdParseREPL extends Command {
   val name = "parse-repl"
@@ -26,7 +27,7 @@ case object CmdParseREPL extends Command {
       val str = reader.readLine(prompt)
       val tokens = parseText(str)
       print(tokens)
-      val e = expr(TokenReader(tokens))
+      val e = expression(new PackratReader(TokenReader(tokens)))
       print(e)
     } catch {
       case e: EndOfFileException => println("quit")
