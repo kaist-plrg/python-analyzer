@@ -112,7 +112,19 @@ trait TokenListParsers extends PackratParsers {
 
   lazy val number: PackratParser[Atom] = intLiteral | floatLiteral | imagLiteral
 
-  implicit def text(s: String): PackratParser[String] = Parser(op | delim | keyword)
+  private def splitText(s: String): List[String] =
+    "([a-zA-Z0-9_]+|\\S)".r.findAllIn(s).toList
+
+  implicit def text(str: String): PackratParser[String] = {
+    Parser(in => {
+      firstMap(in, t => t match {
+          case Op(s) if s == str => Success(s, in.rest)
+          case Delim(s) if s == str => Success(s, in.rest)
+          case Keyword(s) if s == str => Success(s, in.rest)
+          case t => Failure(s"", in)
+        })
+    })
+  }
 
   ///////////////////////////////////////////////
   // expressions
@@ -192,12 +204,16 @@ trait TokenListParsers extends PackratParsers {
     "not" ~> inversion ^^ {
       case e => UnaryExpr(LNot, e)
     } | comparison
-  lazy val comparison: PackratParser[Expr] =
-    bitOr ~ rep1(compareOpBitOrPair) ^^ {
-      case e ~ el => el.foldLeft(e)( (sum, elem) => elem match {
-        case (op, e) => BinaryExpr(op, sum, e)
-      })
-    } | bitOr
+  lazy val comparison: PackratParser[Expr] = bitOr ~ rep1(compareOpBitOrPair) ^^ {
+    case be ~ Nil => be
+    case be ~ (h :: t) =>
+      t.foldLeft((BinaryExpr(h._1, be, h._2), h._2)) ((tup, e) => {
+        val (tempRes, lhs) = tup 
+        val (op, rhs) = e 
+        (BinaryExpr(LAnd, tempRes, BinaryExpr(op, lhs, rhs)), rhs)
+      }   
+    )._1
+  }
   lazy val compareOpBitOrPair: PackratParser[(Op, Expr)] =
     eqBitOr | noteqBitOr | lteBitOr | ltBitOr | gteBitOr | gtBitOr | notinBitOr | inBitOr | isnotBitOr | isBitOr
   lazy val eqBitOr: PackratParser[(Op, Expr)] = "==" ~> bitOr ^^ { (CEq, _) }  
@@ -264,8 +280,11 @@ trait TokenListParsers extends PackratParsers {
     "await" ~> primary ^^ {
       case e => AwaitExpr(e)
     } | primary
+  lazy val invalidPrimary: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
+    case _ => Failure(s"", in)
+  }))
   lazy val primary: PackratParser[Expr] =
-    //invalidPrimary |
+    // invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
     // primary ~ genexp ^^ {???} |
     primary ~ ("(" ~> opt(args) <~ ")") ^^ { 

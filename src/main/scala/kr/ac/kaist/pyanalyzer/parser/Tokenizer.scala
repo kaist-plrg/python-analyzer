@@ -120,16 +120,16 @@ trait Tokenizers extends RegexParsers {
 
   // operator
   lazy val op = List(
-    "\\+", "-", "\\*", "\\*\\*", "/", "//", "%", "@",
+    "\\+", "-", "\\*\\*", "\\*", "//", "/", "%", "@",
     "<<", ">>", "&", "\\|", "\\^", "~",
-    "<", ">", "<=", ">=", "==", "!=",
+    "<=", ">=", "<", ">", "!=",
   ).mkString("|").r ^^ {
     case s => Op(s)
   }
 
   // some operator contians delimiters, so need to be tokenized first
   lazy val opBeforeDelim = List(
-    ":="
+    ":=", "==", 
   ).mkString("|").r ^^ {
     case s => Op(s)
   }

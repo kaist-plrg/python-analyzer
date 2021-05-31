@@ -3,6 +3,7 @@ package kr.ac.kaist.pyanalyzer.parser
 import kr.ac.kaist.pyanalyzer.LINE_SEP
 import kr.ac.kaist.pyanalyzer.PyAnalyzer.Command
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
+import kr.ac.kaist.pyanalyzer.parser.Token._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
 import org.jline.builtins.Completers.TreeCompleter
 import org.jline.builtins.Completers.TreeCompleter._
@@ -26,7 +27,7 @@ case object CmdParseREPL extends Command {
     try while (true) {
       val str = reader.readLine(prompt)
       val tokens = parseText(str)
-      print(tokens)
+      println(tokens)
       val e = expression(new PackratReader(TokenReader(tokens)))
       print(e)
     } catch {
