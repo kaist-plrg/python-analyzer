@@ -118,16 +118,21 @@ trait TokenListParsers extends PackratParsers {
   // expressions
   ///////////////////////////////////////////////
   
-  lazy val starExprs: PackratParser[List[Expr]] = repsep(starExpr, ",") <~ opt(",") ^^ { ??? }
+  lazy val listOf = (p: Parser[Expr]) => p ~ repsep(p, ",") <~ opt(",") ^^ {
+    case e ~ le => e :: le
+  }
+  lazy val starExprs: PackratParser[List[Expr]] = listOf(starExpr)
   lazy val starExpr: PackratParser[Expr] =
-    "*" ~> bitOr | namedExpr 
-  lazy val starNamedExprs: PackratParser[List[Expr]] = repsep(starNamedExpr, ",") <~ opt(",") ^^ { ??? } 
+    "*" ~> bitOr | expression
+  lazy val starNamedExprs: PackratParser[List[Expr]] = listOf(starNamedExpr)
   lazy val starNamedExpr: PackratParser[Expr] =
     "*" ~> bitOr | namedExpr
-  lazy val assignExpr: PackratParser[Expr] = id ~ (":=" ~> commit(expression)) ^^ { ??? }
+  lazy val assignExpr: PackratParser[Expr] = id ~ (":=" ~> commit(expression)) ^^ {
+    case x ~ e => AssignExpr(x, e)
+  }
   lazy val namedExpr: PackratParser[Expr] =
     assignExpr | expression - ":="
-  lazy val expressions: PackratParser[List[Expr]] = repsep(expression, ",") <~ opt(",") 
+  lazy val expressions: PackratParser[List[Expr]] = listOf(expression)
   lazy val expression: PackratParser[Expr] =
     // lambdef |
     disjunction |
@@ -269,7 +274,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val factor: PackratParser[Expr] =
     "+" ~> factor ^^ { case e => UnaryExpr(UPlus, e) } |
     "-" ~> factor ^^ { case e => UnaryExpr(UMinus, e) } |
-    "~" ~> factor ^^ {case e => UnaryExpr(UInv, e) } |
+    "~" ~> factor ^^ { case e => UnaryExpr(UInv, e) } |
     power 
   lazy val power: PackratParser[Expr] =
     awaitPrimary ~ ("**" ~> factor) ^^ {
