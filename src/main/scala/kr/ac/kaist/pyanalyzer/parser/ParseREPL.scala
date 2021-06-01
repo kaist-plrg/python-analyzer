@@ -23,13 +23,12 @@ case object CmdParseREPL extends Command {
     .terminal(terminal).completer(completer).build()
   private val prompt: String = LINE_SEP + s"${MAGENTA}py-analyze>${RESET} "
   def apply(params: List[String]): Unit = {
-    help
     try while (true) {
       val str = reader.readLine(prompt)
       val tokens = parseText(str)
       println(tokens)
-      val e = TokenListParser(tokens)
-      print(e)
+      val e = expression(new PackratReader(TokenReader(tokens)))
+      println(e)
     } catch {
       case e: EndOfFileException => println("quit")
     }
