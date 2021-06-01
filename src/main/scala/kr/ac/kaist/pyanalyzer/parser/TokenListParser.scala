@@ -6,7 +6,8 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object TokenListParser extends TokenListParsers {
   // TODO change Expr to Stmt
-  def apply(tokens: List[Token]): Expr = ???  
+  def apply(tokens: List[Token]): Expr =
+    expression(new PackratReader(TokenReader(tokens))).getOrElse(EEmpty)
 }
 trait TokenListParsers extends PackratParsers {
   ///////////////////////////////////////////////////////////////////

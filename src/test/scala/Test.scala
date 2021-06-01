@@ -5,13 +5,21 @@ import kr.ac.kaist.pyanalyzer.parser._
 import java.io.File
 
 class TokenTest extends AnyFlatSpec {
-  val testDir = new File(PY_SOURCE_DIR)
-  for (test <- testDir.listFiles.filter(_.isFile))
-   s"$test" should "not throw exception" in {
-    try {
-      print(SourceParser(s"$test"))
-    } catch {
-      case e: Exception => assert(false)
-    }
+  val sourceDir = new File(PY_SOURCE_DIR)
+  for {
+    category <- sourceDir.listFiles.filter(_.isDirectory)
+    testDir <- category.listFiles.filter(_.isDirectory)
   }
+    s"$testDir" should "not throw exception" in {
+      try {
+        print(SourceParser(s"$testDir/main.py"))
+      } catch {
+        case e: Exception =>
+          if (!(e.getMessage contains "parsing fail")) {
+            println(s"${e.getMessage}")
+            println(s"${e.getStackTrace.mkString("\n")}")
+          }
+          assert(false)
+      }
+    }
 }

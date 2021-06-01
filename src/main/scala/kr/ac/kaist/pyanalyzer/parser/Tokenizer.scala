@@ -31,18 +31,19 @@ case class IndentParsers(lineParser: String => List[Token]) {
   
   def parseLine(line: String): List[Token] = {
     val trimmed = trimLeft(line)
-    val newIndent = getIndent(line) 
-    if (newIndent > curIndent) {
-      val delta = newIndent - curIndent
-      doIndent(delta) 
-      Indent +: lineParser(trimmed)
-    } else if (newIndent < curIndent) {
-      val delta = curIndent - newIndent
-      val count = doDedent(delta)
-      List.fill(count)(Dedent) ++ lineParser(trimmed) 
-    } else {
-      lineParser(trimmed)
-    }
+    // val newIndent = getIndent(line) 
+    // if (newIndent > curIndent) {
+    //   val delta = newIndent - curIndent
+    //   doIndent(delta) 
+    //   Indent +: lineParser(trimmed)
+    // } else if (newIndent < curIndent) {
+    //   val delta = curIndent - newIndent
+    //   val count = doDedent(delta)
+    //   List.fill(count)(Dedent) ++ lineParser(trimmed) 
+    // } else {
+    //   lineParser(trimmed)
+    // }
+    lineParser(trimmed)
   }
 
   def parseLines(lines: List[String]): List[Token] =

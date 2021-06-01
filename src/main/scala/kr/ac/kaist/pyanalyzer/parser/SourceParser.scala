@@ -7,7 +7,7 @@ object SourceParser {
   def readSource(filename: String): String = {
     val source = Source.fromFile(filename)
     val text = try source.mkString finally source.close()
-    text
+    removeStmt(text)
   }
 
   def parseText(source: String): List[Token] = {
@@ -17,8 +17,30 @@ object SourceParser {
   // TODO change Expr to Stm t
   def apply(filename: String): Expr = {
     val source = readSource(filename)
-    val tokens = parseText(source)
-    val stmts = TokenListParser(tokens) 
-    stmts
+    if (source == "") EEmpty
+    else {
+      val tokens = parseText(source)
+      TokenListParser(tokens) 
+    }
   }
+
+  def removeStmt(text: String): String = {
+    val lines = text.split("\n")
+    // println
+    // println("Not Supported texts:")
+    // println
+    lines.foldLeft("")((s, line) => line match {
+      case line if notSupported matches line =>
+        // println(line)
+        s
+      case line => s"$s$line\n"
+    })
+  }
+
+  val notSupported = List(
+    "assert", "async", "await", "break", "class", "continue", "def",
+    "del", "elif", "if", "else", "except", "finally", "for",
+    "from", "global", "import", "nonlocal", "pass", "raise", "return",
+    "try", "while", "with", "yield"
+  ).mkString(".*(", "|", ").*").r
 }

@@ -28,7 +28,7 @@ case object CmdParseREPL extends Command {
       val str = reader.readLine(prompt)
       val tokens = parseText(str)
       println(tokens)
-      val e = expression(new PackratReader(TokenReader(tokens)))
+      val e = TokenListParser(tokens)
       print(e)
     } catch {
       case e: EndOfFileException => println("quit")
