@@ -78,7 +78,7 @@ trait TokenListParsers extends PackratParsers {
     case t => Failure(s"", in)
   }))
 
-  lazy val namedLiteral: PackratParser[Atom] = Parser(in => firstMap(in, _ match {
+  lazy val namedLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case Keyword(s) if s == ABool(true) => Success(ABool(true), in.rest)
     case Keyword(s) if s == ABool(false) => Success(ABool(false), in.rest)
     case Keyword(s) if s == ANone => Success(ANone, in.rest)
@@ -86,32 +86,32 @@ trait TokenListParsers extends PackratParsers {
   }))
   
   // literals, number, name(id)
-  lazy val stringLiteral: PackratParser[Atom] = Parser(in => firstMap(in, _ match {
+  lazy val stringLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case StrLiteral(s) => Success(AStringLiteral(s), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val bytesLiteral: PackratParser[Atom] = Parser(in => firstMap(in, _ match {
+  lazy val bytesLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case BytesLiteral(b) => Success(ABytesLiteral(b), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val intLiteral: PackratParser[Atom] = Parser(in => firstMap(in, _ match {
+  lazy val intLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case IntLiteral(i) => Success(AIntLiteral(i.toInt), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val floatLiteral: PackratParser[Atom] = Parser(in => firstMap(in, _ match {
+  lazy val floatLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case FloatLiteral(f) => Success(AFloatLiteral(f.toDouble), in.rest)
     case t => Failure(s"", in) 
   }))
 
-  lazy val imagLiteral: PackratParser[Atom] = Parser(in => firstMap(in, _ match {
+  lazy val imagLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case ImagLiteral(i) => Success(AImagLiteral(i.toDouble), in.rest)
     case t => Failure(s"", in)
   }))
 
-  lazy val number: PackratParser[Atom] = intLiteral | floatLiteral | imagLiteral
+  lazy val number: PackratParser[Expr] = intLiteral | floatLiteral | imagLiteral
 
   private def splitText(s: String): List[String] =
     "([a-zA-Z0-9_]+|\\S)".r.findAllIn(s).toList
