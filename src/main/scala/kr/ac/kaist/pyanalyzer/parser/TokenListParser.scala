@@ -131,9 +131,6 @@ trait TokenListParsers extends PackratParsers {
   // expressions
   ///////////////////////////////////////////////
   
-  lazy val listOf = (p: Parser[Expr]) => p ~ repsep(p, ",") <~ opt(",") ^^ {
-    case e ~ le => e :: le
-  }
   lazy val starExprs: PackratParser[Expr] = expression ~ rep1("," ~> expression) <~ opt(",") ^^ {
     case e ~ le => TupleExpr(e :: le)
   } | expression <~ "," ^^ {
@@ -141,7 +138,7 @@ trait TokenListParsers extends PackratParsers {
   } | expression
   lazy val starExpr: PackratParser[Expr] =
     ("*" ~> bitOr) ^^ StarExpr | expression
-  lazy val starNamedExprs: PackratParser[List[Expr]] = listOf(starNamedExpr)
+  lazy val starNamedExprs: PackratParser[List[Expr]] = rep1sep(starNamedExpr, ",") <~ opt(",")
 
   lazy val starNamedExpr: PackratParser[Expr] =
     ("*" ~> bitOr) ^^ StarExpr | namedExpr
@@ -201,19 +198,16 @@ trait TokenListParsers extends PackratParsers {
   // lazy val lambdaParam: PackratParser[AId] = id
 
   // Expressions : production rules
-  lazy val disjunction: PackratParser[Expr] =
-    conjunction ~ rep1("or" ~> conjunction) ^^ {
-      case e ~ el => el.foldLeft(e)( (sum, elem) => BinaryExpr(LOr, sum, elem) )
-    } | conjunction
-  lazy val conjunction: PackratParser[Expr] =
-    inversion ~ rep1("and" ~> inversion) ^^ {
-      case e ~ el => el.foldLeft(e)( (sum, elem) => BinaryExpr(LAnd, sum, elem) )
-    } | inversion
-  lazy val inversion: PackratParser[Expr] =
-    "not" ~> inversion ^^ {
-      case e => UnaryExpr(LNot, e)
-    } | comparison
-  lazy val comparison: PackratParser[Expr] = bitOr ~ rep1(compareOpBitOrPair) ^^ {
+  lazy val disjunction: PackratParser[Expr] = conjunction ~ rep1("or" ~> conjunction) ^^ {
+    case e ~ el => el.foldLeft(e)( (sum, elem) => BinaryExpr(LOr, sum, elem) )
+  } | conjunction
+  lazy val conjunction: PackratParser[Expr] = inversion ~ rep1("and" ~> inversion) ^^ {
+    case e ~ el => el.foldLeft(e)( (sum, elem) => BinaryExpr(LAnd, sum, elem) )
+  } | inversion
+  lazy val inversion: PackratParser[Expr] = "not" ~> inversion ^^ {
+    case e => UnaryExpr(LNot, e)
+  } | comparison
+  lazy val comparison: PackratParser[Expr] = bitOr ~ rep(compareOpBitOrPair) ^^ {
     case be ~ Nil => be
     case be ~ (h :: t) =>
       t.foldLeft((BinaryExpr(h._1, be, h._2), h._2)) ((tup, e) => {
@@ -223,18 +217,21 @@ trait TokenListParsers extends PackratParsers {
       }   
     )._1
   }
-  lazy val compareOpBitOrPair: PackratParser[(Op, Expr)] =
-    eqBitOr | noteqBitOr | lteBitOr | ltBitOr | gteBitOr | gtBitOr | notinBitOr | inBitOr | isnotBitOr | isBitOr
-  lazy val eqBitOr: PackratParser[(Op, Expr)] = "==" ~> bitOr ^^ { (CEq, _) }  
-  lazy val noteqBitOr: PackratParser[(Op, Expr)] = "!=" ~> bitOr ^^ { (CNeq, _) }
-  lazy val lteBitOr: PackratParser[(Op, Expr)] = "<=" ~> bitOr ^^ { (CLte, _) }
-  lazy val ltBitOr: PackratParser[(Op, Expr)] = "<" ~> bitOr ^^ { (CLt, _) }
-  lazy val gteBitOr: PackratParser[(Op, Expr)] = ">=" ~> bitOr ^^ { (CGte, _) }
-  lazy val gtBitOr: PackratParser[(Op, Expr)] = ">" ~> bitOr ^^ { (CGt, _) }
-  lazy val notinBitOr: PackratParser[(Op, Expr)] = ("not" ~ "in") ~> bitOr ^^ { (CNotIn, _) }
-  lazy val inBitOr: PackratParser[(Op, Expr)] = "in" ~> bitOr ^^ { (CIn, _) }
-  lazy val isnotBitOr: PackratParser[(Op, Expr)] = ("is" ~ "not") ~> bitOr ^^ { (CIsNot, _) }
-  lazy val isBitOr: PackratParser[(Op, Expr)] = "is" ~> bitOr ^^ { (CIs, _) }
+  lazy val compareOpBitOrPair: PackratParser[(Op, Expr)] = cop ~ bitOr ^^ {
+    case op ~ be => (op, be)
+  }
+  lazy val cop = (
+    "==" ^^^ CEq |
+    "!=" ^^^ CNeq |
+    "<=" ^^^ CLte |
+    "<" ^^^ CLt |
+    ">=" ^^^ CGte |
+    ">" ^^^ CGt |
+    "not" ~ "in" ^^^ CNotIn |
+    "in" ^^^ CIn |
+    "is" ~ "not" ^^^ CIsNot |
+    "is" ^^^ CIs
+  )
 
   lazy val bitOr: PackratParser[Expr] = bitOr ~ ("|" ~> bitXor) ^^ {
     case e1 ~ e2 => BinaryExpr(OBOr, e1, e2)
@@ -245,42 +242,35 @@ trait TokenListParsers extends PackratParsers {
   lazy val bitAnd: PackratParser[Expr] = bitAnd ~ ("&" ~> shiftExpr) ^^ {
     case e1 ~ e2 => BinaryExpr(OBAnd, e1, e2)
   } | shiftExpr
-  lazy val shiftExpr: PackratParser[Expr] = 
-    shiftExpr ~ ("<<" ~> sum) ^^ {
-      case e1 ~ e2 => BinaryExpr(OLShift, e1, e2)
-    } | 
-    shiftExpr ~ (">>" ~> sum) ^^ {
-      case e1 ~ e2 => BinaryExpr(ORShift, e1, e2)
-    } | sum
+  lazy val shiftExpr: PackratParser[Expr] = shiftExpr ~ ("<<" ~> sum) ^^ {
+    case e1 ~ e2 => BinaryExpr(OLShift, e1, e2)
+  } | shiftExpr ~ (">>" ~> sum) ^^ {
+    case e1 ~ e2 => BinaryExpr(ORShift, e1, e2)
+  } | sum
 
-  lazy val sum: PackratParser[Expr] = 
-    sum ~ ("+" ~> term) ^^ {
-      case e1 ~ e2 => BinaryExpr(OAdd, e1, e2)
-    } |
-    sum ~ ("-" ~> term) ^^ {
-      case e1 ~ e2 => BinaryExpr(OSub, e1, e2)
-    } | term
-  lazy val term: PackratParser[Expr] =
-    term ~ ("*" ~> factor) ^^ {
-      case e1 ~ e2 => BinaryExpr(OMul, e1, e2) 
-    } |
-    term ~ ("/" ~> factor) ^^ {
-      case e1 ~ e2 => BinaryExpr(ODiv, e1, e2)
-    } |
-    term ~ ("//" ~> factor) ^^ {
-      case e1 ~ e2 => BinaryExpr(OIDiv, e1, e2)
-    } |
-    term ~ ("%" ~> factor) ^^ {
-      case e1 ~ e2 => BinaryExpr(OMod, e1, e2)  
-    } |
-    term ~ ("@" ~> factor) ^^ {
-      case e1 ~ e2 => BinaryExpr(OAt, e1, e2)
-    } | factor
-  lazy val factor: PackratParser[Expr] =
-    "+" ~> factor ^^ { case e => UnaryExpr(UPlus, e) } |
-    "-" ~> factor ^^ { case e => UnaryExpr(UMinus, e) } |
-    "~" ~> factor ^^ { case e => UnaryExpr(UInv, e) } |
-    power 
+  lazy val sum: PackratParser[Expr] = sum ~ ("+" ~> term) ^^ {
+    case e1 ~ e2 => BinaryExpr(OAdd, e1, e2)
+  } | sum ~ ("-" ~> term) ^^ {
+    case e1 ~ e2 => BinaryExpr(OSub, e1, e2)
+  } | term
+  lazy val term: PackratParser[Expr] = term ~ bop ~ factor ^^ {
+    case e1 ~ op ~ e2 => BinaryExpr(op, e1, e2)
+  } | factor
+  lazy val bop = (
+    "*" ^^^ OMul |
+    "/" ^^^ ODiv |
+    "//" ^^^ OIDiv |
+    "%" ^^^ OMod |
+    "@" ^^^ OAt
+  )
+  lazy val factor: PackratParser[Expr] = uop ~ factor ^^ {
+    case op ~ e => UnaryExpr(op, e)
+  } | power
+  lazy val uop = (
+    "+" ^^^ UPlus |
+    "-" ^^^ UMinus |
+    "~" ^^^ UInv
+  )
   lazy val power: PackratParser[Expr] =
     awaitPrimary ~ ("**" ~> factor) ^^ {
       case e1 ~ e2 => BinaryExpr(OPow, e1, e2)
@@ -289,6 +279,7 @@ trait TokenListParsers extends PackratParsers {
     "await" ~> primary ^^ {
       case e => AwaitExpr(e)
     } | primary
+  // TODO Add invalid_
   lazy val invalidPrimary: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
     case _ => Failure(s"", in)
   }))
