@@ -7,8 +7,8 @@ sealed trait SimpleStmt extends Stmt
 // TODO define subs
 case class Assignment(id: AId, expr: Expr) extends SimpleStmt
 // TODO appropriate modeling of star_expressions and star_expression
-case class StarExprs(exprs: List[Expr]) extends SimpleStmt
-case class ReturnStmt(exprs: StarExprs) extends SimpleStmt
+case class StarStmt(expr: Expr) extends SimpleStmt
+case class ReturnStmt(exprs: StarStmt) extends SimpleStmt
 
 trait ImportStmt extends SimpleStmt
 case class ImportName(ns: List[String]) extends ImportStmt
