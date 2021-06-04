@@ -15,10 +15,10 @@ case class ABool(b: Boolean) extends Expr
 case object ANone extends Expr
 
 // Displays
-case class ListDisplay(ls: List[Expr]) extends Expr
-case class TupleDisplay(tup: List[Expr]) extends Expr
-case class SetDisplay(set: List[Expr]) extends Expr
-case class DictDisplay(map: List[(Expr, Expr)], given: List[Expr]) extends Expr
+case class ListExpr(ls: List[Expr]) extends Expr
+case class TupleExpr(tup: List[Expr]) extends Expr
+case class SetExpr(set: List[Expr]) extends Expr
+case class DictExpr(map: List[(Expr, Expr)], given: List[Expr]) extends Expr
 case class KVPair(k: Expr, v: Expr) extends Expr
 
 // Primary expressions except atom

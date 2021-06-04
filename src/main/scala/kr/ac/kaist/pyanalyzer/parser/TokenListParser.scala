@@ -321,19 +321,19 @@ trait TokenListParsers extends PackratParsers {
   // TODO complete comprehensions
   lazy val strings: PackratParser[Expr] = stringLiteral
   lazy val list: PackratParser[Expr] = "[" ~> opt(starNamedExprs) <~ "]" ^^ {
-    case Some(el) => ListDisplay(el) 
-    case None => ListDisplay(List())
+    case Some(el) => ListExpr(el) 
+    case None => ListExpr(List())
   }
   lazy val listcomp: PackratParser[Expr] = "[" ~> (namedExpr ~ forIfClauses) <~ "]" ^^ { 
     case e ~ complist => ListCompExpr(e, complist) 
   }  
   lazy val tuple: PackratParser[Expr] = "(" ~> opt(starNamedExpr ~ ("," ~> opt(starNamedExprs))) <~ ")" ^^ { 
     // 0 elem
-    case None => TupleDisplay(List())
+    case None => TupleExpr(List())
     // 1 elem 
-    case Some(e ~ None) => TupleDisplay(List(e)) 
+    case Some(e ~ None) => TupleExpr(List(e)) 
     // 2+ elem
-    case Some(e ~ Some(el)) => TupleDisplay(e +: el)
+    case Some(e ~ Some(el)) => TupleExpr(e +: el)
   }
   lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ {
     case e => GroupExpr(e)
@@ -342,7 +342,7 @@ trait TokenListParsers extends PackratParsers {
     case e ~ cel => GenExpr(e, cel)  
   }
   lazy val set: PackratParser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ {
-    case el => SetDisplay(el)
+    case el => SetExpr(el)
   }
   lazy val setcomp: PackratParser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ {
     case e ~ complist => SetCompExpr(e, complist)
@@ -350,7 +350,7 @@ trait TokenListParsers extends PackratParsers {
   // TODO refactor this function
   lazy val dict: PackratParser[Expr] = 
     "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^ {
-      case None => DictDisplay(List(), List())
+      case None => DictExpr(List(), List())
       case Some(kvs) => {
         val folder: ((List[(Expr, Expr)], List[Expr]), Expr) => ((List[(Expr, Expr)], List[Expr])) =
           (sum, elem) => elem match {
@@ -360,7 +360,7 @@ trait TokenListParsers extends PackratParsers {
         val initKvl = List[(Expr, Expr)]()
         val initGl = List[Expr]()
         val (kvl, gl) = kvs.foldLeft( (initKvl, initGl) )(folder)
-        DictDisplay(kvl, gl)    
+        DictExpr(kvl, gl)    
       }
     }
     // | "{" ~> invalidDoudlbeStarredKvpairs <~ "}" ^^ { ??? }
