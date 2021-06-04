@@ -56,10 +56,12 @@ case class StarExpr(expr: Expr) extends Expr
 
 // Generator, Comprehension related
 // TODO understand generator and comprehension
-case class CompExpr(target: List[Expr], inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
-case class YieldExpr(exprList: Option[Expr]) extends Expr
-case class ListCompExpr(target: Expr, comp: List[Expr]) extends Expr
-case class SetCompExpr(target: Expr, comp: List[Expr]) extends Expr
-case class DictCompExpr(kv: KVPair, comp: List[Expr]) extends Expr
+case class CompFor(targets: List[Expr], inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
+case class ListCompExpr(target: Expr, comp: List[CompFor]) extends Expr
+case class SetCompExpr(target: Expr, comp: List[CompFor]) extends Expr
+case class DictCompExpr(kv: KVPair, comp: List[CompFor]) extends Expr
+
+// Generator
+case class YieldExpr(exprList: List[Expr]) extends Expr
 case class GroupExpr(expr: Expr) extends Expr // TODO understand meaning of this expression,
 case class GenExpr(target: Expr, comp: List[Expr]) extends Expr 

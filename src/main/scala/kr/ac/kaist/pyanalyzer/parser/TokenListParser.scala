@@ -373,13 +373,13 @@ trait TokenListParsers extends PackratParsers {
   }
   // Comprehensions
   // 
-  lazy val forIfClauses: PackratParser[List[Expr]] = rep(forIfClause) 
+  lazy val forIfClauses: PackratParser[List[CompFor]] = rep(forIfClause) 
   // comp_for
   // this returns CompExpr
-  lazy val forIfClause: PackratParser[Expr] =
+  lazy val forIfClause: PackratParser[CompFor] =
     (opt("async") <~ "for") ~ starTargets ~ ("in" ~> disjunction ~ rep("if" ~> disjunction)) ^^ {
-      case Some(_) ~ target ~ (inExpr ~ ifExprs) => CompExpr(target, inExpr, ifExprs, true)   
-      case None ~ target ~ (inExpr ~ ifExprs) => CompExpr(target, inExpr, ifExprs, false)
+      case Some(_) ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, true)   
+      case None ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, false)
     }
   lazy val yieldExpr: PackratParser[Expr] =
     ("yield" ~ "from") ~> expression ^^ { case e => YieldExpr(Some(e))} |
