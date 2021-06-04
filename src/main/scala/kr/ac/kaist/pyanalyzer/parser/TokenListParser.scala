@@ -382,8 +382,13 @@ trait TokenListParsers extends PackratParsers {
       case None ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, false)
     }
   lazy val yieldExpr: PackratParser[Expr] =
-    ("yield" ~ "from") ~> expression ^^ { case e => YieldExpr(Some(e))} |
-    "yield" ~> opt(starExprs) ^^ { YieldExpr }
+    ("yield" ~ "from") ~> expression ^^ {
+      case e => YieldExpr(List(e))
+    } |
+    "yield" ~> opt(starExprs) ^^ {
+      case Some(e) => YieldExpr(List(e))
+      case None => YieldExpr(List())
+    }
   
   //////////////////////////////////////////////////////////////////
   // arguments
