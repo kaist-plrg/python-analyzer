@@ -4,16 +4,7 @@ package kr.ac.kaist.pyanalyzer.parser.ast
 sealed trait Expr extends Node
 case object EEmpty extends Expr
 
-// 6.3 Primaries
-// trait Primary extends Expr
-
-// 6.2. Atoms
-// trait Atom extends Primary
-
-// identifiers
-
-// Literals
-// trait ALiteral extends Atom
+// Atom: id, literals, and enclosure
 case class AId(name: String) extends Expr
 case class AStringLiteral(s: String) extends Expr
 case class ABytesLiteral(b: String) extends Expr
@@ -24,25 +15,27 @@ case class ABool(b: Boolean) extends Expr
 case object ANone extends Expr
 
 // Displays
-// trait Display extends Expr
 case class ListDisplay(ls: List[Expr]) extends Expr
 case class TupleDisplay(tup: List[Expr]) extends Expr
 case class SetDisplay(set: List[Expr]) extends Expr
 case class DictDisplay(map: List[(Expr, Expr)], given: List[Expr]) extends Expr
 case class KVPair(k: Expr, v: Expr) extends Expr
 
-// compound expressions
+// Primary expressions except atom
 case class EAttrRef(prim: Expr, ref: AId) extends Expr
 case class ESubscript(prim: Expr, exprs: List[Expr]) extends Expr
-
-// TODO model Slice
-case class Slice(lb: Option[Expr], ub: Option[Expr], stride: Option[Expr]) extends Expr
 case class Slicing(prim: Expr, slices: List[Expr]) extends Expr
-
-// TODO argument list is modeled differently in reference. model appropriately
 case class Call(prim: Expr, args: Args) extends Expr
-case class Args(posArgs: List[PosArg], posRest: List[PosRest], keyArgs: List[KeyArg], keyRest: List[KeyRest])
+
+// Subexpression constructs
+// slice : [lb:ub:step]
+case class Slice(lb: Option[Expr], ub: Option[Expr], step: Option[Expr]) extends Expr
+
+// function call arguments
+// 2 kinds of arguments: positional and keyword
+// posRest and keyRest binds extra positional/keyword arguments supplied
 trait Arg
+case class Args(posArgs: List[PosArg], posRest: List[PosRest], keyArgs: List[KeyArg], keyRest: List[KeyRest])
 case class PosArg(expr: Expr) extends Arg
 case class PosRest(expr: Expr) extends Arg
 case class KeyArg(id: AId, expr: Expr) extends Arg
