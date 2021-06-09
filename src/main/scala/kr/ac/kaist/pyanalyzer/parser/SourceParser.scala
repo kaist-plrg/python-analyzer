@@ -7,7 +7,7 @@ object SourceParser {
   def readSource(filename: String): String = {
     val source = Source.fromFile(filename)
     val text = try source.mkString finally source.close()
-    removeStmt(text)
+    text
   }
 
   def parseText(source: String): List[Token] = {
