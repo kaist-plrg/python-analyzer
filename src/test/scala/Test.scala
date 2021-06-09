@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
+import scala.util.Random
 import java.io.File
 
 class TokenTest extends AnyFunSuite {
@@ -29,40 +30,73 @@ class TokenTest extends AnyFunSuite {
   //   }
   // }
   val prodMap = Map(
-    "Atom_base" -> atom,
     "Atom" -> atom,
+    "Atom_failed" -> atom,
     "Atom_complex" -> atom,
     "Primary" -> primary,
+    "Primary_complex" -> primary,
+    "AwaitPrimary" -> awaitPrimary,
+    "Power" -> power,
+    "Uop" -> uop,
+    "Factor" -> factor,
     "Bop" -> bop,
     "Term" -> term,
+    "Term_LR" -> term,
+    "Sum" -> sum,
+    "Sum_LR" -> sum,
   )
 
   val partialTestMap: Map[String, List[testScript]] = Map(
-    "Atom_base" -> List("atom"),
     "Atom" -> List(
       "True", "False",
       "id",
-      """\"str\"""",
-      "1", "1.0", "1j",
+      """"str"""",
+      "1"//, "1.0", "1j",
     ),
+    "Atom_failed" -> List("1.0", "1j"),
     "Atom_complex" -> List(
-    //   tuple, group, genexp
-    //   list, listcomp
-    //   dict, set, dictcomp, setcomp
+      // tuple, group, genexp
+      // list, listcomp
+      // dict, set, dictcomp, setcomp
     ),
-    "Primary" -> List(
-      LazyBinding("Atom_base"),
+    "Primary" -> List(), // trivial case, use Atom_base
+    "Primary_complex" -> List(
+      // TODO
+    ),
+    "AwaitPrimary" -> List("await" ~ LazyBinding("Atom")),
+    "Power" -> List(
+      LazyBinding("Atom") ~ "**" ~ LazyBinding("Atom"),
+      LazyBinding("Atom"),
+    ),
+    "Uop" -> List("+", "-", "~"),
+    "Factor" -> List(
+      LazyBinding("Uop") ~ LazyBinding("Power"), LazyBinding("Power"),
+      LazyBinding("Atom"),
     ),
     "Bop" -> List("*", "/", "//", "%", "@"),
     "Term" -> List(
-      LazyBinding("Primary") + LazyBinding("Bop") + LazyBinding("Atom_base")
+      LazyBinding("Factor") ~ LazyBinding("Bop") ~ LazyBinding("Factor"),
     ),
+    "Term_LR" -> List(
+      LazyBinding("Term") ~ LazyBinding("Bop") ~ LazyBinding("Factor"),
+      LazyBinding("Factor"),
+    ),
+    "Sum" -> List(LazyBinding("Term") ~ "+" ~ LazyBinding("Term")),
+    "Sum_LR" -> List(LazyBinding("Sum") ~ "+" ~ LazyBinding("Term")),
   )
+
+  // TODO: Add test for invalid syntax
+  // val partialSyntaxErrorMap = ???
 
   def toTestString(testScript: testScript): List[String] = testScript match {
     case Normal(test) => List(test)
-    case LazyBinding(name) => partialTestMap(name).flatMap(toTestString)
-    case +(a, b) => 
+    // test all possible way
+    // case LazyBinding(name) => partialTestMap(name).flatMap(toTestString)
+    // test one way in each production randomly
+    case LazyBinding(name) => 
+      val candidate = partialTestMap(name)
+      toTestString(candidate(Random.nextInt(candidate.length)))
+    case ~(a, b) => 
       for {
         aa <- toTestString(a)
         bb <- toTestString(b)
@@ -70,14 +104,14 @@ class TokenTest extends AnyFunSuite {
   }
 
   trait testScript {
-    def +(rhs: testScript) = new +(this, rhs)
+    def ~(rhs: testScript) = new ~(this, rhs)
   }
 
   case class LazyBinding(name: String) extends testScript
 
   case class Normal(test: String) extends testScript
 
-  case class +(a: testScript, b: testScript) extends testScript
+  case class ~(a: testScript, b: testScript) extends testScript
 
   implicit def toTestScript(str: String): testScript = Normal(str)
 
@@ -96,9 +130,10 @@ class TokenTest extends AnyFunSuite {
     test(testname) {
       try {
         println(s"<$testname>")
+        println(t)
         prodTest(prod, index, parser, t)() match {
           case Success(res, rest) if rest.first == Newline =>
-            println(s"$testname parsed!")
+            println(s"parsing success")
             println(res)
             println
           case res =>
