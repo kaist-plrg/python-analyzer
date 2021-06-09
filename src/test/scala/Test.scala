@@ -6,6 +6,7 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
 import scala.util.Random
+import scala.Console._
 import java.io.File
 
 class TokenTest extends AnyFunSuite {
@@ -29,6 +30,16 @@ class TokenTest extends AnyFunSuite {
   //     }
   //   }
   // }
+  val help = s"""Test each production.
+
+    ${RED}****IMPORTANT****${RESET}
+    ${MAGENTA}Note that test case of each production is chosen randomly.
+    So, if you want to retrive the testcase, copy and paste that in the parse repl.
+${RESET}
+  """
+
+  println(help)
+
   val prodMap = Map(
     "Atom" -> atom,
     "Atom_failed" -> atom,
