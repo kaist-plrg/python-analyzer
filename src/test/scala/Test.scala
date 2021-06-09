@@ -29,13 +29,22 @@ class TokenTest extends AnyFunSuite {
   //   }
   // }
   val prodMap = Map(
-  "atom" -> atom,
-  "bitOr" -> bitOr,
+    "Atom" -> atom,
+    "Atom_complex" -> atom,
   )
 
   val testMap = Map(
-    "atom" -> List("True"),
-    "bitOr" -> List("True | False"),
+    "Atom" -> List(
+      "True", "False",
+      "id",
+      """\"str\"""",
+      "1", "1.0", "1j",
+    ),
+    "Atom_complex" -> List(
+    //   tuple, group, genexp
+    //   list, listcomp
+    //   dict, set, dictcomp, setcomp
+    ),
   )
 
   def prodTest(name: String, index: Int, parser: Parser[Node], test: String) =
