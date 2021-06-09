@@ -29,11 +29,16 @@ class TokenTest extends AnyFunSuite {
   //   }
   // }
   val prodMap = Map(
+    "Atom_base" -> atom,
     "Atom" -> atom,
     "Atom_complex" -> atom,
+    "Primary" -> primary,
+    "Bop" -> bop,
+    "Term" -> term,
   )
 
-  val testMap = Map(
+  val partialTestMap: Map[String, List[testScript]] = Map(
+    "Atom_base" -> List("atom"),
     "Atom" -> List(
       "True", "False",
       "id",
@@ -45,7 +50,40 @@ class TokenTest extends AnyFunSuite {
     //   list, listcomp
     //   dict, set, dictcomp, setcomp
     ),
+    "Primary" -> List(
+      LazyBinding("Atom_base"),
+    ),
+    "Bop" -> List("*", "/", "//", "%", "@"),
+    "Term" -> List(
+      LazyBinding("Primary") + LazyBinding("Bop") + LazyBinding("Atom_base")
+    ),
   )
+
+  def toTestString(testScript: testScript): List[String] = testScript match {
+    case Normal(test) => List(test)
+    case LazyBinding(name) => partialTestMap(name).flatMap(toTestString)
+    case +(a, b) => 
+      for {
+        aa <- toTestString(a)
+        bb <- toTestString(b)
+      } yield s"$aa $bb"
+  }
+
+  trait testScript {
+    def +(rhs: testScript) = new +(this, rhs)
+  }
+
+  case class LazyBinding(name: String) extends testScript
+
+  case class Normal(test: String) extends testScript
+
+  case class +(a: testScript, b: testScript) extends testScript
+
+  implicit def toTestScript(str: String): testScript = Normal(str)
+
+  val testMap: Map[String, List[String]] = partialTestMap.map {
+    case (key, list) => (key, list.flatMap(toTestString))
+  }
 
   def prodTest(name: String, index: Int, parser: Parser[Node], test: String) =
     ProdTest(name + index, parser, test)
