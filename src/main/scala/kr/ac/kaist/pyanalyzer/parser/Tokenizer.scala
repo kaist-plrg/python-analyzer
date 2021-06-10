@@ -106,17 +106,31 @@ trait Tokenizers extends RegexParsers {
     case (s, b) => IntLiteral(Integer.parseInt(s, b)) 
   }
 
-  lazy val digitPart = """\d(_?\d)*""".r
-  lazy val fraction = ".".r ~ digitPart
-  lazy val exponent = "[eE][+-]".r ~ digitPart
-  lazy val pointFloat = digitPart.? ~ fraction | digitPart ~ ".".r
-  lazy val exponentFloat = (digitPart | pointFloat) ~ exponent
-  lazy val floatNumber: Parser[FloatLiteral] = (pointFloat | exponentFloat) ^^ { 
-    case s => FloatLiteral(s.toString.toDouble) // TODO why type error when no toString? 
+  def comp2str(comp: ~[String, String]): String = {
+    val ~(lhs, rhs) = comp
+    lhs + rhs
   }
 
-  lazy val imagNumber: Parser[ImagLiteral] = ((floatNumber | digitPart) <~ "[jJ]".r) ^^ {
-    case s => ImagLiteral(s.toString.toDouble)
+  implicit lazy val temp = (p: Parser[String ~ String]) => p ^^ { comp2str(_) }
+
+  lazy val digitPart = digit ~ rep(opt("_".r) ~> digit) ^^ {
+    case d ~ ld =>  ld.foldLeft(d)((res, e) => res + e)
+  }
+  lazy val fraction: Parser[String] = "[.]".r ~ digitPart
+  lazy val exponent = "[eE]".r ~ opt("[+-]".r) ~ digitPart ^^ {
+    case e ~ Some("-") ~ d => s"$e-$d"
+    case e ~ _ ~ d => s"$e$d"
+  }
+  lazy val pointFloat: Parser[String] = opt(digitPart) ~ fraction ^^ {
+    case opt ~ f => opt.getOrElse("0") + f
+  } | digitPart ~ "[.]".r
+  lazy val exponentFloat: Parser[String] = (pointFloat | digitPart) ~ exponent
+  lazy val floatNumber: Parser[FloatLiteral] = (exponentFloat | pointFloat) ^^ { 
+    case s => FloatLiteral(s.toDouble)
+  }
+
+  lazy val imagNumber: Parser[ImagLiteral] = ((exponentFloat | pointFloat) | digitPart) <~ "[jJ]".r ^^ {
+    case s => ImagLiteral(s.toDouble)
   }
 
   // operator
@@ -144,8 +158,8 @@ trait Tokenizers extends RegexParsers {
   ).mkString("|").r ^^ { case s => Delim(s) }
 
   // parseAll
-  lazy val literal: Parser[Token] = integer | floatNumber | imagNumber | stringLiteral | bytesLiteral
-  lazy val token: Parser[Token] = opBeforeDelim | delim | op | keyword | literal | identifier
+  lazy val literal: Parser[Token] = imagNumber | floatNumber | integer | stringLiteral | bytesLiteral
+  lazy val token: Parser[Token] = literal | opBeforeDelim | delim | op | keyword | identifier
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }

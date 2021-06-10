@@ -43,7 +43,6 @@ ${RESET}
 
   val prodMap = Map(
     "Atom" -> atom,
-    "Atom_failed" -> atom,
     "Primary" -> primary,
     "AwaitPrimary" -> awaitPrimary,
     "Power" -> power,
@@ -63,7 +62,7 @@ ${RESET}
 
   val partialTestMap: Map[String, List[TestScript]] = Map(
     "Atom" -> List(
-      "1",// "1.0", "1j",
+      "1", "1.0", "1j",
       "True", "False",
       "id",
       """"str"""",
@@ -72,7 +71,6 @@ ${RESET}
       // list, listcomp
       // dict, set, dictcomp, setcomp
     ),
-    "Atom_failed" -> List("1.0", "1j"),
     "Primary" -> List(
       LazyBinding("Atom"),
       // TODO complex primary production
