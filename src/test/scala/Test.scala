@@ -57,7 +57,7 @@ ${RESET}
     "BitXor" -> bitXor,
     "BitOr" -> bitOr,
     "Cop" -> cop,
-    // "Comparison" -> comparison,
+    "Comparison" -> comparison,
   )
 
   val partialTestMap: Map[String, List[TestScript]] = Map(
@@ -117,9 +117,10 @@ ${RESET}
     ),
     // TODO implicitly convert String ~ String to TestScript ~ TestScript
     "Cop" -> List(
-      "==", "!=", "<=", ">=", "<", ">", Normal("not") ~ "in", "in", Normal("is") ~ "not", "is"
+      "==", "!=", "<=", ">=", "<", ">", "not" ~ "in", "in", "is" ~ "not", "is"
     ),
-    // "Compare" -> List
+    // TODO add rep feature
+    "Compare" -> List()
   )
 
   // TODO: Add test for invalid syntax
@@ -146,6 +147,7 @@ ${RESET}
 
   trait TestScript {
     def ~(rhs: TestScript) = new ~(this, rhs)
+    def ~(rhs: String) = new ~(this, rhs)
   }
 
   case class LazyBinding(name: String) extends TestScript
