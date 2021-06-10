@@ -30,13 +30,14 @@ class TokenTest extends AnyFunSuite {
   //     }
   //   }
   // }
-  val help = s"""Test each production.
+  val help =
+s"""Test each production.
 
-    ${RED}****IMPORTANT****${RESET}
-    ${MAGENTA}Note that test case of each production is chosen randomly.
-    So, if you want to retrive the testcase, copy and paste that in the parse repl.
+${RED}****IMPORTANT****${RESET}
+${MAGENTA}Note that test case of each production is chosen randomly.
+So, if you want to retrive the testcase, copy and paste that in the parse repl.
 ${RESET}
-  """
+"""
 
   println(help)
 
@@ -120,7 +121,7 @@ ${RESET}
       "==", "!=", "<=", ">=", "<", ">", "not" ~ "in", "in", "is" ~ "not", "is"
     ),
     // TODO add rep feature
-    "Compare" -> List()
+    "Comparison" -> List()
   )
 
   // TODO: Add test for invalid syntax
