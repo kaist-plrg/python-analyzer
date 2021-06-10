@@ -25,12 +25,16 @@ case object CmdParseREPL extends Command {
   def apply(params: List[String]): Unit = {
     try while (true) {
       val str = reader.readLine(prompt)
-      val tokens = parseText(str)
-      // TODO change the quit command
-      tokens.headOption match {
-        case Some(Delim(",")) => throw new EndOfFileException
-        case _ =>
+      val text = str.split("\\s+").toList match {
+        case Nil => ""
+        case cmd :: rest if cmd.startsWith(":") => cmd.drop(1) match {
+          case "q" => throw new EndOfFileException
+          // TODO add production
+          case _ => rest
+        }
+        case l => str
       }
+      val tokens = parseText(text)
       println(tokens)
       val e = expression(new PackratReader(TokenReader(tokens)))
       println(e)
