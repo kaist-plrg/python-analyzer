@@ -43,70 +43,100 @@ ${RESET}
   val prodMap = Map(
     "Atom" -> atom,
     "Atom_failed" -> atom,
-    "Atom_complex" -> atom,
     "Primary" -> primary,
-    "Primary_complex" -> primary,
     "AwaitPrimary" -> awaitPrimary,
     "Power" -> power,
     "Uop" -> uop,
     "Factor" -> factor,
     "Bop" -> bop,
     "Term" -> term,
-    "Term_LR" -> term,
+    "Sop" -> uop,
     "Sum" -> sum,
-    "Sum_LR" -> sum,
+    "ShiftExpr" -> shiftExpr,
+    "BitAnd" -> bitAnd,
+    "BitXor" -> bitXor,
+    "BitOr" -> bitOr,
+    "Cop" -> cop,
+    // "Comparison" -> comparison,
   )
 
-  val partialTestMap: Map[String, List[testScript]] = Map(
+  val partialTestMap: Map[String, List[TestScript]] = Map(
     "Atom" -> List(
+      "1",// "1.0", "1j",
       "True", "False",
       "id",
       """"str"""",
-      "1"//, "1.0", "1j",
-    ),
-    "Atom_failed" -> List("1.0", "1j"),
-    "Atom_complex" -> List(
+      // TODO complex atom production
       // tuple, group, genexp
       // list, listcomp
       // dict, set, dictcomp, setcomp
     ),
-    "Primary" -> List(), // trivial case, use Atom_base
-    "Primary_complex" -> List(
-      // TODO
-    ),
-    "AwaitPrimary" -> List("await" ~ LazyBinding("Atom")),
-    "Power" -> List(
-      LazyBinding("Atom") ~ "**" ~ LazyBinding("Atom"),
+    "Atom_failed" -> List("1.0", "1j"),
+    "Primary" -> List(
       LazyBinding("Atom"),
+      // TODO complex primary production
+    ),
+    "AwaitPrimary" -> List(
+      LazyBinding("Primary"),
+      "await" ~ LazyBinding("Primary"),
+    ),
+    "Power" -> List(
+      LazyBinding("AwaitPrimary"),
+      LazyBinding("AwaitPrimary") ~ "**" ~ LazyBinding("Factor"),
     ),
     "Uop" -> List("+", "-", "~"),
     "Factor" -> List(
-      LazyBinding("Uop") ~ LazyBinding("Power"), LazyBinding("Power"),
-      LazyBinding("Atom"),
+      LazyBinding("Power"), LazyBinding("Uop") ~ LazyBinding("Power"),
     ),
     "Bop" -> List("*", "/", "//", "%", "@"),
     "Term" -> List(
-      LazyBinding("Factor") ~ LazyBinding("Bop") ~ LazyBinding("Factor"),
-    ),
-    "Term_LR" -> List(
-      LazyBinding("Term") ~ LazyBinding("Bop") ~ LazyBinding("Factor"),
       LazyBinding("Factor"),
+      LazyBinding("Term") ~ LazyBinding("Bop") ~ LazyBinding("Factor"),
     ),
-    "Sum" -> List(LazyBinding("Term") ~ "+" ~ LazyBinding("Term")),
-    "Sum_LR" -> List(LazyBinding("Sum") ~ "+" ~ LazyBinding("Term")),
+    "Sop" -> List("+", "-"),
+    "Sum" -> List(
+      LazyBinding("Term"),
+      LazyBinding("Sum") ~ LazyBinding("Sop") ~ LazyBinding("Term"),
+    ),
+    "ShiftExpr" -> List(
+      LazyBinding("Sum"),
+      LazyBinding("ShiftExpr") ~ ">>" ~ LazyBinding("Sum"),
+      LazyBinding("ShiftExpr") ~ "<<" ~ LazyBinding("Sum"),
+    ),
+    "BitAnd" -> List(
+      LazyBinding("ShiftExpr"),
+      LazyBinding("BitAnd") ~ "&" ~ LazyBinding("ShiftExpr"),
+    ),
+    "BitXor" -> List(
+      LazyBinding("BitAnd"),
+      LazyBinding("BitXor") ~ "^" ~ LazyBinding("BitAnd"),
+    ),
+    "BitOr" -> List(
+      LazyBinding("BitXor"),
+      LazyBinding("BitOr") ~ "|" ~ LazyBinding("BitXor"),
+    ),
+    // TODO implicitly convert String ~ String to TestScript ~ TestScript
+    "Cop" -> List(
+      "==", "!=", "<=", ">=", "<", ">", Normal("not") ~ "in", "in", Normal("is") ~ "not", "is"
+    ),
+    // "Compare" -> List
   )
 
   // TODO: Add test for invalid syntax
   // val partialSyntaxErrorMap = ???
+  def weightedRandomIndex(length: Int) = {
+    val n = Random.nextInt(length * 2)
+    (n / 2) * (n % 2)
+  }
 
-  def toTestString(testScript: testScript): List[String] = testScript match {
+  def toTestString(TestScript: TestScript): List[String] = TestScript match {
     case Normal(test) => List(test)
     // test all possible way
     // case LazyBinding(name) => partialTestMap(name).flatMap(toTestString)
     // test one way in each production randomly
     case LazyBinding(name) => 
       val candidate = partialTestMap(name)
-      toTestString(candidate(Random.nextInt(candidate.length)))
+      toTestString(candidate(weightedRandomIndex(candidate.length)))
     case ~(a, b) => 
       for {
         aa <- toTestString(a)
@@ -114,17 +144,17 @@ ${RESET}
       } yield s"$aa $bb"
   }
 
-  trait testScript {
-    def ~(rhs: testScript) = new ~(this, rhs)
+  trait TestScript {
+    def ~(rhs: TestScript) = new ~(this, rhs)
   }
 
-  case class LazyBinding(name: String) extends testScript
+  case class LazyBinding(name: String) extends TestScript
 
-  case class Normal(test: String) extends testScript
+  case class Normal(test: String) extends TestScript
 
-  case class ~(a: testScript, b: testScript) extends testScript
+  case class ~(a: TestScript, b: TestScript) extends TestScript
 
-  implicit def toTestScript(str: String): testScript = Normal(str)
+  implicit def toTestScript(str: String): TestScript = Normal(str)
 
   val testMap: Map[String, List[String]] = partialTestMap.map {
     case (key, list) => (key, list.flatMap(toTestString))
