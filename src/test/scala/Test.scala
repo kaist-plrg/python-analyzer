@@ -114,7 +114,6 @@ ${RESET}
       LazyBinding("BitXor"),
       LazyBinding("BitOr") ~ "|" ~ LazyBinding("BitXor"),
     ),
-    // TODO implicitly convert String ~ String to TestScript ~ TestScript
     "Cop" -> List(
       "==", "!=", "<=", ">=", "<", ">", "not" ~ "in", "in", "is" ~ "not", "is"
     ),
