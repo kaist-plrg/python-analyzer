@@ -99,18 +99,35 @@ ${RESET}
       "==", "!=", "<=", ">=", "<", ">", "not" ~ "in", "in", "is" ~ "not", "is"
     ),
     "Comparison" -> List(
-      LazyBinding("BitOr") ~ Rep(LazyBinding("Cop") ~ LazyBinding("BitOr")),
-    )
+      LazyBinding("BitOr"),
+      LazyBinding("BitOr") ~ Rep1(LazyBinding("Cop") ~ LazyBinding("BitOr")),
+    ),
+    "Inversion" -> List(
+      LazyBinding("Comparison"),
+      "not" ~ LazyBinding("Inversion"),
+    ),
+    "Conjunction" -> List(
+      LazyBinding("Inversion"),
+      LazyBinding("Inversion") ~ Rep1("and" ~ LazyBinding("Inversion")),
+    ),
+    "Disjunction" -> List(
+      LazyBinding("Conjunction"),
+      LazyBinding("Conjunction") ~ Rep1("or" ~ LazyBinding("Conjunction")),
+    ),
+    "Expression" -> List(
+      LazyBinding("Disjunction"),
+      LazyBinding("Disjunction") ~ "if" ~ LazyBinding("Disjunction") ~ "else" ~ LazyBinding("Expression"),
+    ),
   )
 
   // TODO: Add test for invalid syntax
   // val partialSyntaxErrorMap = ???
   def weightedRandomIndex(length: Int) = {
-    val n = Random.nextInt(length * 2)
-    (n / 2) * (n % 2)
+    val n = Random.nextInt(length * 4)
+    (n / 4) * (n % 2)
   }
 
-  val string0to3 = "0" * 50 + "1" * 40 + "2" * 9 + "3"
+  val string0to3 = "0" * 80 + "1" * 15 + "2" * 4 + "3"
 
   def toTestString(TestScript: TestScript): List[String] = TestScript match {
     case Normal(test) => List(test)
@@ -127,8 +144,8 @@ ${RESET}
       } yield s"$aa $bb"
     // 0 ~ 2 repetition
     case Rep(a) =>
-      val times = string0to3.charAt(weightedRandomIndex(100))
-      List((for (i <- 1 to times) yield (toTestString(a))).mkString(" "))
+      val times = string0to3.charAt(weightedRandomIndex(100)) - 48
+      List((for (i <- 1 to times) yield toTestString(a)).flatten.mkString(" "))
   }
 
   sealed trait TestScript {
@@ -143,6 +160,8 @@ ${RESET}
   case class ~(a: TestScript, b: TestScript) extends TestScript
 
   case class Rep(a: TestScript) extends TestScript
+
+  def Rep1(a: TestScript): TestScript = a ~ Rep(a)
 
   implicit def toTestScript(str: String): TestScript = Normal(str)
 
