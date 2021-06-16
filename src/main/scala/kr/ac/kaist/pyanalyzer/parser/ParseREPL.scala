@@ -30,7 +30,7 @@ case object CmdParseREPL extends Command {
         case cmd :: rest if cmd.startsWith(":") => cmd.drop(1) match {
           case "q" => throw new EndOfFileException
           // TODO add production
-          case _ => rest
+          case _ => str
         }
         case l => str
       }
