@@ -98,8 +98,9 @@ ${RESET}
     "Cop" -> List(
       "==", "!=", "<=", ">=", "<", ">", "not" ~ "in", "in", "is" ~ "not", "is"
     ),
-    // TODO add rep feature
-    "Comparison" -> List()
+    "Comparison" -> List(
+      LazyBinding("BitOr") ~ Rep(LazyBinding("Cop") ~ LazyBinding("BitOr")),
+    )
   )
 
   // TODO: Add test for invalid syntax
@@ -108,6 +109,8 @@ ${RESET}
     val n = Random.nextInt(length * 2)
     (n / 2) * (n % 2)
   }
+
+  val string0to3 = "0" * 50 + "1" * 40 + "2" * 9 + "3"
 
   def toTestString(TestScript: TestScript): List[String] = TestScript match {
     case Normal(test) => List(test)
@@ -122,9 +125,13 @@ ${RESET}
         aa <- toTestString(a)
         bb <- toTestString(b)
       } yield s"$aa $bb"
+    // 0 ~ 2 repetition
+    case Rep(a) =>
+      val times = string0to3.charAt(weightedRandomIndex(100))
+      List((for (i <- 1 to times) yield (toTestString(a))).mkString(" "))
   }
 
-  trait TestScript {
+  sealed trait TestScript {
     def ~(rhs: TestScript) = new ~(this, rhs)
     def ~(rhs: String) = new ~(this, rhs)
   }
@@ -134,6 +141,8 @@ ${RESET}
   case class Normal(test: String) extends TestScript
 
   case class ~(a: TestScript, b: TestScript) extends TestScript
+
+  case class Rep(a: TestScript) extends TestScript
 
   implicit def toTestScript(str: String): TestScript = Normal(str)
 
