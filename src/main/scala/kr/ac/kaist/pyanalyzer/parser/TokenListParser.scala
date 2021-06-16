@@ -526,4 +526,23 @@ trait TokenListParsers extends PackratParsers {
   // parser for parameter id
   lazy val param: PackratParser[AId] = id // TODO add optional type expr `: expr`
   lazy val default: PackratParser[Expr] = "=" ~> expression
+
+  val prodMap = Map(
+    "Atom" -> atom,
+    "Primary" -> primary,
+    "AwaitPrimary" -> awaitPrimary,
+    "Power" -> power,
+    // "Uop" -> uop,
+    "Factor" -> factor,
+    // "Bop" -> bop,
+    "Term" -> term,
+    // "Sop" -> uop,
+    "Sum" -> sum,
+    "ShiftExpr" -> shiftExpr,
+    "BitAnd" -> bitAnd,
+    "BitXor" -> bitXor,
+    "BitOr" -> bitOr,
+    // "Cop" -> cop,
+    "Comparison" -> comparison,
+  )
 }

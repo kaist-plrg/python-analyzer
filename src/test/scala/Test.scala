@@ -41,25 +41,6 @@ ${RESET}
 
   println(help)
 
-  val prodMap = Map(
-    "Atom" -> atom,
-    "Primary" -> primary,
-    "AwaitPrimary" -> awaitPrimary,
-    "Power" -> power,
-    // "Uop" -> uop,
-    "Factor" -> factor,
-    // "Bop" -> bop,
-    "Term" -> term,
-    // "Sop" -> uop,
-    "Sum" -> sum,
-    "ShiftExpr" -> shiftExpr,
-    "BitAnd" -> bitAnd,
-    "BitXor" -> bitXor,
-    "BitOr" -> bitOr,
-    // "Cop" -> cop,
-    "Comparison" -> comparison,
-  )
-
   val partialTestMap: Map[String, List[TestScript]] = Map(
     "Atom" -> List(
       "1", "1.0", "1j",
