@@ -23,7 +23,6 @@ case object CmdParseREPL extends Command {
   val prodNode = prodMap.keys.map(
     x => node(s"-$x".toLowerCase)
   ).toList
-  // TODO: add completer
   private val completer: TreeCompleter = new TreeCompleter(
     node(":raw" :: prodNode: _*) :: commands: _*
   )
@@ -45,7 +44,6 @@ case object CmdParseREPL extends Command {
               Some(Some(prod.drop(1)), target.mkString(" "))
             case target => Some(None, target.mkString(" "))
           }
-          // TODO add production
           case _ => println("In appropriate command!"); None
         }
         case target => Some(None, target.mkString(" "))
