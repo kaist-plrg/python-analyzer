@@ -73,11 +73,22 @@ class ProdTest extends AnyFunSuite {
 
   // TODO: Add more grammar
   val PEG_Grammar: Map[String, List[TestGenerator]] = Map(
+    // TODO: Add Comps
+    "List" -> List(
+      "[" ~ Opt(Prod("StarNamedExpr")) ~ "]",
+    ),
+    "Tuple" -> List(
+      "(" ~ Opt(Prod("StarNamedExpr") ~ "," ~ Opt(Prod("StarNamedExpr"))) ~ ")",
+    ),
+    "Set" -> List(
+      "{" ~ Prod("StarNamedExpr") ~ "}",
+    ),
     "Atom" -> List(
       "1", "1.0", "1j",
       "True", "False",
       "id",
       """"str"""",
+      Prod("List"), Prod("Tuple"), Prod("Set"),
       // TODO complex atom production
       // tuple, group, genexp
       // list, listcomp

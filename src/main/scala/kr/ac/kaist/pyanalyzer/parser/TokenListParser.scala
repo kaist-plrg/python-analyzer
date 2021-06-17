@@ -558,5 +558,8 @@ trait TokenListParsers extends PackratParsers {
     "StarNamedExprs" -> starNamedExprs,
     "StarExpr" -> starExpr,
     "StarExprs" -> starExprs,
+    "List" -> list,
+    "Tuple" -> tuple,
+    "Set" -> set,
   )
 }
