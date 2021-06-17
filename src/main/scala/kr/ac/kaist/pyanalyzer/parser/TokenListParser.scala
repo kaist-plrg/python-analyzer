@@ -551,5 +551,12 @@ trait TokenListParsers extends PackratParsers {
     "Conjunction" -> conjunction,
     "Disjunction" -> disjunction,
     "Expression" -> expression,
+    "Expressions" -> expressions,
+    "NamedExpr" -> namedExpr,
+    "AssignExpr" -> assignExpr,
+    "StarNamedExpr" -> starNamedExpr,
+    "StarNamedExprs" -> starNamedExprs,
+    "StarExpr" -> starExpr,
+    "StarExprs" -> starExprs,
   )
 }

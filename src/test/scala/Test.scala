@@ -5,7 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
-import scala.util.Random
+import scala.util.Random._
 import scala.Console._
 import java.io.File
 
@@ -25,7 +25,7 @@ class ProdTest extends AnyFunSuite {
 
   // TODO: update the random sampling algorithm
   def weightedRandomIndex(length: Int) = {
-    val n = Random.nextInt(length * 4)
+    val n = nextInt(length * 4)
     if (n >= length) 0 else n
   }
 
@@ -45,7 +45,7 @@ class ProdTest extends AnyFunSuite {
       // TODO: update repetition
       // 0 ~ 2 repetition
       case Rep(a) =>
-        val times = repetitions.charAt(Random.nextInt(100)) - 48
+        val times = repetitions.charAt(nextInt(100)) - 48
         (for (i <- 1 to times) yield a).mkString(" ")
     }
   }
@@ -59,6 +59,11 @@ class ProdTest extends AnyFunSuite {
   case class Rep(a: TestGenerator) extends TestGenerator
 
   def Rep1(a: TestGenerator): TestGenerator = a ~ Rep(a)
+
+  def Opt(t: TestGenerator): TestGenerator =
+    if (nextInt(2) == 0) "" else t
+
+  def RepSep1(t: TestGenerator, sep: String): TestGenerator = t ~ Rep1(sep ~ t)
 
   implicit def toTestGenerator(str: String): TestGenerator = Normal(str)
 
@@ -147,12 +152,42 @@ class ProdTest extends AnyFunSuite {
       Prod("Disjunction"),
       Prod("Disjunction") ~ "if" ~ Prod("Disjunction") ~ "else" ~ Prod("Expression"),
     ),
+    "Expressions" -> List(
+      Prod("Expression"),
+      Prod("Expression") ~ ",",
+      Prod("Expression") ~ Rep1("," ~ Prod("Expression")) ~ Opt(","),
+    ),
+    "NamedExpr" -> List(
+      // TODO: implement negative lookahead
+      Prod("Expression"),
+      "*" ~ Prod("BitOr"),
+    ),
+    "AssignExpr" -> List(
+      // TODO: implement ~ operator in grammar spec
+      "id" ~ ":=" ~ Prod("Expression"),
+    ),
+    "StarNamedExpr" -> List(
+      Prod("NamedExpr"),
+      "*" ~ Prod("BitOr"),
+    ),
+    "StarNamedExprs" -> List(
+      RepSep1(Prod("StarNamedExpr"), ",") ~ Opt(","),
+    ),
+    "StarExpr" -> List(
+      Prod("Expression"),
+      "*" ~ Prod("BitOr"),
+    ),
+    "StarExprs" -> List(
+      Prod("StarExpr"),
+      Prod("StarExpr") ~ ",",
+      Prod("StarExpr") ~ Rep1("," ~ Prod("StarExpr")) ~ Opt(","),
+    ),
   )
 
   // TODO: Add test for invalid syntax
   // val partialSyntaxErrorMap = ???
 
-  def runTest(p: Parser[Node], test: String) = {
+  def doParse[T](p: Parser[T], test: String) = {
     println("test string:")
     println(test)
     println
@@ -170,7 +205,7 @@ class ProdTest extends AnyFunSuite {
       try {
         println(s"$MAGENTA<$testname>$RESET")
         println
-        runTest(p, testGenerator) match {
+        doParse(p, testGenerator) match {
           case Success(res, rest) if rest.first == Newline =>
             println("parsed result:")
             println(res)
