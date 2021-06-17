@@ -21,7 +21,7 @@ case object CmdParseREPL extends Command {
   ).map(x => node(s":$x"))
 
   val prodNode = prodMap.keys.map(
-    x => node(s"-$x".toLowerCase)
+    x => node(s"-${x.charAt(0).toLower}${x.drop(1)}")
   ).toList
   private val completer: TreeCompleter = new TreeCompleter(
     node(":raw" :: prodNode: _*) :: commands: _*
