@@ -131,11 +131,11 @@ trait TokenListParsers extends PackratParsers {
   // expressions
   ///////////////////////////////////////////////
   
-  lazy val starExprs: PackratParser[Expr] = expression ~ rep1("," ~> expression) <~ opt(",") ^^ {
+  lazy val starExprs: PackratParser[Expr] = starExpr ~ rep1("," ~> starExpr) <~ opt(",") ^^ {
     case e ~ le => TupleExpr(e :: le)
-  } | expression <~ "," ^^ {
+  } | starExpr <~ "," ^^ {
     case x => TupleExpr(List(x))
-  } | expression
+  } | starExpr
   lazy val starExpr: PackratParser[Expr] =
     ("*" ~> bitOr) ^^ StarExpr | expression
   lazy val starNamedExprs: PackratParser[List[Expr]] = rep1sep(starNamedExpr, ",") <~ opt(",")

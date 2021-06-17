@@ -160,7 +160,7 @@ class ProdTest extends AnyFunSuite {
     "NamedExpr" -> List(
       // TODO: implement negative lookahead
       Prod("Expression"),
-      "*" ~ Prod("BitOr"),
+      Prod("AssignExpr"),
     ),
     "AssignExpr" -> List(
       // TODO: implement ~ operator in grammar spec
