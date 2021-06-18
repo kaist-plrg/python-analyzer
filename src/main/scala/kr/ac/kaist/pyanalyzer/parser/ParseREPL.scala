@@ -2,15 +2,18 @@ package kr.ac.kaist.pyanalyzer.parser
 
 import kr.ac.kaist.pyanalyzer.LINE_SEP
 import kr.ac.kaist.pyanalyzer.PyAnalyzer.Command
+import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.Token._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
+import kr.ac.kaist.pyanalyzer.util.Useful._
 import org.jline.builtins.Completers.TreeCompleter
 import org.jline.builtins.Completers.TreeCompleter._
 import org.jline.reader._
 import org.jline.terminal._
 import scala.Console._
 import scala.util.parsing.input.Reader
+import scala.util.Try
 
 case object CmdParseREPL extends Command {
   val name = "parse-repl"
@@ -53,10 +56,12 @@ case object CmdParseREPL extends Command {
         println(tokens)
         val prodName = pair._1.getOrElse("expression")
         println(s"Parsing with production, $prodName")
-        val e = prodMap.getOrElse(prodName.capitalize, expression)(
+        val parseResult = prodMap.getOrElse(prodName.capitalize, expression)(
           new PackratReader(TokenListParser.TokenReader(tokens))
         )
-        println(e)
+        println(parseResult)
+        println(beautify(parseResult.get))
+        // Try(parseResult.get).map(x => println(beautify(x)))
       })
     } catch {
       case e: EndOfFileException => println("quit")
