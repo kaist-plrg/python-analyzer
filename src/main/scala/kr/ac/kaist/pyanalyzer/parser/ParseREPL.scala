@@ -54,7 +54,7 @@ case object CmdParseREPL extends Command {
         val prodName = pair._1.getOrElse("expression")
         println(s"Parsing with production, $prodName")
         val e = prodMap.getOrElse(prodName.capitalize, expression)(
-          new PackratReader(TokenReader(tokens))
+          new PackratReader(TokenListParser.TokenReader(tokens))
         )
         println(e)
       })

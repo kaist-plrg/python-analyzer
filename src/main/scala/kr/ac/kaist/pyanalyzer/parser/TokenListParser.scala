@@ -5,45 +5,21 @@ import scala.util.parsing.input._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object TokenListParser extends TokenListParsers {
-  // TODO change Expr to Stmt
-  def apply(tokens: List[Token]): Expr =
-    expression(new PackratReader(TokenReader(tokens))).get
+  def apply(ts: Seq[Token]) = ???
 }
 trait TokenListParsers extends PackratParsers {
   ///////////////////////////////////////////////////////////////////
   // Basic Parsers definition, token reader
   ///////////////////////////////////////////////////////////////////
   type Elem = Token
-  case class TokenPosition(column: Int, line: Int, protected val lineContents: String) extends Position
-  abstract class TokenReader extends Reader[Token] { outer =>
-    val tokens: List[Token]
-    val pos: TokenPosition
-
-    def isNewline: Boolean = tokens.head match {
-      case Newline => true
-      case _ => false
-    }
-
-    def width: Int = first.toString.length
-
-    def atEnd: Boolean = tokens.isEmpty
-    def first: Token = tokens.head
-    def rest: TokenReader = new TokenReader {
-      val tokens = outer.tokens.tail
-      val pos = if (outer.isNewline) {
-        TokenPosition(outer.pos.line + 1, outer.pos.column + outer.width, first.toString)
-      } else {
-        TokenPosition(outer.pos.line, outer.pos.column + outer.width, first.toString)
-      }
-    }
+  case class TokenPosition(line: Int, column: Int, protected val lineContents: String) extends Position
+  class TokenReader(tokens: Seq[Token], pos: TokenPosition) extends Reader[Token] {
+    override def first: Token = tokens.head
+    override def atEnd: Boolean = tokens.isEmpty
+    override def pos: Position = pos
+    override def rest: Reader[Token] = new TokenReader(tokens.tail, pos.copy(column=pos.column+1))
   }
-  object TokenReader {
-    def apply(ts: List[Token]): TokenReader = new TokenReader {
-      val tokens = ts
-      val stringList = List("") // TODO
-      val pos = TokenPosition(1, 1, stringList.head)
-    }
-  }
+  def TokenReader(ts: Seq[Token]) = new TokenReader(ts, TokenPosition(0,0, ""))
 
   //////////////////////////////////////////////////////////////////
   // Parsing rule definitions
@@ -561,5 +537,4 @@ trait TokenListParsers extends PackratParsers {
     "List" -> list,
     "Tuple" -> tuple,
     "Set" -> set,
-  )
-}
+  )}
