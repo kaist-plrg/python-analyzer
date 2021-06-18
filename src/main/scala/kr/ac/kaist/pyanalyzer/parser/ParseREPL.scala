@@ -14,7 +14,7 @@ import scala.util.parsing.input.Reader
 
 case object CmdParseREPL extends Command {
   val name = "parse-repl"
-  val help = "hihi"
+  val help = "parse the expression on the REPL"
 
   val commands = List(
     "quit",
