@@ -237,7 +237,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val bitXor: PackratParser[Expr] = bitXor ~ ("^" ~> bitAnd) ^^ {
     case e1 ~ e2 => BinaryExpr(OBXor, e1, e2) 
   } | bitAnd
-  lazy val bitAnd: PackratParser[Expr] = bitAnd ~ ("&" ~> shiftop) ^^ {
+  lazy val bitAnd: PackratParser[Expr] = bitAnd ~ ("&" ~> shiftExpr) ^^ {
     case e1 ~ e2 => BinaryExpr(OBAnd, e1, e2)
   } | shiftExpr
   lazy val shiftop = (
