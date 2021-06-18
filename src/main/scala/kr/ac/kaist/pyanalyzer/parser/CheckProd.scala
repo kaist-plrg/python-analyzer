@@ -8,7 +8,7 @@ import scala.Console._
 import scala.util.Try
 
 object CheckProd {
-  def checkProd(
+  def apply(
     prod: String,
     index: Option[Int] = None,
     times: Int = 1
@@ -46,7 +46,6 @@ object CheckProd {
 }
 
 case object CmdCheckProd extends Command {
-  import CheckProd._
   val name = "check-prod"
   val help = "check the specific production"
   def apply(params: List[String]): Unit = params match {
@@ -54,10 +53,10 @@ case object CmdCheckProd extends Command {
       println(s"${RED}[Error] Prod argument is needed${RESET}")
     case prod :: l => prodMap.get(prod) match {
       case Some(p) => 
-        val times = Try(l.tail.head.toInt.abs).toOption.getOrElse(1)
+        val times = Try(l.tail.head.toInt).toOption.getOrElse(1)
         Try(l.head.toInt).toOption match {
-          case Some(index) => checkProd(prod, Some(index), times)
-          case None => checkProd(prod, None, times)
+          case Some(index) => CheckProd(prod, Some(index), times)
+          case None => CheckProd(prod, None, times)
         }
       case None =>
         println(s"${RED}[Error] Unknown production: ${prod}${RESET}")

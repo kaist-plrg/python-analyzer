@@ -3,7 +3,7 @@ package kr.ac.kaist.pyanalyzer
 import org.scalatest.funsuite.AnyFunSuite
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.parser.CheckProd._
+import kr.ac.kaist.pyanalyzer.parser.CheckProd
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
 import scala.util.Random._
@@ -22,7 +22,8 @@ class ProdTest extends AnyFunSuite {
 
   println(help)
 
-  for (prod <- prodMap.keys) test(s"$prod") { checkProd(prod) }
+  for (prod <- prodMap.keys)
+    test(s"$prod") (if (!CheckProd(prod)) assert(false))
 
 }
 
