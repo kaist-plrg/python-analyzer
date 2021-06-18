@@ -22,8 +22,12 @@ class ProdTest extends AnyFunSuite {
 
   println(help)
 
-  for (prod <- prodMap.keys)
-    test(s"$prod") (if (!CheckProd(prod)) assert(false))
+  val times = 10
+
+  // TODO: Handle too verbous prints
+  for (prod <- prodMap.keys) test(s"$prod") (
+    if (!CheckProd(prod, times = times)) assert(false)
+  )
 
 }
 
