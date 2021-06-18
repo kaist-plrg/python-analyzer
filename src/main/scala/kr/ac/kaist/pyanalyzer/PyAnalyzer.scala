@@ -25,22 +25,25 @@ object PyAnalyzer {
 
   trait Command {
     val name: String
+    val help: String
     def apply(params: List[String]): Any
   }
 
   case object CmdHelp extends Command {
     val name = "help"
+    val help = ""
     def apply(params: List[String]): Unit = {
       params match {
         case cmd :: _ =>
           println
           println(s"${RED}[Error] $cmd: Command Not Found${RESET}")
-          case Nil =>
+        case Nil =>
+          println
+          println("<Command List>")
+          for (command <- commands if command != CmdHelp) 
+            println(s"* ${command.name}: ${command.help}")
+          println
       }
-      println
-      println("<Command List>")
-      println("\t* parse-repl: parse the expression on the REPL")
-      println
     }
   }
 }
