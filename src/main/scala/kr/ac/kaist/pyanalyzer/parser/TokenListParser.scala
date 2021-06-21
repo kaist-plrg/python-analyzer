@@ -135,6 +135,7 @@ trait TokenListParsers extends PackratParsers {
   // lambda expressions
   lazy val lambdef: PackratParser[Expr] = ("lambda" ~> opt(lambdaParams <~ ":")) ~ expression ^^ {
     case Some(pl) ~ e => LambdaExpr(pl, e)
+    case None ~ e => LambdaExpr(Nil, e)
   }
   lazy val lambdaParams: PackratParser[List[Param]] = (
     lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
