@@ -57,6 +57,10 @@ object Grammar {
   // TODO: Add more grammar
   val PEG_Grammar: Map[String, List[TestGenerator]] = Map(
     // TODO: Add Comps
+    "Group" -> List(
+      "(" ~ Prod("NamedExpr") ~ ")",
+      // TODO: Add yieldExpr
+    ),
     "List" -> List(
       "[" ~ Opt(Prod("StarNamedExpr")) ~ "]",
     ),
@@ -71,7 +75,7 @@ object Grammar {
       "True", "False",
       "id",
       """"str"""",
-      Prod("List"), Prod("Tuple"), Prod("Set"),
+      Prod("Group"), Prod("List"), Prod("Tuple"), Prod("Set"),
       // TODO complex atom production
       // tuple, group, genexp
       // list, listcomp

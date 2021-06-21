@@ -182,17 +182,10 @@ trait TokenListParsers extends PackratParsers {
   lazy val inversion: PackratParser[Expr] = "not" ~> inversion ^^ {
     case e => UnaryExpr(LNot, e)
   } | comparison
-  lazy val comparison: PackratParser[Expr] = bitOr ~ rep(compareOpBitOrPair) ^^ {
-    case be ~ Nil => be
-    case be ~ (h :: t) =>
-      t.foldLeft((BinaryExpr(h._1, be, h._2), h._2)) ((tup, e) => {
-        val (tempRes, lhs) = tup 
-        val (op, rhs) = e 
-        (BinaryExpr(LAnd, tempRes, BinaryExpr(op, lhs, rhs)), rhs)
-      }   
-    )._1
-  }
-  lazy val compareOpBitOrPair: PackratParser[(Op, Expr)] = cop ~ bitOr ^^ {
+  lazy val comparison: PackratParser[Expr] = bitOr ~ rep1(compareOpBitOrPair) ^^ {
+    case be ~ lp => CompareExpr(be, lp)
+  } | bitOr
+  lazy val compareOpBitOrPair: PackratParser[(COp, Expr)] = cop ~ bitOr ^^ {
     case op ~ be => (op, be)
   }
   lazy val cop = (
@@ -313,9 +306,7 @@ trait TokenListParsers extends PackratParsers {
     // 2+ elem
     case Some(e ~ Some(el)) => TupleExpr(e +: el)
   }
-  lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ {
-    case e => GroupExpr(e)
-  }
+  lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ GroupExpr
   lazy val genexp: PackratParser[Expr] = "(" ~> (assignExpr | expression - ":=") ~ forIfClauses <~ ")" ^^ {
     case e ~ cel => GenExpr(e, cel)  
   }

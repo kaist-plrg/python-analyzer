@@ -22,16 +22,16 @@ object Beautifier {
     case ABool(b) => app ~ (if (b) "True" else "False")
     case ANone => app ~ "None"
     case ListExpr(l) =>
-      implicit val imp = ListApp[Expr]("[", ", ", "]")
+      implicit val lApp = ListApp[Expr]("[", ", ", "]")
       app ~ l
     case TupleExpr(tup) => tup match {
-      case head :: Nil => app ~ "(" ~ head ~ ",)"
+      case head :: Nil => app ~ "( " ~ head ~ ",)"
       case tup =>
-        implicit val imp = ListApp[Expr]("(", ", ", ")")
+        implicit val lApp = ListApp[Expr]("( ", ", ", ")")
         app ~ tup
       }
     case SetExpr(set) =>
-      implicit val imp = ListApp[Expr]("{", ", ", "}")
+      implicit val lApp = ListApp[Expr]("{", ", ", "}")
       app ~ set
     case DictExpr(map, given) => ???
     case KVPair(k, v) => ???
@@ -42,6 +42,12 @@ object Beautifier {
     case Slice(lb, ub, step) => ???
     case UnaryExpr(op, e) => app ~ op ~ " " ~ e
     case BinaryExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
+    case CompareExpr(h, lp) =>
+      implicit val pApp: App[(COp, Expr)] = {
+        case (app, (op, e)) => app ~ op ~ " " ~ e
+      }
+      implicit val lApp = ListApp[(COp, Expr)](" ", " ")
+      app ~ h ~ lp
     case AssignExpr(id, e) => app ~ id ~ " := " ~ e
     case CondExpr(c, t, e) => app ~ c ~ " if " ~ t ~ " else " ~ e
     case AwaitExpr(e) => app ~ "await " ~ e
@@ -52,7 +58,7 @@ object Beautifier {
     case SetCompExpr(target, comp) => ???
     case DictCompExpr(kv, comp) => ???
     case YieldExpr(el) => ???
-    case GroupExpr(e) => ???
+    case GroupExpr(e) => app ~ "( " ~ e ~ ")"
     case GenExpr(target, comp) => ???
   }
 

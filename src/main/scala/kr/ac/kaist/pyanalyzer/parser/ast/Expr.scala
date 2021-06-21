@@ -44,6 +44,7 @@ case class KeyRest(expr: Expr) extends Arg
 // 6.4-6.13 Arithmetic, Bitwise, Comparison
 case class UnaryExpr(op: Op, expr: Expr) extends Expr
 case class BinaryExpr(op: Op, lhs: Expr, rhs: Expr) extends Expr
+case class CompareExpr(head: Expr, lp: List[(COp, Expr)]) extends Expr
 case class AssignExpr(id: AId, expr: Expr) extends Expr
 case class CondExpr(ifExpr: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr
 case class AwaitExpr(expr: Expr) extends Expr
