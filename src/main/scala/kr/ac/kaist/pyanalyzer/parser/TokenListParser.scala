@@ -255,7 +255,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val primary: PackratParser[Expr] =
     // invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
-    primary ~ genexp ^^ {???} |
+    // primary ~ genexp ^^ {???} |
     primary ~ ("(" ~> opt(args) <~ ")") ^^ { 
       case f ~ None => Call(f, Args(List(), List(), List(), List()))
       case f ~ Some(args) => Call(f, args)
