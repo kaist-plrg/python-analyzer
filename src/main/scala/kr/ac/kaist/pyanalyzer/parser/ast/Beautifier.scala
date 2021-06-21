@@ -19,14 +19,17 @@ object Beautifier {
     case AIntLiteral(i) => app ~ s"$i"
     case AFloatLiteral(f) => app ~ s"$f"
     case AImagLiteral(i) => app ~ s"${i}j"
-    case ABool(b) => app ~ s"$b"
+    case ABool(b) => app ~ (if (b) "True" else "False")
     case ANone => app ~ "None"
     case ListExpr(l) =>
       implicit val imp = ListApp[Expr]("[", ", ", "]")
       app ~ l
-    case TupleExpr(tup) =>
-      implicit val imp = ListApp[Expr]("(", ", ", ")")
-      app ~ tup
+    case TupleExpr(tup) => tup match {
+      case head :: Nil => app ~ "(" ~ head ~ ",)"
+      case tup =>
+        implicit val imp = ListApp[Expr]("(", ", ", ")")
+        app ~ tup
+      }
     case SetExpr(set) =>
       implicit val imp = ListApp[Expr]("{", ", ", "}")
       app ~ set
