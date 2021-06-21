@@ -27,13 +27,15 @@ class ProdTest extends AnyFunSuite {
   for ((prod, p) <- prodMap) test(s"$prod") {
     for ((t, i) <- PEG_Grammar(prod).zipWithIndex) {
       val test: String = t
-      val first = beautify(doParse(p, test))
-      val second = try beautify(doParse(p, first)) catch {
+      val ast1 = doParse(p, test)
+      val beautified1 = beautify(ast1)
+      val ast2 = try doParse(p, beautified1) catch {
         case e: Exception =>
-          throw new RuntimeException(s"Second parsing/beautify failed!\n\ntest:\n$test\n\nfirst:\n$first\n\n$e")
+          throw new RuntimeException(s"Second parsing failed!\n\ntest:\n$test\n\nfirst:\n$beautified1\n\n$e")
       }
-      if (first != second)
-        throw new RuntimeException(s"Inconsistent result!\n\ntest:\n$test\n\nfirst:\n$first\n\nsecond:\n$second")
+      val beautified2 = beautify(ast2)
+      if (ast1 != ast2)
+        throw new RuntimeException(s"Inconsistent result!\n\ntest:\n$test\n\nfirst:\n$beautified1\n\nsecond:\n$beautified2")
     }
   }
 
