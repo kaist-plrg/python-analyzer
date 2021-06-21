@@ -532,7 +532,8 @@ trait TokenListParsers extends PackratParsers {
     "NamedExpr" -> namedExpr,
     "AssignExpr" -> assignExpr,
     "StarNamedExpr" -> starNamedExpr,
-    "StarNamedExprs" -> starNamedExprs,
+    // StarNamedExprs is intermediate production which doesn't produce AST
+    // "StarNamedExprs" -> starNamedExprs,
     "StarExpr" -> starExpr,
     "StarExprs" -> starExprs,
     "List" -> list,

@@ -5,14 +5,6 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object Beautifier {
-  implicit lazy val anyApp: App[Object] = (app, obj) => obj match {
-    // TODO: Handle List Of Node
-    case obj: List[Node] =>
-      implicit val imp = ListApp("_List(", ", ", ")")
-      imp(app, obj)
-    case obj: Node => nodeApp(app, obj)
-    case obj => ???
-  }
   implicit lazy val nodeApp: App[Node] = (app, node) => node match {
     case node: Expr => exprApp(app, node)
     case _ => ???
@@ -28,8 +20,8 @@ object Beautifier {
     case ABool(b) => app ~ s"$b"
     case ANone => app ~ "None"
     case ListExpr(l) =>
-      implicit val imp = ListApp("[", ", ", "]")
-      imp(app, l)
+      implicit val imp = ListApp[Expr]("[", ", ", "]")
+      app ~ l
     case _ => ???
   }
 }
