@@ -34,7 +34,7 @@ class ProdTest extends AnyFunSuite {
           throw new RuntimeException(s"Second parsing failed!\n\ntest:\n$test\n\nfirst:\n$beautified1\n\n$e")
       }
       val beautified2 = beautify(ast2)
-      if (ast1 != ast2)
+      if (beautified1 != beautified2)
         throw new RuntimeException(s"Inconsistent result!\n\ntest:\n$test\n\nfirst:\n$beautified1\n\nsecond:\n$beautified2")
     }
   }
