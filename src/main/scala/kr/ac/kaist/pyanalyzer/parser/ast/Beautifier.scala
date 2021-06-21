@@ -62,7 +62,8 @@ object Beautifier {
     case ListCompExpr(target, comp) => ???
     case SetCompExpr(target, comp) => ???
     case DictCompExpr(kv, comp) => ???
-    case YieldExpr(el) => ???
+    case YieldExpr(e) => app ~ "yield " ~ e
+    case YieldFromExpr(e) => app ~ "yield from " ~ e
     case GroupExpr(e) => app ~ "( " ~ e ~ ")"
     case GenExpr(target, comp) => ???
   }

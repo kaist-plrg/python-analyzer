@@ -62,6 +62,7 @@ case class SetCompExpr(target: Expr, comp: List[CompFor]) extends Expr
 case class DictCompExpr(kv: (Expr, Expr), comp: List[CompFor]) extends Expr
 
 // Generator
-case class YieldExpr(exprList: List[Expr]) extends Expr
+case class YieldExpr(opt: Option[Expr]) extends Expr
+case class YieldFromExpr(expr: Expr) extends Expr
 case class GroupExpr(expr: Expr) extends Expr // TODO understand meaning of this expression,
 case class GenExpr(target: Expr, comp: List[Expr]) extends Expr 

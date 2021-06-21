@@ -59,7 +59,7 @@ object Grammar {
     // TODO: Add Comps
     "Group" -> List(
       "(" ~ Prod("NamedExpr") ~ ")",
-      // TODO: Add yieldExpr
+      "(" ~ Prod("YieldExpr") ~ ")",
     ),
     "List" -> List(
       "[" ~ Opt(Prod("StarNamedExpr")) ~ "]",
@@ -128,7 +128,7 @@ object Grammar {
       Prod("BitOr") ~ "|" ~ Prod("BitXor"),
     ),
     "Cop" -> List(
-      "==", "!=", "<=", ">=", "<", ">", "not" ~ "in", "in", "is" ~ "not", "is"
+      "==", "!=", "<=", ">=", "<", ">", "not in", "in", "is not", "is"
     ),
     "Comparison" -> List(
       Prod("BitOr"),
@@ -179,6 +179,10 @@ object Grammar {
       Prod("StarExpr"),
       Prod("StarExpr") ~ ",",
       Prod("StarExpr") ~ Rep1("," ~ Prod("StarExpr")) ~ Opt(","),
+    ),
+    "YieldExpr" -> List(
+      "yield from" ~ Prod("Expression"),
+      "yield" ~ Opt(Prod("StarExpr")),
     ),
   )
 }

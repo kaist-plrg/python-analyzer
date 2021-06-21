@@ -316,7 +316,6 @@ trait TokenListParsers extends PackratParsers {
   lazy val setcomp: PackratParser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ {
     case e ~ complist => SetCompExpr(e, complist)
   } 
-  // TODO refactor this function
   lazy val dict: PackratParser[Expr] =  "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^  {
     x => DictExpr(x.getOrElse(Nil))
   }
@@ -340,14 +339,8 @@ trait TokenListParsers extends PackratParsers {
       case Some(_) ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, true)   
       case None ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, false)
     }
-  lazy val yieldExpr: PackratParser[Expr] =
-    ("yield" ~ "from") ~> expression ^^ {
-      case e => YieldExpr(List(e))
-    } |
-    "yield" ~> opt(starExprs) ^^ {
-      case Some(e) => YieldExpr(List(e))
-      case None => YieldExpr(List())
-    }
+  lazy val yieldExpr: PackratParser[Expr] = ("yield" ~ "from") ~> expression ^^
+    YieldFromExpr | "yield" ~> opt(starExprs) ^^ YieldExpr
   
   //////////////////////////////////////////////////////////////////
   // arguments
@@ -488,6 +481,10 @@ trait TokenListParsers extends PackratParsers {
 
   // TODO: Add more production
   val prodMap = Map(
+    "Group" -> group,
+    "List" -> list,
+    "Tuple" -> tuple,
+    "Set" -> set,
     "Atom" -> atom,
     "Primary" -> primary,
     "AwaitPrimary" -> awaitPrimary,
@@ -516,7 +513,5 @@ trait TokenListParsers extends PackratParsers {
     // "StarNamedExprs" -> starNamedExprs,
     "StarExpr" -> starExpr,
     "StarExprs" -> starExprs,
-    "List" -> list,
-    "Tuple" -> tuple,
-    "Set" -> set,
+    "YieldExpr" -> yieldExpr,
   )}
