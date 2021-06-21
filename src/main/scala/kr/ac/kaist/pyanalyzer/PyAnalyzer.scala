@@ -18,7 +18,6 @@ object PyAnalyzer {
   val commands: List[Command] = List(
     CmdHelp,
     CmdParseREPL,
-    CmdCheckProd,
   )
   val cmdMap = commands.foldLeft(Map[String, Command]()) {
     case (map, command) => map + (command.name -> command)

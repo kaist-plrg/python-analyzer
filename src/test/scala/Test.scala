@@ -3,9 +3,11 @@ package kr.ac.kaist.pyanalyzer
 import org.scalatest.funsuite.AnyFunSuite
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.parser.CheckProd
+import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.parser.Grammar._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
+import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.util.Random._
 import scala.Console._
 import java.io.File
@@ -22,13 +24,24 @@ class ProdTest extends AnyFunSuite {
 
   println(help)
 
-  val times = 10
+  for ((prod, p) <- prodMap) test(s"$prod") {
+    for ((t, i) <- PEG_Grammar(prod).zipWithIndex) {
+      val test: String = t
+      val first = beautify(doParse(p, test))
+      val second = try beautify(doParse(p, first)) catch {
+        case e: Exception =>
+          throw new RuntimeException(s"Second parsing/beautify failed!\n\ntest:\n$test\n\nfirst:\n$first\n\n$e")
+      }
+      if (first != second)
+        throw new RuntimeException(s"Inconsistent result!\n\ntest:\n$test\n\nfirst:\n$first\n\nsecond:\n$second")
+    }
+  }
 
-  // TODO: Handle too verbous prints
-  for (prod <- prodMap.keys) test(s"$prod") (
-    if (!CheckProd(prod, times = times)) assert(false)
-  )
-
+  def doParse(p: Parser[Node], t: String): Node =
+    p(new PackratReader(TokenReader(parseText(t)))) match {
+      case Success(res, rest) if rest.first == Newline => res
+      case res => throw new RuntimeException(s"$res")
+    }
 }
 
 // Test the read code
