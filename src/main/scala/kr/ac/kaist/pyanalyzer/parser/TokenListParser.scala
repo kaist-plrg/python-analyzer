@@ -31,6 +31,7 @@ trait TokenListParsers extends PackratParsers {
     else f(in.first)
   }
   
+ 
   // TODO write good failure messages
   // identifiers
   lazy val id: PackratParser[AId] = Parser(in => firstMap(in, _ match {
@@ -251,12 +252,8 @@ trait TokenListParsers extends PackratParsers {
     "await" ~> primary ^^ {
       case e => AwaitExpr(e)
     } | primary
-  // TODO Add invalid_
-  lazy val invalidPrimary: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
-    case _ => Failure(s"", in)
-  }))
   lazy val primary: PackratParser[Expr] =
-    // invalidPrimary |
+    invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
     primary ~ genexp ^^ {???} |
     primary ~ ("(" ~> opt(args) <~ ")") ^^ { 
@@ -315,10 +312,9 @@ trait TokenListParsers extends PackratParsers {
   lazy val setcomp: PackratParser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ {
     case e ~ complist => SetCompExpr(e, complist)
   } 
-  lazy val dict: PackratParser[Expr] =  "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^  {
+  lazy val dict: PackratParser[Expr] =  ("{" ~> opt(doubleStarredKvpairs) <~ "}" ^^  {
     x => DictExpr(x.getOrElse(Nil))
-  }
-    // | "{" ~> invalidDoudlbeStarredKvpairs <~ "}" ^^ { ??? }
+  }) | "{" ~> invalidDoubleStarredKvpairs <~ "}" 
   lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
     case kv ~ complist => DictCompExpr(kv, complist) 
   }
@@ -532,4 +528,23 @@ trait TokenListParsers extends PackratParsers {
     "StarExpr" -> starExpr,
     "StarExprs" -> starExprs,
     "YieldExpr" -> yieldExpr,
-  )}
+  )
+
+
+  /////////////////////////////////
+  // Invalid productions
+  ////////////////////////////////
+  // invalid productions accepts come ill-formed subexpr and raise syntax erorr early
+  def error(msg: String): Parser[Nothing] = Parser(in => firstMap(in, _ => Error(msg, in)))
+  lazy val invalidPrimary: Parser[Nothing] = (primary ~ "{").into(_ => error("invalid syntax"))
+  lazy val invalidDoubleStarredKvpairs: Parser[Nothing] =
+    ( repsep(doubleStarredKvpair, ",") ~ "," ~ invalidKvpair
+      | expression ~ ":" ~ "*" ~ bitOr
+      | expression ~ ":" ~ guard("}"|",") 
+    ).into(_ => error("invalid syntax")) //TODO : appropriate errormessage
+  lazy val invalidKvpair: Parser[Nothing] =
+    ( not(":")
+      | expression ~ ":" ~ "*" ~ bitOr
+      | expression ~ ":"
+    ).into(_ => error("invalid syntax")) //TODO : appropriate error msg
+}
