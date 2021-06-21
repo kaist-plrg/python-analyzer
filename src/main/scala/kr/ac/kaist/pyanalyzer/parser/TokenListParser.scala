@@ -317,29 +317,18 @@ trait TokenListParsers extends PackratParsers {
     case e ~ complist => SetCompExpr(e, complist)
   } 
   // TODO refactor this function
-  lazy val dict: PackratParser[Expr] = 
-    "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^ {
-      case None => DictExpr(List(), List())
-      case Some(kvs) => {
-        val folder: ((List[(Expr, Expr)], List[Expr]), Expr) => ((List[(Expr, Expr)], List[Expr])) =
-          (sum, elem) => elem match {
-            case KVPair(k, v) => sum match { case (kvl, gl) => (kvl :+ (k, v), gl) }
-            case e: Expr => sum match { case (kvl, gl) => (kvl, gl :+ e) }
-          }
-        val initKvl = List[(Expr, Expr)]()
-        val initGl = List[Expr]()
-        val (kvl, gl) = kvs.foldLeft( (initKvl, initGl) )(folder)
-        DictExpr(kvl, gl)    
-      }
-    }
+  lazy val dict: PackratParser[Expr] =  "{" ~> opt(doubleStarredKvpairs) <~ "}" ^^  {
+    x => DictExpr(x.getOrElse(Nil))
+  }
     // | "{" ~> invalidDoudlbeStarredKvpairs <~ "}" ^^ { ??? }
   lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
     case kv ~ complist => DictCompExpr(kv, complist) 
   }
-  lazy val doubleStarredKvpairs: PackratParser[List[Expr]] = repsep(doubleStarredKvpair, ",") <~ opt(",")
-  lazy val doubleStarredKvpair: PackratParser[Expr] = "**" ~> bitOr | kvPair 
-  lazy val kvPair: PackratParser[KVPair] = expression ~ (":" ~> expression) ^^ {
-    case e1 ~ e2 => KVPair(e1, e2)
+  lazy val doubleStarredKvpairs: PackratParser[List[(Expr, Expr)]] = rep1sep(doubleStarredKvpair, ",") <~ opt(",")
+  lazy val doubleStarredKvpair: PackratParser[(Expr, Expr)] =
+    "**" ~> bitOr ^^ { (EEmpty, _) } | kvPair
+  lazy val kvPair: PackratParser[(Expr, Expr)] = expression ~ (":" ~> expression) ^^ {
+    case e1 ~ e2 => (e1, e2)
   }
   // Comprehensions
   // 

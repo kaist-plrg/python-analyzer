@@ -33,8 +33,13 @@ object Beautifier {
     case SetExpr(set) =>
       implicit val lApp = ListApp[Expr]("{", ", ", "}")
       app ~ set
-    case DictExpr(map, given) => ???
-    case KVPair(k, v) => ???
+    case DictExpr(map) =>
+      implicit val pApp: App[(Expr, Expr)] = {
+        case (app, (EEmpty, v)) => app ~ "**" ~ v
+        case (app , (k, v)) => app ~ k ~ ": " ~ v
+      }
+      implicit val dApp = ListApp[(Expr, Expr)]("{", ", ", "}")
+      app ~ map
     case EAttrRef(prim, ref) => ???
     case ESubscript(prim, exprs) => ???
     case Slicing(prim, args) => ???

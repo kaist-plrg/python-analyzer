@@ -18,8 +18,7 @@ case object ANone extends Expr
 case class ListExpr(ls: List[Expr]) extends Expr
 case class TupleExpr(tup: List[Expr]) extends Expr
 case class SetExpr(set: List[Expr]) extends Expr
-case class DictExpr(map: List[(Expr, Expr)], given: List[Expr]) extends Expr
-case class KVPair(k: Expr, v: Expr) extends Expr
+case class DictExpr(map: List[(Expr, Expr)]) extends Expr
 
 // Primary expressions except atom
 case class EAttrRef(prim: Expr, ref: AId) extends Expr
@@ -60,7 +59,7 @@ case class StarExpr(expr: Expr) extends Expr
 case class CompFor(targets: List[Expr], inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
 case class ListCompExpr(target: Expr, comp: List[CompFor]) extends Expr
 case class SetCompExpr(target: Expr, comp: List[CompFor]) extends Expr
-case class DictCompExpr(kv: KVPair, comp: List[CompFor]) extends Expr
+case class DictCompExpr(kv: (Expr, Expr), comp: List[CompFor]) extends Expr
 
 // Generator
 case class YieldExpr(exprList: List[Expr]) extends Expr
