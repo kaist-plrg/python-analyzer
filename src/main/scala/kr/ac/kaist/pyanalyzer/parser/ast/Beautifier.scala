@@ -6,11 +6,13 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object Beautifier {
   implicit lazy val nodeApp: App[Node] = (app, node) => node match {
-    case node: Expr => exprApp(app, node)
+    case e: Expr => exprApp(app, e)
+    case node: Op => opApp(app, node)
     case _ => ???
   }
 
   implicit lazy val exprApp: App[Expr] = (app, expr) => expr match {
+    case EEmpty => ???
     case AId(x) => app ~ x
     case AStringLiteral(str) => app ~ s""""$str""""
     case ABytesLiteral(b) => app ~ s"b$b"
@@ -22,6 +24,65 @@ object Beautifier {
     case ListExpr(l) =>
       implicit val imp = ListApp[Expr]("[", ", ", "]")
       app ~ l
-    case _ => ???
+    case TupleExpr(tup) =>
+      implicit val imp = ListApp[Expr]("(", ", ", ")")
+      app ~ tup
+    case SetExpr(set) =>
+      implicit val imp = ListApp[Expr]("{", ", ", "}")
+      app ~ set
+    case DictExpr(map, given) => ???
+    case KVPair(k, v) => ???
+    case EAttrRef(prim, ref) => ???
+    case ESubscript(prim, exprs) => ???
+    case Slicing(prim, args) => ???
+    case Call(prim, args) => ???
+    case Slice(lb, ub, step) => ???
+    case UnaryExpr(op, e) => app ~ op ~ " " ~ e
+    case BinaryExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
+    case AssignExpr(id, e) => app ~ id ~ " := " ~ e
+    case CondExpr(c, t, e) => app ~ c ~ " if " ~ t ~ " else " ~ e
+    case AwaitExpr(e) => app ~ "await " ~ e
+    case LambdaExpr(param, e) => ???
+    case StarExpr(e) => app ~ "*" ~ e
+    case CompFor(targets, inExpr, ifExpr, async) => ???
+    case ListCompExpr(target, comp) => ???
+    case SetCompExpr(target, comp) => ???
+    case DictCompExpr(kv, comp) => ???
+    case YieldExpr(el) => ???
+    case GroupExpr(e) => ???
+    case GenExpr(target, comp) => ???
+  }
+
+  implicit lazy val opApp: App[Op] = (app, op) => op match {
+    case AugAssignOp(op) => ???
+    case OLShift => app ~ "<<"
+    case ORShift => app ~ ">>"
+    case OAdd => app ~ "+"
+    case OSub => app ~ "-"
+    case OMul => app ~ "*"
+    case ODiv => app ~ "/"
+    case OIDiv => app ~ "//"
+    case OMod => app ~ "%"
+    case OAt => app ~ "@"
+    case OPow => app ~ "**"
+    case OBAnd => app ~ "&"
+    case OBOr => app ~ "|"
+    case OBXor => app ~ "^"
+    case CEq => app ~ "=="
+    case CNeq => app ~ "!="
+    case CLte => app ~ "<="
+    case CLt => app ~ "<"
+    case CGte => app ~ ">="
+    case CGt => app ~ ">"
+    case CNotIn => app ~ "not in"
+    case CIn => app ~ "in"
+    case CIsNot => app ~ "is not"
+    case CIs => app ~ "is"
+    case LNot => app ~ "not"
+    case LAnd => app ~ "and"
+    case LOr => app ~ "or"
+    case UPlus => app ~ "+"
+    case UMinus => app ~ "-"
+    case UInv => app ~ "~"
   }
 }

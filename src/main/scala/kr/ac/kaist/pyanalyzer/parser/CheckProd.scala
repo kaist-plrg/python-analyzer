@@ -1,9 +1,11 @@
 package kr.ac.kaist.pyanalyzer.parser
 
 import kr.ac.kaist.pyanalyzer.PyAnalyzer.Command
+import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.Grammar._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
+import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 import scala.util.Try
 
@@ -25,7 +27,7 @@ object CheckProd {
       doParse(parser, testGenerator) match {
         case Success(res, rest) if rest.first == Newline =>
           println("parsed result:")
-          println(res)
+          println(beautify(res))
           println
           true
         case res =>

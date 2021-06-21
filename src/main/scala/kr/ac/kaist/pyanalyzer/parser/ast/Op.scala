@@ -3,7 +3,8 @@ package kr.ac.kaist.pyanalyzer.parser.ast
 sealed trait Op extends Node
 
 case class AugAssignOp(op: String) extends Op
-case class CompareOp(op: String) extends Op
+// TODO: discuss
+// case class CompareOp(op: String) extends Op
 
 // binary operators
 sealed trait BOp extends Op
@@ -15,7 +16,6 @@ case object OMul extends BOp
 case object ODiv extends BOp
 case object OIDiv extends BOp
 case object OMod extends BOp
-case object OMMul extends BOp // TODO what this mean?
 case object OAt extends BOp
 case object OPow extends BOp
 case object OBAnd extends BOp
