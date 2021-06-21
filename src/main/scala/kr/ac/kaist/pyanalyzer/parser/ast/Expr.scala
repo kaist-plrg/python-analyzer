@@ -23,7 +23,6 @@ case class DictExpr(map: List[(Expr, Expr)]) extends Expr
 // Primary expressions except atom
 case class EAttrRef(prim: Expr, ref: AId) extends Expr
 case class ESubscript(prim: Expr, exprs: List[Expr]) extends Expr
-case class Slicing(prim: Expr, slices: List[Expr]) extends Expr
 case class Call(prim: Expr, args: Args) extends Expr
 
 // Subexpression constructs
@@ -56,7 +55,7 @@ case class StarExpr(expr: Expr) extends Expr
 
 // Generator, Comprehension related
 // TODO understand generator and comprehension
-case class CompFor(targets: List[Expr], inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
+case class CompFor(targets: Expr, inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
 case class ListCompExpr(target: Expr, comp: List[CompFor]) extends Expr
 case class SetCompExpr(target: Expr, comp: List[CompFor]) extends Expr
 case class DictCompExpr(kv: (Expr, Expr), comp: List[CompFor]) extends Expr

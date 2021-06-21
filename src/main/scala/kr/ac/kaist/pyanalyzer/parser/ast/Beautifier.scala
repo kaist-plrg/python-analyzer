@@ -42,7 +42,6 @@ object Beautifier {
       app ~ map
     case EAttrRef(prim, ref) => ???
     case ESubscript(prim, exprs) => ???
-    case Slicing(prim, args) => ???
     case Call(prim, args) => ???
     case Slice(lb, ub, step) => ???
     case UnaryExpr(op, e) => app ~ op ~ " " ~ e

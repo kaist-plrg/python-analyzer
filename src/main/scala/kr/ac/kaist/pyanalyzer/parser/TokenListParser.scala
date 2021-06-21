@@ -122,7 +122,7 @@ trait TokenListParsers extends PackratParsers {
     case x ~ e => AssignExpr(x, e)
   }
   lazy val namedExpr: PackratParser[Expr] =
-    assignExpr | expression - ":="
+    assignExpr | expression <~ not(":=")
   lazy val expressions: PackratParser[Expr] = expression ~ rep1("," ~> expression) <~ opt(",") ^^ {
     case e ~ le => TupleExpr(e :: le)
   } | expression <~ "," ^^ {
@@ -258,19 +258,18 @@ trait TokenListParsers extends PackratParsers {
   lazy val primary: PackratParser[Expr] =
     // invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
-    // primary ~ genexp ^^ {???} |
+    primary ~ genexp ^^ {???} |
     primary ~ ("(" ~> opt(args) <~ ")") ^^ { 
       case f ~ None => Call(f, Args(List(), List(), List(), List()))
       case f ~ Some(args) => Call(f, args)
     } |
     primary ~ ("[" ~> slices <~ "]") ^^ {
-      case p ~ sel => Slicing(p, sel)
+      case p ~ s => ESubscript(p, s)
     } |
     atom
   // TODO slices
-  lazy val slices: PackratParser[List[Expr]] =
-    slice <~ not(",") ^^ { case se => List(se) } |
-    repsep(slice, ",") <~ opt(",") ^^ { case sel => sel }
+  lazy val slices: PackratParser[List[Expr]] = slice <~ not(",") ^^ { List(_) } |
+    rep1sep(slice, ",") <~ opt(",")
   lazy val slice: PackratParser[Expr] =
     opt(expression) ~ (":" ~> opt(expression)) ~ opt(":" ~> opt(expression)) ^^ {
       case o1 ~ o2 ~ None => Slice(o1, o2, None)
@@ -307,7 +306,7 @@ trait TokenListParsers extends PackratParsers {
     case Some(e ~ Some(el)) => TupleExpr(e +: el)
   }
   lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ GroupExpr
-  lazy val genexp: PackratParser[Expr] = "(" ~> (assignExpr | expression - ":=") ~ forIfClauses <~ ")" ^^ {
+  lazy val genexp: PackratParser[Expr] = "(" ~> (assignExpr | expression <~ not(":=")) ~ forIfClauses <~ ")" ^^ {
     case e ~ cel => GenExpr(e, cel)  
   }
   lazy val set: PackratParser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ {
@@ -394,15 +393,34 @@ trait TokenListParsers extends PackratParsers {
   //////////////////////////////////////////////////////////////////
 
   // targets
-  // TODO complete this (last part of full grammar)
-  lazy val starTargets: PackratParser[List[Expr]] =  
-    starTarget - "," ^^ { ??? } |
-    repsep(starTarget, ",") <~ opt(",") ^^ { ??? }
-  lazy val starTargetsListSeq: PackratParser[List[Expr]] =
-    repsep(starTarget, ",") <~ opt(",") ^^ { ??? }
-  lazy val starTargetTupleSeq: PackratParser[List[Expr]] =
-    repsep(starTarget, ",") <~ opt(",") ^^ { ??? }
-  lazy val starTarget: PackratParser[Expr] = ???
+  lazy val starTargets: PackratParser[Expr] =  starTarget <~ not(",") |
+    rep1sep(starTarget, ",") <~ opt(",") ^^ TupleExpr
+  lazy val starTargetsListSeq: PackratParser[List[Expr]] = rep1sep(starTarget, ",") <~ opt(",")
+  lazy val starTargetsTupleSeq: PackratParser[List[Expr]] = starTarget ~ rep1("," ~> starTarget) <~ opt(",") ^^ {
+    case st ~ ls => st :: ls
+  } | starTarget <~ "," ^^ { List(_) }
+  lazy val starTarget: PackratParser[Expr] = ("*" ~ not("*")) ~> starTarget ^^ StarExpr |
+    targetWithStarAtom
+  lazy val targetWithStarAtom: PackratParser[Expr] = tPrimary ~ ("." ~> id <~ not(tLookahead)) ^^ {
+    case prim ~ x => EAttrRef(prim, x)
+  } | tPrimary ~ ("[" ~> slices <~ "]" ~ not(tLookahead)) ^^ {
+    case prim ~ s => ESubscript(prim, s)
+  } | starAtom
+  lazy val starAtom: PackratParser[Expr] = id|
+    "(" ~> targetWithStarAtom <~ ")" |
+    "(" ~> starTargetsTupleSeq <~ ")" ^^ TupleExpr |
+    "[" ~> starTargetsListSeq <~ "]" ^^ ListExpr
+  lazy val tPrimary: PackratParser[Expr] = tPrimary ~ ("." ~> id <~ not(tLookahead)) ^^ {
+    case prim ~ x => EAttrRef(prim, x)
+  } | tPrimary ~ ("[" ~> slices <~ "]" ~ not(tLookahead)) ^^ {
+    case prim ~ s => ESubscript(prim, s)
+  } | tPrimary ~ genexp <~ not(tLookahead) ^^ {
+  // TODO: Update call
+    case prim ~ gen => Call(prim, ???))
+  } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ not(tLookahead)) ^^ {
+    case prim ~ opt => Call(prim, opt.getOrElse(Args(Nil, Nil, Nil, Nil)))
+  } | atom <~ not(tLookahead)
+  lazy val tLookahead: PackratParser[String] = "(" | "[" | "."
   // ...
   lazy val targets: PackratParser[List[Expr]] =
     repsep(target, ",") <~ opt(",") ^^ { ??? } 
