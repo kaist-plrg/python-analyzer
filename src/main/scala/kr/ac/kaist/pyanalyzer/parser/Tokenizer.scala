@@ -55,7 +55,6 @@ case class IndentParsers(lineParser: String => List[Token]) {
 // TODO change to Parser[Token]
 object Tokenizer extends Tokenizers
 trait Tokenizers extends RegexParsers {
-  override def skipWhitespace = false
   // line, comments, indents, whitespaces
   lazy val line = ".*\n".r
   lazy val comments = "#.*\n".r
