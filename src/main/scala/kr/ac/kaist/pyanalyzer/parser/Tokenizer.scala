@@ -65,9 +65,9 @@ trait Tokenizers extends RegexParsers {
   // identifier 
   lazy val id_start = """\w""".r
   lazy val id_continue = """\w*""".r
-  lazy val identifier: Parser[Id] = log((id_start ~ id_continue) ^^ {
+  lazy val identifier: Parser[Id] = (id_start ~ id_continue) ^^ {
     case st ~ cts => Id(st + cts.mkString(""))
-  })("id")
+  }
 
   // keywords
   val keywords = List(
@@ -77,7 +77,7 @@ trait Tokenizers extends RegexParsers {
     "import", "in", "is", "lambda", "nonlocal", "not", "or",
     "pass", "raise", "return", "try", "while", "with", "yield",
   )
-  lazy val keyword = log(keywords.mkString("|").r ^^ { case s => Keyword(s)})("keyword")
+  lazy val keyword = keywords.mkString("|").r ^^ { case s => Keyword(s)}
 
   // literals
   lazy val quote = "['\"]".r
