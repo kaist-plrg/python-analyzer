@@ -120,7 +120,7 @@ object Grammar {
     // TODO: Add negative lookahead
     "TargetWithStarAtom" -> List(
       Prod("StarAtom"),
-      Prod("TPrimary") ~ ".id",
+      Prod("TPrimary") ~ "." ~ "id",
       // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
     ),
     "StarAtom" -> List(
@@ -132,14 +132,15 @@ object Grammar {
     // TODO: Add negative lookahead
     "TPrimary" -> List(
       Prod("Atom"),
-      Prod("TPrimary") ~ ".id",
+      Prod("TPrimary") ~ "." ~ "id",
       // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
       // genexp
       // call
     // Expression
     ),
     "Atom" -> List(
-      "1", "1.0", "1j",
+      // "1",
+      "1.0", "1j",
       "True", "False",
       "id",
       """"str"""",
@@ -154,7 +155,7 @@ object Grammar {
     ),
     "Primary" -> List(
       Prod("Atom"),
-      // TODO complex primary production
+      Prod("Primary") ~ "." ~ "id",
     ),
     "AwaitPrimary" -> List(
       Prod("Primary"),
