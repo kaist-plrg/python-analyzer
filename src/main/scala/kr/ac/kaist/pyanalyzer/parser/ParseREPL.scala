@@ -60,8 +60,9 @@ case object CmdParseREPL extends Command {
           new PackratReader(TokenListParser.TokenReader(tokens))
         )
         println(parseResult)
-        println(beautify(parseResult.get))
-        // Try(parseResult.get).map(x => println(beautify(x)))
+        try println(beautify(parseResult.get)) catch {
+          case e => println(e)
+        }
       })
     } catch {
       case e: EndOfFileException => println("quit")
