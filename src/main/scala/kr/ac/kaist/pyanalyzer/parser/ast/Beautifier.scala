@@ -25,9 +25,9 @@ object Beautifier {
       implicit val lApp = ListApp[Expr]("[", ", ", "]")
       app ~ l
     case TupleExpr(tup) => tup match {
-      case head :: Nil => app ~ "( " ~ head ~ ",)"
+      case head :: Nil => app ~ "(" ~ head ~ ",)"
       case tup =>
-        implicit val lApp = ListApp[Expr]("( ", ", ", ")")
+        implicit val lApp = ListApp[Expr]("(", ", ", ")")
         app ~ tup
       }
     case SetExpr(set) =>
@@ -63,7 +63,7 @@ object Beautifier {
     case DictCompExpr(kv, comp) => ???
     case YieldExpr(e) => app ~ "yield " ~ e
     case YieldFromExpr(e) => app ~ "yield from " ~ e
-    case GroupExpr(e) => app ~ "( " ~ e ~ ")"
+    case GroupExpr(e) => app ~ "(" ~ e ~ ")"
     case GenExpr(target, comp) => ???
   }
 
