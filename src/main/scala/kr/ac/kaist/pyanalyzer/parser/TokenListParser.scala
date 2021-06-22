@@ -29,8 +29,7 @@ trait TokenListParsers extends PackratParsers {
   private def firstMap[T](in: Input, f: Token => ParseResult[T]): ParseResult[T] = {
     if (in.atEnd) Failure("EOF", in)
     else f(in.first)
-  }
-  
+  } 
  
   // TODO write good failure messages
   // identifiers
@@ -53,13 +52,6 @@ trait TokenListParsers extends PackratParsers {
   lazy val delim: PackratParser[String] = Parser(in => firstMap(in, _ match {
     case Delim(s) => Success(s, in.rest)
     case t => Failure(s"", in)
-  }))
-
-  lazy val namedLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
-    case Keyword(s) if s == ABool(true) => Success(ABool(true), in.rest)
-    case Keyword(s) if s == ABool(false) => Success(ABool(false), in.rest)
-    case Keyword(s) if s == ANone => Success(ANone, in.rest)
-    case _ => Failure(s"", in)
   }))
   
   // literals, number, name(id)
@@ -275,9 +267,10 @@ trait TokenListParsers extends PackratParsers {
   
   // atoms : literal-like production
   lazy val atom: PackratParser[Expr] =
-    id  |
+    id |
     "True" ^^^ ABool(true) |
     "False" ^^^  ABool(false) |
+    "None" ^^^ ANone | 
     strings |
     number |
     (tuple | group | genexp) |
@@ -285,8 +278,9 @@ trait TokenListParsers extends PackratParsers {
     (dict | set | dictcomp | setcomp)
 
   // TODO make primitive parser for these
-  // TODO complete comprehensions
   lazy val strings: PackratParser[Expr] = stringLiteral
+  
+  // Displays (plain & comprehension)
   lazy val list: PackratParser[Expr] = "[" ~> opt(starNamedExprs) <~ "]" ^^ {
     case Some(el) => ListExpr(el) 
     case None => ListExpr(List())
@@ -306,15 +300,13 @@ trait TokenListParsers extends PackratParsers {
   lazy val genexp: PackratParser[Expr] = "(" ~> ((assignExpr | expression <~ not(":=")) ~ forIfClauses) <~ ")" ^^ {
     case e ~ cel => GenExpr(e, cel)  
   }
-  lazy val set: PackratParser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ {
-    case el => SetExpr(el)
-  }
+  lazy val set: PackratParser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ SetExpr
   lazy val setcomp: PackratParser[Expr] = "{" ~> namedExpr ~ forIfClauses <~ "}" ^^ {
     case e ~ complist => SetCompExpr(e, complist)
   } 
   lazy val dict: PackratParser[Expr] =  ("{" ~> opt(doubleStarredKvPairs) <~ "}" ^^  {
     x => DictExpr(x.getOrElse(Nil))
-  }) //| "{" ~> invalidDoubleStarredKvPairs <~ "}" 
+  }) | "{" ~> invalidDoubleStarredKvpairs <~ "}" 
   lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
     case kv ~ complist => DictCompExpr(kv, complist) 
   }
@@ -324,19 +316,19 @@ trait TokenListParsers extends PackratParsers {
   lazy val kvPair: PackratParser[(Expr, Expr)] = expression ~ (":" ~> expression) ^^ {
     case e1 ~ e2 => (e1, e2)
   }
+
   // Comprehensions
-  // 
   lazy val forIfClauses: PackratParser[List[CompFor]] = rep1(forIfClause) 
-  // comp_for
-  // this returns CompExpr
-  lazy val forIfClause: PackratParser[CompFor] =
+  lazy val forIfClause: PackratParser[CompFor] = // Note. forIfClause same with comp_for
     (opt("async") <~ "for") ~ starTargets ~ ("in" ~> disjunction ~ rep("if" ~> disjunction)) ^^ {
       case Some(_) ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, true)   
       case None ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, false)
     }
-  lazy val yieldExpr: PackratParser[Expr] = ("yield" ~ "from") ~> expression ^^
+  lazy val yieldExpr: PackratParser[Expr] = 
+    ("yield" ~ "from") ~> expression ^^ 
     YieldFromExpr | "yield" ~> opt(starExprs) ^^ YieldExpr
-  
+    // TODO: scala operator precedance problem here with | 
+
   //////////////////////////////////////////////////////////////////
   // arguments
   // Caution: very complex
@@ -387,8 +379,8 @@ trait TokenListParsers extends PackratParsers {
     id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | "**" ~> expression ^^ KeyRest
 
   //////////////////////////////////////////////////////////////////
-
   // targets
+  //////////////////////////////////////////////////////////////////
   lazy val starTargets: PackratParser[Expr] =  starTarget <~ not(",") |
     rep1sep(starTarget, ",") <~ opt(",") ^^ TupleExpr
   lazy val starTargetsListSeq: PackratParser[List[Expr]] = rep1sep(starTarget, ",") <~ opt(",")
