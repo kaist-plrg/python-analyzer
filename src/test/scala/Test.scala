@@ -24,8 +24,13 @@ class ProdTest extends AnyFunSuite {
 
   println(help)
 
+  val times = 10
+
   for ((prod, p) <- prodMap) test(s"$prod") {
-    for ((t, i) <- PEG_Grammar(prod).zipWithIndex) {
+    for {
+      (t, i) <- PEG_Grammar(prod).zipWithIndex
+      time <- 1 to times
+    } {
       val test: String = t
       val ast1 = doParse(p, test)
       val beautified1 = beautify(ast1)
