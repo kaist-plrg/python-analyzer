@@ -40,8 +40,11 @@ object Beautifier {
       }
       implicit val dApp = ListApp[(Expr, Expr)]("{", ", ", "}")
       app ~ map
-    case EAttrRef(prim, ref) => ???
-    case ESubscript(prim, exprs) => ???
+    case EAttrRef(prim, ref) => app ~ prim ~ "." ~ ref
+    case ESubscript(prim, e) =>
+      // TODO: Check
+      implicit val lApp = ListApp[Expr]("[", ", ", "]")
+      app ~ prim ~ e
     case Call(prim, args) => ???
     case Slice(lb, ub, step) => ???
     case UnaryExpr(op, e) => app ~ op ~ " " ~ e
@@ -57,7 +60,10 @@ object Beautifier {
     case AwaitExpr(e) => app ~ "await " ~ e
     case LambdaExpr(param, e) => ???
     case StarExpr(e) => app ~ "*" ~ e
-    case CompFor(targets, inExpr, ifExpr, async) => ???
+    case CompFor(target, inExpr, ifExpr, async) =>
+      implicit val lApp = ListApp[Expr](" ", " if ")
+      app ~ (if (async) "async" else "") ~
+        " for " ~ target ~ " in " ~ inExpr ~ ifExpr
     case ListCompExpr(target, comp) => ???
     case SetCompExpr(target, comp) => ???
     case DictCompExpr(kv, comp) => ???

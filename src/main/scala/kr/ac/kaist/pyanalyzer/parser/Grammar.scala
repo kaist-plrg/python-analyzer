@@ -46,7 +46,7 @@ object Grammar {
   def Opt(t: TestGenerator): TestGenerator =
     if (nextInt(2) == 0) "" else t
 
-  def RepSep1(t: TestGenerator, sep: String): TestGenerator = t ~ Rep1(sep ~ t)
+  def Rep1Sep(t: TestGenerator, sep: String): TestGenerator = t ~ Rep1(sep ~ t)
 
   implicit def toTestGenerator(str: String): TestGenerator = Normal(str)
 
@@ -56,19 +56,87 @@ object Grammar {
 
   // TODO: Add more grammar
   val PEG_Grammar: Map[String, List[TestGenerator]] = Map(
-    // TODO: Add Comps
     "Group" -> List(
       "(" ~ Prod("NamedExpr") ~ ")",
       "(" ~ Prod("YieldExpr") ~ ")",
     ),
+    // Data Structures
     "List" -> List(
       "[" ~ Opt(Prod("StarNamedExpr")) ~ "]",
+    ),
+    "Listcomp" -> List(
+      "[" ~ Prod("NamedExpr") ~ Prod("ForIfClauses") ~ "]",
     ),
     "Tuple" -> List(
       "(" ~ Opt(Prod("StarNamedExpr") ~ "," ~ Opt(Prod("StarNamedExpr"))) ~ ")",
     ),
     "Set" -> List(
       "{" ~ Prod("StarNamedExpr") ~ "}",
+    ),
+    "Setcomp" -> List(
+      "{" ~ Prod("NamedExpr") ~ Prod("ForIfClauses") ~ "}",
+    ),
+    "Dict" -> List(
+      "{" ~ Opt(Prod("DoubleStarredKvPairs")) ~ "}",
+    ),
+    "Dictcomp" -> List(
+      "{" ~ Prod("KvPair") ~ Prod("ForIfClauses") ~ "}",
+    ),
+    "DoubleStarredKvPairs" -> List(
+      Rep1Sep(Prod("DoubleStarredKvPair"), ",") ~ Opt(","),
+    ),
+    "DoubleStarredKvPair" -> List(
+      "**" ~ Prod("BitOr"),
+      Prod("KvPair"),
+    ),
+    "KvPair" -> List(
+      Prod("Expression") ~ ":" ~ Prod("Expression")
+    ),
+    // Comprehension
+    "ForIfClauses" -> List(
+      Rep1(Prod("ForIfClause")),
+    ),
+    "ForIfClause" -> List(
+      Opt("async") ~ "for" ~ Prod("StarTargets") ~ "in" ~ Prod("Disjunction") ~
+        Opt("if" ~ Prod("Disjunction")),
+    ),
+    "StarTargets" -> List(
+      // TODO: Add negative lookahead
+      Prod("StarTarget"),
+      Prod("StarTarget") ~ Rep("," ~ Prod("StarTarget")) ~ Opt(",")
+    ),
+    "StarTargetsListSeq" -> List(
+      Rep1Sep(Prod("StarTarget"), ",") ~ Opt(","),
+    ),
+    "StarTargetsTupleSeq" -> List(
+      Prod("StarTarget") ~ ",",
+      Prod("StarTarget") ~ Rep1("," ~ Prod("StarTarget")) ~ Opt(","),
+    ),
+    "StarTarget" -> List(
+      Prod("TargetWithStarAtom"),
+      // TODO: Add negative lookahead
+      "*" ~ Prod("StarTarget"),
+    ),
+    // TODO: Add negative lookahead
+    "TargetWithStarAtom" -> List(
+      Prod("StarAtom"),
+      Prod("TPrimary") ~ ".id",
+      // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
+    ),
+    "StarAtom" -> List(
+      "id",
+      "(" ~ Prod("TargetWithStarAtom") ~ ")",
+      "(" ~ Opt(Prod("StarTargetsTupleSeq")) ~ ")",
+      "[" ~ Opt(Prod("StarTargetsListSeq")) ~ "]",
+    ),
+    // TODO: Add negative lookahead
+    "TPrimary" -> List(
+      Prod("Atom"),
+      Prod("TPrimary") ~ ".id",
+      // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
+      // genexp
+      // call
+    // Expression
     ),
     "Atom" -> List(
       "1", "1.0", "1j",
@@ -169,7 +237,7 @@ object Grammar {
       "*" ~ Prod("BitOr"),
     ),
     "StarNamedExprs" -> List(
-      RepSep1(Prod("StarNamedExpr"), ",") ~ Opt(","),
+      Rep1Sep(Prod("StarNamedExpr"), ",") ~ Opt(","),
     ),
     "StarExpr" -> List(
       Prod("Expression"),
