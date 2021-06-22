@@ -306,7 +306,7 @@ trait TokenListParsers extends PackratParsers {
   } 
   lazy val dict: PackratParser[Expr] =  ("{" ~> opt(doubleStarredKvPairs) <~ "}" ^^  {
     x => DictExpr(x.getOrElse(Nil))
-  }) | "{" ~> invalidDoubleStarredKvpairs <~ "}" 
+  }) | "{" ~> invalidDoubleStarredKvPairs <~ "}" 
   lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
     case kv ~ complist => DictCompExpr(kv, complist) 
   }
