@@ -253,7 +253,7 @@ trait TokenListParsers extends PackratParsers {
       case e => AwaitExpr(e)
     } | primary
   lazy val primary: PackratParser[Expr] =
-    // invalidPrimary |
+    // //invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
     // primary ~ genexp ^^ {???} |
     primary ~ ("(" ~> opt(args) <~ ")") ^^ { 
@@ -303,7 +303,7 @@ trait TokenListParsers extends PackratParsers {
     case Some(e ~ Some(el)) => TupleExpr(e +: el)
   }
   lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ GroupExpr
-  lazy val genexp: PackratParser[Expr] = "(" ~> (assignExpr | expression <~ not(":=")) ~ forIfClauses <~ ")" ^^ {
+  lazy val genexp: PackratParser[Expr] = "(" ~> ((assignExpr | expression <~ not(":=")) ~ forIfClauses) <~ ")" ^^ {
     case e ~ cel => GenExpr(e, cel)  
   }
   lazy val set: PackratParser[Expr] = "{" ~> starNamedExprs <~ "}" ^^ {
@@ -538,6 +538,7 @@ trait TokenListParsers extends PackratParsers {
   ////////////////////////////////
   // invalid productions accepts come ill-formed subexpr and raise syntax erorr early
   def error(msg: String): Parser[Nothing] = Parser(in => firstMap(in, _ => Error(msg, in)))
+
   lazy val invalidPrimary: Parser[Nothing] = (primary ~ "{").into(_ => error("invalid syntax"))
   lazy val invalidDoubleStarredKvpairs: Parser[Nothing] =
     ( repsep(doubleStarredKvpair, ",") ~ "," ~ invalidKvpair

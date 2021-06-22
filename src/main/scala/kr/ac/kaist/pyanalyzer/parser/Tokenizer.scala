@@ -55,6 +55,7 @@ case class IndentParsers(lineParser: String => List[Token]) {
 // TODO change to Parser[Token]
 object Tokenizer extends Tokenizers
 trait Tokenizers extends RegexParsers {
+  override def skipWhitespace = false
   // line, comments, indents, whitespaces
   lazy val line = ".*\n".r
   lazy val comments = "#.*\n".r
@@ -70,13 +71,14 @@ trait Tokenizers extends RegexParsers {
   }
 
   // keywords
-  lazy val keyword = List(
+  val keywords = List(
     "False", "None", "True", "and", "as", "assert", "async",
     "await", "break", "class", "continue", "def", "del", "elif",
     "else", "except", "finally", "for", "from", "global", "if",
     "import", "in", "is", "lambda", "nonlocal", "not", "or",
     "pass", "raise", "return", "try", "while", "with", "yield",
-  ).mkString("|").r ^^ { case s => Keyword(s)}
+  )
+  lazy val keyword = keywords.mkString("|").r ^^ { case s => Keyword(s)}
 
   // literals
   lazy val quote = "['\"]".r
@@ -99,9 +101,9 @@ trait Tokenizers extends RegexParsers {
   lazy val nonZeroDigit = "[1-9]".r
   lazy val decInteger: Parser[(String, Int)] = "[0-9]+".r ^^ { (_, 10) } 
   //lazy val decInteger: Parser[(String, Int)] = """[([1-9](_\d)*)(0+(_?0)*)]""".r ^^ { (_, 10) }
-  lazy val binInteger: Parser[(String, Int)] = "[(0b)(0B)](_?[0-1])+".r ^^ { (_, 2) }
-  lazy val octInteger: Parser[(String, Int)] = "[(0o)(0O)](_?[0-7])+".r ^^ { (_, 8) }
-  lazy val hexInteger: Parser[(String, Int)] = "[(0x)(0X)](_?[0-7[a-f][A-F]])+".r ^^ { (_, 16) }
+  lazy val binInteger: Parser[(String, Int)] = "((0b)|(0B))(_?[0-1])+".r ^^ { (_, 2) }
+  lazy val octInteger: Parser[(String, Int)] = "((0o)|(0O))(_?[0-7])+".r ^^ { (_, 8) }
+  lazy val hexInteger: Parser[(String, Int)] = "((0x)|(0X))(_?[0-7[a-f][A-F]])+".r ^^ { (_, 16) }
   lazy val integer: Parser[IntLiteral] = (decInteger | binInteger | octInteger | hexInteger) ^^ {
     case (s, b) => IntLiteral(Integer.parseInt(s, b)) 
   }
