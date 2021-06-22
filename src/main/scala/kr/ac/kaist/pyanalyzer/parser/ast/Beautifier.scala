@@ -61,12 +61,24 @@ object Beautifier {
     case LambdaExpr(param, e) => ???
     case StarExpr(e) => app ~ "*" ~ e
     case CompFor(target, inExpr, ifExpr, async) =>
-      implicit val lApp = ListApp[Expr](" ", " if ")
-      app ~ (if (async) "async" else "") ~
-        " for " ~ target ~ " in " ~ inExpr ~ ifExpr
-    case ListCompExpr(target, comp) => ???
-    case SetCompExpr(target, comp) => ???
-    case DictCompExpr(kv, comp) => ???
+      implicit val lApp: App[List[Expr]] = (app, l) => l match {
+        case Nil => app
+        case l => for (e <- l) app ~ " if " ~ e; app
+      }
+      app ~ (if (async) "async " else "") ~
+        "for " ~ target ~ " in " ~ inExpr ~ ifExpr
+    case ListCompExpr(target, comp) =>
+      implicit val lApp = ListApp[Expr](" ", " ")
+      app ~ "[" ~ target ~ comp ~ "]"
+    case SetCompExpr(target, comp) =>
+      implicit val lApp = ListApp[Expr](" ", " ")
+      app ~ "{" ~ target ~ comp ~ "}"
+    case DictCompExpr(kv, comp) =>
+      implicit val pApp: App[(Expr, Expr)] = {
+        case (app , (k, v)) => app ~ k ~ ": " ~ v
+      }
+      implicit val lApp = ListApp[Expr](" ", " ")
+      app ~ "{" ~ kv ~ comp ~ "}"
     case YieldExpr(e) => app ~ "yield " ~ e
     case YieldFromExpr(e) => app ~ "yield from " ~ e
     case GroupExpr(e) => app ~ "(" ~ e ~ ")"
