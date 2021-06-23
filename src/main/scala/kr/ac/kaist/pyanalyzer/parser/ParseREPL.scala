@@ -78,8 +78,12 @@ case object CmdParseREPL extends Command {
         )
         println(s"${GREEN}Parse result${RESET}: ${parseResult}")
 
-        val prettyResult = beautify(parseResult.get)
-        println(s"${CYAN}Beautify result${RESET}: ${prettyResult}")
+        try {
+          val prettyResult = beautify(parseResult.get)
+          println(s"${CYAN}Beautify result${RESET}: ${prettyResult}")
+        } catch {
+          case e: Throwable => println(e)
+        }
       })
     // -1. End when EOF thrown (:quit) case
     } catch {
