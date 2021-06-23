@@ -4,52 +4,77 @@ import scala.util.parsing.combinator._
 import scala.collection.mutable.Stack
 
 case class IndentError(expected: Int, actual: Int) extends Exception
-object IndentParser extends IndentParsers (Tokenizer.parseText)
-case class IndentParsers(lineParser: String => List[Token]) {
-  val stack = Stack[Int]()
-  var curIndent = 0 
-
-  def doIndent(n: Int): Unit = { stack.push(n); curIndent += n }
-  def doDedent(n: Int): Int = {
+case class IndentState(tabs: List[Int], cur: Int) {
+  def doIndent(n: Int): IndentState = IndentState(n :: tabs, cur + n) 
+  def doDedent(n: Int): (Int, IndentState) = {
     var k = 0
     var sum = 0
-    while (sum < n) {
-      val indent = stack.pop()
+    while (sum < n){
+      val indent = tabs(k)
       k += 1
       sum += indent
       if (sum > n) {
-        throw IndentError(sum, n) // TODO : precise info for exception
+        throw IndentError(sum, n)
       }
     }
-    // only exits loop when sum == n
-    curIndent -= sum
-    k
+    // only breaks loop when sum == n
+    (k, IndentState(tabs.drop(k), cur - sum))
+  }
+}
+
+// lineParser: a parser that parses one line string, without considering indentation
+// IndentParser will take care of indent, dedent, and newline
+case class IndentParser(st: IndentState) {
+  // helper
+  def leftTrim(s: String) = s.replaceAll("^\\s+", "")
+  val onelineParser = (Tokenizer.parseText _) 
+
+  // uses current state to parse a line into tokens, and produce a new state
+  def parseLine(line: String): (List[Token], IndentState) = {
+    // get current line's indentation 
+    val trimmed = leftTrim(line)
+    val newIndent = line.length() - trimmed.length()
+    
+    // try parsing a line
+    // indent case
+    if (st.cur < newIndent) {
+      val newSt = st.doIndent(newIndent)
+      (Indent +: onelineParser(trimmed) :+ Newline, newSt) 
+    }
+    // dedent case
+    else if (st.cur > newIndent) {
+      val (k, newSt) = st.doDedent(newIndent)
+      (Dedent +: onelineParser(trimmed) :+ Newline, newSt)
+    }
+    // same case
+    else {
+      (onelineParser(trimmed) :+ Newline, st)      
+    }
   }
 
-  def trimLeft(line: String): String = line.replaceAll("""^\s+""", "")
-  def getIndent(line: String): Int = line.length - trimLeft(line).length
-  
-  def parseLine(line: String): List[Token] = {
-    val trimmed = trimLeft(line)
-    // val newIndent = getIndent(line) 
-    // if (newIndent > curIndent) {
-    //   val delta = newIndent - curIndent
-    //   doIndent(delta) 
-    //   Indent +: lineParser(trimmed)
-    // } else if (newIndent < curIndent) {
-    //   val delta = curIndent - newIndent
-    //   val count = doDedent(delta)
-    //   List.fill(count)(Dedent) ++ lineParser(trimmed) 
-    // } else {
-    //   lineParser(trimmed)
-    // }
-    lineParser(trimmed)
+  // applies parseLine to all lines, maintaining the state 
+  def apply(text: String): List[Token] = {
+    val lines = text.split("\n")
+    var state = st
+    var tokens = List[Token]()
+
+    for (line <- lines) {
+      val (lineToks, newSt) = parseLine(line)
+      state = newSt
+      tokens = tokens ++ lineToks
+    }
+
+    tokens
   }
+}
 
-  def parseLines(lines: List[String]): List[Token] =
-    lines.flatMap(line => parseLine(line) :+ Newline)
-
-  def parse(text: String): List[Token] = parseLines(text.split("\n").toList)
+case class IndentParsers(lineParser: String => List[Token]) {
+  ///////// Re-implementing
+  def apply(text: String): List[Token] = {
+    val lines = text.split("\n")
+    val tokens = ???
+    tokens
+  }
 }
 
 // TODO change to Parser[Token]

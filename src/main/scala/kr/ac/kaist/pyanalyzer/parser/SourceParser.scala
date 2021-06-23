@@ -10,8 +10,10 @@ object SourceParser {
     text
   }
 
-  def parseText(source: String): List[Token] = {
-    IndentParser.parse(source)
+  def tokenizeText(source: String): List[Token] = {
+    val initState = IndentState(List(), 0)
+    val indentParser = IndentParser(initState)
+    indentParser(source)
   }
 
   // TODO change Expr to Stm t
@@ -19,7 +21,7 @@ object SourceParser {
     val source = readSource(filename)
     if (source == "") EEmpty
     else {
-      val tokens = parseText(source)
+      val tokens = tokenizeText(source)
       TokenListParser(tokens) 
     }
   }
