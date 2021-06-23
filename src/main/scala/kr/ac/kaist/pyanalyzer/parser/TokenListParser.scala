@@ -487,6 +487,29 @@ trait TokenListParsers extends PackratParsers {
   lazy val param: PackratParser[AId] = id // TODO add optional type expr `: expr`
   lazy val default: PackratParser[Expr] = "=" ~> expression
 
+  /////////////////////////////////
+  // Invalid productions
+  ////////////////////////////////
+  // invalid productions accepts come ill-formed subexpr and raise syntax erorr early
+  def error(msg: String): Parser[Nothing] = Parser(in => firstMap(in, _ => Error(msg, in)))
+
+  lazy val invalidPrimary: Parser[Nothing] = (primary ~ "{").into(_ => error("invalid syntax"))
+  lazy val invalidDoubleStarredKvPairs: Parser[Nothing] =
+    ( repsep(doubleStarredKvPair, ",") ~ "," ~ invalidKvPair
+      | expression ~ ":" ~ "*" ~ bitOr
+      | expression ~ ":" ~ guard("}"|",") 
+    ).into(_ => error("invalid syntax")) //TODO : appropriate errormessage
+  lazy val invalidKvPair: Parser[Nothing] =
+    ( not(":")
+      | expression ~ ":" ~ "*" ~ bitOr
+      | expression ~ ":"
+    ).into(_ => error("invalid syntax")) //TODO : appropriate error msg
+
+  ///////////////////////////////
+  // prodMap: mapping list of all productions
+  ///////////////////////
+
+  // TODO seperate prodMap to other
   // TODO: Add more production
   val prodMap: Map[String, Parser[Node]] = Map(
     "Group" -> group,
@@ -531,23 +554,4 @@ trait TokenListParsers extends PackratParsers {
     "StarExprs" -> starExprs,
     "YieldExpr" -> yieldExpr,
   )
-
-
-  /////////////////////////////////
-  // Invalid productions
-  ////////////////////////////////
-  // invalid productions accepts come ill-formed subexpr and raise syntax erorr early
-  def error(msg: String): Parser[Nothing] = Parser(in => firstMap(in, _ => Error(msg, in)))
-
-  lazy val invalidPrimary: Parser[Nothing] = (primary ~ "{").into(_ => error("invalid syntax"))
-  lazy val invalidDoubleStarredKvPairs: Parser[Nothing] =
-    ( repsep(doubleStarredKvPair, ",") ~ "," ~ invalidKvPair
-      | expression ~ ":" ~ "*" ~ bitOr
-      | expression ~ ":" ~ guard("}"|",") 
-    ).into(_ => error("invalid syntax")) //TODO : appropriate errormessage
-  lazy val invalidKvPair: Parser[Nothing] =
-    ( not(":")
-      | expression ~ ":" ~ "*" ~ bitOr
-      | expression ~ ":"
-    ).into(_ => error("invalid syntax")) //TODO : appropriate error msg
 }

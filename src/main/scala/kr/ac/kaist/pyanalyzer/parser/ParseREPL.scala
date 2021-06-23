@@ -26,19 +26,29 @@ case object CmdParseREPL extends Command {
   val prodNode = prodMap.keys.map(
     x => node(s"-${x.charAt(0).toLower}${x.drop(1)}")
   ).toList
+
   private val completer: TreeCompleter = new TreeCompleter(
     node(":raw" :: prodNode: _*) :: commands: _*
   )
+
   private val terminal: Terminal = TerminalBuilder.builder().build()
+
   private val reader: LineReader = LineReaderBuilder.builder()
     .terminal(terminal).completer(completer).build()
+
   private val prompt: String =
     LINE_SEP + s"${MAGENTA}py-analyze>${RESET} "
+
+  // main apply : loop to get input line, and try parsing the line
   def apply(params: List[String]): Unit = {
     try while (true) {
+      // 1. get input string, identify if it's empty, command starting with `:`,
+      // or target string to pars
       val str = reader.readLine(prompt)
       val pairOpt = str.split(" ").toList match {
+        // empty string
         case Nil => None
+        // command case, starting with `:`
         case cmd :: rest if cmd.startsWith(":") => cmd.drop(1) match {
           case "quit" => throw new EndOfFileException
           case "raw" => rest match {
@@ -47,23 +57,31 @@ case object CmdParseREPL extends Command {
               Some(Some(prod.drop(1)), target.mkString(" "))
             case target => Some(None, target.mkString(" "))
           }
-          case _ => println("In appropriate command!"); None
+          case _ => println("In appropriate command!\nAvailable commands are [:quit, :raw]"); None
         }
-        case target => Some(None, target.mkString(" "))
+        // target string case
+        case _ => Some(None, str)
       }
+      //2. according to result, do the actual parsing
       pairOpt.map(pair => {
-        val tokens = parseText(pair._2)
-        println(tokens)
-        val prodName = pair._1.getOrElse("expression")
-        println(s"Parsing with production, $prodName")
+        val targetLine = pair._2
+        val prodName = pair._1.getOrElse("expression") 
+        println(s"${CYAN}Target String:${RESET} ${targetLine}")
+        
+        val tokens = parseText(targetLine)
+        println(s"${GREEN}Tokenize result:${RESET} ${tokens}")
+
+        println(s"${GREEN}Goal production:${RESET} ${prodName}")
+
         val parseResult = prodMap.getOrElse(prodName.capitalize, expression)(
           new PackratReader(TokenListParser.TokenReader(tokens))
         )
-        println(parseResult)
-        try println(beautify(parseResult.get)) catch {
-          case e => println(e)
-        }
+        println(s"${GREEN}Parse result${RESET}: ${parseResult}")
+
+        val prettyResult = beautify(parseResult.get)
+        println(s"${CYAN}Beautify result${RESET}: ${prettyResult}")
       })
+    // -1. End when EOF thrown (:quit) case
     } catch {
       case e: EndOfFileException => println("quit")
     }
