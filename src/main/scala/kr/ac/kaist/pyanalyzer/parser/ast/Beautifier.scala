@@ -83,7 +83,9 @@ object Beautifier {
     case YieldExpr(e) => app ~ "yield " ~ e
     case YieldFromExpr(e) => app ~ "yield from " ~ e
     case GroupExpr(e) => app ~ "(" ~ e ~ ")"
-    case GenExpr(target, comp) => ???
+    case GenExpr(target, comp) =>
+      implicit val lApp = ListApp[Expr](" ", " ")
+      app ~ "(" ~ target  ~ comp ~ ")"
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {

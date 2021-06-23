@@ -32,6 +32,12 @@ class ProdTest extends AnyFunSuite {
       time <- 1 to times
     } {
       val test: String = t
+      val CHECK = false
+      if (CHECK) {
+        println(s"<$prod$i>")
+        println(test)
+        println
+      }
       val ast1 = doParse(p, test)
       val beautified1 = beautify(ast1)
       val ast2 = try doParse(p, beautified1) catch {

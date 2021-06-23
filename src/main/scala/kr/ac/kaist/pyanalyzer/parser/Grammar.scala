@@ -8,7 +8,7 @@ object Grammar {
 
   // TODO: update the random sampling algorithm
   def weightedRandomIndex(length: Int) = {
-    val n = nextInt(length * 4)
+    val n = nextInt(length * 5)
     if (n >= length) 0 else n
   }
 
@@ -165,6 +165,8 @@ object Grammar {
     "Primary" -> List(
       Prod("Atom"),
       Prod("Primary") ~ "." ~ "id",
+      // TODO: Call
+      Prod("Primary") ~ "[" ~ Prod("Slices") ~ "]",
     ),
     "AwaitPrimary" -> List(
       Prod("Primary"),
