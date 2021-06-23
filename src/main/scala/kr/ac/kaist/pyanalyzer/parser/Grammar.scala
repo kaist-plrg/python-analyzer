@@ -153,6 +153,15 @@ object Grammar {
       // Failed case
       // "...",
     ),
+    "Slice" -> List(
+      Prod("NamedExpr"),
+      Opt(Prod("Expression")) ~ ":" ~ Opt(Prod("Expression")) ~
+        Opt(":" ~ Opt(Prod("Expression"))),
+    ),
+    "Slices" -> List(
+      Prod("Slice"),
+      Rep1Sep(Prod("Slice"), ",") ~ Opt(","),
+    ),
     "Primary" -> List(
       Prod("Atom"),
       Prod("Primary") ~ "." ~ "id",

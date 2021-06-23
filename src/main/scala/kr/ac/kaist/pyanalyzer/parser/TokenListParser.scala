@@ -256,13 +256,13 @@ trait TokenListParsers extends PackratParsers {
       case p ~ s => ESubscript(p, s)
     } |
     atom
-  // TODO slices
+  // Note that spec returns tuple of Expr
+  // We change it to List of Epxr for the consistency of parsing beautified AST
   lazy val slices: PackratParser[List[Expr]] = slice <~ not(",") ^^ { List(_) } |
     rep1sep(slice, ",") <~ opt(",")
   lazy val slice: PackratParser[Expr] =
     opt(expression) ~ (":" ~> opt(expression)) ~ opt(":" ~> opt(expression)) ^^ {
-      case o1 ~ o2 ~ None => Slice(o1, o2, None)
-      case o1 ~ o2 ~ Some(o3) => Slice(o1, o2, o3)
+      case o1 ~ o2 ~ opt => Slice(o1, o2, opt.getOrElse(None))
     } | namedExpr
   
   // atoms : literal-like production
@@ -527,6 +527,7 @@ trait TokenListParsers extends PackratParsers {
     // "StarAtom" -> starAtom,
     // "TPrimary" -> tPrimary,
     "Atom" -> atom,
+    "Slice" -> slice,
     "Primary" -> primary,
     "AwaitPrimary" -> awaitPrimary,
     "Power" -> power,

@@ -42,11 +42,12 @@ object Beautifier {
       app ~ map
     case EAttrRef(prim, ref) => app ~ prim ~ "." ~ ref
     case ESubscript(prim, e) =>
-      // TODO: Check
       implicit val lApp = ListApp[Expr]("[", ", ", "]")
       app ~ prim ~ e
     case Call(prim, args) => ???
-    case Slice(lb, ub, step) => ???
+    case Slice(lb, ub, step) =>
+      app ~ lb ~ ":" ~ ub
+      step.map(x => app ~ ":" ~ x); app
     case UnaryExpr(op, e) => app ~ op ~ " " ~ e
     case BinaryExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
     case CompareExpr(h, lp) =>
