@@ -226,6 +226,11 @@ object Grammar {
       Prod("Conjunction"),
       Prod("Conjunction") ~ Rep1("or" ~ Prod("Conjunction")),
     ),
+    "Lambdadef" -> List(),
+    "LambdaKwds" -> List(),
+    "LambdaParamNoDefault" -> List(),
+    "LambdaParamWithDefault" -> List(),
+    "LambdaParamMaybeDefault" -> List(),
     "Expression" -> List(
       Prod("Disjunction"),
       Prod("Disjunction") ~ "if" ~ Prod("Disjunction") ~ "else" ~ Prod("Expression"),

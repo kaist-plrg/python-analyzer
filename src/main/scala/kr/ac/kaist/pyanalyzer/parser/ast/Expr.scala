@@ -32,12 +32,18 @@ case class Slice(lb: Option[Expr], ub: Option[Expr], step: Option[Expr]) extends
 // function call arguments
 // 2 kinds of arguments: positional and keyword
 // posRest and keyRest binds extra positional/keyword arguments supplied
-trait Arg
+trait Arg extends Node
 case class Args(posArgs: List[PosArg], posRest: List[PosRest], keyArgs: List[KeyArg], keyRest: List[KeyRest])
 case class PosArg(expr: Expr) extends Arg
 case class PosRest(expr: Expr) extends Arg
 case class KeyArg(id: AId, expr: Expr) extends Arg
 case class KeyRest(expr: Expr) extends Arg
+
+trait Param extends Node
+case class NormalParam(id: AId, default: Option[Expr]) extends Param
+// arbitrary positional and keyword args
+case class ArbPosParam(id: AId) extends Param
+case class ArbKeyParam(id: AId) extends Param
 
 // 6.4-6.13 Arithmetic, Bitwise, Comparison
 case class UnaryExpr(op: Op, expr: Expr) extends Expr

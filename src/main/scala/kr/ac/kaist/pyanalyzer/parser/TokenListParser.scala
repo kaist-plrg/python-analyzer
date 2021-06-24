@@ -130,6 +130,7 @@ trait TokenListParsers extends PackratParsers {
     case Some(pl) ~ e => LambdaExpr(pl, e)
     case None ~ e => LambdaExpr(Nil, e)
   }
+  // Spec used Params expression for List of Param
   lazy val lambdaParams: PackratParser[List[Param]] = (
     lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
       case lp1 ~ lp2 ~ lp3 => lp1 ++ lp2 ++ lp3
@@ -154,7 +155,7 @@ trait TokenListParsers extends PackratParsers {
     ) ~ opt(lambdaKwds) ^^ {
       case lp ~ opt => opt.map(lp :+ _) getOrElse lp
     } | lambdaKwds ^^ { List(_) }
-  lazy val lambdaKwds: PackratParser[Param] = "**" ~> id <~ lambdaSep ^^ ArbPosParam
+  lazy val lambdaKwds: PackratParser[Param] = "**" ~> id <~ lambdaSep ^^ ArbKeyParam
   lazy val lambdaParamNoDefault: PackratParser[Param] = id <~ lambdaSep ^^ { NormalParam(_, None) }
   lazy val lambdaParamWithDefault: PackratParser[Param] = id ~ default <~ lambdaSep ^^ {
     case x ~ e => NormalParam(x, Some(e))
@@ -531,21 +532,24 @@ trait TokenListParsers extends PackratParsers {
     "Primary" -> primary,
     "AwaitPrimary" -> awaitPrimary,
     "Power" -> power,
-    // "Uop" -> uop,
     "Factor" -> factor,
-    // "Bop" -> bop,
     "Term" -> term,
-    // "Sop" -> uop,
     "Sum" -> sum,
     "ShiftExpr" -> shiftExpr,
     "BitAnd" -> bitAnd,
     "BitXor" -> bitXor,
-    "BitOr" -> bitOr,
-    // "Cop" -> cop,
     "Comparison" -> comparison,
     "Inversion" -> inversion,
     "Conjunction" -> conjunction,
     "Disjunction" -> disjunction,
+    // Param
+    // Lambda
+    "Lambdadef" -> lambdef,
+    "LambdaKwds" -> lambdaKwds,
+    "LambdaParamNoDefault" -> lambdaParamNoDefault,
+    "LambdaParamWithDefault" -> lambdaParamWithDefault,
+    "LambdaParamMaybeDefault" -> lambdaParamMaybeDefault,
+    // Expression
     "Expression" -> expression,
     "Expressions" -> expressions,
     "NamedExpr" -> namedExpr,

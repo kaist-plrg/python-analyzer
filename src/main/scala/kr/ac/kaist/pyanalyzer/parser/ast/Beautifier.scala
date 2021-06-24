@@ -7,8 +7,16 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 object Beautifier {
   implicit lazy val nodeApp: App[Node] = (app, node) => node match {
     case e: Expr => exprApp(app, e)
-    case node: Op => opApp(app, node)
+    case op: Op => opApp(app, op)
+    case param: Param => paramApp(app, param)
     case _ => ???
+  }
+
+  implicit lazy val paramApp: App[Param] = (app, param) => param match {
+    case NormalParam(id, default) =>
+      app ~ id; default.map(x => app ~ " = " ~ x); app
+    case ArbPosParam(id) => app ~ "*" ~ id
+    case ArbKeyParam(id) => app ~ "**" ~ id
   }
 
   implicit lazy val exprApp: App[Expr] = (app, expr) => expr match {
@@ -59,7 +67,9 @@ object Beautifier {
     case AssignExpr(id, e) => app ~ id ~ " := " ~ e
     case CondExpr(c, t, e) => app ~ c ~ " if " ~ t ~ " else " ~ e
     case AwaitExpr(e) => app ~ "await " ~ e
-    case LambdaExpr(param, e) => ???
+    case LambdaExpr(param, e) => 
+      implicit val lApp = ListApp[Param](sep = ", ")
+      app ~ "lambda " ~ param ~ " : " ~ e
     case StarExpr(e) => app ~ "*" ~ e
     case CompFor(target, inExpr, ifExpr, async) =>
       implicit val lApp: App[List[Expr]] = (app, l) => l match {
