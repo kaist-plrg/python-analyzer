@@ -261,7 +261,7 @@ object Grammar {
     "LambdaStarEtc" -> List(
       Prod("LambdaKwds"),
       "*" ~ Prod("LambdaParamNoDefault") ~ Rep("," ~ Prod("LambdaParamMaybeDefault")) ~
-        Opt(Prod("LambdaKwds")),
+        Opt("," ~ Prod("LambdaKwds")),
       "*" ~ Rep1("," ~ Prod("LambdaParamMaybeDefault")) ~
         Opt("," ~ Prod("LambdaKwds")),
     ),
