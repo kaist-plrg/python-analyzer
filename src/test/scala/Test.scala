@@ -25,6 +25,7 @@ class ProdTest extends AnyFunSuite {
   println(help)
 
   val times = 10
+  val CHECK = false
 
   for ((prod, p) <- prodMap) test(s"$prod") {
     for {
@@ -32,7 +33,6 @@ class ProdTest extends AnyFunSuite {
       time <- 1 to times
     } {
       val test: String = t
-      val CHECK = false
       if (CHECK) {
         println(s"<$prod$i>")
         println(test)
@@ -53,7 +53,7 @@ class ProdTest extends AnyFunSuite {
   def doParse(p: Parser[Node], t: String): Node =
     p(new PackratReader(TokenReader(tokenizeText(t)))) match {
       case Success(res, rest) if rest.first == Newline => res
-      case res => throw new RuntimeException(s"\ntest:\n$t\n\n$res")
+      case res => throw new RuntimeException(s"\nParsing fail\ntest:\n$t\n\n$res")
     }
 }
 

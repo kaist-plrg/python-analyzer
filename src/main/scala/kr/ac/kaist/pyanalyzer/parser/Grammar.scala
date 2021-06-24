@@ -24,7 +24,10 @@ object Grammar {
       case Prod(name) =>
         val candidate = PEG_Grammar(name)
         candidate(weightedRandomIndex(candidate.length))
-      case ~(a, b) => s"$a $b"
+      case ~(a, b) => s"$a" match {
+        case "" => b
+        case a => s"$a $b"
+      }
       // TODO: update repetition
       // 0 ~ 2 repetition
       case Rep(a) =>
@@ -159,6 +162,7 @@ object Grammar {
         Opt(":" ~ Opt(Prod("Expression"))),
     ),
     "Slices" -> List(
+      // Add negative lookahead
       Prod("Slice"),
       Rep1Sep(Prod("Slice"), ",") ~ Opt(","),
     ),
