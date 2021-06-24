@@ -126,7 +126,7 @@ trait TokenListParsers extends PackratParsers {
       case ie ~ (te ~ ee) => CondExpr(ie, te, ee)
     } | disjunction | lambdef
   // lambda expressions
-  lazy val lambdef: PackratParser[Expr] = ("lambda" ~> opt(lambdaParams <~ ":")) ~ expression ^^ {
+  lazy val lambdef: PackratParser[Expr] = ("lambda" ~> opt(lambdaParams) <~ ":") ~ expression ^^ {
     case Some(pl) ~ e => LambdaExpr(pl, e)
     case None ~ e => LambdaExpr(Nil, e)
   }
@@ -544,11 +544,7 @@ trait TokenListParsers extends PackratParsers {
     "Disjunction" -> disjunction,
     // Param
     // Lambda
-    "Lambdadef" -> lambdef,
-    "LambdaKwds" -> lambdaKwds,
-    "LambdaParamNoDefault" -> lambdaParamNoDefault,
-    "LambdaParamWithDefault" -> lambdaParamWithDefault,
-    "LambdaParamMaybeDefault" -> lambdaParamMaybeDefault,
+    "Lambdef" -> lambdef,
     // Expression
     "Expression" -> expression,
     "Expressions" -> expressions,
