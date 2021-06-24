@@ -70,8 +70,20 @@ object Beautifier {
     case CondExpr(c, t, e) => app ~ c ~ " if " ~ t ~ " else " ~ e
     case AwaitExpr(e) => app ~ "await " ~ e
     case LambdaExpr(param, e) => 
+      app ~ "lambda "
+      val keyParam = param.find(_.isInstanceOf[KeyParam])
+      val starSepParam = keyParam.map(k => {
+        val index = param.indexOf(k)
+        (param.slice(0, index), param.slice(index, param.length))
+      })
       implicit val lApp = ListApp[Param](sep = ", ")
-      app ~ "lambda " ~ param ~ ": " ~ e
+      implicit val plApp: App[(List[Param], List[Param])] = {
+        case (app, (l1, l2)) => app ~ l1 ~ ", *, " ~ l2
+      }
+      (starSepParam match {
+        case None => app ~ param
+        case s => app ~ s
+      }) ~ ": " ~ e
     case StarExpr(e) => app ~ "*" ~ e
     case CompFor(target, inExpr, ifExpr, async) =>
       implicit val lApp: App[List[Expr]] = (app, l) => l match {
