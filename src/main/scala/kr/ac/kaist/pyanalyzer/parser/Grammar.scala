@@ -264,43 +264,43 @@ object Grammar {
       "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
     ),
     "LambdaParams" -> List(
-      Prod("LambdaSlashNoDefault") ~ Rep(Prod("LambdaParamNoDefault")) ~
-        Rep(Prod("LambdaParamWithDefault")) ~ Opt(Prod("LambdaStarEtc")),
-      Prod("LambdaSlashWithDefault") ~ Rep(Prod("LambdaParamWithDefault")) ~
-        Opt(Prod("LambdaStarEtc")),
-      Rep1(Prod("LambdaParamNoDefault")) ~ Rep(Prod("LambdaParamWithDefault")) ~
-        Opt(Prod("LambdaStarEtc")),
-      Rep1(Prod("LambdaParamWithDefault")) ~ Opt(Prod("LambdaStarEtc")),
+      Prod("LambdaSlashNoDefault") ~ Rep("," ~ Prod("LambdaParamNoDefault")) ~
+        Rep("," ~ Prod("LambdaParamWithDefault")) ~ Opt("," ~ Prod("LambdaStarEtc")),
+      Prod("LambdaSlashWithDefault") ~ Rep("," ~ Prod("LambdaParamWithDefault")) ~
+        Opt("," ~ Prod("LambdaStarEtc")),
+      Rep1Sep(Prod("LambdaParamNoDefault"), ",") ~
+        Rep("," ~ Prod("LambdaParamWithDefault")) ~ Opt("," ~ Prod("LambdaStarEtc")),
+      Rep1Sep(Prod("LambdaParamWithDefault"), ",") ~ Opt("," ~ Prod("LambdaStarEtc")),
       Prod("LambdaStarEtc"),
     ),
     "LambdaSlashNoDefault" -> List(
-      Rep1(Prod("LambdaParamNoDefault")) ~ "/",
-      Rep1(Prod("LambdaParamNoDefault")) ~ "/" ~ ",",
+      Prod("LambdaParamNoDefault") ~ Rep("," ~ Prod("LambdaParamNoDefault")) ~ "," ~ "/",
     ),
     "LambdaSlashWithDefault" -> List(
-      Rep(Prod("LambdaParamNoDefault")) ~ Rep1(Prod("LambdaParamWithDefault")) ~ "/",
-      Rep(Prod("LambdaParamNoDefault")) ~ Rep1(Prod("LambdaParamWithDefault")) ~ "/" ~ ",",
+      Rep(Prod("LambdaParamNoDefault") ~ ",") ~ Prod("LambdaParamWithDefault") ~
+        Rep1("," ~ Prod("LambdaParamWithDefault")) ~ "," ~ "/",
     ),
     "LambdaStarEtc" -> List(
       Prod("LambdaKwds"),
-      "*" ~ Prod("LambdaParamNoDefault") ~ Rep(Prod("LambdaParamMaybeDefault")) ~
+      "*" ~ Prod("LambdaParamNoDefault") ~ Rep("," ~ Prod("LambdaParamMaybeDefault")) ~
         Opt(Prod("LambdaKwds")),
-      "*" ~ "," ~ Rep1(Prod("LambdaParamMaybeDefault")) ~ Opt(Prod("LambdaKwds")),
+      "*" ~ Rep1("," ~ Prod("LambdaParamMaybeDefault")) ~
+        Opt("," ~ Prod("LambdaKwds")),
     ),
     "LambdaKwds" -> List(
       "**" ~ Prod("LambdaParamNoDefault"),
     ),
     "LambdaParamNoDefault" -> List(
       "id",
-      "id" ~ ",",
     ),
     "LambdaParamWithDefault" -> List(
       "id" ~ Prod("Default"),
-      "id" ~ Prod("Default") ~ ",",
     ),
     "LambdaParamMaybeDefault" -> List(
       "id" ~ Opt(Prod("Default")),
-      "id" ~ Opt(Prod("Default")) ~ ",",
+    ),
+    "Default" -> List(
+      "=" ~ Prod("Expression"),
     ),
     "Expressions" -> List(
       Prod("Expression"),
