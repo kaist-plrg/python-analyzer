@@ -151,17 +151,20 @@ trait TokenListParsers extends PackratParsers {
   lazy val lambdaStarEtc: PackratParser[List[Param]] = (
     "*" ~> (id <~ lambdaSep) ~ rep(lambdaParamMaybeDefault) ^^ {
       case pos ~ l => ArbPosParam(pos) :: l
-    } | ("*" ~ ",") ~> rep1(lambdaParamMaybeDefault)
-    ) ~ opt(lambdaKwds) ^^ {
+    } | ("*" ~ ",") ~> rep1(id ~ opt(default) <~ lambdaSep) ^^ {
+      case lx => lx.map {
+        case x ~ opt => KeyParam(x, opt)
+      }
+    }) ~ opt(lambdaKwds) ^^ {
       case lp ~ opt => opt.map(lp :+ _) getOrElse lp
     } | lambdaKwds ^^ { List(_) }
   lazy val lambdaKwds: PackratParser[Param] = "**" ~> id <~ lambdaSep ^^ ArbKeyParam
-  lazy val lambdaParamNoDefault: PackratParser[Param] = id <~ lambdaSep ^^ { NormalParam(_, None) }
+  lazy val lambdaParamNoDefault: PackratParser[Param] = id <~ lambdaSep ^^ { PosParam(_, None) }
   lazy val lambdaParamWithDefault: PackratParser[Param] = id ~ default <~ lambdaSep ^^ {
-    case x ~ e => NormalParam(x, Some(e))
+    case x ~ e => PosParam(x, Some(e))
   }
   lazy val lambdaParamMaybeDefault: PackratParser[Param] = id ~ opt(default) <~ lambdaSep ^^ {
-    case x ~ opt => NormalParam(x, opt)
+    case x ~ opt => PosParam(x, opt)
   }
   lazy val lambdaSep = "," | guard(":")
   // lazy val lambdaParam: PackratParser[AId] = id
@@ -465,7 +468,7 @@ trait TokenListParsers extends PackratParsers {
       // yes kwargs
       case o ~ pl ~ Some(Some(p)) => o.toList ++ pl ++ List(p) 
     } ^^ { pl => pl.map({
-      case p: NormalParam => p
+      case p: PosParam => p
       case p: ArbPosParam => p
       case p: ArbKeyParam => p
     })} | 
@@ -482,7 +485,7 @@ trait TokenListParsers extends PackratParsers {
   }
   // parser for normal parameter
   lazy val defparam: PackratParser[Param] = param ~ ("=" ~> opt(expression)) ^^ {
-    case i ~ oe => NormalParam(i, oe)
+    case i ~ oe => PosParam(i, oe)
   }
   // parser for parameter id
   lazy val param: PackratParser[AId] = id // TODO add optional type expr `: expr`

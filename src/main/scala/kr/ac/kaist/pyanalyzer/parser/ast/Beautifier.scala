@@ -13,7 +13,9 @@ object Beautifier {
   }
 
   implicit lazy val paramApp: App[Param] = (app, param) => param match {
-    case NormalParam(id, default) =>
+    case PosParam(id, default) =>
+      app ~ id; default.map(x => app ~ " = " ~ x); app
+    case KeyParam(id, default) =>
       app ~ id; default.map(x => app ~ " = " ~ x); app
     case ArbPosParam(id) => app ~ "*" ~ id
     case ArbKeyParam(id) => app ~ "**" ~ id
@@ -69,7 +71,7 @@ object Beautifier {
     case AwaitExpr(e) => app ~ "await " ~ e
     case LambdaExpr(param, e) => 
       implicit val lApp = ListApp[Param](sep = ", ")
-      app ~ "lambda " ~ param ~ " : " ~ e
+      app ~ "lambda " ~ param ~ ": " ~ e
     case StarExpr(e) => app ~ "*" ~ e
     case CompFor(target, inExpr, ifExpr, async) =>
       implicit val lApp: App[List[Expr]] = (app, l) => l match {

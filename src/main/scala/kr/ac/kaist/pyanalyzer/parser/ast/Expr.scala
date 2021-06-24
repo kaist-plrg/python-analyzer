@@ -40,7 +40,8 @@ case class KeyArg(id: AId, expr: Expr) extends Arg
 case class KeyRest(expr: Expr) extends Arg
 
 trait Param extends Node
-case class NormalParam(id: AId, default: Option[Expr]) extends Param
+case class PosParam(id: AId, default: Option[Expr]) extends Param
+case class KeyParam(id: AId, default: Option[Expr]) extends Param
 // arbitrary positional and keyword args
 case class ArbPosParam(id: AId) extends Param
 case class ArbKeyParam(id: AId) extends Param
