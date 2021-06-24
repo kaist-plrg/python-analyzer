@@ -32,7 +32,7 @@ class ProdTest extends AnyFunSuite {
       (t, i) <- PEG_Grammar(prod).zipWithIndex
       time <- 1 to times
     } {
-      val test: String = t.unfolding
+      val test: String = t
       if (CHECK) {
         println(s"<$prod$i>")
         println(test)
