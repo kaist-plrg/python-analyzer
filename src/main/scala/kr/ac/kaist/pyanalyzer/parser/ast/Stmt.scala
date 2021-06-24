@@ -4,10 +4,11 @@ sealed trait Stmt extends Node
 
 // Simple statements
 sealed trait SimpleStmt extends Stmt
+// psudo-expr emptystmt
+case object EmptyStmt extends SimpleStmt
 // TODO define subs
 case class Assignment(id: AId, expr: Expr) extends SimpleStmt
-// TODO appropriate modeling of star_expressions and star_expression
-case class StarStmt(expr: Expr) extends SimpleStmt
+case class StarStmt(expr: Expr) extends SimpleStmt // only StarExpr can given
 case class ReturnStmt(exprs: StarStmt) extends SimpleStmt
 
 trait ImportStmt extends SimpleStmt

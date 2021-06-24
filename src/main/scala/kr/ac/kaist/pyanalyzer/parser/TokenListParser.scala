@@ -81,8 +81,14 @@ trait TokenListParsers extends PackratParsers {
   }))
 
   // TODO need implementation
-  lazy val indent: PackratParser[Unit] = ???
-  lazy val dedent: PackratParser[Unit] = ???
+  lazy val indent: PackratParser[Unit] = Parser(in => firstMap(in, _ match {
+    case Indent => Success((), in.rest)
+    case _ => Failure(s"", in)
+  }))
+  lazy val dedent: PackratParser[Unit] = Parser(in => firstMap(in, _ match {
+    case Dedent => Success((), in.rest)
+    case _ => Failure(s"", in)
+  }))
   lazy val typeComment: PackratParser[Unit] = ???
 
   lazy val number: PackratParser[Expr] = intLiteral | floatLiteral | imagLiteral
@@ -454,16 +460,17 @@ trait TokenListParsers extends PackratParsers {
   // Statements
   lazy val statements: PackratParser[List[Stmt]] = rep1(statement)
   lazy val statement: PackratParser[Stmt] = compoundStmt | simpleStmt
-  lazy val statementNewline: PackratParser[Stmt] = (
-    (compoundStmt ~ "\n") | simpleStmts | "\n" //| endmarker  //TODO ad rule for endmarker  
-  ) ^^ ???
+  lazy val statementNewline: PackratParser[Stmt] = 
+    (compoundStmt <~ "\n") | simpleStmts ^^ ??? | ("\n" ^^^ EmptyStmt) //| endmarker  //TODO ad rule for endmarker  
   
-  lazy val simpleStmts: PackratParser[Stmt] = ( 
-    (simpleStmt ~ not(";") ~ "\n") | (rep1sep(simpleStmt, ";") ~ opt(";") ~ "\n")
-  ) ^^ ???
+  lazy val simpleStmtFirst: PackratParser[List[Stmt]] = 
+    (simpleStmt <~ (not(";") ~ "\n")) ^^ { case s: Stmt => List(s) } // TODO why cannot write it on below directly?
+
+  lazy val simpleStmts: PackratParser[List[Stmt]] = 
+    simpleStmtFirst | (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n"))
 
   lazy val simpleStmt: PackratParser[Stmt] =
-    assignment | (starExprs ^^ ???) | returnStmt | importStmt | raiseStmt | passStmt |
+    assignment | (starExprs ^^ StarStmt) | returnStmt | importStmt | raiseStmt | passStmt |
     delStmt | yieldStmt | assertStmt | breakStmt | continueStmt | globalStmt | nonlocalStmt |
     (expressions ^^ StarStmt)
 
