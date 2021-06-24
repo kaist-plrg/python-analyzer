@@ -113,7 +113,7 @@ object Beautifier {
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {
-    case AugAssignOp(op) => ???
+    case AugOp(op) => ???
     case OLShift => app ~ "<<"
     case ORShift => app ~ ">>"
     case OAdd => app ~ "+"

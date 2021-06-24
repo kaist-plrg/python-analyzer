@@ -6,8 +6,9 @@ sealed trait Stmt extends Node
 sealed trait SimpleStmt extends Stmt
 // psudo-expr emptystmt
 case object EmptyStmt extends SimpleStmt
-// TODO define subs
-case class Assignment(id: AId, expr: Expr) extends SimpleStmt
+
+case class AssignStmt(targets: List[Expr], expr: Expr) extends SimpleStmt
+case class AugAssignStmt(target: Expr, op: AugOp, expr: Expr) extends SimpleStmt
 case class StarStmt(expr: Expr) extends SimpleStmt // only StarExpr can given
 case class ReturnStmt(exprs: StarStmt) extends SimpleStmt
 
@@ -22,9 +23,9 @@ case object RaiseLiteral extends RaiseStmt
 
 case object PassStmt extends SimpleStmt
 // TODO define del_targets and subs
-case class DelStmt(targets: Node) extends SimpleStmt
+case class DelStmt(targets: List[Expr]) extends SimpleStmt
 case class YieldStmt(expr: Expr) extends SimpleStmt
-case class AssertStmt(check: Expr, raise: Expr ) extends SimpleStmt
+case class AssertStmt(check: Expr, raise: Option[Expr] ) extends SimpleStmt
 case object BreakStmt extends SimpleStmt
 case object ContinueStmt extends SimpleStmt
 case class GlobalStmt(ns: List[AId]) extends SimpleStmt

@@ -80,7 +80,6 @@ trait TokenListParsers extends PackratParsers {
     case t => Failure(s"", in)
   }))
 
-  // TODO need implementation
   lazy val indent: PackratParser[Unit] = Parser(in => firstMap(in, _ match {
     case Indent => Success((), in.rest)
     case _ => Failure(s"", in)
@@ -89,6 +88,8 @@ trait TokenListParsers extends PackratParsers {
     case Dedent => Success((), in.rest)
     case _ => Failure(s"", in)
   }))
+
+  // TODO need impl. is this parser or tokenizer?
   lazy val typeComment: PackratParser[Unit] = ???
 
   lazy val number: PackratParser[Expr] = intLiteral | floatLiteral | imagLiteral
@@ -424,7 +425,7 @@ trait TokenListParsers extends PackratParsers {
     | tPrimary ~ "[" ~ slices ~ "]" ~ not(tLookahead)
     | starAtom
   ) ^^ ???
-  lazy val delTargets: PackratParser[Expr] = (rep1sep(delTarget, ",") ~ opt(",")) ^^ ???
+  lazy val delTargets: PackratParser[List[Expr]] = (rep1sep(delTarget, ",") <~ opt(",")) ^^ ???
   lazy val delTarget: PackratParser[Expr] = (
     tPrimary ~ "." ~ id ~ not(tLookahead)
     | tPrimary ~ "[" ~ slices ~ "]" ~ not(tLookahead)
@@ -463,11 +464,10 @@ trait TokenListParsers extends PackratParsers {
   lazy val statementNewline: PackratParser[Stmt] = 
     (compoundStmt <~ "\n") | simpleStmts ^^ ??? | ("\n" ^^^ EmptyStmt) //| endmarker  //TODO ad rule for endmarker  
   
-  lazy val simpleStmtFirst: PackratParser[List[Stmt]] = 
+  lazy val simpleStmtOne: PackratParser[List[Stmt]] = 
     (simpleStmt <~ (not(";") ~ "\n")) ^^ { case s: Stmt => List(s) } // TODO why cannot write it on below directly?
-
   lazy val simpleStmts: PackratParser[List[Stmt]] = 
-    simpleStmtFirst | (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n"))
+    simpleStmtOne | (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n"))
 
   lazy val simpleStmt: PackratParser[Stmt] =
     assignment | (starExprs ^^ StarStmt) | returnStmt | importStmt | raiseStmt | passStmt |
@@ -478,27 +478,38 @@ trait TokenListParsers extends PackratParsers {
     funcDef | ifStmt | classDef | withStmt | forStmt | tryStmt | whileStmt | matchStmt
 
   // assignment stmt
-  lazy val assignment: PackratParser[Stmt] = (
-    id ~ ":" ~ expression ~ opt("=" ~ annotatedRhs)
-    | (("(" ~ singleTarget ~ ")") | singleSubscriptAttrTarget) ~ ":" ~ expression ~ opt("=" ~ annotatedRhs)
-    | rep1(starTargets ~ "=") ~ (yieldExpr | starExprs) ~ not("=") ~ opt(typeComment) // TODO: add type comment
-    | singleTarget ~ augAssign ~ (yieldExpr | starExprs) 
-  ) ^^ ???
-  lazy val augAssign: PackratParser[AugAssignOp] = 
-    ("+=" | "-=" | "*=" | "@=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "**=" | "//=") ^^ ???
+  lazy val assignment: PackratParser[Stmt] =
+    // TODO `":" ~> expression` part means type expression annotation... deal with this
+    (id ~ (":" ~> expression) ~ opt("=" ~ annotatedRhs) ^^ {  
+      case x ~ e ~ Some(rhs) => ??? 
+      case x ~ e ~ None => ???
+    }) |
+    ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) <~ ":" ~ expression ~ opt("=" ~ annotatedRhs) ) ^^ { case _ => ??? } |
+    (rep1(starTargets <~ "=") ~ (yieldExpr | starExprs) ~ (not("=") ~> opt(typeComment))) ^^ {
+      case stl ~ e ~ _ => AssignStmt(stl, e) // TODO currently ignoring type comment
+    } | 
+    (singleTarget ~ augAssign ~ (yieldExpr | starExprs)) ^^ {
+      case t ~ op ~ e => AugAssignStmt(t, op, e)
+    } 
+  lazy val augAssign: PackratParser[AugOp] = 
+    ("+=" | "-=" | "*=" | "@=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "**=" | "//=") ^^ AugOp
  
   // some simple stmt
-  lazy val globalStmt: PackratParser[Stmt] = ("global" ~ rep1sep(id, ",")) ^^ ???
-  lazy val nonlocalStmt: PackratParser[Stmt] = ("nonlocal" ~ rep1sep(id, ",")) ^^ ???
-  lazy val yieldStmt: PackratParser[Stmt] = yieldExpr ^^ ???
-  lazy val assertStmt: PackratParser[Stmt] = ("assert" ~ expression ~ opt("," ~ expression)) ^^ ???
-  lazy val delStmt: PackratParser[Stmt] = ("del" ~ delTargets ~ guard(";" | "\n")) ^^ ???
-  lazy val passStmt: PackratParser[Stmt] = "pass" ^^ ???
-  lazy val breakStmt: PackratParser[Stmt] = "break" ^^ ???
-  lazy val continueStmt: PackratParser[Stmt] = "continue" ^^ ???
+  lazy val globalStmt: PackratParser[Stmt] = ("global" ~> rep1sep(id, ",")) ^^ GlobalStmt 
+  lazy val nonlocalStmt: PackratParser[Stmt] = ("nonlocal" ~> rep1sep(id, ",")) ^^ NonlocalStmt
+  lazy val yieldStmt: PackratParser[Stmt] = yieldExpr ^^ YieldStmt
+  lazy val assertStmt: PackratParser[Stmt] = ("assert" ~> expression ~ opt("," ~> expression)) ^^ {
+    case e ~ opt => AssertStmt(e, opt)
+  }
+  lazy val delStmt: PackratParser[Stmt] = ("del" ~> delTargets <~ guard(";" | "\n")) ^^ {
+    case tl => DelStmt(tl)
+  }
+  lazy val passStmt: PackratParser[Stmt] = "pass" ^^^ PassStmt
+  lazy val breakStmt: PackratParser[Stmt] = "break" ^^^ BreakStmt
+  lazy val continueStmt: PackratParser[Stmt] = "continue" ^^^ ContinueStmt
 
   // import stmt related
-  lazy val importStmt: PackratParser[Stmt] = (importName | importFrom) ^^ ???
+  lazy val importStmt: PackratParser[Stmt] = (importName | importFrom)
   lazy val importName: PackratParser[Stmt] = ("import" ~ dottedAsNames) ^^ ???
   lazy val importFrom: PackratParser[Stmt] = ( 
     "from" ~ rep("." | "...") ~ dottedName ~ "import" ~ importFromTargets

@@ -2,7 +2,7 @@ package kr.ac.kaist.pyanalyzer.parser.ast
 
 sealed trait Op extends Node
 
-case class AugAssignOp(op: String) extends Op
+case class AugOp(op: String) extends Op
 // TODO: discuss
 // case class CompareOp(op: String) extends Op
 
