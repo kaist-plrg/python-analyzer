@@ -29,7 +29,7 @@ class ProdTest extends AnyFunSuite {
 
   for ((prod, p) <- prodMap) test(s"$prod") {
     for {
-      (t, i) <- PEG_Grammar(prod).zipWithIndex
+      (t: TestGenerator, i) <- PEG_Grammar(prod).zipWithIndex
       time <- 1 to times
     } {
       val test: String = t

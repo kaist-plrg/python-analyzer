@@ -4,7 +4,7 @@ import scala.util.Random._
 
 object Grammar {
 
-  // TestGenerator
+  // Grammar
 
   // TODO: update the random sampling algorithm
   def weightedRandomIndex(length: Int) = {
@@ -14,51 +14,69 @@ object Grammar {
 
   val repetitions = "0" * 80 + "1" * 15 + "2" * 4 + "3"
 
-  sealed trait TestGenerator {
-    def ~(rhs: TestGenerator) = new ~(this, rhs)
+  sealed trait Grammar {
+    def ~(rhs: Grammar) = new ~(this, rhs)
     def ~(rhs: String) = new ~(this, rhs)
     // ****Important****
     // each toString call returns a different String
-    override def toString: String = this match {
-      case Normal(test) => test
+    def unfolding: TestGenerator = this match {
+      case Str(str) => Normal(str)
       case Prod(name) =>
         val candidate = PEG_Grammar(name)
         candidate(weightedRandomIndex(candidate.length))
-      case ~(a, b) => s"$a" match {
-        case "" => b
-        case a => s"$a $b"
-      }
+      case ~(a, b) =>
+        val Seq(l, r) = Seq(a, b)
+        l match {
+          case Normal("") => r // ignore trivial case
+          case l => Seq(l, r)
+        }
       // TODO: update repetition
       // 0 ~ 2 repetition
       case Rep(a) =>
         val times = repetitions.charAt(nextInt(100)) - 48
-        (for (i <- 1 to times) yield a).mkString(" ")
+        (for (i <- 1 to times) yield a).foldLeft(Str(""): Grammar)((g, e) => g ~ e)
     }
   }
 
-  case class Normal(test: String) extends TestGenerator
+  case class Prod(name: String) extends Grammar
 
-  case class Prod(name: String) extends TestGenerator
+  case class Rep(a: Grammar) extends Grammar
 
-  case class ~(a: TestGenerator, b: TestGenerator) extends TestGenerator
+  case class Str(str: String) extends Grammar
 
-  case class Rep(a: TestGenerator) extends TestGenerator
+  case class ~(a: Grammar, b: Grammar) extends Grammar
 
-  def Rep1(a: TestGenerator): TestGenerator = a ~ Rep(a)
+  def Rep1(a: Grammar): Grammar = a ~ Rep(a)
 
-  def Opt(t: TestGenerator): TestGenerator =
+  def Opt(t: Grammar): Grammar =
     if (nextInt(2) == 0) "" else t
 
-  def Rep1Sep(t: TestGenerator, sep: String): TestGenerator = t ~ Rep1(sep ~ t)
+  def Rep1Sep(t: Grammar, sep: String): Grammar = t ~ Rep1(sep ~ t)
 
-  implicit def toTestGenerator(str: String): TestGenerator = Normal(str)
+  sealed trait TestGenerator {
+    override def toString = this match {
+      case Normal(str) => str
+      case Seq(a, b) => s"$a $b"
+      case LookaheadSeq(a, g) => s"$a"
+    }
+  }
+
+  case class Normal(str: String) extends TestGenerator
+
+  case class Seq(a: TestGenerator, b: TestGenerator) extends TestGenerator
+
+  case class LookaheadSeq(a: TestGenerator, guard: TestGenerator) extends TestGenerator
+
+  implicit def toGrammar(str: String): Grammar = Str(str)
+
+  implicit def toTestGenerator(g: Grammar): TestGenerator = g.unfolding
 
   implicit def mkTest(t: TestGenerator): String = t.toString
 
   // PEG Grammar
 
   // TODO: Add more grammar
-  val PEG_Grammar: Map[String, List[TestGenerator]] = Map(
+  val PEG_Grammar: Map[String, List[Grammar]] = Map(
     "Group" -> List(
       "(" ~ Prod("NamedExpr") ~ ")",
       "(" ~ Prod("YieldExpr") ~ ")",
