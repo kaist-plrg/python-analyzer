@@ -265,9 +265,10 @@ trait TokenListParsers extends PackratParsers {
   lazy val primary: PackratParser[Expr] =
     // //invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
-    //primary ~ genexp ^^ {???} |
-    primary ~ ("(" ~> opt(args) <~ ")") ^^ { 
-      case f ~ None => Call(f, Args(List(), List(), List(), List()))
+    primary ~ genexp ^^ {
+      case f ~ g => Call(f, Args(List(PosArg(g))))
+    } | primary ~ ("(" ~> opt(args) <~ ")") ^^ {
+      case f ~ None => Call(f, Args())
       case f ~ Some(args) => Call(f, args)
     } |
     primary ~ ("[" ~> slices <~ "]") ^^ {
@@ -362,7 +363,7 @@ trait TokenListParsers extends PackratParsers {
       case a: PosRest => sum match { case (pl, prest) => (pl, prest :+ a) }
       case _ => ??? // TODO raise exception, non-positional argument should not appear
     })
-    Args(pl, prest, List(), List())
+    Args(pl, prest)
   }
   // helper function for keyword arguments case
   def kwargsToArgs: List[Arg] => Args = al => {
@@ -371,7 +372,7 @@ trait TokenListParsers extends PackratParsers {
       case a: KeyRest => sum match { case (kl, krest) => (kl, krest :+ a) }
       case _ => ??? // TODO raise exception, non-keyword argument should not appear
     })
-    Args(List(), List(), kl, krest)  
+    Args(keyArgs = kl, keyRest = krest)
   }
   lazy val args: PackratParser[Args] = 
     // positional and keywords arguments case
@@ -443,10 +444,10 @@ trait TokenListParsers extends PackratParsers {
       case prim ~ x => EAttrRef(prim, x)
     } | tPrimary ~ ("[" ~> slices <~ "]" ~ not(tLookahead)) ^^ {
       case prim ~ s => ESubscript(prim, s)
-    // } | tPrimary ~ genexp <~ not(tLookahead) ^^ {
-    //   case prim ~ gen => Call(prim, ???) //TODO update call
+    } | tPrimary ~ genexp <~ not(tLookahead) ^^ {
+      case prim ~ gen => Call(prim, Args(List(PosArg(gen)))) //TODO update call
     } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ not(tLookahead)) ^^ {
-      case prim ~ opt => Call(prim, opt.getOrElse(Args(Nil, Nil, Nil, Nil)))
+      case prim ~ opt => Call(prim, opt.getOrElse(Args()))
     } | atom <~ not(tLookahead)
 
   lazy val tLookahead: PackratParser[String] = "(" | "[" | "."

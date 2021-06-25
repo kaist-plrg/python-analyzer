@@ -33,7 +33,12 @@ case class Slice(lb: Option[Expr], ub: Option[Expr], step: Option[Expr]) extends
 // 2 kinds of arguments: positional and keyword
 // posRest and keyRest binds extra positional/keyword arguments supplied
 trait Arg extends Node
-case class Args(posArgs: List[PosArg], posRest: List[PosRest], keyArgs: List[KeyArg], keyRest: List[KeyRest])
+case class Args(
+  posArgs: List[PosArg] = Nil,
+  posRest: List[PosRest] = Nil,
+  keyArgs: List[KeyArg] = Nil,
+  keyRest: List[KeyRest] = Nil
+)
 case class PosArg(expr: Expr) extends Arg
 case class PosRest(expr: Expr) extends Arg
 case class KeyArg(id: AId, expr: Expr) extends Arg
