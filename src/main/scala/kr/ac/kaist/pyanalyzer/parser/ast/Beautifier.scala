@@ -12,6 +12,10 @@ object Beautifier {
     case _ => ???
   }
 
+  implicit lazy val argApp: App[Args] = (app, arg) => arg match {
+    case _ => ???
+  }
+
   implicit lazy val paramApp: App[Param] = (app, param) => param match {
     case PosParam(id, default) =>
       app ~ id; default.map(x => app ~ " = " ~ x); app
@@ -54,7 +58,7 @@ object Beautifier {
     case ESubscript(prim, e) =>
       implicit val lApp = ListApp[Expr]("[", ", ", "]")
       app ~ prim ~ e
-    case Call(prim, args) => ???
+    case Call(prim, args) => app ~ prim ~ args
     case Slice(lb, ub, step) =>
       app ~ lb ~ ":" ~ ub
       step.map(x => app ~ ":" ~ x); app

@@ -32,17 +32,16 @@ case class Slice(lb: Option[Expr], ub: Option[Expr], step: Option[Expr]) extends
 // function call arguments
 // 2 kinds of arguments: positional and keyword
 // posRest and keyRest binds extra positional/keyword arguments supplied
+// TODO: Refactor Arg
 trait Arg extends Node
 case class Args(
   posArgs: List[PosArg] = Nil,
-  posRest: List[PosRest] = Nil,
   keyArgs: List[KeyArg] = Nil,
-  keyRest: List[KeyRest] = Nil
+  keyStars: List[KeyStar] = Nil,
 )
 case class PosArg(expr: Expr) extends Arg
-case class PosRest(expr: Expr) extends Arg
 case class KeyArg(id: AId, expr: Expr) extends Arg
-case class KeyRest(expr: Expr) extends Arg
+case class KeyStar(expr: Expr) extends Arg
 
 trait Param extends Node
 case class PosParam(id: AId, default: Option[Expr]) extends Param

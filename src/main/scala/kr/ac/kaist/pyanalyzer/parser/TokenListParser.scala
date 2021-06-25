@@ -344,58 +344,40 @@ trait TokenListParsers extends PackratParsers {
       case None ~ target ~ (inExpr ~ ifExprs) => CompFor(target, inExpr, ifExprs, false)
     }
   lazy val yieldExpr: PackratParser[Expr] = 
-    ("yield" ~ "from") ~> expression ^^ 
-    YieldFromExpr | "yield" ~> opt(starExprs) ^^ YieldExpr
+    ("yield" ~ "from") ~> expression ^^ YieldFromExpr |
+    "yield" ~> opt(starExprs) ^^ YieldExpr
     // TODO: scala operator precedance problem here with | 
 
   //////////////////////////////////////////////////////////////////
   // arguments
-  // Caution: very complex
   /////////////////////////////////////////////////////////////////
+  // TODO: Refactor Arg
   lazy val arguments: PackratParser[Args] = args <~ (opt(",") ~ guard(")"))
-  lazy val exprToArg: PackratParser[Arg] = (assignExpr | expression <~ not(":=")) ^^ {
-    case e => PosArg(e)
-  }
-  // helper function for positional arguments case 
-  def pargsToArgs: List[Arg] => Args = al => {
-    val (pl, prest) = al.foldLeft( (List[PosArg](), List[PosRest]()) )( (sum, elem) => elem match {
-      case a: PosArg => sum match { case (pl, prest) => (pl :+ a, prest) }
-      case a: PosRest => sum match { case (pl, prest) => (pl, prest :+ a) }
-      case _ => ??? // TODO raise exception, non-positional argument should not appear
-    })
-    Args(pl, prest)
-  }
-  // helper function for keyword arguments case
-  def kwargsToArgs: List[Arg] => Args = al => {
-    val (kl, krest) = al.foldLeft( (List[KeyArg](), List[KeyRest]()) )( (sum, elem) => elem match {
-      case a: KeyArg => sum match { case (kl, krest) => (kl :+ a, krest) }
-      case a: KeyRest => sum match { case (kl, krest) => (kl, krest :+ a) }
-      case _ => ??? // TODO raise exception, non-keyword argument should not appear
-    })
-    Args(keyArgs = kl, keyRest = krest)
-  }
   lazy val args: PackratParser[Args] = 
     // positional and keywords arguments case
-    repsep(starredExpr | exprToArg <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
-      case el ~ None => pargsToArgs(el)
-      case el ~ Some(kl) => {
-        val pArgs = pargsToArgs(el)
-        val kArgs = kwargsToArgs(kl)
-        pArgs.copy(keyArgs=kArgs.keyArgs, keyRest=kArgs.keyRest)
-      }
-    } | kwargs ^^ kwargsToArgs // only keyword args case
+    rep1sep(starredExpr | (assignExpr | expression <~ not(":=")) <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
+      case el ~ None => Args(el.map(PosArg))
+      case el ~ Some(Args(l1, l2, l3)) => Args(el.map(PosArg) ++ l1, l2, l3)
+    } | kwargs
 
-  lazy val kwargs: PackratParser[List[Arg]] =
-    repsep(kwargOrStarred, ",") ~ ("," ~> repsep(kwargOrDoubleStarred, ",")) ^^ {
-      case l1 ~ l2 => l1 ++ l2 
-    } |
-    repsep(kwargOrStarred, ",") |
-    repsep(kwargOrDoubleStarred, ",")
-  lazy val starredExpr: PackratParser[PosRest] = "*" ~> expression ^^ PosRest
+  lazy val kwargs: PackratParser[Args] =
+    rep1sep(kwargOrStarred, ",") ~ repsep(kwargOrDoubleStarred, ",") ^^ {
+      case l1 ~ l2 => Args(
+        l1.filter(_.isInstanceOf[PosArg]).asInstanceOf[List[PosArg]],
+        (l1.filter(_.isInstanceOf[KeyArg]) ++ l2.filter(_.isInstanceOf[KeyArg])).asInstanceOf[List[KeyArg]],
+        l2.filter(_.isInstanceOf[KeyStar]).asInstanceOf[List[KeyStar]]
+      )
+    } | rep1sep(kwargOrDoubleStarred, ",") ^^ {
+      case l2 => Args(Nil,
+        l2.filter(_.isInstanceOf[KeyArg]).asInstanceOf[List[KeyArg]],
+        l2.filter(_.isInstanceOf[KeyStar]).asInstanceOf[List[KeyStar]]
+      )
+    }
+  lazy val starredExpr: PackratParser[Expr] = "*" ~> expression ^^ StarExpr
   lazy val kwargOrStarred: PackratParser[Arg] =
-    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | starredExpr
+    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | starredExpr ^^ PosArg
   lazy val kwargOrDoubleStarred: PackratParser[Arg] = 
-    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | "**" ~> expression ^^ KeyRest
+    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | "**" ~> expression ^^ KeyStar
 
   //////////////////////////////////////////////////////////////////
   // targets
