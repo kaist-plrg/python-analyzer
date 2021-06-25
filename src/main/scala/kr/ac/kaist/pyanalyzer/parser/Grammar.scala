@@ -47,7 +47,7 @@ object Grammar {
   def Rep1(a: TestGenerator): TestGenerator = a ~ Rep(a)
 
   def Opt(t: TestGenerator): TestGenerator =
-    if (nextInt(2) == 0) "" else t
+    if (nextInt(5) == 0) "" else t
 
   def Rep1Sep(t: TestGenerator, sep: String): TestGenerator = t ~ Rep1(sep ~ t)
 
@@ -241,14 +241,6 @@ object Grammar {
       Prod("Conjunction") ~ Rep1("or" ~ Prod("Conjunction")),
     ),
     "Lambdef" -> List(
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
-      "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
       "lambda" ~ Opt(Prod("LambdaParams")) ~ ":" ~ Prod("Expression"),
     ),
     "LambdaParams" -> List(
