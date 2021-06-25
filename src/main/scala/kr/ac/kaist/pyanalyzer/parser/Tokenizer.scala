@@ -82,17 +82,15 @@ object Tokenizer extends Tokenizers
 trait Tokenizers extends RegexParsers {
   // line, comments, indents, whitespaces
   lazy val line = ".*\n".r
-  lazy val comments = "#.*\n".r
+  lazy val comments = "#[^\n]*".r
   // TODO implicit line joining
-  lazy val whitespace = """\s+""".r //TODO just use \s in needed
-  // TODO stack-based indent parser needed: look at 2.1.8 last line
+  lazy val whitespace = """[ \f\t]*""".r //TODO just use \s in needed
   
   // identifier 
-  lazy val id_start = """\w""".r
-  lazy val id_continue = """\w*""".r
-  lazy val identifier: Parser[Id] = (id_start ~ id_continue) ^^ {
-    case st ~ cts => Id(st + cts.mkString(""))
-  }
+  // lazy val id_start = log("""\w""".r)("idstart")
+  // lazy val id_continue = log("""\w""".r)("idcont")
+  // one token - one regex object, or whitespace is captured inbetween
+  lazy val identifier: Parser[Id] = """([a-zA-Z_])([a-zA-Z_0-9])*""".r ^^ Id
 
   // keywords
   val keywords = List(
@@ -102,7 +100,7 @@ trait Tokenizers extends RegexParsers {
     "import", "in", "is", "lambda", "nonlocal", "not", "or",
     "pass", "raise", "return", "try", "while", "with", "yield",
   )
-  lazy val keyword = keywords.mkString("|").r ^^ { case s => Keyword(s)}
+  lazy val keyword = keywords.mkString("|").r ^^ { case s => Keyword(s) }
 
   // literals
   lazy val quote = "['\"]".r
@@ -117,8 +115,6 @@ trait Tokenizers extends RegexParsers {
     "RB", "b", "B").mkString("|").r
   lazy val bytesLiteral: Parser[BytesLiteral] = bytesPrefix ~>
     (longQuote | shortQuote) ^^ BytesLiteral
-
-  // TODO escape character how?
 
   // TODO format string
   lazy val digit = "[0-9]".r
@@ -185,7 +181,7 @@ trait Tokenizers extends RegexParsers {
 
   // parseAll
   lazy val literal: Parser[Token] = imagNumber | floatNumber | integer | stringLiteral | bytesLiteral
-  lazy val token: Parser[Token] = literal | opBeforeDelim | delim | op | keyword | identifier
+  lazy val token: Parser[Token] = (literal | opBeforeDelim | delim | op | keyword | identifier)
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }
