@@ -78,6 +78,7 @@ object Beautifier {
       })
       implicit val lApp = ListApp[Param](sep = ", ")
       implicit val plApp: App[(List[Param], List[Param])] = {
+        case (app, (Nil, l2)) => app ~ "*, " ~ l2
         case (app, (l1, l2)) => app ~ l1 ~ ", *, " ~ l2
       }
       (starSepParam match {
