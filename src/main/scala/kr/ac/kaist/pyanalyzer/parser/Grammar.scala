@@ -55,6 +55,16 @@ object Grammar {
 
   implicit def mkTest(t: TestGenerator): String = t.toString
 
+  def genId: String = {
+    val length = nextInt(5)
+    def capital = nextInt(2) * 32
+    def alpha = (65 + nextInt(26) + capital).toChar
+    alpha + (for (i <- 1 to length) yield {
+      if (nextInt(2) == 0) (48 + nextInt(10)).toChar
+      else alpha
+    }).mkString("")
+  }
+
   // PEG Grammar
 
   // TODO: Add more grammar
@@ -123,11 +133,11 @@ object Grammar {
     // // TODO: Add negative lookahead
     // "TargetWithStarAtom" -> List(
     //   Prod("StarAtom"),
-    //   Prod("TPrimary") ~ "." ~ "id",
+    //   Prod("TPrimary") ~ "." ~ genId,
     //   // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
     // ),
     // "StarAtom" -> List(
-    //   "id",
+    //   genId,
     //   "(" ~ Prod("TargetWithStarAtom") ~ ")",
     //   "(" ~ Opt(Prod("StarTargetsTupleSeq")) ~ ")",
     //   "[" ~ Opt(Prod("StarTargetsListSeq")) ~ "]",
@@ -135,7 +145,7 @@ object Grammar {
     // // TODO: Add negative lookahead
     // "TPrimary" -> List(
     //   Prod("Atom"),
-    //   Prod("TPrimary") ~ "." ~ "id",
+    //   Prod("TPrimary") ~ "." ~ genId,
     //   // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
     //   // genexp
     //   // call
@@ -145,7 +155,7 @@ object Grammar {
       // "1",
       "1.0", "1j",
       "True", "False",
-      "id",
+      genId,
       """"str"""",
       Prod("Group"), Prod("List"), Prod("Tuple"), Prod("Set"),
       // TODO complex atom production
@@ -168,7 +178,7 @@ object Grammar {
     ),
     "Primary" -> List(
       Prod("Atom"),
-      Prod("Primary") ~ "." ~ "id",
+      Prod("Primary") ~ "." ~ genId,
       // TODO: Call
       Prod("Primary") ~ "[" ~ Prod("Slices") ~ "]",
     ),
@@ -269,13 +279,13 @@ object Grammar {
       "**" ~ Prod("LambdaParamNoDefault"),
     ),
     "LambdaParamNoDefault" -> List(
-      "id",
+      genId,
     ),
     "LambdaParamWithDefault" -> List(
-      "id" ~ Prod("Default"),
+      genId ~ Prod("Default"),
     ),
     "LambdaParamMaybeDefault" -> List(
-      "id" ~ Opt(Prod("Default")),
+      genId ~ Opt(Prod("Default")),
     ),
     "Default" -> List(
       "=" ~ Prod("Expression"),
@@ -296,7 +306,7 @@ object Grammar {
     ),
     "AssignExpr" -> List(
       // TODO: implement ~ operator in grammar spec
-      "id" ~ ":=" ~ Prod("Expression"),
+      genId ~ ":=" ~ Prod("Expression"),
     ),
     "StarNamedExpr" -> List(
       Prod("NamedExpr"),
