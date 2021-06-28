@@ -676,7 +676,8 @@ trait TokenListParsers extends PackratParsers {
     "StarTarget" -> starTarget,
     "TargetWithStarAtom" -> targetWithStarAtom,
     "StarAtom" -> starAtom,
-    "TPrimary" -> tPrimary,
+    // TODO: consider lookahead
+    // "TPrimary" -> tPrimary,
     "Atom" -> atom,
     "Slice" -> slice,
     "Primary" -> primary,

@@ -129,7 +129,8 @@ object Grammar {
     "StarTarget" -> List(
       Prod("TargetWithStarAtom"),
       // TODO: Add negative lookahead
-      "*" ~ Prod("StarTarget"),
+      // "*" ~ Prod("StarTarget"),
+      "*" ~ Prod("TargetWithStarAtom"),
     ),
     // TODO: Add negative lookahead
     "TargetWithStarAtom" -> List(
