@@ -351,27 +351,25 @@ trait TokenListParsers extends PackratParsers {
   //////////////////////////////////////////////////////////////////
   // arguments
   /////////////////////////////////////////////////////////////////
-  // TODO: Refactor Arg
+  // helper function for argument
+  def argList2Args(l: List[Arg]): Args = l.foldRight(Args()) {
+    case (e, Args(pl, kl, sl)) => e match {
+      case p: PosArg => Args(p :: pl, kl, sl)
+      case k: KeyArg => Args(pl, k :: kl, sl)
+      case s: KeyStar => Args(pl, kl, s :: sl)
+    }
+  }
   lazy val arguments: PackratParser[Args] = args <~ (opt(",") ~ guard(")"))
   lazy val args: PackratParser[Args] = 
-    // positional and keywords arguments case
     rep1sep(starredExpr | (assignExpr | expression <~ not(":=")) <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
       case el ~ None => Args(el.map(PosArg))
       case el ~ Some(Args(l1, l2, l3)) => Args(el.map(PosArg) ++ l1, l2, l3)
     } | kwargs
-
   lazy val kwargs: PackratParser[Args] =
-    rep1sep(kwargOrStarred, ",") ~ rep("," ~ kwargOrDoubleStarred) ^^ {
-      case l1 ~ l2 => Args(
-        l1.filter(_.isInstanceOf[PosArg]).asInstanceOf[List[PosArg]],
-        (l1.filter(_.isInstanceOf[KeyArg]) ++ l2.filter(_.isInstanceOf[KeyArg])).asInstanceOf[List[KeyArg]],
-        l2.filter(_.isInstanceOf[KeyStar]).asInstanceOf[List[KeyStar]]
-      )
+    rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ {
+      case l1 ~ l2 => argList2Args(l1 ++ l2)
     } | rep1sep(kwargOrDoubleStarred, ",") ^^ {
-      case l2 => Args(Nil,
-        l2.filter(_.isInstanceOf[KeyArg]).asInstanceOf[List[KeyArg]],
-        l2.filter(_.isInstanceOf[KeyStar]).asInstanceOf[List[KeyStar]]
-      )
+      case l2 => argList2Args(l2)
     }
   lazy val starredExpr: PackratParser[Expr] = "*" ~> expression ^^ StarExpr
   lazy val kwargOrStarred: PackratParser[Arg] =
