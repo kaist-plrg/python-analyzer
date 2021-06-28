@@ -27,7 +27,7 @@ object Grammar {
       case ~(a, b) => (s"$a", s"$b") match {
         case ("", str2) => str2
         case (str1, "") => str1
-        case (str1, str2) => s"$a $b"
+        case (str1, str2) => s"$str1 $str2"
       }
       // TODO: update repetition
       // 0 ~ 2 repetition
