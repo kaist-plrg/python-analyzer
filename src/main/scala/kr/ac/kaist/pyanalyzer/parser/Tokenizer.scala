@@ -90,6 +90,7 @@ trait Tokenizers extends RegexParsers {
   // lazy val id_start = log("""\w""".r)("idstart")
   // lazy val id_continue = log("""\w""".r)("idcont")
   // one token - one regex object, or whitespace is captured inbetween
+  // TODO Unicode characters are being ignored
   lazy val identifier: Parser[Id] = """([a-zA-Z_])([a-zA-Z_0-9])*""".r ^^ Id
 
   // keywords
@@ -135,6 +136,7 @@ trait Tokenizers extends RegexParsers {
 
   implicit lazy val temp = (p: Parser[String ~ String]) => p ^^ { comp2str(_) }
 
+  /*
   lazy val digitPart = digit ~ rep(opt("_".r) ~> digit) ^^ {
     case d ~ ld =>  ld.foldLeft(d)((res, e) => res + e)
   }
@@ -143,16 +145,33 @@ trait Tokenizers extends RegexParsers {
     case e ~ Some("-") ~ d => s"$e-$d"
     case e ~ _ ~ d => s"$e$d"
   }
-  lazy val pointFloat: Parser[String] = opt(digitPart) ~ fraction ^^ {
+  */
+  /* lazy val pointFloat: Parser[String] = opt(digitPart) ~ fraction ^^ {
     case opt ~ f => opt.getOrElse("0") + f
-  } | digitPart ~ "[.]".r
+  } | digitPart ~ "[.]".r */
+  /*
+  lazy val pointFloat: Parser[String] = """(\d(_?\d)*\.\d(_?\d)*)|(\d(_?\d)*\.)""".r ^^ {
+    case s => s.replaceAll("_", "")
+  }
   lazy val exponentFloat: Parser[String] = (pointFloat | digitPart) ~ exponent
   lazy val floatNumber: Parser[FloatLiteral] = (exponentFloat | pointFloat) ^^ { 
     case s => FloatLiteral(s.toDouble)
   }
+  */
 
-  lazy val imagNumber: Parser[ImagLiteral] = ((exponentFloat | pointFloat) | digitPart) <~ "[jJ]".r ^^ {
+  lazy val imagNumber: Parser[ImagLiteral] = imagNumberRegex.r <~ "[jJ]".r ^^ {
     case s => ImagLiteral(s.toDouble)
+  }
+  lazy val imagNumberRegex = "(" + floatNumberRegex + "|" + digitPart + ")"
+  // refactoring regex: intermediate regex is string, only top-level matchers are Parser[]
+  lazy val digitPart = """(\d(_?\d)*)"""
+  lazy val fraction = "(" + """\.""" + digitPart + ")"
+  lazy val exponent = "(" + """[eE][+-]?""" + digitPart + ")"
+  lazy val pointFloat = "(" + "(" + digitPart + "?" + fraction + ")" + "|" + "(" + digitPart + """\.""" + ")" + ")"   
+  lazy val exponentFloat = "(" + "(" + digitPart + "|" + pointFloat + ")" + exponent + ")"
+  lazy val floatNumberRegex = "(" + exponentFloat + "|" + pointFloat + ")"
+  lazy val floatNumber: Parser[FloatLiteral] = floatNumberRegex.r ^^ {
+    case s => FloatLiteral(s.replaceAll("_", "").toDouble) 
   }
 
   // operator
