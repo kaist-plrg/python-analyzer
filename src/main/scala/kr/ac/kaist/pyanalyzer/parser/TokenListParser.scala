@@ -267,7 +267,7 @@ trait TokenListParsers extends PackratParsers {
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
     primary ~ genexp ^^ {
       case f ~ g => Call(f, List(NormalArg(g)))
-    } | primary ~ ("(" ~> opt(args) <~ ")") ^^ {
+    } | primary ~ ("(" ~> opt(arguments) <~ ")") ^^ {
       case f ~ opt => Call(f, opt.getOrElse(Nil))
     } |
     primary ~ ("[" ~> slices <~ "]") ^^ {

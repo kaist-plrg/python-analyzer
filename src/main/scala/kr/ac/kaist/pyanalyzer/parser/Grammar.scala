@@ -8,7 +8,7 @@ object Grammar {
 
   // TODO: update the random sampling algorithm
   def weightedRandomIndex(length: Int) = {
-    val n = nextInt(length * 5)
+    val n = nextInt(length * 7)
     if (n >= length) 0 else n
   }
 
@@ -24,9 +24,10 @@ object Grammar {
       case Prod(name) =>
         val candidate = PEG_Grammar(name)
         candidate(weightedRandomIndex(candidate.length))
-      case ~(a, b) => s"$a" match {
-        case "" => b
-        case a => s"$a $b"
+      case ~(a, b) => (s"$a", s"$b") match {
+        case ("", str2) => str2
+        case (str1, "") => str1
+        case (str1, str2) => s"$a $b"
       }
       // TODO: update repetition
       // 0 ~ 2 repetition
@@ -179,7 +180,8 @@ object Grammar {
     "Primary" -> List(
       Prod("Atom"),
       Prod("Primary") ~ "." ~ genId,
-      // TODO: Call
+      // Prod("Primary") ~ Prod("Genexp"),
+      Prod("Primary") ~ "(" ~ Prod("Arguments") ~ ")",
       Prod("Primary") ~ "[" ~ Prod("Slices") ~ "]",
     ),
     "AwaitPrimary" -> List(
@@ -297,7 +299,6 @@ object Grammar {
       Prod("AssignExpr"),
     ),
     "AssignExpr" -> List(
-      // TODO: implement ~ operator in grammar spec
       genId ~ ":=" ~ Prod("Expression"),
     ),
     "StarNamedExpr" -> List(
@@ -319,6 +320,32 @@ object Grammar {
     "YieldExpr" -> List(
       "yield from" ~ Prod("Expression"),
       "yield" ~ Opt(Prod("StarExpr")),
+    ),
+    "Arguments" -> List(
+      Prod("Args") ~ Opt(","),
+    ),
+    "Args" -> List(
+      Rep1Sep(Prod("argsTarget"), ",") ~ Opt("," ~ Prod("Kwargs")),
+    ),
+    "argsTarget" -> List(
+      Prod("StarredExpr"), Prod("AssignExpr"), Prod("Expression"),
+    ),
+    "Kwargs" -> List(
+      Rep1Sep(Prod("KwargOrStarred"), ",") ~ "," ~
+        Rep1Sep(Prod("KwargOrDoubleStarred"), ","),
+      Rep1Sep(Prod("KwargOrStarred"), ","),
+      Rep1Sep(Prod("KwargOrDoubleStarred"), ","),
+    ),
+    "StarredExpr" -> List(
+      "*" ~ Prod("Expression"),
+    ),
+    "KwargOrStarred" -> List(
+      genId ~ "=" ~ Prod("Expression"),
+      Prod("StarredExpr"),
+    ),
+    "KwargOrDoubleStarred" -> List(
+      genId ~ "=" ~ Prod("Expression"),
+      "**" ~ Prod("Expression"),
     ),
   )
 }

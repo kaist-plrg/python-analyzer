@@ -10,6 +10,7 @@ object Beautifier {
     case op: Op => opApp(app, op)
     case param: Param => paramApp(app, param)
     case item: DictItem => dictItemApp(app, item)
+    case arg: Arg => argApp(app, arg)
     case _ => ???
   }
 
