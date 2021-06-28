@@ -384,7 +384,7 @@ trait TokenListParsers extends PackratParsers {
     case prim ~ s => ESubscript(prim, s)
   } | starAtom
   lazy val starAtom: PackratParser[Expr] = id|
-    "(" ~> targetWithStarAtom <~ ")" |
+    "(" ~> targetWithStarAtom <~ ")" ^^ GroupExpr |
     "(" ~> opt(starTargetsTupleSeq) <~ ")" ^^ { e => TupleExpr(e.getOrElse(Nil)) } |
     "[" ~> opt(starTargetsListSeq) <~ "]" ^^ { e => ListExpr(e.getOrElse(Nil)) }
   //TODO need impl
@@ -665,10 +665,10 @@ trait TokenListParsers extends PackratParsers {
   val prodMap: Map[String, Parser[Node]] = Map(
     "Group" -> group,
     "List" -> list,
-    // "Listcomp" -> listcomp,
+    "Listcomp" -> listcomp,
     "Tuple" -> tuple,
     "Set" -> set,
-    // "Setcomp" -> setcomp,
+    "Setcomp" -> setcomp,
     "Dict" -> dict,
     "Dictcomp" -> dictcomp,
     "ForIfClause" -> forIfClause,

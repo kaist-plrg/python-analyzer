@@ -78,24 +78,24 @@ object Grammar {
     "List" -> List(
       "[" ~ Opt(Prod("StarNamedExpr")) ~ "]",
     ),
-    // "Listcomp" -> List(
-    //   "[" ~ Prod("NamedExpr") ~ Prod("ForIfClauses") ~ "]",
-    // ),
+    "Listcomp" -> List(
+      "[" ~ Prod("NamedExpr") ~ Prod("ForIfClauses") ~ "]",
+    ),
     "Tuple" -> List(
       "(" ~ Opt(Prod("StarNamedExpr") ~ "," ~ Opt(Prod("StarNamedExpr"))) ~ ")",
     ),
     "Set" -> List(
       "{" ~ Prod("StarNamedExpr") ~ "}",
     ),
-    // "Setcomp" -> List(
-    //   "{" ~ Prod("NamedExpr") ~ Prod("ForIfClauses") ~ "}",
-    // ),
+    "Setcomp" -> List(
+      "{" ~ Prod("NamedExpr") ~ Prod("ForIfClauses") ~ "}",
+    ),
     "Dict" -> List(
       "{" ~ Opt(Prod("DoubleStarredKvPairs")) ~ "}",
     ),
-    // "Dictcomp" -> List(
-    //   "{" ~ Prod("KvPair") ~ Prod("ForIfClauses") ~ "}",
-    // ),
+    "Dictcomp" -> List(
+      "{" ~ Prod("KvPair") ~ Prod("ForIfClauses") ~ "}",
+    ),
     "DoubleStarredKvPairs" -> List(
       Rep1Sep(Prod("DoubleStarredKvPair"), ",") ~ Opt(","),
     ),
