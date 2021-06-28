@@ -361,7 +361,7 @@ trait TokenListParsers extends PackratParsers {
     } | kwargs
 
   lazy val kwargs: PackratParser[Args] =
-    rep1sep(kwargOrStarred, ",") ~ repsep(kwargOrDoubleStarred, ",") ^^ {
+    rep1sep(kwargOrStarred, ",") ~ rep("," ~ kwargOrDoubleStarred) ^^ {
       case l1 ~ l2 => Args(
         l1.filter(_.isInstanceOf[PosArg]).asInstanceOf[List[PosArg]],
         (l1.filter(_.isInstanceOf[KeyArg]) ++ l2.filter(_.isInstanceOf[KeyArg])).asInstanceOf[List[KeyArg]],
