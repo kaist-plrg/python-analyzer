@@ -18,12 +18,16 @@ case object ANone extends Expr
 case class ListExpr(ls: List[Expr]) extends Expr
 case class TupleExpr(tup: List[Expr]) extends Expr
 case class SetExpr(set: List[Expr]) extends Expr
-case class DictExpr(map: List[(Expr, Expr)]) extends Expr
+case class DictExpr(map: List[DictItem]) extends Expr
+
+sealed trait DictItem extends Node
+case class KvPair(key: Expr, value: Expr) extends DictItem
+case class DStarItem(expr: Expr) extends DictItem
 
 // Primary expressions except atom
 case class EAttrRef(prim: Expr, ref: AId) extends Expr
 case class ESubscript(prim: Expr, exprs: List[Expr]) extends Expr
-case class Call(prim: Expr, args: Args) extends Expr
+case class Call(prim: Expr, args: List[Arg]) extends Expr
 
 // Subexpression constructs
 // slice : [lb:ub:step]
@@ -32,17 +36,11 @@ case class Slice(lb: Option[Expr], ub: Option[Expr], step: Option[Expr]) extends
 // function call arguments
 // 2 kinds of arguments: positional and keyword
 // posRest and keyRest binds extra positional/keyword arguments supplied
-trait Arg extends Node
-case class Args(
-  posArgs: List[PosArg] = Nil,
-  keyArgs: List[KeyArg] = Nil,
-  keyStars: List[KeyStar] = Nil,
-)
-case class PosArg(expr: Expr) extends Arg
+sealed trait Arg extends Node
+case class NormalArg(expr: Expr) extends Arg
 case class KeyArg(id: AId, expr: Expr) extends Arg
-case class KeyStar(expr: Expr) extends Arg
 
-trait Param extends Node
+sealed trait Param extends Node
 case class PosParam(id: AId, default: Option[Expr]) extends Param
 case class KeyParam(id: AId, default: Option[Expr]) extends Param
 // arbitrary positional and keyword args
@@ -62,13 +60,14 @@ case class LambdaExpr(parms: List[Param], expr: Expr) extends Expr
 
 // 6.15 stared expression
 case class StarExpr(expr: Expr) extends Expr
+case class DStarExpr(expr: Expr) extends Expr
 
 // Generator, Comprehension related
 // TODO understand generator and comprehension
 case class CompFor(targets: Expr, inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
 case class ListCompExpr(target: Expr, comp: List[CompFor]) extends Expr
 case class SetCompExpr(target: Expr, comp: List[CompFor]) extends Expr
-case class DictCompExpr(kv: (Expr, Expr), comp: List[CompFor]) extends Expr
+case class DictCompExpr(kv: DictItem, comp: List[CompFor]) extends Expr
 
 // Generator
 case class YieldExpr(opt: Option[Expr]) extends Expr

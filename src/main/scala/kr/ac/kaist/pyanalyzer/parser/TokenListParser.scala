@@ -266,10 +266,9 @@ trait TokenListParsers extends PackratParsers {
     // //invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => EAttrRef(e, i) } |
     primary ~ genexp ^^ {
-      case f ~ g => Call(f, Args(List(PosArg(g))))
+      case f ~ g => Call(f, List(NormalArg(g)))
     } | primary ~ ("(" ~> opt(args) <~ ")") ^^ {
-      case f ~ None => Call(f, Args())
-      case f ~ Some(args) => Call(f, args)
+      case f ~ opt => Call(f, opt.getOrElse(Nil))
     } |
     primary ~ ("[" ~> slices <~ "]") ^^ {
       case p ~ s => ESubscript(p, s)
@@ -329,11 +328,11 @@ trait TokenListParsers extends PackratParsers {
   lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
     case kv ~ complist => DictCompExpr(kv, complist) 
   }
-  lazy val doubleStarredKvPairs: PackratParser[List[(Expr, Expr)]] = rep1sep(doubleStarredKvPair, ",") <~ opt(",")
-  lazy val doubleStarredKvPair: PackratParser[(Expr, Expr)] =
-    "**" ~> bitOr ^^ { (EEmpty, _) } | kvPair
-  lazy val kvPair: PackratParser[(Expr, Expr)] = expression ~ (":" ~> expression) ^^ {
-    case e1 ~ e2 => (e1, e2)
+  lazy val doubleStarredKvPairs: PackratParser[List[DictItem]] = rep1sep(doubleStarredKvPair, ",") <~ opt(",")
+  lazy val doubleStarredKvPair: PackratParser[DictItem] =
+    "**" ~> bitOr ^^ DStarExpr ^^ DStarItem | kvPair
+  lazy val kvPair: PackratParser[DictItem] = expression ~ (":" ~> expression) ^^ {
+    case e1 ~ e2 => KvPair(e1, e2)
   }
 
   // Comprehensions
@@ -351,31 +350,22 @@ trait TokenListParsers extends PackratParsers {
   //////////////////////////////////////////////////////////////////
   // arguments
   /////////////////////////////////////////////////////////////////
-  // helper function for argument
-  def argList2Args(l: List[Arg]): Args = l.foldRight(Args()) {
-    case (e, Args(pl, kl, sl)) => e match {
-      case p: PosArg => Args(p :: pl, kl, sl)
-      case k: KeyArg => Args(pl, k :: kl, sl)
-      case s: KeyStar => Args(pl, kl, s :: sl)
-    }
-  }
-  lazy val arguments: PackratParser[Args] = args <~ (opt(",") ~ guard(")"))
-  lazy val args: PackratParser[Args] = 
-    rep1sep(starredExpr | (assignExpr | expression <~ not(":=")) <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
-      case el ~ None => Args(el.map(PosArg))
-      case el ~ Some(Args(l1, l2, l3)) => Args(el.map(PosArg) ++ l1, l2, l3)
+  lazy val arguments: PackratParser[List[Arg]] = args <~ (opt(",") ~ guard(")"))
+  lazy val args: PackratParser[List[Arg]] =  rep1sep(starredExpr |
+    (assignExpr | expression <~ not(":=")) <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
+      case el ~ opt => el.map(NormalArg) ++ opt.getOrElse(Nil)
     } | kwargs
-  lazy val kwargs: PackratParser[Args] =
+  lazy val kwargs: PackratParser[List[Arg]] =
     rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ {
-      case l1 ~ l2 => argList2Args(l1 ++ l2)
-    } | rep1sep(kwargOrDoubleStarred, ",") ^^ {
-      case l2 => argList2Args(l2)
-    }
+      case l1 ~ l2 => l1 ++ l2
+    } | rep1sep(kwargOrDoubleStarred, ",")
   lazy val starredExpr: PackratParser[Expr] = "*" ~> expression ^^ StarExpr
-  lazy val kwargOrStarred: PackratParser[Arg] =
-    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | starredExpr ^^ PosArg
-  lazy val kwargOrDoubleStarred: PackratParser[Arg] = 
-    id ~ ("=" ~> expression) ^^ { case i ~ e => KeyArg(i, e)} | "**" ~> expression ^^ KeyStar
+  lazy val kwargOrStarred: PackratParser[Arg] = id ~ ("=" ~> expression) ^^ {
+    case i ~ e => KeyArg(i, e)
+  } | starredExpr ^^ NormalArg
+  lazy val kwargOrDoubleStarred: PackratParser[Arg] = id ~ ("=" ~> expression) ^^ {
+    case i ~ e => KeyArg(i, e)
+  } | "**" ~> expression ^^ DStarExpr ^^ NormalArg
 
   //////////////////////////////////////////////////////////////////
   // targets
@@ -425,9 +415,9 @@ trait TokenListParsers extends PackratParsers {
     } | tPrimary ~ ("[" ~> slices <~ "]" ~ not(tLookahead)) ^^ {
       case prim ~ s => ESubscript(prim, s)
     } | tPrimary ~ genexp <~ not(tLookahead) ^^ {
-      case prim ~ gen => Call(prim, Args(List(PosArg(gen)))) //TODO update call
+      case prim ~ gen => Call(prim, List(NormalArg(gen))) //TODO update call
     } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ not(tLookahead)) ^^ {
-      case prim ~ opt => Call(prim, opt.getOrElse(Args()))
+      case prim ~ opt => Call(prim, opt.getOrElse(Nil))
     } | atom <~ not(tLookahead)
 
   lazy val tLookahead: PackratParser[String] = "(" | "[" | "."

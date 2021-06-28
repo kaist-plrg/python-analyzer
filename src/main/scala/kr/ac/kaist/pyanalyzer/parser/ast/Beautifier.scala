@@ -9,11 +9,18 @@ object Beautifier {
     case e: Expr => exprApp(app, e)
     case op: Op => opApp(app, op)
     case param: Param => paramApp(app, param)
+    case item: DictItem => dictItemApp(app, item)
     case _ => ???
   }
 
-  implicit lazy val argApp: App[Args] = (app, arg) => arg match {
-    case _ => ???
+  implicit lazy val dictItemApp: App[DictItem] = (app, item) => item match {
+    case KvPair(k, v) => app ~ k ~ ": " ~ v
+    case DStarItem(e) => app ~ e
+  }
+
+  implicit lazy val argApp: App[Arg] = (app, arg) => arg match {
+    case NormalArg(e) => app ~ e
+    case KeyArg(x, e) => app ~ x ~ "=" ~ e
   }
 
   implicit lazy val paramApp: App[Param] = (app, param) => param match {
@@ -48,17 +55,15 @@ object Beautifier {
       implicit val lApp = ListApp[Expr]("{", ", ", "}")
       app ~ set
     case DictExpr(map) =>
-      implicit val pApp: App[(Expr, Expr)] = {
-        case (app, (EEmpty, v)) => app ~ "**" ~ v
-        case (app , (k, v)) => app ~ k ~ ": " ~ v
-      }
-      implicit val dApp = ListApp[(Expr, Expr)]("{", ", ", "}")
+      implicit val dApp = ListApp[DictItem]("{", ", ", "}")
       app ~ map
     case EAttrRef(prim, ref) => app ~ prim ~ "." ~ ref
     case ESubscript(prim, e) =>
       implicit val lApp = ListApp[Expr]("[", ", ", "]")
       app ~ prim ~ e
-    case Call(prim, args) => app ~ prim ~ args
+    case Call(prim, args) =>
+      implicit val lApp = ListApp[Arg]("(", ", ", ")")
+      app ~ prim ~ args
     case Slice(lb, ub, step) =>
       app ~ lb ~ ":" ~ ub
       step.map(x => app ~ ":" ~ x); app
@@ -90,6 +95,7 @@ object Beautifier {
         case s => app ~ s
       }) ~ ": " ~ e
     case StarExpr(e) => app ~ "*" ~ e
+    case DStarExpr(e) => app ~ "**" ~ e
     case CompFor(target, inExpr, ifExpr, async) =>
       implicit val lApp: App[List[Expr]] = (app, l) => l match {
         case Nil => app
@@ -103,12 +109,9 @@ object Beautifier {
     case SetCompExpr(target, comp) =>
       implicit val lApp = ListApp[Expr](" ", " ")
       app ~ "{" ~ target ~ comp ~ "}"
-    case DictCompExpr(kv, comp) =>
-      implicit val pApp: App[(Expr, Expr)] = {
-        case (app , (k, v)) => app ~ k ~ ": " ~ v
-      }
+    case DictCompExpr(item, comp) =>
       implicit val lApp = ListApp[Expr](" ", " ")
-      app ~ "{" ~ kv ~ comp ~ "}"
+      app ~ "{" ~ item ~ comp ~ "}"
     case YieldExpr(e) => app ~ "yield " ~ e
     case YieldFromExpr(e) => app ~ "yield from " ~ e
     case GroupExpr(e) => app ~ "(" ~ e ~ ")"
