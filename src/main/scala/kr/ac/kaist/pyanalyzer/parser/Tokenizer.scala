@@ -94,7 +94,7 @@ trait Tokenizers extends RegexParsers {
 
   // keywords
   val keywords = List(
-    "False", "None", "True", "and", "as", "assert", "async",
+    "False", "None", "True", "and", "async", "as", "assert",
     "await", "break", "class", "continue", "def", "del", "elif",
     "else", "except", "finally", "for", "from", "global", "if",
     "import", "in", "is", "lambda", "nonlocal", "not", "or",
