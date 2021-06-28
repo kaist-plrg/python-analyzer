@@ -106,52 +106,52 @@ object Grammar {
     "KvPair" -> List(
       Prod("Expression") ~ ":" ~ Prod("Expression")
     ),
-    // // Comprehension
-    // "ForIfClauses" -> List(
-    //   Rep1(Prod("ForIfClause")),
-    // ),
-    // "ForIfClause" -> List(
-    //   Opt("async") ~ "for" ~ Prod("StarTargets") ~ "in" ~ Prod("Disjunction") ~
-    //     Opt("if" ~ Prod("Disjunction")),
-    // ),
-    // "StarTargets" -> List(
-    //   // TODO: Add negative lookahead
-    //   Prod("StarTarget"),
-    //   Prod("StarTarget") ~ Rep("," ~ Prod("StarTarget")) ~ Opt(",")
-    // ),
-    // "StarTargetsListSeq" -> List(
-    //   Rep1Sep(Prod("StarTarget"), ",") ~ Opt(","),
-    // ),
-    // "StarTargetsTupleSeq" -> List(
-    //   Prod("StarTarget") ~ ",",
-    //   Prod("StarTarget") ~ Rep1("," ~ Prod("StarTarget")) ~ Opt(","),
-    // ),
-    // "StarTarget" -> List(
-    //   Prod("TargetWithStarAtom"),
-    //   // TODO: Add negative lookahead
-    //   "*" ~ Prod("StarTarget"),
-    // ),
-    // // TODO: Add negative lookahead
-    // "TargetWithStarAtom" -> List(
-    //   Prod("StarAtom"),
-    //   Prod("TPrimary") ~ "." ~ genId,
-    //   // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
-    // ),
-    // "StarAtom" -> List(
-    //   genId,
-    //   "(" ~ Prod("TargetWithStarAtom") ~ ")",
-    //   "(" ~ Opt(Prod("StarTargetsTupleSeq")) ~ ")",
-    //   "[" ~ Opt(Prod("StarTargetsListSeq")) ~ "]",
-    // ),
-    // // TODO: Add negative lookahead
-    // "TPrimary" -> List(
-    //   Prod("Atom"),
-    //   Prod("TPrimary") ~ "." ~ genId,
-    //   // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
-    //   // genexp
-    //   // call
-    // // Expression
-    // ),
+    // Comprehension
+    "ForIfClauses" -> List(
+      Rep1(Prod("ForIfClause")),
+    ),
+    "ForIfClause" -> List(
+      Opt("async") ~ "for" ~ Prod("StarTargets") ~ "in" ~ Prod("Disjunction") ~
+        Opt("if" ~ Prod("Disjunction")),
+    ),
+    "StarTargets" -> List(
+      // TODO: Add negative lookahead
+      Prod("StarTarget"),
+      Prod("StarTarget") ~ Rep("," ~ Prod("StarTarget")) ~ Opt(",")
+    ),
+    "StarTargetsListSeq" -> List(
+      Rep1Sep(Prod("StarTarget"), ",") ~ Opt(","),
+    ),
+    "StarTargetsTupleSeq" -> List(
+      Prod("StarTarget") ~ ",",
+      Prod("StarTarget") ~ Rep1("," ~ Prod("StarTarget")) ~ Opt(","),
+    ),
+    "StarTarget" -> List(
+      Prod("TargetWithStarAtom"),
+      // TODO: Add negative lookahead
+      "*" ~ Prod("StarTarget"),
+    ),
+    // TODO: Add negative lookahead
+    "TargetWithStarAtom" -> List(
+      Prod("StarAtom"),
+      Prod("TPrimary") ~ "." ~ genId,
+      // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
+    ),
+    "StarAtom" -> List(
+      genId,
+      "(" ~ Prod("TargetWithStarAtom") ~ ")",
+      "(" ~ Opt(Prod("StarTargetsTupleSeq")) ~ ")",
+      "[" ~ Opt(Prod("StarTargetsListSeq")) ~ "]",
+    ),
+    // TODO: Add negative lookahead
+    "TPrimary" -> List(
+      Prod("Atom"),
+      Prod("TPrimary") ~ "." ~ genId,
+      // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
+      // genexp
+      // call
+    // Expression
+    ),
     "Atom" -> List(
       // "1",
       "1.0", "1j",

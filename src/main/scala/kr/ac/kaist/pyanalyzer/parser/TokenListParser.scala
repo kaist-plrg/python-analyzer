@@ -385,8 +385,8 @@ trait TokenListParsers extends PackratParsers {
   } | starAtom
   lazy val starAtom: PackratParser[Expr] = id|
     "(" ~> targetWithStarAtom <~ ")" |
-    "(" ~> starTargetsTupleSeq <~ ")" ^^ TupleExpr |
-    "[" ~> starTargetsListSeq <~ "]" ^^ ListExpr
+    "(" ~> opt(starTargetsTupleSeq) <~ ")" ^^ { e => TupleExpr(e.getOrElse(Nil)) } |
+    "[" ~> opt(starTargetsListSeq) <~ "]" ^^ { e => ListExpr(e.getOrElse(Nil)) }
   //TODO need impl
   lazy val singleTarget: PackratParser[Expr] = (
     singleSubscriptAttrTarget | id | ("(" ~ singleTarget ~ ")")
@@ -410,15 +410,15 @@ trait TokenListParsers extends PackratParsers {
   ) ^^ ???
 
   lazy val tPrimary: PackratParser[Expr] =
-    tPrimary ~ ("." ~> id <~ not(tLookahead)) ^^ {
+    tPrimary ~ ("." ~> id <~ guard(tLookahead)) ^^ {
       case prim ~ x => EAttrRef(prim, x)
-    } | tPrimary ~ ("[" ~> slices <~ "]" ~ not(tLookahead)) ^^ {
+    } | tPrimary ~ ("[" ~> slices <~ "]" ~ guard(tLookahead)) ^^ {
       case prim ~ s => ESubscript(prim, s)
-    } | tPrimary ~ genexp <~ not(tLookahead) ^^ {
-      case prim ~ gen => Call(prim, List(NormalArg(gen))) //TODO update call
-    } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ not(tLookahead)) ^^ {
+    } | tPrimary ~ genexp <~ guard(tLookahead) ^^ {
+      case prim ~ gen => Call(prim, List(NormalArg(gen)))
+    } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ guard(tLookahead)) ^^ {
       case prim ~ opt => Call(prim, opt.getOrElse(Nil))
-    } | atom <~ not(tLookahead)
+    } | atom <~ guard(tLookahead)
 
   lazy val tLookahead: PackratParser[String] = "(" | "[" | "."
   // ...
@@ -670,13 +670,13 @@ trait TokenListParsers extends PackratParsers {
     "Set" -> set,
     // "Setcomp" -> setcomp,
     "Dict" -> dict,
-    // "Dictcomp" -> dictcomp,
-    // "ForIfClause" -> forIfClause,
-    // "StarTargets" -> starTargets,
-    // "StarTarget" -> starTarget,
-    // "TargetWithStarAtom" -> targetWithStarAtom,
-    // "StarAtom" -> starAtom,
-    // "TPrimary" -> tPrimary,
+    "Dictcomp" -> dictcomp,
+    "ForIfClause" -> forIfClause,
+    "StarTargets" -> starTargets,
+    "StarTarget" -> starTarget,
+    "TargetWithStarAtom" -> targetWithStarAtom,
+    "StarAtom" -> starAtom,
+    "TPrimary" -> tPrimary,
     "Atom" -> atom,
     "Slice" -> slice,
     "Primary" -> primary,
