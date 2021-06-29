@@ -28,7 +28,7 @@ trait TokenListParsers extends PackratParsers {
   // logging function
   // all productions must be explicitly wrapped with this
   ////////////////////////////////////////////
-  var setLog = true
+  var setLog = false
   
   def log[T](p: Parser[T])(name: String): Parser[T] = {
     if (!setLog) p else Parser{in: Input => { 
