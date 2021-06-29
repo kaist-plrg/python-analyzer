@@ -6,31 +6,30 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object Beautifier {
   implicit lazy val nodeApp: App[Node] = (app, node) => node match {
+    case stmt: Stmt => stmtApp(app, stmt)
     case e: Expr => exprApp(app, e)
-    case op: Op => opApp(app, op)
-    case param: Param => paramApp(app, param)
     case item: DictItem => dictItemApp(app, item)
     case arg: Arg => argApp(app, arg)
+    case param: Param => paramApp(app, param)
+    case op: Op => opApp(app, op)
     case _ => ???
   }
 
-  implicit lazy val dictItemApp: App[DictItem] = (app, item) => item match {
-    case KvPair(k, v) => app ~ k ~ ": " ~ v
-    case DStarItem(e) => app ~ e
-  }
-
-  implicit lazy val argApp: App[Arg] = (app, arg) => arg match {
-    case NormalArg(e) => app ~ e
-    case KeyArg(x, e) => app ~ x ~ "=" ~ e
-  }
-
-  implicit lazy val paramApp: App[Param] = (app, param) => param match {
-    case PosParam(id, default) =>
-      app ~ id; default.map(x => app ~ " = " ~ x); app
-    case KeyParam(id, default) =>
-      app ~ id; default.map(x => app ~ " = " ~ x); app
-    case ArbPosParam(id) => app ~ "*" ~ id
-    case ArbKeyParam(id) => app ~ "**" ~ id
+  implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
+    case PassStmt => app ~ "pass"
+    case BreakStmt => app ~ "break"
+    case ContinueStmt => app ~ "continue"
+    case GlobalStmt(xl) =>
+      implicit val lApp = ListApp[AId](sep = ", ")
+      app ~ "global " ~ xl
+    case NonlocalStmt(xl) =>
+      implicit val lApp = ListApp[AId](sep = ", ")
+      app ~ "nonlocal " ~ xl
+    case YieldStmt(e) => app ~ e
+    case AssertStmt(c, opt) =>
+      app ~ "assert" ~ c
+      opt.map(info => app ~ ", " ~ info); app
+    case _ => ???
   }
 
   implicit lazy val exprApp: App[Expr] = (app, expr) => expr match {
@@ -119,6 +118,25 @@ object Beautifier {
     case GenExpr(target, comp) =>
       implicit val lApp = ListApp[Expr](" ", " ")
       app ~ "(" ~ target  ~ comp ~ ")"
+  }
+
+  implicit lazy val dictItemApp: App[DictItem] = (app, item) => item match {
+    case KvPair(k, v) => app ~ k ~ ": " ~ v
+    case DStarItem(e) => app ~ e
+  }
+
+  implicit lazy val argApp: App[Arg] = (app, arg) => arg match {
+    case NormalArg(e) => app ~ e
+    case KeyArg(x, e) => app ~ x ~ "=" ~ e
+  }
+
+  implicit lazy val paramApp: App[Param] = (app, param) => param match {
+    case PosParam(id, default) =>
+      app ~ id; default.map(x => app ~ " = " ~ x); app
+    case KeyParam(id, default) =>
+      app ~ id; default.map(x => app ~ " = " ~ x); app
+    case ArbPosParam(id) => app ~ "*" ~ id
+    case ArbKeyParam(id) => app ~ "**" ~ id
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {

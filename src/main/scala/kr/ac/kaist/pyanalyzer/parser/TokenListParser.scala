@@ -748,7 +748,14 @@ trait TokenListParsers extends PackratParsers {
     "StarExprs" -> starExprs,
     "YieldExpr" -> yieldExpr,
     // Statement
+    "PassStmt" -> passStmt,
+    "BreakStmt" -> breakStmt,
+    "ContinueStmt" -> continueStmt,
     // "Assignment" -> assignment,
-
+    "GlobalStmt" -> globalStmt,
+    "NonlocalStmt" -> nonlocalStmt,
+    "YieldStmt" -> yieldStmt,
+    "AssertStmt" -> assertStmt,
+    // "DelStmt" -> delStmt,
   )
 }

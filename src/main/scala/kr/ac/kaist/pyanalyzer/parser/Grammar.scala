@@ -351,5 +351,22 @@ object Grammar {
       genId ~ "=" ~ Prod("Expression"),
       "**" ~ Prod("Expression"),
     ),
+    // Statement
+    "PassStmt" -> List("pass"),
+    "BreakStmt" -> List("break"),
+    "ContinueStmt" -> List("continue"),
+    "GlobalStmt" -> List(
+      "global" ~ Rep1Sep(Prod("genId"), ", "),
+    ),
+    "NonlocalStmt" -> List(
+      "nonlocal" ~ Rep1Sep(Prod("genId"), ", "),
+    ),
+    "YieldStmt" -> List(
+      Prod("YieldExpr"),
+    ),
+    "AssertStmt" -> List(
+      "assert" ~ Prod("Expression") ~ Opt("," ~ Prod("Expression")),
+    ),
+    "genId" -> List(genId)
   )
 }
