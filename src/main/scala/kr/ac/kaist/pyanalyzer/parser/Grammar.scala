@@ -1,5 +1,6 @@
 package kr.ac.kaist.pyanalyzer.parser
 
+import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import scala.util.Random._
 
 object Grammar {
@@ -60,10 +61,11 @@ object Grammar {
     val length = nextInt(5)
     def capital = nextInt(2) * 32
     def alpha = (65 + nextInt(26) + capital).toChar
-    alpha + (for (i <- 1 to length) yield {
+    val res = alpha + (for (i <- 1 to length) yield {
       if (nextInt(2) == 0) (48 + nextInt(10)).toChar
       else alpha
     }).mkString("")
+    if (keywords contains res) genId else res
   }
 
   // PEG Grammar
