@@ -4,22 +4,22 @@ package kr.ac.kaist.pyanalyzer.parser
 object Token {
   def toPrettyString(token: Token): String = token match {
     case Newline => "\\n\n"
-    case Indent => "INDENT "
-    case Dedent => "DEDENT "
-    case Id(s) => s"id($s) "
-    case Keyword(s) => s + " "
-    case StrLiteral(s) => s"lit:$s "
-    case BytesLiteral(b) => s"lit:$b "
-    case IntLiteral(i) => s"lit:$i "
-    case FloatLiteral(f) => s"lit:$f "
-    case ImagLiteral(i) => s"lit:${i}j "
-    case Op(s) => s + " "
-    case Delim(s) => s + " "
+    case Indent => "INDENT"
+    case Dedent => "DEDENT"
+    case Id(s) => s"id($s)"
+    case Keyword(s) => s
+    case StrLiteral(s) => s""""$s""""
+    case BytesLiteral(b) => s"$b"
+    case IntLiteral(i) => s"$i"
+    case FloatLiteral(f) => s"$f"
+    case ImagLiteral(i) => s"${i}j"
+    case Op(s) => s
+    case Delim(s) => s
   }
   def printTokens(tokens: List[Token]): Unit = tokens.foreach(t => print(toPrettyString(t)))
 }
 abstract class Token(name: String, content: String) {
-  // override def toString: String = content
+  override def toString: String = Token.toPrettyString(this)
 }
 
 case object Newline extends Token("NEWLINE", "\n")

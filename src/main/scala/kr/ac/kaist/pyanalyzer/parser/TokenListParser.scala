@@ -17,9 +17,48 @@ trait TokenListParsers extends PackratParsers {
     override def first: Token = tokens.head
     override def atEnd: Boolean = tokens.isEmpty
     override def pos: Position = pos
-    override def rest: Reader[Token] = new TokenReader(tokens.tail, pos.copy(column=pos.column+1))
+    override def rest: Reader[Token] = new TokenReader(tokens.tail, 
+      pos.copy(column=pos.column + tokens.head.toString.length() + 1)
+    )
   }
-  def TokenReader(ts: Seq[Token]) = new TokenReader(ts, TokenPosition(0,0, ""))
+  def TokenReader(ts: Seq[Token]) = 
+    new TokenReader(ts, TokenPosition(0,0, ts.map(_.toString).mkString(" ").replaceAll("[\n\r]$", "")))
+
+  //////////////////////////////////////////////
+  // logging function
+  // all productions must be explicitly wrapped with this
+  ////////////////////////////////////////////
+  var setLog = true
+  
+  def log[T](p: Parser[T])(name: String): Parser[T] = {
+    if (!setLog) p else Parser{in: Input => { 
+        val msg = (
+          s"trying $name at [${in.pos}] \n" +
+          s"${in.pos.longString}\n"
+        )
+        stop(msg) match {
+          case "q" => 
+            setLog = false
+            p(in)
+          case "j" =>
+            setLog = false
+            val r = p(in)
+            println(name + " --> " + r)
+            setLog = true
+            r
+          case _ =>
+            val r = p(in)
+            println(name + " --> " + r)
+            r
+        }
+      }
+    }
+  }
+  protected def stop(msg: String): String = {
+     println(msg)
+     val res = scala.io.StdIn.readLine
+     res
+  }
 
   //////////////////////////////////////////////////////////////////
   // Parsing rule definitions
@@ -33,61 +72,61 @@ trait TokenListParsers extends PackratParsers {
  
   // TODO write good failure messages
   // identifiers
-  lazy val id: PackratParser[AId] = Parser(in => firstMap(in, _ match {
+  lazy val id: PackratParser[AId] = log(Parser(in => firstMap(in, _ match {
     case Id(name) => Success(AId(name), in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("id")
 
   // keywords, op and delimiters
-  lazy val keyword: PackratParser[String] = Parser(in => firstMap(in, _ match {
+  lazy val keyword: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
     case Keyword(s) => Success(s, in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("keyword")
 
-  lazy val op: PackratParser[String] = Parser(in => firstMap(in, _ match {
+  lazy val op: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
     case Op(s) => Success(s, in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("op")
 
-  lazy val delim: PackratParser[String] = Parser(in => firstMap(in, _ match {
+  lazy val delim: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
     case Delim(s) => Success(s, in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("delim")
   
   // literals, number, name(id)
-  lazy val stringLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
+  lazy val stringLiteral: PackratParser[Expr] = log(Parser(in => firstMap(in, _ match {
     case StrLiteral(s) => Success(AStringLiteral(s), in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("stringLiteral")
 
-  lazy val bytesLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
+  lazy val bytesLiteral: PackratParser[Expr] = log(Parser(in => firstMap(in, _ match {
     case BytesLiteral(b) => Success(ABytesLiteral(b), in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("bytesLiteral")
 
-  lazy val intLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
+  lazy val intLiteral: PackratParser[Expr] = log(Parser(in => firstMap(in, _ match {
     case IntLiteral(i) => Success(AIntLiteral(i.toInt), in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("intLiteral")
 
-  lazy val floatLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
+  lazy val floatLiteral: PackratParser[Expr] = log(Parser(in => firstMap(in, _ match {
     case FloatLiteral(f) => Success(AFloatLiteral(f.toDouble), in.rest)
     case t => Failure(s"", in) 
-  }))
+  })))("floatLiteral")
 
-  lazy val imagLiteral: PackratParser[Expr] = Parser(in => firstMap(in, _ match {
+  lazy val imagLiteral: PackratParser[Expr] = log(Parser(in => firstMap(in, _ match {
     case ImagLiteral(i) => Success(AImagLiteral(i.toDouble), in.rest)
     case t => Failure(s"", in)
-  }))
+  })))("imagLiteral")
 
-  lazy val indent: PackratParser[Unit] = Parser(in => firstMap(in, _ match {
+  lazy val indent: PackratParser[Unit] = log(Parser(in => firstMap(in, _ match {
     case Indent => Success((), in.rest)
     case _ => Failure(s"", in)
-  }))
-  lazy val dedent: PackratParser[Unit] = Parser(in => firstMap(in, _ match {
+  })))("indent")
+  lazy val dedent: PackratParser[Unit] = log(Parser(in => firstMap(in, _ match {
     case Dedent => Success((), in.rest)
     case _ => Failure(s"", in)
-  }))
+  })))("dedent")
 
   // TODO need impl. is this parser or tokenizer?
   lazy val typeComment: PackratParser[Unit] = ???
@@ -108,6 +147,8 @@ trait TokenListParsers extends PackratParsers {
         })
     })
   }
+
+
 
   ///////////////////////////////////////////////
   // expressions
@@ -135,15 +176,16 @@ trait TokenListParsers extends PackratParsers {
   } | expression <~ "," ^^ {
     case x => TupleExpr(List(x))
   } | expression
-  lazy val expression: PackratParser[Expr] =
+  lazy val expression: PackratParser[Expr] = log(
     disjunction ~ ("if" ~> disjunction ~ ("else" ~> expression)) ^^ {
       case ie ~ (te ~ ee) => CondExpr(ie, te, ee)
     } | disjunction | lambdef
+  )("expression")
   // lambda expressions
-  lazy val lambdef: PackratParser[Expr] = ("lambda" ~> opt(lambdaParams) <~ ":") ~ expression ^^ {
+  lazy val lambdef: PackratParser[Expr] = log(("lambda" ~> opt(lambdaParams) <~ ":") ~ expression ^^ {
     case Some(pl) ~ e => LambdaExpr(pl, e)
     case None ~ e => LambdaExpr(Nil, e)
-  }
+  })("lambdef")
   // Spec used Params expression for List of Param
   lazy val lambdaParams: PackratParser[List[Param]] = (
     lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
