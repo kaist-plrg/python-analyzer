@@ -8,7 +8,7 @@ object Grammar {
 
   // TODO: update the random sampling algorithm
   def weightedRandomIndex(length: Int) = {
-    val n = nextInt(length * 7)
+    val n = nextInt(length * 9)
     if (n >= length) 0 else n
   }
 
@@ -148,9 +148,9 @@ object Grammar {
     "TPrimary" -> List(
       Prod("Atom"),
       Prod("TPrimary") ~ "." ~ genId,
-      // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
-      // genexp
-      // call
+      Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
+      Prod("TPrimary") ~ Prod("Genexp"),
+      Prod("TPrimary") ~ "(" ~ Opt(Prod("Arguments")) ~ ")",
     // Expression
     ),
     "Atom" -> List(
@@ -160,13 +160,14 @@ object Grammar {
       genId,
       """"str"""",
       Prod("Group"), Prod("List"), Prod("Tuple"), Prod("Set"),
-      // TODO complex atom production
-      // tuple, group, genexp
-      // list, listcomp
-      // dict, set, dictcomp, setcomp
-
-      // Failed case
-      // "...",
+      Prod("Dict"), Prod("Listcomp"), Prod("Dictcomp"), Prod("Setcomp"),
+      Prod("Genexp")
+    ),
+    "genTarget" -> List(
+      Prod("AssignExpr"), Prod("Expression"),
+    ),
+    "Genexp" -> List(
+      "(" ~ Prod("genTarget") ~ Prod("ForIfClauses") ~ ")"
     ),
     "Slice" -> List(
       Prod("NamedExpr"),
@@ -181,7 +182,7 @@ object Grammar {
     "Primary" -> List(
       Prod("Atom"),
       Prod("Primary") ~ "." ~ genId,
-      // Prod("Primary") ~ Prod("Genexp"),
+      Prod("Primary") ~ Prod("Genexp"),
       Prod("Primary") ~ "(" ~ Prod("Arguments") ~ ")",
       Prod("Primary") ~ "[" ~ Prod("Slices") ~ "]",
     ),
