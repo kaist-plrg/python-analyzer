@@ -10,7 +10,7 @@ case object EmptyStmt extends SimpleStmt
 case class AssignStmt(targets: List[Expr], expr: Expr) extends SimpleStmt
 case class AugAssignStmt(target: Expr, op: AugOp, expr: Expr) extends SimpleStmt
 case class StarStmt(expr: Expr) extends SimpleStmt // only StarExpr can given
-case class ReturnStmt(exprs: StarStmt) extends SimpleStmt
+case class ReturnStmt(exprs: Expr) extends SimpleStmt
 
 trait ImportStmt extends SimpleStmt
 case class ImportName(ns: List[String]) extends ImportStmt

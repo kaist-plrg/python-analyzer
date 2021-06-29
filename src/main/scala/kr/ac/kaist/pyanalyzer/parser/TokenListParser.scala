@@ -598,7 +598,7 @@ trait TokenListParsers extends PackratParsers {
 
   // return, raise stmt
   lazy val returnStmt: PackratParser[Stmt] = 
-    ("return" ~ opt(starExprs)) ^^ ???
+    ("return" ~> opt(starExprs)) ^^ { e => ReturnStmt(e.getOrElse(ANone)) }
   lazy val raiseStmt: PackratParser[Stmt] = (
     "raise" ~ expression ~ opt("from" ~ expression)
     | "raise"
@@ -747,5 +747,8 @@ trait TokenListParsers extends PackratParsers {
     "StarExpr" -> starExpr,
     "StarExprs" -> starExprs,
     "YieldExpr" -> yieldExpr,
+    // Statement
+    // "Assignment" -> assignment,
+
   )
 }
