@@ -2,62 +2,71 @@ package kr.ac.kaist.pyanalyzer.parser.ast
 
 sealed trait Stmt extends Node
 
+// Related constructs
+trait TyComment // TODO model type comment
+
+case class Keyword(id: Option[Id], expr: Expr)
+case class Alias(name: Id, asName: Option[Id])
+case class WithItem(expr: Expr, asExpr: Option[Expr])
+case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
+
+// Match patterns
+trait Pattern
+case class MatchValue(expr: Expr) extends Pattern
+case class MatchSingleton(const: Constant) extends Pattern
+case class MatchSequence(patterns: List[Pattern]) extends Pattern
+case class MatchStar(name: Option[Id]) extends Pattern
+case class MatchMapping(map: List[(Expr, Pattern)], name: Option[Id]) extends Pattern
+case class MatchClass(classExpr: Expr, patterns: List[Pattern], map: List[(Id, Pattern)]) extends Pattern
+case class MatchAs(pattern: Pattern, name: Id) extends Pattern
+case class MatchOr(lhs: Pattern, rhs: Pattern) extends Pattern
+case object MatchWildcard extends Pattern
+
+// Exception handler
+case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt])
+
+// Args
+trait Args // TODO model args
+
+/////////////////////////////////////////////
+// Statements
+/////////////////////////////////////////////
+// Function, Class definitions
+case class FunDef(decos: List[Expr], name: Id, args: Args, retExpr: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
+case class AsyncFunDef(decos: List[Expr], name: Id, args: Args, retExpr: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
+case class ClassDef(decos: List[Expr], name: Id, exprs: List[Expr], kwds: List[Keyword], body: List[Stmt]) extends Stmt 
+
 // Simple statements
-sealed trait SimpleStmt extends Stmt
-// psudo-expr emptystmt
-case object EmptyStmt extends SimpleStmt
+case class ReturnStmt(expr: Option[Expr]) extends Stmt
+case class DelStmt(targets: List[Expr]) extends Stmt
+case class AssignStmt(targets: List[Expr], expr: Expr, ty: Option[TyComment]) extends Stmt
+case class AugAssignStmt(target: Expr, op: BOp, expr: Expr) extends Stmt
+case class AnnAssignStmt() extends Stmt //TODO what does this mean?
 
-case class AssignStmt(targets: List[Expr], expr: Expr) extends SimpleStmt
-case class AugAssignStmt(target: Expr, op: AugOp, expr: Expr) extends SimpleStmt
-case class StarStmt(expr: Expr) extends SimpleStmt // only StarExpr can given
-case class ReturnStmt(exprs: Expr) extends SimpleStmt
+// Loops
+case class ForStmt(ty: Option[TyComment], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
+case class AsyncForStmt(ty: Option[TyComment], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
+case class WhileStmt(whileExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
+case class IfStmt(cond: Expr, thenStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
 
-trait ImportStmt extends SimpleStmt
-case class ImportName(ns: List[String]) extends ImportStmt
-// TODO define import_from
-case class ImportFrom() extends ImportStmt
+// With and Pattern matching
+case class WithStmt(ty: Option[TyComment], items: List[WithItem], doStmt: List[Stmt]) extends Stmt
+case class AsyncWithStmt(ty: Option[TyComment], items: List[WithItem], doStmt: List[Stmt]) extends Stmt
+case class MatchStmt(expr: Expr, cases: List[MatchCase]) extends Stmt   
 
-trait RaiseStmt extends SimpleStmt
-case class RaiseExpr(raise: Expr, from: Expr) extends RaiseStmt
-case object RaiseLiteral extends RaiseStmt
+// Exception related
+case class RaiseStmt(expr: Option[Expr], from: Option[Expr]) extends Stmt 
+case class TryStmt(tryStmt: List[Stmt], handlers: List[ExcHandler], elseStmt: List[Stmt], finallyStmt: List[Stmt]) extends Stmt
+case class AssertStmt(expr: Expr, toRaise: Option[Expr]) extends Stmt
 
-case object PassStmt extends SimpleStmt
-// TODO define del_targets and subs
-case class DelStmt(targets: List[Expr]) extends SimpleStmt
-case class YieldStmt(expr: Expr) extends SimpleStmt
-case class AssertStmt(check: Expr, raise: Option[Expr] ) extends SimpleStmt
-case object BreakStmt extends SimpleStmt
-case object ContinueStmt extends SimpleStmt
-case class GlobalStmt(ns: List[AId]) extends SimpleStmt
-case class NonlocalStmt(ns: List[AId]) extends SimpleStmt
+// Module, scope related
+case class ImportStmt(aliases: List[Alias]) extends Stmt
+case class ImportFromStmt(fromId: Option[Id], alises: List[Alias]) extends Stmt
+case class GlobalStmt(ids: List[Id]) extends Stmt
+case class NonlocalStmt(ids: List[Id]) extends Stmt
 
-trait Suite
-
-// Compound statements
-sealed trait CompoundStmt extends Stmt
-
-case class FunDefStmt(
-    deco: List[Expr],
-    fname: AId,
-    params: List[Param],
-    annotation: Expr,
-    bodySu: Suite
-  ) extends CompoundStmt
-case class IfStmt(cond: Expr, thenSu: Suite, elifSu: List[Suite],
-  elseSu: Option[Suite]) extends CompoundStmt
-case class ClassDefStmt(deco: List[Expr], classname: AId,
-  parents: List[AId], bodySu: Suite) extends CompoundStmt
-case class WithStmt(items: List[(Expr, Option[Expr])],
-  bodySu: Suite) extends CompoundStmt
-case class ForStmt(target: List[Expr], list: List[Expr], bodySu: Suite,
-  elseSu: Option[Suite]) extends CompoundStmt
-case class TryStmt(
-    bodySu: Suite,
-    exceptionTuple: List[(Option[Expr], Option[AId], Suite)],
-    elseSu: Option[Suite],
-    finallySu: Option[Suite]
-  ) extends CompoundStmt
-case class WhileStmt(cond: Expr, bodySu: Suite,
-  elseSu: Option[Suite]) extends CompoundStmt
-case class MatchStmt(expr: Expr, cases: List[Suite]) extends CompoundStmt
-// TODO Coroutine
+// Other simple statements
+case class ExprStmt(expr: Expr) extends Stmt
+case object PassStmt extends Stmt
+case object BreakStmt extends Stmt
+case object ContinueStmt extends Stmt

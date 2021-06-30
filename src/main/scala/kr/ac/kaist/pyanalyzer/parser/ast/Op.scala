@@ -7,41 +7,43 @@ case class AugOp(op: String) extends Op
 // case class CompareOp(op: String) extends Op
 
 // binary operators
-sealed trait BOp extends Op
-case object OLShift extends BOp
-case object ORShift extends BOp
-case object OAdd extends BOp
-case object OSub extends BOp
-case object OMul extends BOp
-case object ODiv extends BOp
-case object OIDiv extends BOp
-case object OMod extends BOp
-case object OAt extends BOp
-case object OPow extends BOp
-case object OBAnd extends BOp
-case object OBOr extends BOp
-case object OBXor extends BOp
+sealed trait BinOp extends Op
+case object OLShift extends BinOp
+case object ORShift extends BinOp
+case object OAdd extends BinOp
+case object OSub extends BinOp
+case object OMul extends BinOp
+case object ODiv extends BinOp
+case object OIDiv extends BinOp
+case object OMod extends BinOp
+case object OAt extends BinOp
+case object OPow extends BinOp
+case object OBAnd extends BinOp
+case object OBOr extends BinOp
+case object OBXor extends BinOp
+
+sealed trait BoolOP extends Op
+case object OAnd extends BoolOp
+case object OOr extends BoolOp
 
 // compare operators
-sealed trait COp extends Op
-case object CEq extends COp
-case object CNeq extends COp
-case object CLte extends COp
-case object CLt extends COp
-case object CGte extends COp
-case object CGt extends COp
-case object CNotIn extends COp
-case object CIn extends COp
-case object CIsNot extends COp
-case object CIs extends COp
+sealed trait CompOp extends Op
+case object CEq extends CompOp
+case object CNeq extends CompOp
+case object CLte extends CompOp
+case object CLt extends CompOp
+case object CGte extends CompOp
+case object CGt extends CompOp
+case object CNotIn extends CompOp
+case object CIn extends CompOp
+case object CIsNot extends CompOp
+case object CIs extends CompOp
 
 // logical operators
 sealed trait LOp extends Op
 case object LNot extends LOp
-case object LAnd extends LOp
-case object LOr extends LOp
 
-sealed trait UOp extends Op
-case object UPlus extends UOp
-case object UMinus extends UOp
-case object UInv extends UOp // bitwise inverse
+sealed trait UnOp extends Op
+case object UPlus extends UnOp
+case object UMinus extends UnOp
+case object UInv extends UnOp // bitwise inverse

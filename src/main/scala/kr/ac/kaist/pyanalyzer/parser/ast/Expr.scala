@@ -1,76 +1,49 @@
 package kr.ac.kaist.pyanalyzer.parser.ast
 
-// 6. Expression
+///////////////////////////////////
+// Expressions
+///////////////////////////////////
 sealed trait Expr extends Node
-case object EEmpty extends Expr
 
-// Atom: id, literals, and enclosure
-case class AId(name: String) extends Expr
-case class AStringLiteral(s: String) extends Expr
-case class ABytesLiteral(b: String) extends Expr
-case class AIntLiteral(i: Int) extends Expr
-case class AFloatLiteral(f: Double) extends Expr
-case class AImagLiteral(i: Double) extends Expr
-case class ABool(b: Boolean) extends Expr
-case object ANone extends Expr
+// Basic expressions
+case class BoolExpr(op: BoolOp, lhs: Expr, rhs: Expr) extends Expr
+case class NamedExpr(lhs: Expr, rhs: Expr) extends Expr
+case class BinaryExpr(op: BinOp, lhs: Expr, rhs: Expr) extends Expr
+case class UnaryExpr(op: UnOp, expr: Expr) extends Expr
 
-// Displays
-case class ListExpr(ls: List[Expr]) extends Expr
-case class TupleExpr(tup: List[Expr]) extends Expr
+// Simple compound expression
+case class LambdaExpr(args: Args, expr: Expr) extends Expr
+case class IfExpr(cond: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr
+
+// Display expressions
+case class DictExpr(map: List[(Expr, Expr)]) extends Expr
 case class SetExpr(set: List[Expr]) extends Expr
-case class DictExpr(map: List[DictItem]) extends Expr
+case class ListExpr(ls: List[Expr]) extends Expr
 
-sealed trait DictItem extends Node
-case class KvPair(key: Expr, value: Expr) extends DictItem
-case class DStarItem(expr: Expr) extends DictItem
+// Display comprehensions
+case class ListComp(target: Expr, comp: List[Comp]) extends Expr
+case class SetComp(target: Expr, comp: List[Comp]) extends Expr
+case class DictComp(key: Expr, value: Expr, comp: List[Comp]) extends Expr
+case class GeneratorComp(expr: Expr, comp:  List[Comp]) extends Expr
 
-// Primary expressions except atom
-case class EAttrRef(prim: Expr, ref: AId) extends Expr
-case class ESubscript(prim: Expr, exprs: List[Expr]) extends Expr
-case class Call(prim: Expr, args: List[Arg]) extends Expr
-
-// Subexpression constructs
-// slice : [lb:ub:step]
-case class Slice(lb: Option[Expr], ub: Option[Expr], step: Option[Expr]) extends Expr
-
-// function call arguments
-// 2 kinds of arguments: positional and keyword
-// posRest and keyRest binds extra positional/keyword arguments supplied
-sealed trait Arg extends Node
-case class NormalArg(expr: Expr) extends Arg
-case class KeyArg(id: AId, expr: Expr) extends Arg
-
-sealed trait Param extends Node
-case class PosParam(id: AId, default: Option[Expr]) extends Param
-case class KeyParam(id: AId, default: Option[Expr]) extends Param
-// arbitrary positional and keyword args
-case class ArbPosParam(id: AId) extends Param
-case class ArbKeyParam(id: AId) extends Param
-
-// 6.4-6.13 Arithmetic, Bitwise, Comparison
-case class UnaryExpr(op: Op, expr: Expr) extends Expr
-case class BinaryExpr(op: Op, lhs: Expr, rhs: Expr) extends Expr
-case class CompareExpr(head: Expr, lp: List[(COp, Expr)]) extends Expr
-case class AssignExpr(id: AId, expr: Expr) extends Expr
-case class CondExpr(ifExpr: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr
+// Generator related
 case class AwaitExpr(expr: Expr) extends Expr
-
-// 6.14 Lambdas
-case class LambdaExpr(parms: List[Param], expr: Expr) extends Expr
-
-// 6.15 stared expression
-case class StarExpr(expr: Expr) extends Expr
-case class DStarExpr(expr: Expr) extends Expr
-
-// Generator, Comprehension related
-// TODO understand generator and comprehension
-case class CompFor(targets: Expr, inExpr: Expr, ifExpr: List[Expr], async: Boolean) extends Expr
-case class ListCompExpr(target: Expr, comp: List[CompFor]) extends Expr
-case class SetCompExpr(target: Expr, comp: List[CompFor]) extends Expr
-case class DictCompExpr(kv: DictItem, comp: List[CompFor]) extends Expr
-
-// Generator
 case class YieldExpr(opt: Option[Expr]) extends Expr
 case class YieldFromExpr(expr: Expr) extends Expr
-case class GroupExpr(expr: Expr) extends Expr // TODO understand meaning of this expression,
-case class GenExpr(target: Expr, comp: List[Expr]) extends Expr 
+case class CompExpr(lhs: Expr, op: CompOp, rhs: Expr) extends Expr
+
+// Call
+case class Call(fun: Expr, exprs: List[Expr], kwds: List[Keyword]) extends Expr
+
+// Formatted value
+case class FormattedValue(lhs: Expr, n: Option[Int], rhs: Option[Expr]) extends Expr
+
+// Other simple expressions
+case class JoinedStr(exprs: List[Expr]) extends Expr
+case class EConst(c: Constant) extends Expr
+case class Attribute(expr: Expr, field: Expr) extends Expr
+case class Subscript(expr: Expr, slice: Expr) extends Expr
+case class Starred(expr: Expr) extends Expr
+case class EName(id: Id) extends Expr
+case class Slice(start: Option[Expr], end: Option[Expr], stride: Option[Expr]) extends Expr
+
