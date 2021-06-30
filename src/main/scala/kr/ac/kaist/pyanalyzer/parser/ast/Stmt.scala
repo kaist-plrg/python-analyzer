@@ -28,7 +28,10 @@ case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt])
 
 // Args
 case class Arg(name: Id, ann: Option[Expr], ty: Option[String])
-case class Args(posOnlys: List[(Arg, Expr)], normArgs: List[(Arg, Expr)], varArg: Option[Arg], keyOnlys: List[(Arg, Expr)], kwArg: Option[Arg]) 
+case class Args(posOnlys: List[(Arg, Option[Expr])], normArgs: List[(Arg, Option[Expr])], varArg: Option[Arg], keyOnlys: List[(Arg, Option[Expr])], kwArg: Option[Arg]) 
+object Args {
+  val empty = Args(Nil, Nil, None, Nil, None)
+}
 
 // Comprehension
 trait Comp
