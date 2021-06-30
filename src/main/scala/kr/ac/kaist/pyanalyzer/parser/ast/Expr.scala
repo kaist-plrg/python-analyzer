@@ -46,4 +46,3 @@ case class Subscript(expr: Expr, slice: Expr) extends Expr
 case class Starred(expr: Expr) extends Expr
 case class EName(id: Id) extends Expr
 case class Slice(start: Option[Expr], end: Option[Expr], stride: Option[Expr]) extends Expr
-

@@ -5,7 +5,7 @@ sealed trait Stmt extends Node
 // Related constructs
 trait TyComment // TODO model type comment
 
-case class Keyword(id: Option[Id], expr: Expr)
+case class Kwarg(id: Option[Id], expr: Expr)
 case class Alias(name: Id, asName: Option[Id])
 case class WithItem(expr: Expr, asExpr: Option[Expr])
 case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
@@ -26,7 +26,13 @@ case object MatchWildcard extends Pattern
 case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt])
 
 // Args
-trait Args // TODO model args
+case class Arg(name: Id, ann: Option[Expr], ty: Option[String])
+case class Args(posOnlys: List[(Arg, Expr)], normArgs: List[(Arg, Expr)], varArg: Option[Arg], keyOnlys: List[(Arg, Expr)], kwArg: Option[Arg]) 
+
+// Comprehension
+trait Comp
+case class ForComp(target: Expr, in: Expr, cond: List[Expr]) extends Comp
+case class AsyncComp(target: Expr, in: Expr, cond: List[Expr]) extends Comp
 
 /////////////////////////////////////////////
 // Statements
@@ -34,14 +40,14 @@ trait Args // TODO model args
 // Function, Class definitions
 case class FunDef(decos: List[Expr], name: Id, args: Args, retExpr: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
 case class AsyncFunDef(decos: List[Expr], name: Id, args: Args, retExpr: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
-case class ClassDef(decos: List[Expr], name: Id, exprs: List[Expr], kwds: List[Keyword], body: List[Stmt]) extends Stmt 
+case class ClassDef(decos: List[Expr], name: Id, exprs: List[Expr], kwds: List[Kwarg], body: List[Stmt]) extends Stmt 
 
 // Simple statements
 case class ReturnStmt(expr: Option[Expr]) extends Stmt
 case class DelStmt(targets: List[Expr]) extends Stmt
 case class AssignStmt(targets: List[Expr], expr: Expr, ty: Option[TyComment]) extends Stmt
-case class AugAssignStmt(target: Expr, op: BOp, expr: Expr) extends Stmt
-case class AnnAssignStmt() extends Stmt //TODO what does this mean?
+case class AugAssign(target: Expr, op: BOp, expr: Expr) extends Stmt
+case class AnnAssign(target: Expr, ann: Expr, expr: Expr) extends Stmt
 
 // Loops
 case class ForStmt(ty: Option[TyComment], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt

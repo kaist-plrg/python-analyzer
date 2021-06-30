@@ -8,9 +8,9 @@ object Beautifier {
   implicit lazy val nodeApp: App[Node] = (app, node) => node match {
     case stmt: Stmt => stmtApp(app, stmt)
     case e: Expr => exprApp(app, e)
-    case item: DictItem => dictItemApp(app, item)
+    // case item: DictItem => dictItemApp(app, item)
     case arg: Arg => argApp(app, arg)
-    case param: Param => paramApp(app, param)
+    // case param: Param => paramApp(app, param)
     case op: Op => opApp(app, op)
     case _ => ???
   }
@@ -20,10 +20,10 @@ object Beautifier {
     case BreakStmt => app ~ "break"
     case ContinueStmt => app ~ "continue"
     case GlobalStmt(xl) =>
-      implicit val lApp = ListApp[AId](sep = ", ")
+      implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "global " ~ xl
     case NonlocalStmt(xl) =>
-      implicit val lApp = ListApp[AId](sep = ", ")
+      implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "nonlocal " ~ xl
     case YieldStmt(e) => app ~ e
     case AssertStmt(c, opt) =>
@@ -33,8 +33,7 @@ object Beautifier {
   }
 
   implicit lazy val exprApp: App[Expr] = (app, expr) => expr match {
-    case EEmpty => ???
-    case AId(x) => app ~ x
+    // case Id(x) => app ~ x
     case AStringLiteral(str) => app ~ s""""$str""""
     case ABytesLiteral(b) => app ~ s"b$b"
     case AIntLiteral(i) => app ~ s"$i"
@@ -54,9 +53,11 @@ object Beautifier {
     case SetExpr(set) =>
       implicit val lApp = ListApp[Expr]("{", ", ", "}")
       app ~ set
+    /*
     case DictExpr(map) =>
       implicit val dApp = ListApp[DictItem]("{", ", ", "}")
       app ~ map
+    */
     case EAttrRef(prim, ref) => app ~ prim ~ "." ~ ref
     case ESubscript(prim, e) =>
       implicit val lApp = ListApp[Expr]("[", ", ", "]")
@@ -120,16 +121,19 @@ object Beautifier {
       app ~ "(" ~ target  ~ comp ~ ")"
   }
 
+  /*
   implicit lazy val dictItemApp: App[DictItem] = (app, item) => item match {
     case KvPair(k, v) => app ~ k ~ ": " ~ v
     case DStarItem(e) => app ~ e
   }
+  */
 
   implicit lazy val argApp: App[Arg] = (app, arg) => arg match {
     case NormalArg(e) => app ~ e
     case KeyArg(x, e) => app ~ x ~ "=" ~ e
   }
 
+  /*
   implicit lazy val paramApp: App[Param] = (app, param) => param match {
     case PosParam(id, default) =>
       app ~ id; default.map(x => app ~ " = " ~ x); app
@@ -138,6 +142,7 @@ object Beautifier {
     case ArbPosParam(id) => app ~ "*" ~ id
     case ArbKeyParam(id) => app ~ "**" ~ id
   }
+  */
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {
     case AugOp(op) => ???
