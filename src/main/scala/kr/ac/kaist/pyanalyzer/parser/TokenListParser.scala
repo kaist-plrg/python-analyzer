@@ -200,53 +200,99 @@ trait TokenListParsers extends PackratParsers {
 
   // TODO refactor below
   lazy val lambdaParams: PackratParser[Args] = (
-    (
-      lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
-        case lp1 ~ lp2 ~ lp3 => ???
-      } | 
-      lambdaSlashWithDefault ~ rep(lambdaParamWithDefault) ^^ {
-        case lp1 ~ lp2 => ???
-      } | 
-      rep1(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
-        case lp1 ~ lp2 => ???
-      } | 
-      rep1(lambdaParamWithDefault)
-    ) ~ opt(lambdaStarEtc) ^^ { case lp ~ opt => ??? } | 
-    lambdaStarEtc ^^ { ??? }
-  )
-
-  lazy val lambdaSlashNoDefault: PackratParser[List[_]] = rep1(lambdaParamNoDefault) <~ ("/" ~ ("," | guard(":"))) ^^ {
-    ???
-  }
-
-  lazy val lambdaSlashWithDefault: PackratParser[List[_]] =
-    rep(lambdaParamNoDefault) ~ rep1(lambdaParamWithDefault) <~ ("/" ~ ("," | guard(":"))) ^^ {
-      case lp1 ~ lp2 => ???
-    }
-  lazy val lambdaStarEtc: PackratParser[List[_]] = ( 
-    (
-      "*" ~> (id <~ lambdaSep) ~ rep(lambdaParamMaybeDefault) ^^ {
-        case pos ~ l => ???
-      } | 
-      ("*" ~ ",") ~> rep1(id ~ opt(default) <~ lambdaSep) ^^ {
-        case lx => lx.map {
-          case x ~ opt => ???
+    lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ~ opt(lambdaStarEtc) ^^ {
+      case snl ~ pnl ~ pwl ~ kopt => {
+        val posonly: List[(Arg, Option[Expr])] = snl.map(a => (a, None)) 
+        val midl: List[(Arg, Option[Expr])] = pnl.map(a =>  (a, None))
+        kopt match {
+          case Some(args) => args.copy(posOnlys =  posonly, normArgs = midl)
+          case None => Args(posonly, midl, None, Nil, None)
         }
       }
-    ) ~ opt(lambdaKwds) ^^ {
-      case lp ~ opt => ???
-    } | 
-    lambdaKwds ^^ { ??? }
+    } |
+    lambdaSlashWithDefault ~ rep(lambdaParamWithDefault) ~ opt(lambdaStarEtc) ^^ {
+      case (snl, swl) ~ pwl ~ kopt => {
+        val posNoDefault: List[(Arg, Option[Expr])]  = snl.map(a => (a, None))
+        val posonly = posNoDefault ++ swl
+        kopt match {
+          case Some(args) => args.copy(posOnlys = posonly, normArgs= pwl)
+          case None => Args(posonly, pwl, Nonw, Nil, None)
+        }
+      }
+    } |
+    rep1(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ~ opt(lambdaStarEtc) ^^ {
+      case pnl ~ pwl ~ kopt => { 
+        val normNd: List[(Arg, Option[Expr])] = pnl.map(a => (a, None))
+        val normargs = normNd ++ pwl
+        kopt match {
+          case Some(args) => args.copy(normArgs = normargs)
+          case None =>Args(Nil, normargs, None, Nil, None)
+        }
+      }
+    } |
+    rep1(lambdaParamWithDefault) ~ opt(lambdaStarEtc) ^^ {
+      case pwl ~ kopt => {
+        kopt match {
+          case Some(args) => args.copy(normArgs = pwl)
+          case None => Args(Nil, pwl, None, Nil, None)
+        }
+      }
+    } |
+    lambdaStarEtc
   )
-  lazy val lambdaKwds: PackratParser[_] = "**" ~> id <~ lambdaSep ^^ { ??? }
-  lazy val lambdaParamNoDefault: PackratParser[_] = id <~ lambdaSep ^^ { ??? }
-  lazy val lambdaParamWithDefault: PackratParser[_] = id ~ default <~ lambdaSep ^^ {
-    case x ~ e => ???
-  }
-  lazy val lambdaParamMaybeDefault: PackratParser[_] = id ~ opt(default) <~ lambdaSep ^^ {
-    case x ~ opt => ???
-  }
-  lazy val lambdaSep = "," | guard(":")
+
+  // pos only
+  lazy val lambdaSlashNoDefault: PackratParser[List[Arg]] = (
+    rep1(lambdaParamNoDefault) <~ ("/" ~ (",")) |
+    rep1(lambdaParamNoDefault) <~ ("/" ~ guard(":"))
+  )
+
+  // pos only
+  lazy val lambdaSlashWithDefault: PackratParser[(List[Arg], List[(Arg, Option[Expr])])] = (
+    rep(lambdaParamNoDefault) ~ rep1(lambdaParamWithDefault) <~ ("/" ~ (",")) ^^ {
+      case pnl ~ pwl => (pnl, pwl)
+    } |
+    rep(lambdaParamNoDefault) ~ rep1(lambdaParamWithDefault) <~ ("/" ~ guard(":")) ^^ {
+      case pnl ~ pwl => (pnl, pwl)
+    }
+  )
+
+  // vararg, keyword only arg, kwargs can appear
+  lazy val lambdaStarEtc: PackratParser[Args] = ( 
+    ("*" ~> lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ~ opt(lambdaKwds) ^^ {
+      case a ~ pwl ~ kopt => Args(Nil, Nil, a, pwl, kopt)
+    } |
+    (("*" ~ ",") ~> rep1(lambdaParamMaybeDefault)) ~ opt(lambdaKwds) ^^ {
+      case pml ~ kopt => Args(Nil, Nil, None, pml, kopt)
+    } |
+    lambdaKwds ^^ { case a => Args(Nil, Nil, None, Nil, Some(a)) }
+  )
+  lazy val lambdaKwds: PackratParser[Arg] = "**" ~> lambdaParamNoDefault
+
+  lazy val lambdaParamNoDefault: PackratParser[Arg] = ( 
+    lambdaParam <~ "," ^^ { case x => Arg(x, None, None) } |
+    lambdaParam <~ guard(":") ^^ { case x => Arg(x, None, None) }
+  )
+
+  lazy val lambdaParamWithDefault: PackratParser[(Arg, Option[Expr])] = (
+    lambdaParam ~ default <~ "," ^^ {
+      case x ~ e => (Arg(x, None, None), Some(e))
+    } |
+    lambdaParam ~ default <~ guard(":") ^^ {
+      case x ~ e => (Arg(x, None, None), Some(e))
+    }
+  ) 
+
+  lazy val lambdaParamMaybeDefault: PackratParser[(Arg, Option[Expr])] = ( 
+    lambdaParam ~ opt(default) <~ "," ^^ {
+      case x ~ dopt => (Arg(x, None, None), dopt)
+    } |
+    lambdaParam ~ opt(default) <~ guard(":") ^^ {
+      case x ~ dopt => (Arg(x, None, None), dopt)
+    }
+  )
+
+  lazy val lambdaParam: PackratParser[Id] = id
 
   ///////////////////////////////////////////
   // Expressions : production rules
@@ -571,23 +617,27 @@ trait TokenListParsers extends PackratParsers {
     matchStmt
 
   // assignment stmt
-  lazy val assignment: PackratParser[Stmt] =
+  lazy val assignment: PackratParser[Stmt] = (
     // TODO `":" ~> expression` part means type expression annotation... deal with this
     (id ~ (":" ~> expression) ~ opt("=" ~ annotatedRhs) ^^ {  
       case x ~ e ~ Some(rhs) => ??? 
       case x ~ e ~ None => ???
     }) |
-    ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) <~ ":" ~ expression ~ opt("=" ~ annotatedRhs) ) ^^ { case _ => ??? } |
+    ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) <~ ":" ~ expression ~ opt("=" ~ annotatedRhs) ) ^^ { 
+      case _ => ??? 
+    } |
     (rep1(starTargets <~ "=") ~ (yieldExpr | starExprs) ~ (not("=") ~> opt(typeComment))) ^^ {
       case stl ~ e ~ tyopt => AssignStmt(stl, e, tyopt) // TODO currently ignoring type comment
     } | 
     (singleTarget ~ augAssign ~ (yieldExpr | starExprs)) ^^ {
       case t ~ op ~ e => AugAssign(t, op, e)
     } 
-  lazy val augAssign: PackratParser[BinOp] = 
+  )
+  lazy val augAssign: PackratParser[BinOp] = ( 
     ("+=" | "-=" | "*=" | "@=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "**=" | "//=") ^^ {
       case s => Op.getBinOp(s.dropRight(1)).getOrElse(???) // TODO raise appropriate error
     }
+  )
  
   // some simple stmt
   lazy val globalStmt: PackratParser[Stmt] = ("global" ~> rep1sep(id, ",")) ^^ GlobalStmt 
@@ -868,7 +918,8 @@ trait TokenListParsers extends PackratParsers {
           case None => Args(Nil, pwl, None, Nil, None)
         }
       }
-    }
+    } |
+    starEtc
   )
   lazy val slashNoDefault: PackratParser[List[Arg]] = (
     rep1(paramNoDefault) <~ ("/" ~ ",") |
