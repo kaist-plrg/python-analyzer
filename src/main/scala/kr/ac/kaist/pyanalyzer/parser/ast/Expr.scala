@@ -13,7 +13,7 @@ case class UnaryExpr(op: UnOp, expr: Expr) extends Expr
 
 // Simple compound expression
 case class LambdaExpr(args: Args, expr: Expr) extends Expr
-case class IfExpr(cond: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr
+case class IfExpr(expr: Expr, cond: Expr, elseExpr: Expr) extends Expr
 
 // Display expressions
 case class DictExpr(map: List[(Expr, Expr)]) extends Expr
@@ -34,14 +34,14 @@ case class YieldFromExpr(expr: Expr) extends Expr
 case class CompExpr(lhs: Expr, lp: List[(CompOp, Expr)]) extends Expr
 
 // Call
-case class Call(fun: Expr, exprs: List[Expr], kwds: List[Keyword]) extends Expr
+case class Call(fun: Expr, exprs: List[Expr], kwds: List[Kwarg]) extends Expr
 
 // Formatted value
 case class FormattedValue(lhs: Expr, n: Option[Int], rhs: Option[Expr]) extends Expr
 
 // Other simple expressions
 case class JoinedStr(exprs: List[Expr]) extends Expr
-case class EConst(c: Constant) extends Expr
+case class EConst(c: Const) extends Expr
 case class Attribute(expr: Expr, field: Expr) extends Expr
 case class Subscript(expr: Expr, slice: Expr) extends Expr
 case class Starred(expr: Expr) extends Expr

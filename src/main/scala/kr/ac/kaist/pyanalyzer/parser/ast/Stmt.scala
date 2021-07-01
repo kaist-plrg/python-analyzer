@@ -13,7 +13,7 @@ case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
 // Match patterns
 trait Pattern
 case class MatchValue(expr: Expr) extends Pattern
-case class MatchSingleton(const: Constant) extends Pattern
+case class MatchSingleton(const: Const) extends Pattern
 case class MatchSequence(patterns: List[Pattern]) extends Pattern
 case class MatchStar(name: Option[Id]) extends Pattern
 case class MatchMapping(map: List[(Expr, Pattern)], name: Option[Id]) extends Pattern
@@ -46,7 +46,7 @@ case class ClassDef(decos: List[Expr], name: Id, exprs: List[Expr], kwds: List[K
 case class ReturnStmt(expr: Option[Expr]) extends Stmt
 case class DelStmt(targets: List[Expr]) extends Stmt
 case class AssignStmt(targets: List[Expr], expr: Expr, ty: Option[TyComment]) extends Stmt
-case class AugAssign(target: Expr, op: BOp, expr: Expr) extends Stmt
+case class AugAssign(target: Expr, op: Op, expr: Expr) extends Stmt
 case class AnnAssign(target: Expr, ann: Expr, expr: Expr) extends Stmt
 
 // Loops
