@@ -49,7 +49,7 @@ case class ClassDef(decos: List[Expr], name: Id, exprs: List[Expr], kwds: List[K
 // Simple statements
 case class ReturnStmt(expr: Option[Expr]) extends Stmt
 case class DelStmt(targets: List[Expr]) extends Stmt
-case class AssignStmt(targets: List[Expr], expr: Expr, ty: Option[TyComment]) extends Stmt
+case class AssignStmt(targets: List[Expr], expr: Expr, ty: Option[String]) extends Stmt
 case class AugAssign(target: Expr, op: Op, expr: Expr) extends Stmt
 case class AnnAssign(target: Expr, ann: Expr, expr: Expr) extends Stmt
 

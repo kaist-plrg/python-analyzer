@@ -19,7 +19,7 @@ object SourceParser {
   // TODO change Expr to Stm t
   def apply(filename: String): Expr = {
     val source = readSource(filename)
-    if (source == "") EEmpty
+    if (source == "") ???
     else {
       val tokens = tokenizeText(source)
       TokenListParser(tokens) 

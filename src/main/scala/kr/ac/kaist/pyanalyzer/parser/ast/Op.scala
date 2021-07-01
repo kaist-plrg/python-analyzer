@@ -41,3 +41,22 @@ case object CNotIn extends CompOp // not in
 case object CIn extends CompOp // in
 case object CIsNot extends CompOp // is not
 case object CIs extends CompOp // is
+
+object Op{
+  lazy val binOpMap: Map[String, BinOp] = Map(
+    "<<" -> OLShift,
+    ">>" -> ORShift,
+    "+" -> OAdd,
+    "-" -> OSub,
+    "*" -> OMul,
+    "/" -> ODiv,
+    "//" -> OIDiv,
+    "%" -> OMod,
+    "@" -> OAt,
+    "**" -> OPow,
+    "&" -> OBAnd,
+    "|" -> OBOr,
+    "^" -> OBXor,
+  )
+  def getBinOp(s: String): Option[BinOp] = binOpMap get s
+}

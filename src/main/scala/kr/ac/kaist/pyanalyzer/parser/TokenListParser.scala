@@ -182,51 +182,67 @@ trait TokenListParsers extends PackratParsers {
     } | disjunction// | lambdef
   )("expression")
 
-  // lambda expressions
+  ///////////////////////////////////////////
+  // Lambda expressions
+  ///////////////////////////////////////////
   lazy val lambdef: PackratParser[Expr] = log(("lambda" ~> opt(lambdaParams) <~ ":") ~ expression ^^ {
-    case Some(pl) ~ e => LambdaExpr(pl, e)
-    case None ~ e => LambdaExpr(Nil, e)
+    case Some(a) ~ e => LambdaExpr(a, e)
+    case None ~ e => LambdaExpr(Args.empty, e)
   })("lambdef")
 
-  // Spec used Params expression for List of Param
-  lazy val lambdaParams: PackratParser[List[_]] = (
-    lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
-      case lp1 ~ lp2 ~ lp3 => lp1 ++ lp2 ++ lp3
-    } | lambdaSlashWithDefault ~ rep(lambdaParamWithDefault) ^^ {
-      case lp1 ~ lp2 => lp1 ++ lp2
-    } | rep1(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
-      case lp1 ~ lp2 => lp1 ++ lp2
-    } | rep1(lambdaParamWithDefault)
-    ) ~ opt(lambdaStarEtc) ^^ {
-      case lp ~ opt => opt.map(lp ++ _) getOrElse lp
-    } | lambdaStarEtc
-  lazy val lambdaSlashNoDefault: PackratParser[List[_]] =
-    rep1(lambdaParamNoDefault) <~ ("/" ~ ("," | guard(":")))
+  // TODO refactor below
+  lazy val lambdaParams: PackratParser[Args] = (
+    (
+      lambdaSlashNoDefault ~ rep(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
+        case lp1 ~ lp2 ~ lp3 => ???
+      } | 
+      lambdaSlashWithDefault ~ rep(lambdaParamWithDefault) ^^ {
+        case lp1 ~ lp2 => ???
+      } | 
+      rep1(lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ^^ {
+        case lp1 ~ lp2 => ???
+      } | 
+      rep1(lambdaParamWithDefault)
+    ) ~ opt(lambdaStarEtc) ^^ { case lp ~ opt => ??? } | 
+    lambdaStarEtc ^^ { ??? }
+  )
+
+  lazy val lambdaSlashNoDefault: PackratParser[List[_]] = rep1(lambdaParamNoDefault) <~ ("/" ~ ("," | guard(":"))) ^^ {
+    ???
+  }
+
   lazy val lambdaSlashWithDefault: PackratParser[List[_]] =
     rep(lambdaParamNoDefault) ~ rep1(lambdaParamWithDefault) <~ ("/" ~ ("," | guard(":"))) ^^ {
-      case lp1 ~ lp2 => lp1 ++ lp2
+      case lp1 ~ lp2 => ???
     }
-  lazy val lambdaStarEtc: PackratParser[List[_]] = (
-    "*" ~> (id <~ lambdaSep) ~ rep(lambdaParamMaybeDefault) ^^ {
-      case pos ~ l => ArbPosParam(pos) :: l
-    } | ("*" ~ ",") ~> rep1(id ~ opt(default) <~ lambdaSep) ^^ {
-      case lx => lx.map {
-        case x ~ opt => KeyParam(x, opt)
+  lazy val lambdaStarEtc: PackratParser[List[_]] = ( 
+    (
+      "*" ~> (id <~ lambdaSep) ~ rep(lambdaParamMaybeDefault) ^^ {
+        case pos ~ l => ???
+      } | 
+      ("*" ~ ",") ~> rep1(id ~ opt(default) <~ lambdaSep) ^^ {
+        case lx => lx.map {
+          case x ~ opt => ???
+        }
       }
-    }) ~ opt(lambdaKwds) ^^ {
-      case lp ~ opt => opt.map(lp :+ _) getOrElse lp
-    } | lambdaKwds ^^ { List(_) }
-  lazy val lambdaKwds: PackratParser[_] = "**" ~> id <~ lambdaSep ^^ ArbKeyParam
-  lazy val lambdaParamNoDefault: PackratParser[_] = id <~ lambdaSep ^^ { PosParam(_, None) }
+    ) ~ opt(lambdaKwds) ^^ {
+      case lp ~ opt => ???
+    } | 
+    lambdaKwds ^^ { ??? }
+  )
+  lazy val lambdaKwds: PackratParser[_] = "**" ~> id <~ lambdaSep ^^ { ??? }
+  lazy val lambdaParamNoDefault: PackratParser[_] = id <~ lambdaSep ^^ { ??? }
   lazy val lambdaParamWithDefault: PackratParser[_] = id ~ default <~ lambdaSep ^^ {
-    case x ~ e => PosParam(x, Some(e))
+    case x ~ e => ???
   }
   lazy val lambdaParamMaybeDefault: PackratParser[_] = id ~ opt(default) <~ lambdaSep ^^ {
-    case x ~ opt => PosParam(x, opt)
+    case x ~ opt => ???
   }
   lazy val lambdaSep = "," | guard(":")
 
+  ///////////////////////////////////////////
   // Expressions : production rules
+  ///////////////////////////////////////////
   lazy val disjunction: PackratParser[Expr] = conjunction ~ rep1("or" ~> conjunction) ^^ {
     case e ~ el => el.foldLeft(e)( (sum, elem) => BoolExpr(OOr, sum, elem) )
   } | conjunction
@@ -390,24 +406,62 @@ trait TokenListParsers extends PackratParsers {
     // TODO: scala operator precedance problem here with | 
 
   //////////////////////////////////////////////////////////////////
-  // arguments
+  // Arguments
+  // for one arg, Expr or Kwarg(id?, expr) can be returned.
+  // Expr -> always positional arg
+  // Kwarg(Some(id), e) -> always keyword arg
+  // Kwarg(None, Starred(...)) -> vararg (ie. *arg_list)
+  // Kwarg(None, _) -> kwargs (ie. **arg_dict)
+  // TODO revise, clarify above rule
   /////////////////////////////////////////////////////////////////
-  lazy val arguments: PackratParser[List[Arg]] = args <~ (opt(",") ~ guard(")"))
-  lazy val args: PackratParser[List[Arg]] =  rep1sep(starredExpr |
-    (assignExpr | expression <~ not(":=")) <~ not("="), ",") ~ opt("," ~> kwargs) ^^ {
-      case el ~ opt => el.map(NormalArg) ++ opt.getOrElse(Nil)
-    } | kwargs
-  lazy val kwargs: PackratParser[List[Arg]] =
-    rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ {
-      case l1 ~ l2 => l1 ++ l2
-    } | rep1sep(kwargOrDoubleStarred, ",")
-  lazy val starredExpr: PackratParser[Expr] = "*" ~> expression ^^ StarExpr
-  lazy val kwargOrStarred: PackratParser[Arg] = id ~ ("=" ~> expression) ^^ {
-    case i ~ e => KeyArg(i, e)
-  } | starredExpr ^^ NormalArg
-  lazy val kwargOrDoubleStarred: PackratParser[Arg] = id ~ ("=" ~> expression) ^^ {
-    case i ~ e => KeyArg(i, e)
-  } | "**" ~> expression ^^ DStarExpr ^^ NormalArg
+  lazy val arguments: PackratParser[(List[Expr], List[Kwarg])] = args <~ (opt(",") ~ guard(")"))
+  lazy val args: PackratParser[(List[Expr], List[Kwarg])] = ( 
+    (rep1sep(starredExpr | (assignExpr | expression <~ not(":=")) <~ not("="), ",")) ~ opt("," ~> kwargs) ^^ {
+      // el : 
+      // get Starred from starredExpr, convert it to Kwarg(None, Kwarg) and put to second list
+      // put others to first list
+      // opt:
+      // get List[Kwarg], put to second list
+      case el ~ opt => {
+        def matcher(p: (List[Expr], List[Kwarg]), e: Expr): (List[Expr], List[Kwarg]) = p match {
+            case (el, kl) => e match {
+              case e: Starred => (el, kl :+ Kwarg(None, e))
+              case _ => (el :+ e, kl)
+            }
+          }
+        val (elist, klist) = el.foldLeft( (List[Expr](), List[Kwarg]()) )( matcher )
+        opt match {
+          case Some(kl) => (elist, klist ++ kl)
+          case None => (elist, klist)
+        }
+      }
+    } | 
+    kwargs ^^ {
+      // kwl : just put to second list
+      case kwl => (Nil, kwl)  
+    }
+  )
+  // getting all Kwarg
+  lazy val kwargs: PackratParser[List[Kwarg]] = (
+    rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ { case l1 ~ l2 => l1 ++ l2 } | 
+    rep1sep(kwargOrStarred, ",") |
+    rep1sep(kwargOrDoubleStarred, ",")
+  )
+  // vararg case : must be Starred
+  lazy val starredExpr: PackratParser[Starred] = ("*" ~> expression) ^^ { case e => Starred(e) }
+  // keyarg or vararg case
+  lazy val kwargOrStarred: PackratParser[Kwarg] = (
+    id ~ ("=" ~> expression) ^^ { case i ~ e => Kwarg(Some(i), e) } | 
+    starredExpr ^^ { case e => Kwarg(None, e) }
+  )
+  // keyarg or kwargs case
+  lazy val kwargOrDoubleStarred: PackratParser[Kwarg] = ( 
+    id ~ ("=" ~> expression) ^^ { case i ~ e => Kwarg(Some(i), e) } | 
+    ("**" ~> expression) ^^ { 
+      case e: Starred => ??? // TODO arg like `** *dict1` given, how should we differentiate?
+      case e => Kwarg(None, e)
+    }
+  )
 
   //////////////////////////////////////////////////////////////////
   // targets
@@ -475,10 +529,12 @@ trait TokenListParsers extends PackratParsers {
   lazy val statements: PackratParser[List[Stmt]] = rep1(statement)
   lazy val statement: PackratParser[Stmt] = compoundStmt | simpleStmt
   lazy val statementNewline: PackratParser[List[Stmt]] = 
-    (compoundStmt <~ "\n") ^^ List(_) | simpleStmts | ("\n" ^^^ Nil) //| endmarker  //TODO ad rule for endmarker  
+    (compoundStmt <~ "\n") ^^ { case s => List(s) } | 
+    simpleStmts | 
+    ("\n" ^^^ Nil) //| endmarker  //TODO ad rule for endmarker  
   
   lazy val simpleStmtsOne: PackratParser[List[Stmt]] = 
-    (simpleStmt <~ (not(";") ~ "\n")) ^^ List(_)
+    (simpleStmt <~ (not(";") ~ "\n")) ^^ { case s => List(s) }
   lazy val simpleStmts: PackratParser[List[Stmt]] = 
     simpleStmtsOne | (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n"))
 
@@ -495,7 +551,7 @@ trait TokenListParsers extends PackratParsers {
     ("break" ^^^ BreakStmt) | 
     ("continue" ^^^  ContinueStmt) | 
     globalStmt | 
-    nonlocalStmt |
+    nonlocalStmt 
 
   lazy val compoundStmt: PackratParser[Stmt] =
     funcDef | 
@@ -516,14 +572,14 @@ trait TokenListParsers extends PackratParsers {
     }) |
     ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) <~ ":" ~ expression ~ opt("=" ~ annotatedRhs) ) ^^ { case _ => ??? } |
     (rep1(starTargets <~ "=") ~ (yieldExpr | starExprs) ~ (not("=") ~> opt(typeComment))) ^^ {
-      case stl ~ e ~ _ => AssignStmt(stl, e) // TODO currently ignoring type comment
+      case stl ~ e ~ tyopt => AssignStmt(stl, e, tyopt) // TODO currently ignoring type comment
     } | 
     (singleTarget ~ augAssign ~ (yieldExpr | starExprs)) ^^ {
-      case t ~ op ~ e => AugAssignStmt(t, op, e)
+      case t ~ op ~ e => AugAssign(t, op, e)
     } 
   lazy val augAssign: PackratParser[BinOp] = 
     ("+=" | "-=" | "*=" | "@=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "**=" | "//=") ^^ {
-      case s => ??? // TODO impl this with s.dropRight(1) 
+      case s => Op.getBinOp(s.dropRight(1)).getOrElse(???) // TODO raise appropriate error
     }
  
   // some simple stmt
@@ -541,7 +597,7 @@ trait TokenListParsers extends PackratParsers {
   // Import stmt
   //////////////////////////////////////
   lazy val importStmt: PackratParser[Stmt] = (importName | importFrom)
-  lazy val importName: PackratParser[Stmt] = ("import" ~>> dottedAsNames) ^^ ImportStmt
+  lazy val importName: PackratParser[Stmt] = ("import" ~> dottedAsNames) ^^ ImportStmt
   // TODO `.` and `...` related to relative import, need appropriate modeling
   lazy val importFrom: PackratParser[Stmt] = ( 
     (("from" ~> rep("." | "...")) ~ dottedName ~ ("import" ~> importFromTargets) ^^ {
