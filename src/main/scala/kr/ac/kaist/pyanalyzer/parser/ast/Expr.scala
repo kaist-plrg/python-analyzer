@@ -19,18 +19,19 @@ case class IfExpr(cond: Expr, thenExpr: Expr, elseExpr: Expr) extends Expr
 case class DictExpr(map: List[(Expr, Expr)]) extends Expr
 case class SetExpr(set: List[Expr]) extends Expr
 case class ListExpr(ls: List[Expr]) extends Expr
+case class TupleExpr(tup: List[Expr]) extends Expr
 
 // Display comprehensions
-case class ListComp(target: Expr, comp: List[Comp]) extends Expr
-case class SetComp(target: Expr, comp: List[Comp]) extends Expr
-case class DictComp(key: Expr, value: Expr, comp: List[Comp]) extends Expr
-case class GeneratorComp(expr: Expr, comp:  List[Comp]) extends Expr
+case class ListComp(target: Expr, comp: List[Comprehension]) extends Expr
+case class SetComp(target: Expr, comp: List[Comprehension]) extends Expr
+case class DictComp(key: Expr, value: Expr, comp: List[Comprehension]) extends Expr
+case class GenComp(expr: Expr, comp:  List[Comprehension]) extends Expr
 
 // Generator related
 case class AwaitExpr(expr: Expr) extends Expr
 case class YieldExpr(opt: Option[Expr]) extends Expr
 case class YieldFromExpr(expr: Expr) extends Expr
-case class CompExpr(lhs: Expr, op: CompOp, rhs: Expr) extends Expr
+case class CompExpr(lhs: Expr, lp: List[(CompOp, Expr)]) extends Expr
 
 // Call
 case class Call(fun: Expr, exprs: List[Expr], kwds: List[Keyword]) extends Expr
@@ -46,3 +47,5 @@ case class Subscript(expr: Expr, slice: Expr) extends Expr
 case class Starred(expr: Expr) extends Expr
 case class EName(id: Id) extends Expr
 case class Slice(start: Option[Expr], end: Option[Expr], stride: Option[Expr]) extends Expr
+
+case class GroupExpr(expr: Expr) extends Expr

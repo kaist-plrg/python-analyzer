@@ -39,16 +39,16 @@ case class IndentParser(st: IndentState) {
     // indent case
     if (st.cur < newIndent) {
       val newSt = st.doIndent(newIndent)
-      (Indent +: onelineParser(trimmed) :+ Newline, newSt) 
+      (IndentToken +: onelineParser(trimmed) :+ NewlineToken, newSt) 
     }
     // dedent case
     else if (st.cur > newIndent) {
       val (k, newSt) = st.doDedent(newIndent)
-      (Dedent +: onelineParser(trimmed) :+ Newline, newSt)
+      (DedentToken +: onelineParser(trimmed) :+ NewlineToken, newSt)
     }
     // same case
     else {
-      (onelineParser(trimmed) :+ Newline, st)      
+      (onelineParser(trimmed) :+ NewlineToken, st)      
     }
   }
 
@@ -91,7 +91,7 @@ trait Tokenizers extends RegexParsers {
   // lazy val id_continue = log("""\w""".r)("idcont")
   // one token - one regex object, or whitespace is captured inbetween
   // TODO Unicode characters are being ignored
-  lazy val identifier: Parser[Id] = """([a-zA-Z_])([a-zA-Z_0-9])*""".r ^^ Id
+  lazy val identifier: Parser[IdToken] = """([a-zA-Z_])([a-zA-Z_0-9])*""".r ^^ IdToken
 
   // keywords
   val keywords = List(
@@ -101,7 +101,7 @@ trait Tokenizers extends RegexParsers {
     "import", "in", "is", "lambda", "nonlocal", "not", "or",
     "pass", "raise", "return", "try", "while", "with", "yield",
   )
-  lazy val keyword = keywords.mkString("|").r ^^ { case s => Keyword(s) }
+  lazy val keyword = keywords.mkString("|").r ^^ { case s => KeywordToken(s) }
 
   // literals
   lazy val quote = "['\"]".r
@@ -110,12 +110,12 @@ trait Tokenizers extends RegexParsers {
   lazy val longQuote = tripleQuote ~> "[^'\"]*".r <~ tripleQuote
   lazy val stringPrefix = List("fr", "Fr", "fR", "FR", "rf", "rF", "Rf",
     "RF", "r", "u", "R", "U", "f", "F").mkString("|").r
-  lazy val stringLiteral: Parser[StrLiteral] = opt(stringPrefix) ~>
-    (longQuote | shortQuote) ^^ StrLiteral
+  lazy val stringLiteral: Parser[StrToken] = opt(stringPrefix) ~>
+    (longQuote | shortQuote) ^^ StrToken
   lazy val bytesPrefix = List("br", "Br", "bR", "BR","rb", "rB", "Rb",
     "RB", "b", "B").mkString("|").r
-  lazy val bytesLiteral: Parser[BytesLiteral] = bytesPrefix ~>
-    (longQuote | shortQuote) ^^ BytesLiteral
+  lazy val bytesLiteral: Parser[BytesToken] = bytesPrefix ~>
+    (longQuote | shortQuote) ^^ BytesToken
 
   // TODO format string
   lazy val digit = "[0-9]".r
@@ -125,8 +125,8 @@ trait Tokenizers extends RegexParsers {
   lazy val binInteger: Parser[(String, Int)] = "((0b)|(0B))(_?[0-1])+".r ^^ { (_, 2) }
   lazy val octInteger: Parser[(String, Int)] = "((0o)|(0O))(_?[0-7])+".r ^^ { (_, 8) }
   lazy val hexInteger: Parser[(String, Int)] = "((0x)|(0X))(_?[0-7[a-f][A-F]])+".r ^^ { (_, 16) }
-  lazy val integer: Parser[IntLiteral] = (decInteger | binInteger | octInteger | hexInteger) ^^ {
-    case (s, b) => IntLiteral(Integer.parseInt(s, b)) 
+  lazy val integer: Parser[IntToken] = (decInteger | binInteger | octInteger | hexInteger) ^^ {
+    case (s, b) => IntToken(Integer.parseInt(s, b)) 
   }
 
   def comp2str(comp: ~[String, String]): String = {
@@ -154,13 +154,13 @@ trait Tokenizers extends RegexParsers {
     case s => s.replaceAll("_", "")
   }
   lazy val exponentFloat: Parser[String] = (pointFloat | digitPart) ~ exponent
-  lazy val floatNumber: Parser[FloatLiteral] = (exponentFloat | pointFloat) ^^ { 
-    case s => FloatLiteral(s.toDouble)
+  lazy val floatNumber: Parser[FloatToken] = (exponentFloat | pointFloat) ^^ { 
+    case s => FloatToken(s.toDouble)
   }
   */
 
-  lazy val imagNumber: Parser[ImagLiteral] = imagNumberRegex.r <~ "[jJ]".r ^^ {
-    case s => ImagLiteral(s.toDouble)
+  lazy val imagNumber: Parser[ImagToken] = imagNumberRegex.r <~ "[jJ]".r ^^ {
+    case s => ImagToken(s.toDouble)
   }
   lazy val imagNumberRegex = "(" + floatNumberRegex + "|" + digitPart + ")"
   // refactoring regex: intermediate regex is string, only top-level matchers are Parser[]
@@ -170,8 +170,8 @@ trait Tokenizers extends RegexParsers {
   lazy val pointFloat = "(" + "(" + digitPart + "?" + fraction + ")" + "|" + "(" + digitPart + """\.""" + ")" + ")"   
   lazy val exponentFloat = "(" + "(" + digitPart + "|" + pointFloat + ")" + exponent + ")"
   lazy val floatNumberRegex = "(" + exponentFloat + "|" + pointFloat + ")"
-  lazy val floatNumber: Parser[FloatLiteral] = floatNumberRegex.r ^^ {
-    case s => FloatLiteral(s.replaceAll("_", "").toDouble) 
+  lazy val floatNumber: Parser[FloatToken] = floatNumberRegex.r ^^ {
+    case s => FloatToken(s.replaceAll("_", "").toDouble) 
   }
 
   // operator
@@ -180,14 +180,14 @@ trait Tokenizers extends RegexParsers {
     "<<", ">>", "&", "\\|", "\\^", "~",
     "<=", ">=", "<", ">", "!=",
   ).mkString("|").r ^^ {
-    case s => Op(s)
+    case s => OpToken(s)
   }
 
   // some operator contians delimiters, so need to be tokenized first
   lazy val opBeforeDelim = List(
     ":=", "==", 
   ).mkString("|").r ^^ {
-    case s => Op(s)
+    case s => OpToken(s)
   }
 
   // delimiter
@@ -196,7 +196,7 @@ trait Tokenizers extends RegexParsers {
     ",", ":", "\\.", ";", "@", "=", "->",
     "\\+=", "-=", "\\*=", "/=", "//=", "%=", "@=",
     "&=", "\\|=", "\\^=", ">>=", "<<=", "\\*\\*=",
-  ).mkString("|").r ^^ { case s => Delim(s) }
+  ).mkString("|").r ^^ { case s => DelimToken(s) }
 
   // parseAll
   lazy val literal: Parser[Token] = imagNumber | floatNumber | integer | stringLiteral | bytesLiteral

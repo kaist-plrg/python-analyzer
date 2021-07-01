@@ -23,8 +23,9 @@ sealed trait UnOp extends Op
 case object UPlus extends UnOp
 case object UMinus extends UnOp
 case object UInv extends UnOp // bitwise inverse
+case object UNot extends UnOp
 
-sealed trait BoolOP extends Op
+sealed trait BoolOp extends Op
 case object OAnd extends BoolOp // and
 case object OOr extends BoolOp // or
 
