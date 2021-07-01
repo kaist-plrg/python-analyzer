@@ -133,7 +133,8 @@ trait TokenListParsers extends PackratParsers {
   })))("dedent")
 
   // TODO need impl. is this parser or tokenizer?
-  lazy val typeComment: PackratParser[TyComment] = ???
+  lazy val typeComment: PackratParser[String] = ???
+  lazy val funcTypeComment: PackratParser[String] = ???
 
   lazy val number: PackratParser[Expr] = intLiteral | floatLiteral | imagLiteral
 
@@ -520,13 +521,15 @@ trait TokenListParsers extends PackratParsers {
     (singleTarget ~ augAssign ~ (yieldExpr | starExprs)) ^^ {
       case t ~ op ~ e => AugAssignStmt(t, op, e)
     } 
-  lazy val augAssign: PackratParser[AugOp] = 
-    ("+=" | "-=" | "*=" | "@=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "**=" | "//=") ^^ AugOp
+  lazy val augAssign: PackratParser[BinOp] = 
+    ("+=" | "-=" | "*=" | "@=" | "/=" | "%=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "**=" | "//=") ^^ {
+      case s => ??? // TODO impl this with s.dropRight(1) 
+    }
  
   // some simple stmt
   lazy val globalStmt: PackratParser[Stmt] = ("global" ~> rep1sep(id, ",")) ^^ GlobalStmt 
   lazy val nonlocalStmt: PackratParser[Stmt] = ("nonlocal" ~> rep1sep(id, ",")) ^^ NonlocalStmt
-  lazy val yieldStmt: PackratParser[Stmt] = yieldExpr ^^ YieldStmt
+  lazy val yieldStmt: PackratParser[Stmt] = yieldExpr ^^ ExprStmt
   lazy val assertStmt: PackratParser[Stmt] = ("assert" ~> expression ~ opt("," ~> expression)) ^^ {
     case e ~ opt => AssertStmt(e, opt)
   }
@@ -538,7 +541,7 @@ trait TokenListParsers extends PackratParsers {
   // Import stmt
   //////////////////////////////////////
   lazy val importStmt: PackratParser[Stmt] = (importName | importFrom)
-  lazy val importName: PackratParser[Stmt] = ("import" ~ dottedAsNames) ^^ ImportStmt
+  lazy val importName: PackratParser[Stmt] = ("import" ~>> dottedAsNames) ^^ ImportStmt
   // TODO `.` and `...` related to relative import, need appropriate modeling
   lazy val importFrom: PackratParser[Stmt] = ( 
     (("from" ~> rep("." | "...")) ~ dottedName ~ ("import" ~> importFromTargets) ^^ {
@@ -556,7 +559,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val importFromAsNames: PackratParser[List[Alias]] =
     rep1sep(importFromAsName, ",")
   lazy val importFromAsName: PackratParser[Alias] = 
-    (id ~ opt("as" ~ id)) ^^ { case x ~ opt => Alias(x, opt) }
+    (id ~ opt("as" ~> id)) ^^ { case x ~ opt => Alias(x, opt) }
   lazy val dottedAsNames: PackratParser[List[Alias]] = 
     rep1sep(dottedAsName, ",")
   lazy val dottedAsName: PackratParser[Alias] = 
@@ -600,11 +603,11 @@ trait TokenListParsers extends PackratParsers {
       case c ~ b ~ None => WhileStmt(c, b, Nil)
     }
   lazy val forStmt: PackratParser[Stmt] =
-    opt("async") ~ ("for" ~> starTargets) ~ ("in" ~> starExprs) ~ (":" ~> (opt(typeComment) ~ block)) ~ opt(elseBlock) ^^ {
-      case Some(_) ~ t ~ i ~ ty ~ b ~ Some(eb) => AsyncForStmt(ty, t, i, b, eb) 
-      case Some(_) ~ t ~ i ~ ty ~ b ~ None => AsyncForStmt(ty, t, i, b, Nil) 
-      case None ~ t ~ i ~ ty ~ b ~ Some(eb) => ForStmt(ty, t, i, b, eb) 
-      case None ~ t ~ i ~ ty ~ b ~ None => ForStmt(ty, t, i, b, Nil) 
+    (opt("async") ~ ("for" ~> starTargets)) ~ (("in" ~> starExprs) ~ (":" ~> (opt(typeComment) ~ block))) ~ opt(elseBlock) ^^ {
+      case (Some(_) ~ t) ~ (i ~ (ty ~ b)) ~ Some(eb) => AsyncForStmt(ty, t, i, b, eb) 
+      case (Some(_) ~ t) ~ (i ~ (ty ~ b)) ~ None => AsyncForStmt(ty, t, i, b, Nil) 
+      case (None ~ t) ~ (i ~ (ty ~ b)) ~ Some(eb) => ForStmt(ty, t, i, b, eb) 
+      case (None ~ t) ~ (i ~ (ty ~ b)) ~ None => ForStmt(ty, t, i, b, Nil) 
     }
 
   //////////////////////////////////////
@@ -750,25 +753,25 @@ trait TokenListParsers extends PackratParsers {
     }
   )
   lazy val funcDefRaw: PackratParser[Stmt] = (
-    ("def" ~> id) ~ ("(" ~> opt(params) <~ ")") ~ opt("->" ~> expression) ~ opt(":" ~> funcTypeComment) ~ block ^^ {
-      case x ~ Some(ps) ~ tyopt ~ ftyopt ~ b => FunDef(Nil, x, ps, tyopt, ftyopt, b)  
-      case x ~ None ~ tyopt ~ ftyopt ~ b => FunDef(Nil, x, Args.empty, tyopt, ftyopt, b) // TODO empty Args?
+    (("def" ~> id) ~ ("(" ~> opt(params) <~ ")")) ~ (opt("->" ~> expression) ~ opt(":" ~> funcTypeComment)) ~ block ^^ {
+      case (x ~ Some(ps)) ~ (tyopt ~ ftyopt) ~ b => FunDef(Nil, x, ps, tyopt, ftyopt, b)  
+      case (x ~ None) ~ (tyopt ~ ftyopt) ~ b => FunDef(Nil, x, Args.empty, tyopt, ftyopt, b) // TODO empty Args?
     } |
     (("async" ~ "def") ~> id) ~ ("(" ~> opt(params) <~ ")") ~ opt("->" ~> expression) ~ opt(":" ~> funcTypeComment) ~ block ^^ {
       case x ~ Some(ps) ~ tyopt ~ ftyopt ~ b => AsyncFunDef(Nil, x, ps, tyopt, ftyopt, b)  
-      case (((x ~ None) ~ tyopt) ~ ftyopt) ~ b => AsyncFunDef(Nil, x, Args.empty, typopt, ftyopt, b) // TODO empty Args?
+      case (((x ~ None) ~ tyopt) ~ ftyopt) ~ b => AsyncFunDef(Nil, x, Args.empty, tyopt, ftyopt, b) // TODO empty Args?
     }
   ) 
   // case class Args(posOnlys: List[(Arg, Option[Expr])], normArgs: List[(Arg, Option[Expr])], varArg: Option[Arg], keyOnlys: List[(Arg, Option[Expr])], kwArg: Option[Arg]) 
-  lazy val params:  PackratParser[List[Args]] = parameters
-  lazy val parameters: PackratParser[List[Args]] = (
+  lazy val params:  PackratParser[Args] = parameters
+  lazy val parameters: PackratParser[Args] = (
     slashNoDefault ~ rep(paramNoDefault) ~ rep(paramWithDefault) ~ opt(starEtc) ^^ {
       case snl ~ pnl ~ pwl ~ kopt => {
         val posonly: List[(Arg, Option[Expr])] = snl.map(a => (a, None))
         val midl: List[(Arg, Option[Expr])] = pnl.map(a => (a, None))
         kopt match {
           case Some(args) => args.copy(posOnlys = posonly, normArgs = midl)
-          case None => Args(posonly, midl, None, Nil, Nil)
+          case None => Args(posonly, midl, None, Nil, None)
         }
       }
     } |
@@ -778,7 +781,7 @@ trait TokenListParsers extends PackratParsers {
         val posonly = posNoDefault ++ swl
         kopt match {
           case Some(args) => args.copy(posOnlys = posonly, normArgs = pwl)
-          case None => Args(posonly, pwl, None, Nil, Nil)
+          case None => Args(posonly, pwl, None, Nil, None)
         }
       }
     } |
@@ -788,7 +791,7 @@ trait TokenListParsers extends PackratParsers {
         val normargs = normNoDefault ++ pwl
         kopt match {
           case Some(args) => args.copy(normArgs = normargs)
-          case None => Args(Nil, normargs, None, Nil, Nil)
+          case None => Args(Nil, normargs, None, Nil, None)
         }
       }
     } |
@@ -796,7 +799,7 @@ trait TokenListParsers extends PackratParsers {
       case pwl ~ kopt => {
         kopt match {
           case Some(args) => args.copy(normArgs = pwl)
-          case None => Args(Nil, pwl, None, Nil, Nil)
+          case None => Args(Nil, pwl, None, Nil, None)
         }
       }
     }
@@ -818,17 +821,17 @@ trait TokenListParsers extends PackratParsers {
     ("*" ~ ",") ~> rep1(paramMaybeDefault) ~ opt(kwds) ^^ {
       case pl ~ kopt => Args(Nil, Nil, None, pl, kopt) 
     } |
-    kwds ^^ Args(Nil, Nil, None, Nil, Some(_)) 
+    kwds ^^ {a => Args(Nil, Nil, None, Nil, Some(a))} 
   )
   lazy val kwds: PackratParser[Arg] = "**" ~> paramNoDefault
   // Arg: id, annotation, typecomment / Expr: default value
   lazy val paramNoDefault: PackratParser[Arg] = (
     (param <~ ",") ~ opt(typeComment) ^^ { case (x, aopt) ~ tyopt => Arg(x, aopt, tyopt) } |
-    param ~ opt(typeComment) <~ guard(")") ^^ { case (x, aopt) ~ typopt => Arg(x, aopt, tyopt) }
+    param ~ opt(typeComment) <~ guard(")") ^^ { case (x, aopt) ~ tyopt => Arg(x, aopt, tyopt) }
   )
   lazy val paramWithDefault: PackratParser[(Arg, Option[Expr])] = (
     (param ~ default <~ ",") ~ opt(typeComment) ^^ { case ((x, aopt) ~ dexp) ~ tyopt => (Arg(x, aopt, tyopt), Some(dexp)) } |
-    (param ~ default) ~ opt(typeCommeent) <~ guard(")") ^^ { case ((x, aopt) ~ dexp) ~ tyopt => (Arg(x, aopt, tyopt), Some(dexp))  }
+    (param ~ default) ~ opt(typeComment) <~ guard(")") ^^ { case ((x, aopt) ~ dexp) ~ tyopt => (Arg(x, aopt, tyopt), Some(dexp))  }
   )
   lazy val paramMaybeDefault: PackratParser[(Arg, Option[Expr])] = (
     (param ~ opt(default) <~ ",") ~ opt(typeComment) ^^ { case ((x, aopt) ~ dopt) ~ tyopt => (Arg(x, aopt, tyopt), dopt)  } |
@@ -849,7 +852,7 @@ trait TokenListParsers extends PackratParsers {
     }
     | classDefRaw
   )
-  lazy val classDefRaw: PackratParser[Stmt] =
+  lazy val classDefRaw: PackratParser[ClassDef] =
     ("class" ~> id) ~ opt("(" ~ args ~ ")") ~ (":" ~> block) ^^ {
       case x ~ aopt ~ b => ClassDef(Nil, x, ???, ???, b) // TODO identify what `expr* keyword*` mean in abs.syntax 
     }

@@ -54,14 +54,14 @@ case class AugAssign(target: Expr, op: Op, expr: Expr) extends Stmt
 case class AnnAssign(target: Expr, ann: Expr, expr: Expr) extends Stmt
 
 // Loops
-case class ForStmt(ty: Option[TyComment], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
-case class AsyncForStmt(ty: Option[TyComment], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
+case class ForStmt(ty: Option[String], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
+case class AsyncForStmt(ty: Option[String], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
 case class WhileStmt(whileExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
 case class IfStmt(cond: Expr, thenStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt
 
 // With and Pattern matching
-case class WithStmt(ty: Option[TyComment], items: List[WithItem], doStmt: List[Stmt]) extends Stmt
-case class AsyncWithStmt(ty: Option[TyComment], items: List[WithItem], doStmt: List[Stmt]) extends Stmt
+case class WithStmt(ty: Option[String], items: List[WithItem], doStmt: List[Stmt]) extends Stmt
+case class AsyncWithStmt(ty: Option[String], items: List[WithItem], doStmt: List[Stmt]) extends Stmt
 case class MatchStmt(expr: Expr, cases: List[MatchCase]) extends Stmt   
 
 // Exception related
