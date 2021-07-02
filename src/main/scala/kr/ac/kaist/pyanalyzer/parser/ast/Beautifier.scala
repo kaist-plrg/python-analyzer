@@ -100,6 +100,7 @@ object Beautifier {
       }
       implicit val lApp = ListApp[(CompOp, Expr)](" ", " ")
       app ~ h ~ lp
+    case Call(f, g :: Nil, Nil) if g.isInstanceOf[GenComp] => app ~ f ~ g
     case Call(f, le, lk) =>
       implicit val leApp = ListApp[Expr](sep = ", ")
       implicit val lkApp = ListApp[Kwarg](sep = ", ")

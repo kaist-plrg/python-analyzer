@@ -488,8 +488,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val kwargOrDoubleStarred: PackratParser[Kwarg] = ( 
     id ~ ("=" ~> expression) ^^ { case i ~ e => Kwarg(Some(i), e) } | 
     ("**" ~> expression) ^^ { 
-      case e: Starred => ??? // TODO arg like `** *dict1` given, how should we differentiate?
-      case e => Kwarg(None, e)
+      case e => Kwarg(None, DoubleStarred(e))
     }
   )
 
@@ -993,7 +992,7 @@ trait TokenListParsers extends PackratParsers {
     "Setcomp" -> setcomp,
     "Dict" -> dict,
     "Dictcomp" -> dictcomp,
-    // "ForIfClause" -> forIfClause,
+    "ForIfClause" -> forIfClause,
     "StarTargets" -> starTargets,
     "StarTarget" -> starTarget,
     "TargetWithStarAtom" -> targetWithStarAtom,
