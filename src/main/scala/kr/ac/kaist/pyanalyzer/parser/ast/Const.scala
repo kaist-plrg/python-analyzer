@@ -1,6 +1,6 @@
 package kr.ac.kaist.pyanalyzer.parser.ast
 
-trait Const
+trait Const extends Node
 case object NoneLiteral extends Const
 case class IntLiteral(i: Int) extends Const
 case class FloatLiteral(f: Double) extends Const

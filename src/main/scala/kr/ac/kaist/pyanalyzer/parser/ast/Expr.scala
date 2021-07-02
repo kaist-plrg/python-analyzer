@@ -16,7 +16,7 @@ case class LambdaExpr(args: Args, expr: Expr) extends Expr
 case class IfExpr(expr: Expr, cond: Expr, elseExpr: Expr) extends Expr
 
 // Display expressions
-case class DictExpr(map: List[(Expr, Expr)]) extends Expr
+case class DictExpr(map: List[(Expr, Expr)], dstar: List[Expr]) extends Expr
 case class SetExpr(set: List[Expr]) extends Expr
 case class ListExpr(ls: List[Expr]) extends Expr
 case class TupleExpr(tup: List[Expr]) extends Expr
@@ -24,7 +24,7 @@ case class TupleExpr(tup: List[Expr]) extends Expr
 // Display comprehensions
 case class ListComp(target: Expr, comp: List[Comprehension]) extends Expr
 case class SetComp(target: Expr, comp: List[Comprehension]) extends Expr
-case class DictComp(key: Expr, value: Expr, comp: List[Comprehension]) extends Expr
+case class DictComp(kvpair: (Expr, Expr), comp: List[Comprehension]) extends Expr
 case class GenComp(expr: Expr, comp:  List[Comprehension]) extends Expr
 
 // Generator related
@@ -34,7 +34,11 @@ case class YieldFromExpr(expr: Expr) extends Expr
 case class CompExpr(lhs: Expr, lp: List[(CompOp, Expr)]) extends Expr
 
 // Call
-case class Call(fun: Expr, exprs: List[Expr], kwds: List[Kwarg]) extends Expr
+case class Call(
+  fun: Expr,
+  exprs: List[Expr] = Nil,
+  kwds: List[Kwarg] = Nil
+) extends Expr
 
 // Formatted value
 case class FormattedValue(lhs: Expr, n: Option[Int], rhs: Option[Expr]) extends Expr
@@ -45,6 +49,7 @@ case class EConst(c: Const) extends Expr
 case class Attribute(expr: Expr, field: Expr) extends Expr
 case class Subscript(expr: Expr, slice: Expr) extends Expr
 case class Starred(expr: Expr) extends Expr
+case class DoubleStarred(expr: Expr) extends Expr
 case class EName(id: Id) extends Expr
 case class Slice(start: Option[Expr], end: Option[Expr], stride: Option[Expr]) extends Expr
 

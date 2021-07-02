@@ -346,12 +346,12 @@ trait TokenListParsers extends PackratParsers {
   lazy val primary: PackratParser[Expr] =
     // //invalidPrimary |
     primary ~ ("." ~> id) ^^ { case e ~ i => Attribute(e, EName(i)) } |
-// TODO: need arg model
-//    primary ~ genexp ^^ {
-//      case f ~ g => Call(f, List(NormalArg(g)))
-//    } | primary ~ ("(" ~> opt(arguments) <~ ")") ^^ {
-//      case f ~ opt => Call(f, opt.getOrElse(Nil))
-//    } |
+    primary ~ genexp ^^ {
+      case f ~ g => Call(f, List(g))
+    } | primary ~ ("(" ~> opt(arguments) <~ ")") ^^ {
+      case f ~ Some((le, lk)) => Call(f, le, lk)
+      case f ~ None => Call(f)
+    } |
     primary ~ ("[" ~> slices <~ "]") ^^ {
       case p ~ s => Subscript(p, s)
     } |
@@ -373,9 +373,8 @@ trait TokenListParsers extends PackratParsers {
     strings |
     number |
     (tuple | group | genexp) |
-    (list | listcomp) // |
-    // TODO: Dict with double starred
-    // (dict | set | dictcomp | setcomp)
+    (list | listcomp) |
+    (dict | set | dictcomp | setcomp)
 
   // TODO make primitive parser for these
   lazy val strings: PackratParser[Expr] = stringLiteral ^^ EConst
@@ -401,19 +400,26 @@ trait TokenListParsers extends PackratParsers {
     case e ~ complist => SetComp(e, complist)
   } 
 
-  // TODO: Dict with double starred
-//  lazy val dict: PackratParser[Expr] =  ("{" ~> opt(doubleStarredKvPairs) <~ "}" ^^  {
-//    x => DictExpr(x.getOrElse(Nil))
-//  }) | "{" ~> invalidDoubleStarredKvPairs <~ "}" 
-//  lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
-//    case kv ~ complist => DictCompExpr(kv, complist) 
-//  }
-//  lazy val doubleStarredKvPairs: PackratParser[List[DictItem]] = rep1sep(doubleStarredKvPair, ",") <~ opt(",")
-//  lazy val doubleStarredKvPair: PackratParser[DictItem] =
-//    "**" ~> bitOr ^^ DStarExpr ^^ DStarItem | kvPair
-//  lazy val kvPair: PackratParser[DictItem] = expression ~ (":" ~> expression) ^^ {
-//    case e1 ~ e2 => KvPair(e1, e2)
-//  }
+  lazy val dict: PackratParser[Expr] = "{" ~> opt(doubleStarredKvPairs) <~ "}" ^^  {
+    case list =>
+      val (lp, le) = list.map(_.foldRight((List[(Expr, Expr)](), List[Expr]())){
+        case ((Some(p), None), (lp, le)) => (p :: lp, le)
+        case ((None, Some(e)), (lp, le)) => (lp, e :: le)
+        case _ => ???
+      }).getOrElse((Nil, Nil))
+      DictExpr(lp, le)
+   } // | "{" ~> invalidDoubleStarredKvPairs <~ "}"
+  lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
+    case kv ~ lcomp => DictComp(kv, lcomp)
+  }
+  lazy val doubleStarredKvPairs: PackratParser[List[(Option[(Expr, Expr)], Option[Expr])]] =
+    rep1sep(doubleStarredKvPair, ",") <~ opt(",")
+  lazy val doubleStarredKvPair: PackratParser[(Option[(Expr, Expr)], Option[Expr])] =
+    "**" ~> bitOr ^^ (dstar => (None, Some(DoubleStarred(dstar)))) |
+    kvPair ^^ (kvpair => (Some(kvpair), None))
+  lazy val kvPair: PackratParser[(Expr, Expr)] = expression ~ (":" ~> expression) ^^ {
+    case e1 ~ e2 => (e1, e2)
+  }
 
   // Comprehensions
   // Note. forIfClause same with comp_for
@@ -534,11 +540,11 @@ trait TokenListParsers extends PackratParsers {
       case prim ~ x => Attribute(prim, EName(x))
     } | tPrimary ~ ("[" ~> slices <~ "]" ~ guard(tLookahead)) ^^ {
       case prim ~ s => Subscript(prim, s)
-      // TODO: need arg model
-//    } | tPrimary ~ genexp <~ guard(tLookahead) ^^ {
-//      case prim ~ gen => Call(prim, List(NormalArg(gen)))
-//    } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ guard(tLookahead)) ^^ {
-//      case prim ~ opt => Call(prim, opt.getOrElse(Nil))
+    } | tPrimary ~ genexp <~ guard(tLookahead) ^^ {
+      case prim ~ g => Call(prim, List(g))
+    } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ guard(tLookahead)) ^^ {
+      case prim ~ Some((le, lk)) => Call(prim, le, lk)
+      case prim ~ None => Call(prim)
     } | atom <~ guard(tLookahead)
 
   lazy val tLookahead: PackratParser[String] = "(" | "[" | "."
@@ -961,12 +967,11 @@ trait TokenListParsers extends PackratParsers {
   def error(msg: String): Parser[Nothing] = Parser(in => firstMap(in, _ => Error(msg, in)))
 
   lazy val invalidPrimary: Parser[Nothing] = (primary ~ "{").into(_ => error("invalid syntax"))
-  // TODO: Dict with double starred
-//  lazy val invalidDoubleStarredKvPairs: Parser[Nothing] =
-//    ( repsep(doubleStarredKvPair, ",") ~ "," ~ invalidKvPair
-//      | expression ~ ":" ~ "*" ~ bitOr
-//      | expression ~ ":" ~ guard("}"|",") 
-//    ).into(_ => error("invalid syntax")) //TODO : appropriate errormessage
+  lazy val invalidDoubleStarredKvPairs: Parser[Nothing] =
+    ( repsep(doubleStarredKvPair, ",") ~ "," ~ invalidKvPair
+      | expression ~ ":" ~ "*" ~ bitOr
+      | expression ~ ":" ~ guard("}"|",")
+    ).into(_ => error("invalid syntax")) //TODO : appropriate errormessage
   lazy val invalidKvPair: Parser[Nothing] =
     ( not(":")
       | expression ~ ":" ~ "*" ~ bitOr
@@ -986,9 +991,9 @@ trait TokenListParsers extends PackratParsers {
     "Tuple" -> tuple,
     "Set" -> set,
     "Setcomp" -> setcomp,
-//    "Dict" -> dict,
-//    "Dictcomp" -> dictcomp,
-    "ForIfClause" -> forIfClause,
+    "Dict" -> dict,
+    "Dictcomp" -> dictcomp,
+    // "ForIfClause" -> forIfClause,
     "StarTargets" -> starTargets,
     "StarTarget" -> starTarget,
     "TargetWithStarAtom" -> targetWithStarAtom,

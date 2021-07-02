@@ -6,13 +6,16 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object Beautifier {
   implicit lazy val nodeApp: App[Node] = (app, node) => node match {
-    case stmt: Stmt => stmtApp(app, stmt)
-    case e: Expr => exprApp(app, e)
-    // case item: DictItem => dictItemApp(app, item)
-    // case arg: Arg => argApp(app, arg)
-    // case param: Param => paramApp(app, param)
+    case id: Id => app ~ id.name
+    case const: Const => constApp(app, const)
     case op: Op => opApp(app, op)
-    case _ => ???
+    case comprehension: Comprehension => comprehensionApp(app, comprehension)
+    case e: Expr => exprApp(app, e)
+    case argument: Argument => argumentApp(app, argument)
+    case stmt: Stmt => stmtApp(app, stmt)
+    case node =>
+      println(node)
+      ???
   }
 
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
@@ -26,8 +29,8 @@ object Beautifier {
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "nonlocal " ~ xl
     case AssertStmt(c, opt) =>
-      app ~ "assert" ~ c
-      opt.map(info => app ~ ", " ~ info); app
+      implicit val oApp = OptApp[Expr](", ")
+      app ~ "assert" ~ c ~ opt
     case _ => ???
   }
 
@@ -49,28 +52,16 @@ object Beautifier {
     case NamedExpr(lhs, rhs) => app ~ lhs ~ " := " ~ rhs
     case BinaryExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
     case UnaryExpr(op, e) => app ~ op ~ " " ~ e
-//    case LambdaExpr(param, e) => 
-//      app ~ "lambda "
-//      val keyParam = param.find(_.isInstanceOf[KeyParam])
-//      val starSepParam = keyParam.map(k => {
-//        val index = param.indexOf(k)
-//        (param.slice(0, index), param.slice(index, param.length))
-//      })
-//      implicit val lApp = ListApp[Param](sep = ", ")
-//      implicit val plApp: App[(List[Param], List[Param])] = {
-//        case (app, (Nil, l2)) => app ~ "*, " ~ l2
-//        case (app, (l1, l2)) => app ~ l1 ~ ", *, " ~ l2
-//      }
-//      (starSepParam match {
-//        case None => app ~ param
-//        case s => app ~ s
-//      }) ~ ": " ~ e
-//    case IfExpr(e1, c, e2) => app ~ e1 ~ " if " ~ c ~ " else " ~ e2
-    /*
-    case DictExpr(map) =>
-      implicit val dApp = ListApp[DictItem]("{", ", ", "}")
-      app ~ map
-    */
+    case LambdaExpr(args, e) => app ~ args ~ e
+    case IfExpr(e1, c, e2) => app ~ e1 ~ " if " ~ c ~ " else " ~ e2
+    case DictExpr(lp, dstar) =>
+      implicit val pApp: App[(Expr, Expr)] = {
+        case (app, (k, v)) => app ~ k ~ ": " ~ v
+      }
+      implicit val lpApp = ListApp[(Expr, Expr)]("{", ", ")
+      implicit val lApp = ListApp[Expr]("", ", ", "}")
+      val sep = sepOpt(lp, dstar, ", ")
+      app ~ lp ~ sep ~ dstar
     case SetExpr(set) =>
       implicit val lApp = ListApp[Expr]("{", ", ", "}")
       app ~ set
@@ -89,14 +80,19 @@ object Beautifier {
     case SetComp(target, comp) =>
       implicit val lApp = ListApp[Comprehension](sep = " ")
       app ~ "{" ~ target ~ " " ~ comp ~ "}"
-//    case DictComp(item, comp) =>
-//      implicit val lApp = ListApp[Comprehension](sep = " ")
-//      app ~ "{" ~ item ~ " " ~ comp ~ "}"
+    case DictComp(p, comp) =>
+      implicit val pApp: App[(Expr, Expr)] = {
+        case (app, (k, v)) => app ~ k ~ ": " ~ v
+      }
+      implicit val lApp = ListApp[Comprehension](sep = " ")
+      app ~ "{" ~ p ~ " " ~ comp ~ "}"
     case GenComp(target, comp) =>
       implicit val lApp = ListApp[Comprehension](sep = " ")
       app ~ "(" ~ target ~ " "  ~ comp ~ ")"
     case AwaitExpr(e) => app ~ "await " ~ e
-    case YieldExpr(opt) => app ~ "yield " ~ opt
+    case YieldExpr(opt) =>
+      implicit val oApp = OptApp[Expr]()
+      app ~ "yield " ~ opt
     case YieldFromExpr(e) => app ~ "yield from " ~ e
     case CompExpr(h, lp) =>
       implicit val pApp: App[(CompOp, Expr)] = {
@@ -104,55 +100,45 @@ object Beautifier {
       }
       implicit val lApp = ListApp[(CompOp, Expr)](" ", " ")
       app ~ h ~ lp
-//    case Call(prim, args) =>
-//      implicit val lApp = ListApp[Arg]("(", ", ", ")")
-//      app ~ prim ~ args
+    case Call(f, le, lk) =>
+      implicit val leApp = ListApp[Expr](sep = ", ")
+      implicit val lkApp = ListApp[Kwarg](sep = ", ")
+      val sep = sepOpt(le, lk, ", ")
+      app ~ f ~ "(" ~ le ~ sep ~ lk ~ ")"
     case FormattedValue(lhs, n, rhs) => ???
     case JoinedStr(le) => ???
+    case EConst(c) => app ~ c
     case Attribute(e, f) => app ~ e ~ "." ~ f
-    case Subscript(e, s) =>
-      implicit val lApp = ListApp[Expr]("[", ", ", "]")
-      app ~ e ~ s
+    case Subscript(e, s) => app ~ e ~ "[" ~ s ~ "]"
     case Starred(e) => app ~ "*" ~ e
+    case DoubleStarred(e) => app ~ "**" ~ e
     case EName(x) => app ~ x
     case Slice(lb, ub, step) =>
+      implicit val oApp = OptApp[Expr]()
       app ~ lb ~ ":" ~ ub
-      step.map(x => app ~ ":" ~ x); app
+      step match {
+        case Some(e) => app ~ ":" ~ e
+        case None => app
+      }
     case GroupExpr(e) => app ~ "(" ~ e ~ ")"
   }
 
   implicit lazy val comprehensionApp: App[Comprehension] = {
     case (app, Comprehension(target, inExpr, ifExpr, async)) =>
-      implicit val lApp: App[List[Expr]] = (app, l) => l match {
-        case Nil => app
-        case l => for (e <- l) app ~ " if " ~ e; app
+      implicit val lApp: App[List[Expr]] = (app, l) => {
+        for (e <- l) app ~ " if " ~ e; app
       }
       app ~ (if (async) "async " else "") ~
         "for " ~ target ~ " in " ~ inExpr ~ ifExpr
   }
 
-  /*
-  implicit lazy val dictItemApp: App[DictItem] = (app, item) => item match {
-    case KvPair(k, v) => app ~ k ~ ": " ~ v
-    case DStarItem(e) => app ~ e
+  implicit lazy val argumentApp: App[Argument] = (app, argument) => argument match {
+    case Args(_, _, _, _, _) => ???
+    case Arg(x, ann, ty) => app ~ x // TODO: Add annotation and type
+    case Kwarg(opt, e) =>
+      implicit val oApp = OptApp[Id](right = "=")
+      app ~ opt ~ e
   }
-  */
-
-//  implicit lazy val argApp: App[Arg] = (app, arg) => arg match {
-//    case NormalArg(e) => app ~ e
-//    case KeyArg(x, e) => app ~ x ~ "=" ~ e
-//  }
-
-  /*
-  implicit lazy val paramApp: App[Param] = (app, param) => param match {
-    case PosParam(id, default) =>
-      app ~ id; default.map(x => app ~ " = " ~ x); app
-    case KeyParam(id, default) =>
-      app ~ id; default.map(x => app ~ " = " ~ x); app
-    case ArbPosParam(id) => app ~ "*" ~ id
-    case ArbKeyParam(id) => app ~ "**" ~ id
-  }
-  */
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {
     case OLShift => app ~ "<<"
@@ -185,4 +171,7 @@ object Beautifier {
     case OAnd => app ~ "and"
     case OOr => app ~ "or"
   }
+
+  def sepOpt[T, U](l1: List[T], l2: List[U], sep: String): Option[String] =
+    if (l1.nonEmpty && l2.nonEmpty) Some(sep) else None
 }

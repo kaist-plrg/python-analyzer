@@ -26,24 +26,28 @@ case class MatchGroup(pattern: Pattern) extends Pattern
 case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt])
 
 // Args
-case class Kwarg(id: Option[Id], expr: Expr)
-case class Arg(
-  name: Id,
-  ann: Option[Expr] = None,
-  ty: Option[String] = None
-)
+sealed trait Argument extends Node
 case class Args(
   posOnlys: List[(Arg, Option[Expr])] = Nil,
   normArgs: List[(Arg, Option[Expr])] = Nil,
   varArg: Option[Arg] = None,
   keyOnlys: List[(Arg, Option[Expr])] = Nil,
   kwArg: Option[Arg] = None
-)
+) extends Argument
+case class Arg(
+  name: Id,
+  ann: Option[Expr] = None,
+  ty: Option[String] = None
+) extends Argument
+case class Kwarg(id: Option[Id], expr: Expr) extends Argument
 
 // Comprehension
-trait Comp
-case class ForComp(target: Expr, in: Expr, cond: List[Expr]) extends Comp
-case class AsyncComp(target: Expr, in: Expr, cond: List[Expr]) extends Comp
+case class Comprehension(
+  target: Expr,
+  in: Expr,
+  conds: List[Expr],
+  async: Boolean = false
+) extends Node
 
 /////////////////////////////////////////////
 // Statements

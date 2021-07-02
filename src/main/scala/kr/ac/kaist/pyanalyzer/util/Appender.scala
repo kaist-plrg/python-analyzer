@@ -23,11 +23,17 @@ object Appender {
   implicit lazy val stringApp: App[String] = _ ~ _
   implicit lazy val intApp: App[Int] = _ ~ _.toString
 
+  implicit val optStrApp: App[Option[String]] = (app, opt) => opt match {
+    case Some(str) => app ~ str
+    case None => app
+  }
+
   // option appender
-  implicit def optApp[T](
-    implicit vApp: App[T]
-  ): App[Option[T]] = (app, opt) => opt match {
-    case Some(v) => app ~ v
+  def OptApp[T](
+    left: String = "",
+    right: String = ""
+  )(implicit vApp: App[T]): App[Option[T]] = (app, opt) => opt match {
+    case Some(v) => app ~ left ~ v ~ right
     case None => app
   }
 
