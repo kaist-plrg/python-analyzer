@@ -187,7 +187,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val expression: PackratParser[Expr] = log(
     disjunction ~ ("if" ~> disjunction ~ ("else" ~> expression)) ^^ {
       case ie ~ (te ~ ee) => IfExpr(ie, te, ee)
-    } | disjunction// | lambdef
+    } | disjunction | lambdef
   )("expression")
 
   ///////////////////////////////////////////

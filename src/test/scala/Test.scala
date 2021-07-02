@@ -52,7 +52,7 @@ class ProdTest extends AnyFunSuite {
 
   def doParse(p: Parser[Node], t: String): Node =
     p(new PackratReader(TokenReader(tokenizeText(t)))) match {
-      case Success(res, rest) if rest.first == Newline => res
+      case Success(res, rest) if rest.first == NewlineToken => res
       case res => throw new RuntimeException(s"\nParsing fail\ntest:\n$t\n\n$res")
     }
 }
