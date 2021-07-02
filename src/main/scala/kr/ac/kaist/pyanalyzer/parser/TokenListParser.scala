@@ -590,15 +590,16 @@ trait TokenListParsers extends PackratParsers {
   // assignment stmt
   lazy val assignment: PackratParser[Stmt] = (
     // TODO `":" ~> expression` part means type expression annotation... deal with this
-    (id ~ (":" ~> expression) ~ opt("=" ~ annotatedRhs) ^^ {  
-      case x ~ e ~ Some(rhs) => ??? 
-      case x ~ e ~ None => ???
+    (id ~ (":" ~> expression) ~ opt("=" ~> annotatedRhs) ^^ {  
+      case x ~ ty ~ Some(rhs) => AnnAssign(EName(x), ty, rhs)
+      case x ~ ty ~ None => AnnAssign(EName(x), ty, EConst(NoneLiteral)) // TODO does this really assign none?
     }) |
-    ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) <~ ":" ~ expression ~ opt("=" ~ annotatedRhs) ) ^^ { 
-      case _ => ??? 
+    ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) ~ (":" ~> expression) ~ opt("=" ~> annotatedRhs) ) ^^ { 
+      case te ~ ty ~ Some(rhs) => AnnAssign(te, ty, rhs)
+      case te ~ ty ~ None => AnnAssign(te, ty, EConst(NoneLiteral))
     } |
     (rep1(starTargets <~ "=") ~ (yieldExpr | starExprs) ~ (not("=") ~> opt(typeComment))) ^^ {
-      case stl ~ e ~ tyopt => AssignStmt(stl, e, tyopt) // TODO currently ignoring type comment
+      case el ~ e ~ tyopt => AssignStmt(el, e, tyopt)
     } | 
     (singleTarget ~ augAssign ~ (yieldExpr | starExprs)) ^^ {
       case t ~ op ~ e => AugAssign(t, op, e)
