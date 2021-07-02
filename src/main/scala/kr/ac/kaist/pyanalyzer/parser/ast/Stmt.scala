@@ -5,7 +5,6 @@ sealed trait Stmt extends Node
 // Related constructs
 trait TyComment // TODO model type comment
 
-case class Kwarg(id: Option[Id], expr: Expr)
 case class Alias(name: Id, asName: Option[Id])
 case class WithItem(expr: Expr, asExpr: Option[Expr])
 case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
@@ -27,11 +26,19 @@ case class MatchGroup(pattern: Pattern) extends Pattern
 case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt])
 
 // Args
-case class Arg(name: Id, ann: Option[Expr], ty: Option[String])
-case class Args(posOnlys: List[(Arg, Option[Expr])], normArgs: List[(Arg, Option[Expr])], varArg: Option[Arg], keyOnlys: List[(Arg, Option[Expr])], kwArg: Option[Arg]) 
-object Args {
-  val empty = Args(Nil, Nil, None, Nil, None)
-}
+case class Kwarg(id: Option[Id], expr: Expr)
+case class Arg(
+  name: Id,
+  ann: Option[Expr] = None,
+  ty: Option[String] = None
+)
+case class Args(
+  posOnlys: List[(Arg, Option[Expr])] = Nil,
+  normArgs: List[(Arg, Option[Expr])] = Nil,
+  varArg: Option[Arg] = None,
+  keyOnlys: List[(Arg, Option[Expr])] = Nil,
+  kwArg: Option[Arg] = None
+)
 
 // Comprehension
 trait Comp
