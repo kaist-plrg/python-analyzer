@@ -5,7 +5,7 @@ sealed trait Stmt extends Node
 // Related constructs
 trait TyComment // TODO model type comment
 
-case class Alias(name: Id, asName: Option[Id])
+case class Alias(name: List[Id], asName: Option[Id])
 case class WithItem(expr: Expr, asExpr: Option[Expr])
 case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
 
@@ -82,7 +82,7 @@ case class AssertStmt(expr: Expr, toRaise: Option[Expr]) extends Stmt
 
 // Module, scope related
 case class ImportStmt(aliases: List[Alias]) extends Stmt
-case class ImportFromStmt(fromId: Option[Id], alises: List[Alias]) extends Stmt
+case class ImportFromStmt(level: Int, fromId: List[Id], alises: List[Alias]) extends Stmt
 case class GlobalStmt(ids: List[Id]) extends Stmt
 case class NonlocalStmt(ids: List[Id]) extends Stmt
 

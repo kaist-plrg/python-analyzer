@@ -594,7 +594,6 @@ trait TokenListParsers extends PackratParsers {
 
   // assignment stmt
   lazy val assignment: PackratParser[Stmt] = (
-    // TODO `":" ~> expression` part means type expression annotation... deal with this
     (id ~ (":" ~> expression) ~ opt("=" ~> annotatedRhs) ^^ {  
       case x ~ ty ~ Some(rhs) => AnnAssign(EName(x), ty, rhs)
       case x ~ ty ~ None => AnnAssign(EName(x), ty, EConst(NoneLiteral)) // TODO does this really assign none?
@@ -632,32 +631,33 @@ trait TokenListParsers extends PackratParsers {
   //////////////////////////////////////
   lazy val importStmt: PackratParser[Stmt] = (importName | importFrom)
   lazy val importName: PackratParser[Stmt] = ("import" ~> dottedAsNames) ^^ ImportStmt
-  // TODO `.` and `...` related to relative import, need appropriate modeling
+  // helper fn for relative import
+  def relLevel(l: List[String]): Int = l.mkString("").length() - 1
   lazy val importFrom: PackratParser[Stmt] = ( 
     (("from" ~> rep("." | "...")) ~ dottedName ~ ("import" ~> importFromTargets) ^^ {
-      case _ ~ x ~ tl => ImportFromStmt(Some(x), tl)
+      case rl ~ x ~ tl => ImportFromStmt(relLevel(rl), x, tl)
     }) |
     (("from" ~> rep1("." | "...")) ~ ("import" ~> importFromTargets) ^^ {
-      case _ ~ tl => ImportFromStmt(None, tl) // TODO what ... means?
+      case rl ~ tl => ImportFromStmt(relLevel(rl), Nil, tl) 
     })
   ) 
   lazy val importFromTargets: PackratParser[List[Alias]] = (
-    "(" ~ importFromAsNames ~ opt(",") ~ ")"
-    | importFromAsNames ~ not(",")
-    | ("*" ^^ ???)
-  ) ^^ ???
+    ("(" ~> importFromAsNames <~ (opt(",") ~ ")"))
+    | importFromAsNames <~ not(",")
+    | ("*" ^^ ???) // TODO: extends Alias for *
+  )
   lazy val importFromAsNames: PackratParser[List[Alias]] =
     rep1sep(importFromAsName, ",")
   lazy val importFromAsName: PackratParser[Alias] = 
-    (id ~ opt("as" ~> id)) ^^ { case x ~ opt => Alias(x, opt) }
+    (id ~ opt("as" ~> id)) ^^ { case x ~ opt => Alias(List(x), opt) }
   lazy val dottedAsNames: PackratParser[List[Alias]] = 
     rep1sep(dottedAsName, ",")
   lazy val dottedAsName: PackratParser[Alias] = 
-    (dottedName ~ opt("as" ~> id)) ^^ { case x ~ opt => Alias(x, opt) }
+    (dottedName ~ opt("as" ~> id)) ^^ { case il ~ opt => Alias(il, opt) }
   // TODO need additional modeling for this, alias includes dotted id sequence
-  lazy val dottedName: PackratParser[Id] = (
-    (dottedName ~ "." ~ id) ^^ ??? 
-    | id
+  lazy val dottedName: PackratParser[List[Id]] = (
+    (dottedName ~ ("." ~> id)) ^^ { case il ~ x => il :+ x } 
+    | id ^^ { case x => List(x) }
   ) 
 
   //////////////////////////////////////
