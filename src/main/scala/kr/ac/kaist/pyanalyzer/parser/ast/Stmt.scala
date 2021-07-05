@@ -10,7 +10,7 @@ case class WithItem(expr: Expr, asExpr: Option[Expr])
 case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
 
 // Match patterns
-trait Pattern
+trait Pattern extends Node
 case class MatchValue(expr: Expr) extends Pattern
 case class MatchSingleton(const: Const) extends Pattern
 case class MatchSeq(patterns: List[Pattern]) extends Pattern

@@ -13,9 +13,43 @@ object Beautifier {
     case e: Expr => exprApp(app, e)
     case argument: Argument => argumentApp(app, argument)
     case stmt: Stmt => stmtApp(app, stmt)
+    case pattern: Pattern => patternApp(app, pattern)
     case node =>
       println(node)
       ???
+  }
+
+  implicit lazy val patternApp: App[Pattern] = (app, pattern) => pattern match {
+    case MatchValue(e)  => app ~ e
+    case MatchSingleton(c) => app ~ c
+    case MatchSeq(pl) => 
+      implicit val lApp = ListApp[Pattern](sep = ", ")
+      app ~ pl
+    case MatchStar(nopt) => 
+      app ~ "*" ~ &("", nopt, "")
+    case MatchMapping(map, nopt) =>
+      implicit val mapApp: App[(Expr, Pattern)] = {
+        case (app, (e, p)) => app ~ e ~ " : " ~ p
+      }
+      implicit val lApp = ListApp[(Expr, Pattern)](sep = ", ")
+      app ~ "{" ~ map ~ &(",", nopt, "") ~ "}"
+    case MatchClass(ce, pl, map) =>
+      implicit val mapApp: App[(Id, Pattern)] = {
+        case (app, (x, p)) => app ~ x ~ " = " ~ p
+      }
+      implicit val plApp = ListApp[Pattern](sep = ", ")
+      implicit val mlApp = ListApp[(Id, Pattern)](sep = ", ")
+      app ~ ce ~ "(" ~ pl ~ map ~ ")"
+    case MatchAs(popt, x) =>
+      app ~ &("", popt, " as ") ~ x
+    case MatchOr(pl) =>
+      implicit val plApp = ListApp[Pattern](sep = " | ")
+      app ~ pl
+    case MatchWildcard =>
+      app ~ "_"
+    case MatchGroup(p) =>
+      app ~ "(" ~ p ~ ")"
+    case _ => ???  
   }
 
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {

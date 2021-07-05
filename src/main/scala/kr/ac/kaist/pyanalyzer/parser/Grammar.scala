@@ -367,6 +367,132 @@ object Grammar {
     "AssertStmt" -> List(
       "assert" ~ Prod("Expression") ~ Opt("," ~ Prod("Expression")),
     ),
-    "genId" -> List(genId)
+    "genId" -> List(genId),
+    // Patterns
+    "patterns" -> List(
+      Prod("openSeqPat"),   
+    ),
+    "pattern" -> List(
+      Prod("asPat"),
+      Prod("orPat"),
+    ),
+    "asPat" -> List(
+      Prod("orPat") ~ "as" ~ Prod("patCaptureTarget"),
+    ),
+    "orPat" -> List(
+      Rep1Sep(Prod("closedPat"), "|"),
+    ),
+    "closedPat" -> List(
+      Prod("literalPat"),
+      Prod("capturePat"),
+      Prod("wildcardPat"),
+      Prod("valuePat"),
+      Prod("groupPat"),
+      Prod("seqPat"),
+      Prod("mapPat"),
+      Prod("classPat"),
+    ),
+    // TODO negative lookahead on signedNum
+    "literalPat" -> List(
+      Prod("signedNum"),
+      Prod("complexNum"),
+      "None",
+      "True", "False",
+    ),
+    "literalExpr" -> List(
+      Prod("signedNum"),
+      Prod("complexNum"),
+      "abcd", "xyzw",
+      "None",
+      "True", "False",
+    ),
+    "complexNum" -> List(
+      "1.0 + 1.0j" 
+    ),
+    "signedRealNum" -> List(
+      "1.0", "-1.0",
+    ),
+    "signedNum" -> List(
+      "1.0", "-1.0",
+    ),
+    "realNum" -> List(
+      "1.0"  
+    ),
+    "imagNum" -> List(
+      "1.0"
+    ),
+    "capturePat" -> List(
+      Prod("patCaptureTarget") 
+    ),
+    // TODO negative lookahead
+    "patCaptureTarget" -> List(
+      genId
+    ),
+    "wildcardPat" -> List(
+      "_"
+    ),
+    // TODO negative lookahead
+    "valuePat" -> List(
+      Prod("attr")
+    ),
+    "attr" -> List(
+      Prod("nameOrAttr") ~ ("," ~ genId), 
+    ),
+    "nameOrAttr" -> List(
+      "." ~ genId,
+      Prod("attr"),
+    ),
+    "groupPat" -> List(
+      "(" ~ Prod("pattern") ~ ")",
+    ),
+    "seqPat" -> List(
+      "[" ~ Opt(Prod("maybeSeqPat")) ~ "]",
+      "(" ~ Opt(Prod("openSeqPat")) ~ ")",
+    ),
+    "openSeqPat" -> List(
+      Prod("maybeStarPat") ~ ","  ~ Opt(Prod("maybeSeqPat"))
+    ),
+    "maybeSeqPat" -> List(
+      Rep1Sep(Prod("maybeStarPat"), ",") ~ Opt(",") 
+    ),
+    "maybeStarPat" -> List(
+      Prod("starPat"),
+      Prod("pattern"),
+    ),
+    "starPat" -> List(
+      "*" ~ Prod("patCaptureTarget"),
+      "*" ~ Prod("wildcardPat"),
+    ),
+    "mapPat" -> List(
+      "{ }",
+      "{" ~ Prod("doubleStarPat") ~ Opt(",") ~ "}",
+      "{" ~ Prod("itemsPat") ~ "," ~ Prod("doubleStarPat") ~ Opt(",") ~ "}",
+      "{" ~ Prod("itemsPat") ~ Opt(",") ~ "}", 
+    ),
+    "itemsPat" -> List(
+      Rep1Sep(Prod("kvPat"), ","),   
+    ),
+    "kvPat" -> List(
+      Prod("literalExpr") ~ ":" ~ Prod("pattern"),
+      Prod("attr") ~ ":" ~ Prod("pattern"),
+    ),
+    "doubleStarPat" -> List(
+      "**" ~ Prod("patCaptureTarget")
+    ),
+    "classPat" -> List(
+      Prod("nameOrAttr") ~ "( )",
+      Prod("nameOrAttr") ~ "(" ~ Prod("posPats") ~ Opt(",") ~ ")",
+      Prod("nameOrAttr") ~ "(" ~ Prod("keywordPats") ~ Opt(",") ~ ")",
+      Prod("nameOrAttr") ~ "(" ~ Prod("posPats") ~ "," ~ Prod("keywordPats") ~ Opt(",") ~ ")", 
+    ),
+    "posPats" -> List(
+      Rep1Sep(Prod("pattern"), ",")
+    ),
+    "keywordPats" -> List(
+      Rep1Sep(Prod("keywordPat"), ",") 
+    ),
+    "keywordPat" -> List(
+      genId ~ "=" ~ Prod("pattern"),
+    ),
   )
 }
