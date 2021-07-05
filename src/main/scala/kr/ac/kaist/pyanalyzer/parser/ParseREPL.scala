@@ -65,7 +65,7 @@ case object CmdParseREPL extends Command {
       //2. according to result, do the actual parsing
       pairOpt.map(pair => {
         val targetLine = pair._2
-        val prodName = pair._1.getOrElse("expression") 
+        val prodName = pair._1.getOrElse("statement") 
         println(s"${CYAN}Target String:${RESET} ${targetLine}")
         
         val tokens = tokenizeText(targetLine)
@@ -73,7 +73,7 @@ case object CmdParseREPL extends Command {
 
         println(s"${GREEN}Goal production:${RESET} ${prodName}")
 
-        val parseResult = prodMap.getOrElse(prodName.capitalize, expression)(
+        val parseResult = prodMap.getOrElse(prodName.capitalize, statement)(
           new PackratReader(TokenListParser.TokenReader(tokens))
         )
         println(s"${GREEN}Parse result${RESET}: ${parseResult}")

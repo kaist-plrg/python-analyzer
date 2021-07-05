@@ -4,8 +4,10 @@ class Appender(tab: String = "  ") {
   import Appender._
 
   val sb: StringBuilder = new StringBuilder
-  var k = 0
-  def indent = tab * k
+  private var k = 0
+  def indent = { k += 1; tab }
+  def dedent = { k -= 1; sb.drop(2); "" }
+  def newLine = "\n" + tab * k
   override def toString: String = sb.toString
   def ~(str: String): Appender = { sb ++= str; this }
   def ~[T](x: T)(implicit app: App[T]): Appender = app(this, x)
@@ -13,11 +15,6 @@ class Appender(tab: String = "  ") {
   def ~[T](opt: &[T])(implicit app: App[T]): Appender = opt match {
     case &(l, Some(v), r) => sb ++= l; app(this, v); sb ++= r; this
     case _ => this
-  }
-  def block(
-    lr: (String, String) = ("", "")
-  )(f: => Unit): Appender = {
-    k += 1; wrap(lr)(f); k -= 1; this
   }
 
   def wrap(

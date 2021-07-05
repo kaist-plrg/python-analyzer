@@ -60,8 +60,8 @@ case class Comprehension(
 // Statements
 /////////////////////////////////////////////
 // Function, Class definitions
-case class FunDef(decos: List[Expr], name: Id, args: Args, retExpr: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
-case class AsyncFunDef(decos: List[Expr], name: Id, args: Args, retExpr: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
+case class FunDef(decos: List[Expr], name: Id, args: Args, retType: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
+case class AsyncFunDef(decos: List[Expr], name: Id, args: Args, retType: Option[Expr], tyExpr: Option[String], body: List[Stmt]) extends Stmt
 case class ClassDef(decos: List[Expr], name: Id, exprs: List[Expr], kwds: List[Kwarg], body: List[Stmt]) extends Stmt 
 
 // Simple statements

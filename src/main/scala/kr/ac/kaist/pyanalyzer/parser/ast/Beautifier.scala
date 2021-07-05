@@ -23,6 +23,7 @@ object Beautifier {
     case MatchValue(e)  => app ~ e
     case MatchSingleton(c) => app ~ c
     case MatchSeq(pl) => 
+    // TODO: Add [] or ()
       implicit val lApp = ListApp[Pattern](sep = ", ")
       app ~ pl
     case MatchStar(nopt) => 
@@ -39,7 +40,7 @@ object Beautifier {
       }
       implicit val plApp = ListApp[Pattern](sep = ", ")
       implicit val mlApp = ListApp[(Id, Pattern)](sep = ", ")
-      app ~ ce ~ "(" ~ pl ~ map ~ ")"
+      app ~ ce ~ "(" ~ pl ~ sepOpt(pl, map, ", ") ~ map ~ ")"
     case MatchAs(popt, x) =>
       app ~ &("", popt, " as ") ~ x
     case MatchOr(pl) =>
@@ -49,23 +50,27 @@ object Beautifier {
       app ~ "_"
     case MatchGroup(p) =>
       app ~ "(" ~ p ~ ")"
-    case _ => ???  
   }
 
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
-    case FunDef(decos, name, args, retExjpr, tyExpr, body) =>
-      implicit val leApp = ListApp[Expr]("@")
-      ???
-    case PassStmt => app ~ "pass"
-    case BreakStmt => app ~ "break"
-    case ContinueStmt => app ~ "continue"
+    case FunDef(decos, name, args, retType, tyExpr, body) =>
+      implicit val leApp: App[List[Expr]] = (app, le) =>
+        le.foldLeft(app)((app, e) => app ~ e ~ app.newLine)
+      implicit val lsApp: App[List[Stmt]] = (app, ls) =>
+        ls.foldLeft(app)((app, stmt) => app ~ stmt)
+      app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", tyExpr) ~ ":" ~
+        &(app.newLine, retType) ~ app.newLine ~ app.indent ~
+        body ~ app.dedent
+    case PassStmt => app ~ "pass" ~ app.newLine
+    case BreakStmt => app ~ "break" ~ app.newLine
+    case ContinueStmt => app ~ "continue" ~ app.newLine
     case GlobalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
-      app ~ "global " ~ xl
+      app ~ "global " ~ xl ~ app.newLine
     case NonlocalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
-      app ~ "nonlocal " ~ xl
-    case AssertStmt(c, opt) => app ~ "assert" ~ c ~ &("", opt, ", ")
+      app ~ "nonlocal " ~ xl ~ app.newLine
+    case AssertStmt(c, opt) => app ~ "assert" ~ c ~ &("", opt, ", ") ~ app.newLine
     case _ => ???
   }
 
