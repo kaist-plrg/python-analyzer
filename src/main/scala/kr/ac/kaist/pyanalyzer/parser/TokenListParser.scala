@@ -1045,7 +1045,7 @@ trait TokenListParsers extends PackratParsers {
     "Disjunction" -> disjunction,
     // Param
     // Lambda
-//    "Lambdef" -> lambdef,
+    "Lambdef" -> lambdef,
     // Expression
     "Expression" -> expression,
     "Expressions" -> expressions,

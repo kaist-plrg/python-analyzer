@@ -53,7 +53,7 @@ object Beautifier {
     case NamedExpr(lhs, rhs) => app ~ lhs ~ " := " ~ rhs
     case BinaryExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
     case UnaryExpr(op, e) => app ~ op ~ " " ~ e
-    case LambdaExpr(args, e) => app ~ args ~ e
+    case LambdaExpr(args, e) => app ~ "lambda " ~ args ~ " : " ~ e
     case IfExpr(e1, c, e2) => app ~ e1 ~ " if " ~ c ~ " else " ~ e2
     case DictExpr(lp, dstar) =>
       implicit val pApp: App[(Expr, Expr)] = {
@@ -135,8 +135,11 @@ object Beautifier {
       implicit val pApp: App[(Arg, Option[Expr])] = {
         case (app, (arg, opt)) => app ~ arg ~ &("=", opt)
       }
-      implicit val lApp = ListApp[(Arg, Option[Expr])](sep = ", ")
-      ???
+      implicit val lApp: App[List[(Arg, Option[Expr])]] = (app, list) =>
+        list.foldLeft(app)((app, e) => app ~ e ~ ", ")
+      val slash = if (pos.nonEmpty) "/, " else ""
+      val star = if (varArg.isInstanceOf[None.type] && key.nonEmpty) "*, " else ""
+      app ~ pos ~ slash ~ norm ~ star ~ &("*", varArg, ", ") ~ key ~ &("**", kwarg)
     case Arg(x, ann, ty) => app ~ x // TODO: Add annotation and type
     case Kwarg(opt, e) => app ~ &("", opt, "=") ~ e
   }
