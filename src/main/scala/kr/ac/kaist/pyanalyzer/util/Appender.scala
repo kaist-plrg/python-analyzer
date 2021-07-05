@@ -10,6 +10,10 @@ class Appender(tab: String = "  ") {
   def ~(str: String): Appender = { sb ++= str; this }
   def ~[T](x: T)(implicit app: App[T]): Appender = app(this, x)
   def ~(f: Update): Appender = f(this)
+  def ~[T](opt: &[T])(implicit app: App[T]): Appender = opt match {
+    case &(l, Some(v), r) => sb ++= l; app(this, v); sb ++= r; this
+    case _ => this
+  }
 
   def wrap(
     lr: (String, String) = ("", "")
@@ -37,15 +41,6 @@ object Appender {
     case None => app
   }
 
-  // option appender
-  def OptApp[T](
-    left: String = "",
-    right: String = ""
-  )(implicit vApp: App[T]): App[Option[T]] = (app, opt) => opt match {
-    case Some(v) => app ~ left ~ v ~ right
-    case None => app
-  }
-
   // lists with separator
   def ListApp[T](
     left: String = "",
@@ -58,4 +53,5 @@ object Appender {
       for (t <- tl) app ~ sep ~ t
       app ~ right
   }
+  case class &[T](l: String = "", opt: Option[T], r: String = "")
 }
