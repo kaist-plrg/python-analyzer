@@ -777,7 +777,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val patterns: PackratParser[Pattern] = openSeqPat ^^ MatchSeq | pattern
   lazy val pattern: PackratParser[Pattern] = asPat | orPat
   lazy val asPat: PackratParser[Pattern] = orPat ~ ("as" ~> patCaptureTarget) ^^ {
-    case or ~ x => MatchAs(or, x)
+    case or ~ x => MatchAs(Some(or), x)
   }
   lazy val orPat: PackratParser[Pattern] = rep1sep(closedPat, "|") ^^ {
     case head :: Nil => head
@@ -799,9 +799,9 @@ trait TokenListParsers extends PackratParsers {
     realNum | "-" ~> number ^^ { UnaryExpr(UMinus, _) }
   lazy val realNum: PackratParser[Expr] = number
   lazy val imagNum: PackratParser[Expr] = number
-  lazy val capturePat: PackratParser[Pattern] = patCaptureTarget ^^ ??? // matchas
+  lazy val capturePat: PackratParser[Pattern] = patCaptureTarget ^^ { MatchAs(None, _) }
   lazy val patCaptureTarget: PackratParser[Id] = not("_") ~> id <~ not("." | "(" | "=")
-  lazy val wildcardPat: PackratParser[Pattern] = "_" ^^ ???
+  lazy val wildcardPat: PackratParser[Pattern] = "_" ^^^ MatchWildcard
   lazy val valuePat: PackratParser[Pattern] = attr <~ not("." | "(" | "=") ^^ MatchValue
   lazy val attr: PackratParser[Expr] = nameOrAttr ~ ("." ~> id) ^^ {
     case e ~ x => Attribute(e, EName(x))
@@ -809,9 +809,9 @@ trait TokenListParsers extends PackratParsers {
   lazy val nameOrAttr: PackratParser[Expr] = attr | id ^^ EName
   lazy val groupPat: PackratParser[Pattern] = "(" ~> pattern <~ ")" ^^ MatchGroup
   lazy val seqPat: PackratParser[Pattern] =
-    ("[" ~> opt(maybeSeqPat) <~ "]" | "(" ~> opt(openSeqPat) <~ ")") ^^ (
-      opt => MatchSeq(opt.getOrElse(Nil))
-    )
+    ("[" ~> opt(maybeSeqPat) <~ "]" | "(" ~> opt(openSeqPat) <~ ")") ^^ {
+      case opt => MatchSeq(opt.getOrElse(Nil))
+    }
   lazy val openSeqPat: PackratParser[List[Pattern]] =
     maybeStarPat ~ ("," ~> opt(maybeSeqPat)) ^^ {
       case p ~ opt => p :: opt.getOrElse(Nil)
@@ -819,25 +819,36 @@ trait TokenListParsers extends PackratParsers {
   lazy val maybeSeqPat: PackratParser[List[Pattern]] =
     rep1sep(maybeStarPat, ",") <~ opt(",")
   lazy val maybeStarPat: PackratParser[Pattern] = starPat | pattern
-  lazy val starPat: PackratParser[Pattern] = "*" ~> patCaptureTarget ^^ (
-    x => MatchStar(Some(x))
-  ) | "*" ~> wildcardPat ^^^ MatchStar(None)
-//TODO: Add double star unpacking
+  lazy val starPat: PackratParser[Pattern] = "*" ~> patCaptureTarget ^^ {
+    case x => MatchStar(Some(x))
+  } | "*" ~> wildcardPat ^^^ MatchStar(None)
   lazy val mapPat: PackratParser[Pattern] =
-    "{" ~ "}" ^^ { _ => MatchMapping(Nil, None) } |
-    "{" ~> doubleStarPat <~ opt(",") ~ "}" ^^ ??? |
-    "{" ~> itemsPat ~ ("," ~> doubleStarPat) <~ opt(",") ~ "}" ^^ ??? |
-    "{" ~> itemsPat <~ opt(",") ~ "}" ^^ ???
-  lazy val itemsPat: PackratParser[List[Pattern]] = rep1sep(kvPat, ",")
-  // TODO: model the pair
-  lazy val kvPat: PackratParser[Pattern] = ???
+    "{" ~ "}" ^^^ MatchMapping() |
+    "{" ~> doubleStarPat <~ opt(",") ~ "}" ^^ {
+      case x => MatchMapping(name = Some(x))
+    } | "{" ~> itemsPat ~ ("," ~> doubleStarPat) <~ opt(",") ~ "}" ^^ {
+      case map ~ x => MatchMapping(map, Some(x))
+    } | "{" ~> itemsPat <~ opt(",") ~ "}" ^^ { MatchMapping(_) }
+  lazy val itemsPat: PackratParser[List[(Expr,Pattern)]] = rep1sep(kvPat, ",")
+  lazy val kvPat: PackratParser[(Expr, Pattern)] =
+    (literalExpr | attr) ~ (":" ~> pattern) ^^ {
+      case e ~ p => (e, p)
+    }
   lazy val doubleStarPat: PackratParser[Id] = "**" ~> patCaptureTarget
-  // TODO: model the class pattern
-  lazy val classPat: PackratParser[Pattern] = ???
+  lazy val classPat: PackratParser[Pattern] =
+    nameOrAttr <~ "(" ~ ")" ^^ { MatchClass(_) } |
+    nameOrAttr ~ ("(" ~> posPats <~ opt(",") ~ ")") ^^ {
+      case e ~ pos => MatchClass(e, pos)
+    } | nameOrAttr ~ ("(" ~> keywordPats <~ opt(",") ~ ")") ^^ {
+      case e ~ keyword => MatchClass(e, map = keyword)
+    } | nameOrAttr ~ ("(" ~> posPats <~ ",") ~ keywordPats <~ opt(",") ~ ")" ^^ {
+      case e ~ pos ~ keyword => MatchClass(e, pos, keyword)
+    }
   lazy val posPats: PackratParser[List[Pattern]] = rep1sep(pattern, ",")
-  lazy val keyPats: PackratParser[List[Pattern]] = rep1sep(keyPat, ",")
-  // TODO: model the pair
-  lazy val keyPat: PackratParser[Pattern] = id ~ ("=" ~> pattern) ^^ ???
+  lazy val keywordPats: PackratParser[List[(Id, Pattern)]] = rep1sep(keywordPat, ",")
+  lazy val keywordPat: PackratParser[(Id, Pattern)] = id ~ ("=" ~> pattern) ^^ {
+    case x ~ p => (x, p)
+  }
 
 
   //////////////////////////////////////

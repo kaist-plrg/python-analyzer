@@ -15,9 +15,16 @@ case class MatchValue(expr: Expr) extends Pattern
 case class MatchSingleton(const: Const) extends Pattern
 case class MatchSeq(patterns: List[Pattern]) extends Pattern
 case class MatchStar(name: Option[Id]) extends Pattern
-case class MatchMapping(map: List[(Expr, Pattern)], name: Option[Id]) extends Pattern
-case class MatchClass(classExpr: Expr, patterns: List[Pattern], map: List[(Id, Pattern)]) extends Pattern
-case class MatchAs(pattern: Pattern, name: Id) extends Pattern
+case class MatchMapping(
+  map: List[(Expr, Pattern)] = Nil,
+  name: Option[Id] = None
+) extends Pattern
+case class MatchClass(
+  classExpr: Expr,
+  patterns: List[Pattern] = Nil,
+  map: List[(Id, Pattern)] = Nil
+) extends Pattern
+case class MatchAs(pattern: Option[Pattern], name: Id) extends Pattern
 case class MatchOr(patterns: List[Pattern]) extends Pattern
 case object MatchWildcard extends Pattern
 case class MatchGroup(pattern: Pattern) extends Pattern
