@@ -21,7 +21,6 @@ object Beautifier {
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
     case FunDef(decos, name, args, retExjpr, tyExpr, body) =>
       implicit val leApp = ListApp[Expr]("@")
-      implicit val lsApp = ListApp[Stmt]???
       ???
     case PassStmt => app ~ "pass"
     case BreakStmt => app ~ "break"
@@ -137,7 +136,7 @@ object Beautifier {
         case (app, (arg, opt)) => app ~ arg ~ &("=", opt)
       }
       implicit val lApp = ListApp[(Arg, Option[Expr])](sep = ", ")
-      app ~ "(" ~ pos ~ 
+      ???
     case Arg(x, ann, ty) => app ~ x // TODO: Add annotation and type
     case Kwarg(opt, e) => app ~ &("", opt, "=") ~ e
   }
