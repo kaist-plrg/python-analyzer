@@ -19,6 +19,10 @@ object Beautifier {
   }
 
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
+    case FunDef(decos, name, args, retExjpr, tyExpr, body) =>
+      implicit val leApp = ListApp[Expr]("@")
+      implicit val lsApp = ListApp[Stmt]???
+      ???
     case PassStmt => app ~ "pass"
     case BreakStmt => app ~ "break"
     case ContinueStmt => app ~ "continue"
@@ -28,9 +32,7 @@ object Beautifier {
     case NonlocalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "nonlocal " ~ xl
-    case AssertStmt(c, opt) =>
-      implicit val oApp = OptApp[Expr](", ")
-      app ~ "assert" ~ c ~ opt
+    case AssertStmt(c, opt) => app ~ "assert" ~ c ~ &("", opt, ", ")
     case _ => ???
   }
 
@@ -94,9 +96,7 @@ object Beautifier {
       implicit val lApp = ListApp[Comprehension](sep = " ")
       app ~ "(" ~ target ~ " "  ~ comp ~ ")"
     case AwaitExpr(e) => app ~ "await " ~ e
-    case YieldExpr(opt) =>
-      implicit val oApp = OptApp[Expr]()
-      app ~ "yield " ~ opt
+    case YieldExpr(opt) => app ~ "yield " ~ &(opt = opt)
     case YieldFromExpr(e) => app ~ "yield from " ~ e
     case CompExpr(h, lp) =>
       implicit val pApp: App[(CompOp, Expr)] = {
@@ -118,13 +118,7 @@ object Beautifier {
     case Starred(e) => app ~ "*" ~ e
     case DoubleStarred(e) => app ~ "**" ~ e
     case EName(x) => app ~ x
-    case Slice(lb, ub, step) =>
-      implicit val oApp = OptApp[Expr]()
-      app ~ lb ~ ":" ~ ub
-      step match {
-        case Some(e) => app ~ ":" ~ e
-        case None => app
-      }
+    case Slice(lb, ub, step) => app ~ &(opt = lb) ~ ":" ~ &(opt = ub) ~ &(":", step)
     case GroupExpr(e) => app ~ "(" ~ e ~ ")"
   }
 
@@ -138,11 +132,14 @@ object Beautifier {
   }
 
   implicit lazy val argumentApp: App[Argument] = (app, argument) => argument match {
-    case Args(_, _, _, _, _) => ???
+    case Args(pos, norm, varArg, key, kwarg) =>
+      implicit val pApp: App[(Arg, Option[Expr])] = {
+        case (app, (arg, opt)) => app ~ arg ~ &("=", opt)
+      }
+      implicit val lApp = ListApp[(Arg, Option[Expr])](sep = ", ")
+      app ~ "(" ~ pos ~ 
     case Arg(x, ann, ty) => app ~ x // TODO: Add annotation and type
-    case Kwarg(opt, e) =>
-      implicit val oApp = OptApp[Id](right = "=")
-      app ~ opt ~ e
+    case Kwarg(opt, e) => app ~ &("", opt, "=") ~ e
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {
@@ -176,7 +173,4 @@ object Beautifier {
     case OAnd => app ~ "and"
     case OOr => app ~ "or"
   }
-
-  def sepOpt[T, U](l1: List[T], l2: List[U], sep: String): Option[String] =
-    if (l1.nonEmpty && l2.nonEmpty) Some(sep) else None
 }

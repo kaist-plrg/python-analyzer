@@ -14,6 +14,11 @@ class Appender(tab: String = "  ") {
     case &(l, Some(v), r) => sb ++= l; app(this, v); sb ++= r; this
     case _ => this
   }
+  def block(
+    lr: (String, String) = ("", "")
+  )(f: => Unit): Appender = {
+    k += 1; wrap(lr)(f); k -= 1; this
+  }
 
   def wrap(
     lr: (String, String) = ("", "")
@@ -53,5 +58,9 @@ object Appender {
       for (t <- tl) app ~ sep ~ t
       app ~ right
   }
+
+  def sepOpt[T, U](l1: List[T], l2: List[U], sep: String): Option[String] =
+    if (l1.nonEmpty && l2.nonEmpty) Some(sep) else None
+
   case class &[T](l: String = "", opt: Option[T], r: String = "")
 }
