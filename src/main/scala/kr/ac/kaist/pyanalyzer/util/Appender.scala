@@ -10,6 +10,15 @@ class Appender(tab: String = "  ") {
   def ~(str: String): Appender = { sb ++= str; this }
   def ~[T](x: T)(implicit app: App[T]): Appender = app(this, x)
   def ~(f: Update): Appender = f(this)
+
+  def wrap(
+    lr: (String, String) = ("", "")
+  )(f: => Unit): Appender = {
+    val (l, r) = lr
+    this ~ l
+    f
+    this ~ r
+  }
 }
 object Appender {
   // Scala value appender

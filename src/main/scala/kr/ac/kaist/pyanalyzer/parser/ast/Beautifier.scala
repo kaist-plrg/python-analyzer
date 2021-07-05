@@ -68,12 +68,16 @@ object Beautifier {
     case ListExpr(l) =>
       implicit val lApp = ListApp[Expr]("[", ", ", "]")
       app ~ l
-    case TupleExpr(tup) => tup match {
-      case head :: Nil => app ~ "(" ~ head ~ ",)"
-      case tup =>
-        implicit val lApp = ListApp[Expr]("(", ", ", ")")
-        app ~ tup
+    case TupleExpr(tup) =>
+      val isSlices = !tup.forall(e => !e.isInstanceOf[Slice])
+      val wrapper = if (isSlices) ("", "") else ("(", ")")
+      lazy val tupApp = tup match {
+        case head :: Nil => app ~ head ~ ","
+        case tup =>
+          implicit val lApp = ListApp[Expr](sep = ", ")
+          app ~ tup
       }
+      app.wrap(wrapper)(tupApp)
     case ListComp(target, comp) =>
       implicit val lApp = ListApp[Comprehension](sep = " ")
       app ~ "[" ~ target ~ " " ~ comp ~ "]"
