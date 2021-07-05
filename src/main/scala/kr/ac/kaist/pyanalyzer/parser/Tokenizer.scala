@@ -5,16 +5,19 @@ import scala.collection.mutable.Stack
 
 case class IndentError(expected: Int, actual: Int) extends Exception
 case class IndentState(tabs: List[Int], cur: Int) {
-  def doIndent(n: Int): IndentState = IndentState(n :: tabs, cur + n) 
+  // expects positive int
+  def doIndent(n: Int): IndentState = IndentState(n:: tabs, cur + n) 
+  // expects negative int
   def doDedent(n: Int): (Int, IndentState) = {
+    val delta = -n
     var k = 0
     var sum = 0
-    while (sum < n){
+    while (sum < delta){
       val indent = tabs(k)
       k += 1
       sum += indent
-      if (sum > n) {
-        throw IndentError(sum, n)
+      if (sum > delta) {
+        throw IndentError(sum, delta)
       }
     }
     // only breaks loop when sum == n
@@ -24,7 +27,7 @@ case class IndentState(tabs: List[Int], cur: Int) {
 
 // lineParser: a parser that parses one line string, without considering indentation
 // IndentParser will take care of indent, dedent, and newline
-case class IndentParser(st: IndentState) {
+case class IndentParser(var st: IndentState) {
   // helper
   def leftTrim(s: String) = s.replaceAll("^\\s+", "")
   val onelineParser = (Tokenizer.parseText _) 
@@ -37,14 +40,16 @@ case class IndentParser(st: IndentState) {
     
     // try parsing a line
     // indent case
-    if (st.cur < newIndent) {
-      val newSt = st.doIndent(newIndent)
+    val delta =  newIndent - st.cur
+    if (delta > 0) {
+      val newSt = st.doIndent(delta)
       (IndentToken +: onelineParser(trimmed) :+ NewlineToken, newSt) 
     }
     // dedent case
-    else if (st.cur > newIndent) {
-      val (k, newSt) = st.doDedent(newIndent)
-      (DedentToken +: onelineParser(trimmed) :+ NewlineToken, newSt)
+    else if (delta < 0) {
+      val (k, newSt) = st.doDedent(delta)
+      val dedents = List.fill(k)(DedentToken)
+      (dedents ++ onelineParser(trimmed) :+ NewlineToken, newSt)
     }
     // same case
     else {
@@ -60,7 +65,7 @@ case class IndentParser(st: IndentState) {
 
     for (line <- lines) {
       val (lineToks, newSt) = parseLine(line)
-      state = newSt
+      this.st = newSt
       tokens = tokens ++ lineToks
     }
 
