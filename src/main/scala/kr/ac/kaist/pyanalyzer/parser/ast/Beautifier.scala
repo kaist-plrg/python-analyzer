@@ -23,8 +23,7 @@ object Beautifier {
     case MatchValue(e)  => app ~ e
     case MatchSingleton(c) => app ~ c
     case MatchSeq(pl) => 
-    // TODO: Add [] or ()
-      implicit val lApp = ListApp[Pattern](sep = ", ")
+      implicit val lApp = ListApp[Pattern]("[", ", ", "]")
       app ~ pl
     case MatchStar(nopt) => 
       app ~ "*" ~ &("", nopt, "")
