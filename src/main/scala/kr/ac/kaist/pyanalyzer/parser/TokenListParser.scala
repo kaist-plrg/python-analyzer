@@ -138,8 +138,8 @@ trait TokenListParsers extends PackratParsers {
   lazy val noneLiteral: PackratParser[Const] = "None" ^^^ NoneLiteral
 
   // TODO need impl. is this parser or tokenizer?
-  lazy val typeComment: PackratParser[String] = ???
-  lazy val funcTypeComment: PackratParser[String] = ???
+  lazy val typeComment: PackratParser[String] = "TODO" ^^^ ""
+  lazy val funcTypeComment: PackratParser[String] = "TODO" ^^^ ""
 
   lazy val number: PackratParser[Expr] =
     (intLiteral | floatLiteral | imagLiteral) ^^ EConst
@@ -572,8 +572,9 @@ trait TokenListParsers extends PackratParsers {
   ////////////////////////////////////////////////////////////////////////////////
   // Statements
   //////////////////////////////////////////////////////////////////////////////
-  lazy val statements: PackratParser[List[Stmt]] = rep1(statement)
-  lazy val statement: PackratParser[Stmt] = compoundStmt | simpleStmt
+  lazy val statements: PackratParser[List[Stmt]] = rep1(statement) ^^ { _.flatten }
+  lazy val statement: PackratParser[List[Stmt]] =
+    compoundStmt ^^ { List(_) } | simpleStmts
   lazy val statementNewline: PackratParser[List[Stmt]] = 
     (compoundStmt <~ "\n") ^^ { case s => List(s) } | 
     simpleStmts | 

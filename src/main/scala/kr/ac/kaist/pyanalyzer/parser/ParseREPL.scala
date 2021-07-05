@@ -2,13 +2,14 @@ package kr.ac.kaist.pyanalyzer.parser
 
 import kr.ac.kaist.pyanalyzer.LINE_SEP
 import kr.ac.kaist.pyanalyzer.PyAnalyzer.Command
+import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.Token._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import org.jline.builtins.Completers.TreeCompleter
-import org.jline.builtins.Completers.TreeCompleter._
+import org.jline.builtins.Completers.TreeCompleter.{Node => CNode, node}
 import org.jline.reader._
 import org.jline.terminal._
 import scala.Console._
@@ -65,7 +66,7 @@ case object CmdParseREPL extends Command {
       //2. according to result, do the actual parsing
       pairOpt.map(pair => {
         val targetLine = pair._2
-        val prodName = pair._1.getOrElse("statement") 
+        val prodName = pair._1.getOrElse("statements") 
         println(s"${CYAN}Target String:${RESET} ${targetLine}")
         
         val tokens = tokenizeText(targetLine)
@@ -73,14 +74,20 @@ case object CmdParseREPL extends Command {
 
         println(s"${GREEN}Goal production:${RESET} ${prodName}")
 
-        val parseResult = prodMap.getOrElse(prodName.capitalize, statement)(
+        val parseResult = prodMap.getOrElse(prodName.capitalize, statements)(
           new PackratReader(TokenListParser.TokenReader(tokens))
         )
         println(s"${GREEN}Parse result${RESET}: ${parseResult}")
 
         try {
-          val prettyResult = beautify(parseResult.get)
-          println(s"${CYAN}Beautify result${RESET}: ${prettyResult}")
+          val ast = parseResult.get
+          ast match {
+            case l: List[Node] =>
+              val stmts = l.foldLeft("")((s, e) => s + beautify(e))
+              println(s"${CYAN}Beautify result${RESET}: ${stmts}")
+            case node: Node =>
+              println(s"${CYAN}Beautify result${RESET}: ${beautify(node)}")
+          }
         } catch {
           case e: Throwable => println(e)
         }
