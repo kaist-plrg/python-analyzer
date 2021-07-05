@@ -60,6 +60,16 @@ object Beautifier {
       app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", tyExpr) ~ ":" ~
         &(app.newLine, retType) ~ app.newLine ~ app.indent ~
         body ~ app.dedent
+    case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
+      app ~ "async" ~ FunDef(decos, name, args, retType, tyExpr, body)
+    case ClassDef(decos, name, exprs, kwds, body) => ???
+    case ReturnStmt(e) => app ~ "return " ~ &(opt = e) ~ app.newLine
+    case DelStmt(le) => ???
+    case AssignStmt(target, e, ty) => ???
+    case AugAssign(target, op, e) => ???
+    case AnnAssign(target, ann, e) => ???
+    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) => ???
+    case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) => ???
     case PassStmt => app ~ "pass" ~ app.newLine
     case BreakStmt => app ~ "break" ~ app.newLine
     case ContinueStmt => app ~ "continue" ~ app.newLine
