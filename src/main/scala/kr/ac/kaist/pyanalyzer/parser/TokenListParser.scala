@@ -512,45 +512,60 @@ trait TokenListParsers extends PackratParsers {
     "(" ~> targetWithStarAtom <~ ")" ^^ GroupExpr |
     "(" ~> opt(starTargetsTupleSeq) <~ ")" ^^ { e => TupleExpr(e.getOrElse(Nil)) } |
     "[" ~> opt(starTargetsListSeq) <~ "]" ^^ { e => ListExpr(e.getOrElse(Nil)) }
-  //TODO need impl
   lazy val singleTarget: PackratParser[Expr] = (
-    singleSubscriptAttrTarget | id | ("(" ~ singleTarget ~ ")")
-  ) ^^ ???
+    singleSubscriptAttrTarget | 
+    id ^^ EName | 
+    ("(" ~> singleTarget <~ ")")
+  )
   lazy val singleSubscriptAttrTarget: PackratParser[Expr] = (
-    tPrimary ~ "." ~ id ~ not(tLookahead)
-    | tPrimary ~ "[" ~ slices ~ "]" ~ not(tLookahead)
-    | starAtom
-  ) ^^ ???
-  lazy val delTargets: PackratParser[List[Expr]] = (rep1sep(delTarget, ",") <~ opt(",")) ^^ ???
-  lazy val delTarget: PackratParser[Expr] = (
-    tPrimary ~ "." ~ id ~ not(tLookahead)
-    | tPrimary ~ "[" ~ slices ~ "]" ~ not(tLookahead)
-    | deltAtom
-  ) ^^ ???
-  lazy val deltAtom: PackratParser[Expr] = (
-    id
-    | "(" ~ delTarget ~ ")"
-    | "(" ~ opt(delTargets) ~ ")"
-    | "[" ~ opt(delTargets) ~ "]"
-  ) ^^ ???
+    tPrimary ~ ("." ~> id) <~ not(tLookahead) ^^ {
+      case prim ~ x => Attribute(prim, EName(x))
+    } | 
+    tPrimary ~ ("[" ~> slices <~ "]") <~ not(tLookahead) ^^ {
+      case prim ~ s => Subscript(prim, s)
+    } | 
+    starAtom
+  )
 
-  lazy val tPrimary: PackratParser[Expr] =
+  // nested lists / tuples of targts can  appear.
+  // `delTargets` flatten them into one-level list
+  lazy val delTargets: PackratParser[List[Expr]] = 
+    (rep1sep(delTarget, ",") <~ opt(",")) ^^ {
+      case l => l.flatten
+    }
+  lazy val delTarget: PackratParser[List[Expr]] = (
+    tPrimary ~ ("." ~> id) <~ not(tLookahead) ^^ {
+      case prim ~ x => List(Attribute(prim, EName(x)))  
+    }
+    | tPrimary ~ ("[" ~> slices <~ "]") <~ not(tLookahead) ^^ {
+      case prim ~ s => List(Subscript(prim, s)) 
+    }
+    | deltAtom
+  )
+  lazy val deltAtom: PackratParser[List[Expr]] = (
+    id ^^ { case x => List(EName(x)) } | 
+    "(" ~> delTarget <~ ")" | 
+    "(" ~> opt(delTargets) <~ ")" ^^ { case o => o.getOrElse(Nil) } | 
+    "[" ~> opt(delTargets) <~ "]" ^^ { case o => o.getOrElse(Nil) }
+  )
+
+  lazy val tPrimary: PackratParser[Expr] = (
     tPrimary ~ ("." ~> id <~ guard(tLookahead)) ^^ {
       case prim ~ x => Attribute(prim, EName(x))
-    } | tPrimary ~ ("[" ~> slices <~ "]" ~ guard(tLookahead)) ^^ {
+    } | 
+    tPrimary ~ ("[" ~> slices <~ "]" ~ guard(tLookahead)) ^^ {
       case prim ~ s => Subscript(prim, s)
-    } | tPrimary ~ genexp <~ guard(tLookahead) ^^ {
+    } | 
+    tPrimary ~ genexp <~ guard(tLookahead) ^^ {
       case prim ~ g => Call(prim, List(g))
-    } | tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ guard(tLookahead)) ^^ {
+    } | 
+    tPrimary ~ ("(" ~> opt(arguments) <~ ")" ~ guard(tLookahead)) ^^ {
       case prim ~ Some((le, lk)) => Call(prim, le, lk)
       case prim ~ None => Call(prim)
-    } | atom <~ guard(tLookahead)
-
+    } | 
+    atom <~ guard(tLookahead)
+  )
   lazy val tLookahead: PackratParser[String] = "(" | "[" | "."
-  // ...
-  lazy val targets: PackratParser[List[Expr]] =
-    repsep(target, ",") <~ opt(",") ^^ { ??? } 
-  lazy val target: PackratParser[Expr] = ???
 
   ////////////////////////////////////////////////////////////////////////////////
   // Statements
