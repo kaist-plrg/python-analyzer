@@ -438,51 +438,53 @@ trait TokenListParsers extends PackratParsers {
   //////////////////////////////////////////////////////////////////
   // Arguments
   // for one arg, Expr or Kwarg(id?, expr) can be returned.
-  // Expr -> always positional arg
-  // Kwarg(Some(id), e) -> always keyword arg
-  // Kwarg(None, Starred(...)) -> vararg (ie. *arg_list)
-  // Kwarg(None, _) -> kwargs (ie. **arg_dict)
-  // TODO revise, clarify above rule
+  // unpacking list (ie. *arg_list) : Starred in List[Expr]
+  // unpacking dict (ie. **arg_dict) : (None, DoubleStarred) is List[Kwarg]
   /////////////////////////////////////////////////////////////////
   lazy val arguments: PackratParser[(List[Expr], List[Kwarg])] = args <~ (opt(",") ~ guard(")"))
   lazy val args: PackratParser[(List[Expr], List[Kwarg])] = ( 
     (rep1sep(starredExpr | (assignExpr | expression <~ not(":=")) <~ not("="), ",")) ~ opt("," ~> kwargs) ^^ {
-      // el : 
-      // get Starred from starredExpr, convert it to Kwarg(None, Kwarg) and put to second list
-      // put others to first list
-      // opt:
-      // get List[Kwarg], put to second list
-      case el ~ opt => {
-        def matcher(p: (List[Expr], List[Kwarg]), e: Expr): (List[Expr], List[Kwarg]) = p match {
-            case (el, kl) => e match {
-              case e: Starred => (el, kl :+ Kwarg(None, e))
-              case _ => (el :+ e, kl)
-            }
-          }
-        val (elist, klist) = el.foldLeft( (List[Expr](), List[Kwarg]()) )( matcher )
-        opt match {
-          case Some(kl) => (elist, klist ++ kl)
-          case None => (elist, klist)
-        }
-      }
+      case el ~ None => (el, Nil)
+      case el ~ Some((exprList, kwList)) => (el ++ exprList,  kwList)   
     } | 
-    kwargs ^^ {
-      // kwl : just put to second list
-      case kwl => (Nil, kwl)  
-    }
+    kwargs
   )
   // getting all Kwarg
-  lazy val kwargs: PackratParser[List[Kwarg]] = (
-    rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ { case l1 ~ l2 => l1 ++ l2 } | 
-    rep1sep(kwargOrStarred, ",") |
-    rep1sep(kwargOrDoubleStarred, ",")
+  lazy val kwargs: PackratParser[(List[Expr], List[Kwarg])] = (
+    rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ { 
+      case eitherList ~ kwargList => {
+        def matcher(p: (List[Expr], List[Kwarg]), e: Either[Expr, Kwarg]): (List[Expr], List[Kwarg]) = p match {
+          case (el, kl) => e match {
+            case Left(e) => (el :+ e, kl)
+            case Right(k) => (el, kl :+ k)
+          }
+        }
+        val (el, kl) = eitherList.foldLeft(List[Expr](), List[Kwarg]())(matcher)
+        (el, kl ++ kwargList)
+      }
+    } | 
+    rep1sep(kwargOrStarred, ",") ^^ {
+      case eitherList => { // List[Either[Expr, Kwarg]] -> (List[Expr], List[Kwarg])
+        def matcher(p: (List[Expr], List[Kwarg]), e: Either[Expr, Kwarg]): (List[Expr], List[Kwarg]) = p match {
+          case (el, kl) => e match {
+            case Left(e) => (el :+ e, kl)
+            case Right(k) => (el, kl :+ k)
+          }
+        }
+        val (el, kl) = eitherList.foldLeft(List[Expr](), List[Kwarg]())(matcher)
+        (el, kl)
+      }
+    } |
+    rep1sep(kwargOrDoubleStarred, ",")  ^^ {
+      case kl => (Nil, kl)
+    }
   )
   // vararg case : must be Starred
   lazy val starredExpr: PackratParser[Starred] = ("*" ~> expression) ^^ { case e => Starred(e) }
   // keyarg or vararg case
-  lazy val kwargOrStarred: PackratParser[Kwarg] = (
-    id ~ ("=" ~> expression) ^^ { case i ~ e => Kwarg(Some(i), e) } | 
-    starredExpr ^^ { case e => Kwarg(None, e) }
+  lazy val kwargOrStarred: PackratParser[Either[Expr, Kwarg]] = (
+    id ~ ("=" ~> expression) ^^ { case i ~ e => Right(Kwarg(Some(i), e)) } | 
+    starredExpr ^^ { case e => Left(e) }
   )
   // keyarg or kwargs case
   lazy val kwargOrDoubleStarred: PackratParser[Kwarg] = ( 
