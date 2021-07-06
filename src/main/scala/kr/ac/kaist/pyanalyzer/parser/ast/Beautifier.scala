@@ -51,36 +51,76 @@ object Beautifier {
       app ~ "(" ~ p ~ ")"
   }
 
+  // TODO
+  implicit val lsApp = ListApp[Stmt]()
+
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
     case FunDef(decos, name, args, retType, tyExpr, body) =>
       implicit val leApp: App[List[Expr]] = (app, le) =>
-        le.foldLeft(app)((app, e) => app ~ e ~ app.newLine)
-      implicit val lsApp: App[List[Stmt]] = (app, ls) =>
-        ls.foldLeft(app)((app, stmt) => app ~ stmt)
+        le.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine)
       app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", tyExpr) ~ ":" ~
-        &(app.newLine, retType) ~ app.newLine ~ app.indent ~
-        body ~ app.dedent
+        &(app.newLine, retType) ~ *(body)
     case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
-      app ~ "async" ~ FunDef(decos, name, args, retType, tyExpr, body)
-    case ClassDef(decos, name, exprs, kwds, body) => ???
+      app ~ "async " ~ FunDef(decos, name, args, retType, tyExpr, body)
+    case ClassDef(decos, name, exprs, kwds, body) =>
+      implicit val leApp = ListApp[Expr](sep = ", ")
+      implicit val klApp = ListApp[Kwarg](sep = ", ")
+      decos.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine) ~
+        "def " ~ name ~ "(" ~ exprs ~ sepOpt(exprs, kwds, ", ") ~ kwds ~ ")" ~ ":" ~
+        *(body)
     case ReturnStmt(e) => app ~ "return " ~ &(opt = e) ~ app.newLine
-    case DelStmt(le) => ???
-    case AssignStmt(target, e, ty) => ???
-    case AugAssign(target, op, e) => ???
-    case AnnAssign(target, ann, e) => ???
-    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) => ???
-    case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) => ???
-    case PassStmt => app ~ "pass" ~ app.newLine
-    case BreakStmt => app ~ "break" ~ app.newLine
-    case ContinueStmt => app ~ "continue" ~ app.newLine
+    case DelStmt(le) =>
+      implicit val lApp = ListApp[Expr](sep = ", ")
+      app ~ "del " ~ le
+    case AssignStmt(targets, e, ty) =>
+      targets.foldLeft(app)((app, target) => app ~ target ~ " = ") ~
+        e ~ " " ~ &(opt = ty)
+    case AugAssign(target, op, e) =>
+      app ~ target ~ " " ~ op ~ "= " ~ e
+    case AnnAssign(target, ann, e) =>
+      app ~ target ~ ": " ~ ann ~ &(" = ", e)
+    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
+      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ": " ~ &(opt = ty) ~
+        *(doStmt) ~ "else:" ~ *(elseStmt)
+    case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
+      app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
+    case WhileStmt(cond, body, elseStmt) =>
+      app ~ "while " ~ cond ~ ": " ~ *(body) ~ "else:" ~ *(elseStmt)
+    case IfStmt(cond, thenStmt, elseStmt) =>
+      app ~ "if " ~ cond ~ ": " ~ *(thenStmt)
+      elseStmt match {
+        case Nil => app
+        case s :: Nil if s.isInstanceOf[IfStmt] => app ~ "el" ~ s
+        case stmts => app ~ "else:" ~ *(stmts)
+      }
+    case WithStmt(ty, items, body) =>
+      implicit val lApp = ListApp[WithItem](sep = ", ")
+      app ~ "with" ~ items ~ ": " ~ &(opt = ty) ~ *(body)
+    case AsyncWithStmt(ty, items, body) =>
+      app ~ "async " ~ WithStmt(ty, items, body)
+    case MatchStmt(e, cases) =>
+      implicit val caseApp: App[MatchCase] = {
+        case (app, MatchCase(pat, cond, body)) =>
+          app ~ "case " ~ pat ~ &(" if ", cond) ~ ":" ~ *(body)
+      }
+      implicit val lcApp = ListApp[MatchCase]()
+      app ~ "match " ~ e ~ ":" ~ *(cases)
+    case RaiseStmt(e, from) =>
+      app ~ "raise " ~ &(opt = e) ~ &(" from ", from) ~ app.newLine
+    case TryStmt(body, handlers, elseStmt, finStmt) => ???
+    case AssertStmt(c, opt) => app ~ "assert" ~ c ~ &("", opt, ", ") ~ app.newLine
+    case ImportStmt(aliases) => ???
+    case ImportFromStmt(level, form, aliases) => ???
     case GlobalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "global " ~ xl ~ app.newLine
     case NonlocalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "nonlocal " ~ xl ~ app.newLine
-    case AssertStmt(c, opt) => app ~ "assert" ~ c ~ &("", opt, ", ") ~ app.newLine
-    case _ => ???
+    case ExprStmt(e) => ???
+    case PassStmt => app ~ "pass" ~ app.newLine
+    case BreakStmt => app ~ "break" ~ app.newLine
+    case ContinueStmt => app ~ "continue" ~ app.newLine
   }
 
   implicit lazy val constApp: App[Const] = (app, c) => c match {

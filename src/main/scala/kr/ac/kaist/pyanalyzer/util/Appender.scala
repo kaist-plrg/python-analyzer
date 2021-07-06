@@ -6,7 +6,12 @@ class Appender(tab: String = "  ") {
   val sb: StringBuilder = new StringBuilder
   private var k = 0
   def indent = { k += 1; tab }
-  def dedent = { k -= 1; sb.drop(2); "" }
+  def dedent = {
+    k -= 1
+    val length = sb.length
+    sb.delete(length - 2, length)
+    ""
+  }
   def newLine = "\n" + tab * k
   override def toString: String = sb.toString
   def ~(str: String): Appender = { sb ++= str; this }
@@ -16,6 +21,10 @@ class Appender(tab: String = "  ") {
     case &(l, Some(v), r) => sb ++= l; app(this, v); sb ++= r; this
     case _ => this
   }
+  def ~[T](block: *[T])(implicit app: App[T]): Appender =
+    this ~ newLine ~ indent ~ block.block ~ dedent
+  def ~[T, U](seq: ^[T, U])(implicit app1: App[T], app2: App[U]): Appender =
+    this ~ seq.l ~ seq.r
 
   def wrap(
     lr: (String, String) = ("", "")
@@ -59,5 +68,8 @@ object Appender {
   def sepOpt[T, U](l1: List[T], l2: List[U], sep: String): Option[String] =
     if (l1.nonEmpty && l2.nonEmpty) Some(sep) else None
 
+  // TODO: Give appropriate name!
   case class &[T](l: String = "", opt: Option[T], r: String = "")
+  case class *[T](block: T)
+  case class ^[T, U](l: T, r: U)
 }

@@ -84,9 +84,9 @@ case object CmdParseREPL extends Command {
           ast match {
             case l: List[Node] =>
               val stmts = l.foldLeft("")((s, e) => s + beautify(e))
-              println(s"${CYAN}Beautify result${RESET}: ${stmts}")
+              println(s"${CYAN}Beautify result${RESET}:\n${stmts}")
             case node: Node =>
-              println(s"${CYAN}Beautify result${RESET}: ${beautify(node)}")
+              println(s"${CYAN}Beautify result${RESET}:\n${beautify(node)}")
           }
         } catch {
           case e: Throwable => println(e)

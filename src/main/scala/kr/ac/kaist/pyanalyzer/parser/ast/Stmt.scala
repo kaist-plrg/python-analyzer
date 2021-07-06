@@ -5,9 +5,9 @@ sealed trait Stmt extends Node
 // Related constructs
 trait TyComment // TODO model type comment
 
-case class Alias(name: List[Id], asName: Option[Id])
-case class WithItem(expr: Expr, asExpr: Option[Expr])
-case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt])
+case class Alias(name: List[Id], asName: Option[Id]) extends Node
+case class WithItem(expr: Expr, asExpr: Option[Expr]) extends Node
+case class MatchCase(pattern: Pattern, cond: Option[Expr], body: List[Stmt]) extends Node
 
 // Match patterns
 trait Pattern extends Node
@@ -30,7 +30,7 @@ case object MatchWildcard extends Pattern
 case class MatchGroup(pattern: Pattern) extends Pattern
 
 // Exception handler
-case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt])
+case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt]) extends Node
 
 // Args
 sealed trait Argument extends Node
