@@ -69,7 +69,7 @@ case class ReturnStmt(expr: Option[Expr]) extends Stmt
 case class DelStmt(targets: List[Expr]) extends Stmt
 case class AssignStmt(targets: List[Expr], expr: Expr, ty: Option[String]) extends Stmt
 case class AugAssign(target: Expr, op: Op, expr: Expr) extends Stmt
-case class AnnAssign(target: Expr, ann: Expr, expr: Expr) extends Stmt
+case class AnnAssign(target: Expr, ann: Expr, expr: Option[Expr]) extends Stmt
 
 // Loops
 case class ForStmt(ty: Option[String], forExpr: Expr, inExpr: Expr, doStmt: List[Stmt], elseStmt: List[Stmt]) extends Stmt

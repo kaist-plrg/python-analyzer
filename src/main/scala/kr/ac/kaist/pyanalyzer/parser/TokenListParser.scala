@@ -613,12 +613,10 @@ trait TokenListParsers extends PackratParsers {
   // assignment stmt
   lazy val assignment: PackratParser[Stmt] = (
     (id ~ (":" ~> expression) ~ opt("=" ~> annotatedRhs) ^^ {  
-      case x ~ ty ~ Some(rhs) => AnnAssign(EName(x), ty, rhs)
-      case x ~ ty ~ None => AnnAssign(EName(x), ty, EConst(NoneLiteral)) // TODO does this really assign none?
+      case x ~ ty ~ rhs => AnnAssign(EName(x), ty, rhs)
     }) |
     ( (("(" ~> singleTarget <~ ")") | singleSubscriptAttrTarget) ~ (":" ~> expression) ~ opt("=" ~> annotatedRhs) ) ^^ { 
-      case te ~ ty ~ Some(rhs) => AnnAssign(te, ty, rhs)
-      case te ~ ty ~ None => AnnAssign(te, ty, EConst(NoneLiteral))
+      case te ~ ty ~ rhs => AnnAssign(te, ty, rhs)
     } |
     (rep1(starTargets <~ "=") ~ (yieldExpr | starExprs) ~ (not("=") ~> opt(typeComment))) ^^ {
       case el ~ e ~ tyopt => AssignStmt(el, e, tyopt)
