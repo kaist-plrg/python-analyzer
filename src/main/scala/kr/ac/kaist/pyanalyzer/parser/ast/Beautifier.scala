@@ -23,8 +23,8 @@ object Beautifier {
     case MatchValue(e)  => app ~ e
     case MatchSingleton(c) => app ~ c
     case MatchSeq(pl) => 
-      implicit val lApp = ListApp[Pattern]("[", ", ", "]")
-      app ~ pl
+      implicit val lApp = ListApp[Pattern](sep =  ", ")
+      app ~ "[" ~ pl ~ "]"
     case MatchStar(nopt) => 
       app ~ "*" ~ &("", nopt, "")
     case MatchMapping(map, nopt) =>
@@ -37,9 +37,9 @@ object Beautifier {
       implicit val mapApp: App[(Id, Pattern)] = {
         case (app, (x, p)) => app ~ x ~ " = " ~ p
       }
-      implicit val plApp = ListApp[Pattern](sep = ", ")
-      implicit val mlApp = ListApp[(Id, Pattern)](sep = ", ")
-      app ~ ce ~ "(" ~ pl ~ sepOpt(pl, map, ", ") ~ map ~ ")"
+      implicit val plApp = ListApp[Pattern]("", ", ", ", ")
+      implicit val mlApp = ListApp[(Id, Pattern)]("", ", ", ", ")
+      app ~ ce ~ "(" ~ pl ~ map ~ ")"
     case MatchAs(popt, x) =>
       app ~ &("", popt, " as ") ~ x
     case MatchOr(pl) =>
@@ -63,10 +63,10 @@ object Beautifier {
     case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
       app ~ "async " ~ FunDef(decos, name, args, retType, tyExpr, body)
     case ClassDef(decos, name, exprs, kwds, body) =>
-      implicit val leApp = ListApp[Expr](sep = ", ")
-      implicit val klApp = ListApp[Kwarg](sep = ", ")
+      implicit val leApp = ListApp[Expr]("", ", ", ", ")
+      implicit val klApp = ListApp[Kwarg]("", ", ", ", ")
       decos.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine) ~
-        "def " ~ name ~ "(" ~ exprs ~ sepOpt(exprs, kwds, ", ") ~ kwds ~ ")" ~ ":" ~
+        "def " ~ name ~ "(" ~ exprs ~ kwds ~ ")" ~ ":" ~
         *(body)
     case ReturnStmt(e) => app ~ "return " ~ &(opt = e) ~ app.newLine
     case DelStmt(le) =>
@@ -131,8 +131,8 @@ object Beautifier {
     case StringLiteral(s) => app ~ s""""$s""""
     case BooleanLiteral(b) => app ~ (if (b) "True" else "False")
     case TupleLiteral(tup) =>
-      implicit val lApp = ListApp[Const]("(", ", ", ")")
-      app ~ tup
+      implicit val lApp = ListApp[Const](sep = ", ")
+      app ~ "(" ~ tup ~ ")"
     case Ellipsis => app ~ "..."
   }
 
@@ -147,16 +147,15 @@ object Beautifier {
       implicit val pApp: App[(Expr, Expr)] = {
         case (app, (k, v)) => app ~ k ~ ": " ~ v
       }
-      implicit val lpApp = ListApp[(Expr, Expr)]("{", ", ")
-      implicit val lApp = ListApp[Expr]("", ", ", "}")
-      val sep = sepOpt(lp, dstar, ", ")
-      app ~ lp ~ sep ~ dstar
+      implicit val lpApp = ListApp[(Expr, Expr)]("", ", ", ", ")
+      implicit val lApp = ListApp[Expr]("", ", ", ", ")
+      app ~ "{" ~ lp ~ dstar ~ "}"
     case SetExpr(set) =>
-      implicit val lApp = ListApp[Expr]("{", ", ", "}")
-      app ~ set
+      implicit val lApp = ListApp[Expr](sep = ", ")
+      app ~ "{" ~ set ~ "}"
     case ListExpr(l) =>
-      implicit val lApp = ListApp[Expr]("[", ", ", "]")
-      app ~ l
+      implicit val lApp = ListApp[Expr](sep = ", ")
+      app ~ "[" ~ l ~ "]"
     case TupleExpr(tup) =>
       val isSlices = !tup.forall(e => !e.isInstanceOf[Slice])
       val wrapper = if (isSlices) ("", "") else ("(", ")")
@@ -193,10 +192,9 @@ object Beautifier {
       app ~ h ~ lp
     case Call(f, g :: Nil, Nil) if g.isInstanceOf[GenComp] => app ~ f ~ g
     case Call(f, le, lk) =>
-      implicit val leApp = ListApp[Expr](sep = ", ")
-      implicit val lkApp = ListApp[Kwarg](sep = ", ")
-      val sep = sepOpt(le, lk, ", ")
-      app ~ f ~ "(" ~ le ~ sep ~ lk ~ ")"
+      implicit val leApp = ListApp[Expr]("", ", ", ", ")
+      implicit val lkApp = ListApp[Kwarg]("", ", ", ", ")
+      app ~ f ~ "(" ~ le ~ lk ~ ")"
     case FormattedValue(lhs, n, rhs) => ???
     case JoinedStr(le) => ???
     case EConst(c) => app ~ c
@@ -211,9 +209,7 @@ object Beautifier {
 
   implicit lazy val comprehensionApp: App[Comprehension] = {
     case (app, Comprehension(target, inExpr, ifExpr, async)) =>
-      implicit val lApp: App[List[Expr]] = (app, l) => {
-        for (e <- l) app ~ " if " ~ e; app
-      }
+      implicit val lApp = ListApp[Expr](" if", " if")
       app ~ (if (async) "async " else "") ~
         "for " ~ target ~ " in " ~ inExpr ~ ifExpr
   }
@@ -223,11 +219,10 @@ object Beautifier {
       implicit val pApp: App[(Arg, Option[Expr])] = {
         case (app, (arg, opt)) => app ~ arg ~ &("=", opt)
       }
-      implicit val lApp: App[List[(Arg, Option[Expr])]] = (app, list) =>
-        list.foldLeft(app)((app, e) => app ~ e ~ ", ")
-      val slash = if (pos.nonEmpty) "/, " else ""
+      implicit val lApp = ListApp[(Arg, Option[Expr])]("", ", ", ", ")
       val star = if (varArg.isInstanceOf[None.type] && key.nonEmpty) "*, " else ""
-      app ~ pos ~ slash ~ norm ~ star ~ &("*", varArg, ", ") ~ key ~ &("**", kwarg)
+      app ~ ^("", pos, "/, ") ~ norm ~ star ~ &("*", varArg, ", ") ~
+        key ~ &("**", kwarg, ", ")
     case Arg(x, ann, ty) => app ~ x // TODO: Add annotation and type
     case Kwarg(opt, e) => app ~ &("", opt, "=") ~ e
   }

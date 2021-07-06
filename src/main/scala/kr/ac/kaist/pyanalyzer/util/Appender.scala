@@ -12,20 +12,25 @@ class Appender(tab: String = "  ") {
     sb.delete(length - 2, length)
     ""
   }
+  def pop = { sb.deleteCharAt(sb.length - 1); this }
   def newLine = "\n" + tab * k
   override def toString: String = sb.toString
   def ~(str: String): Appender = { sb ++= str; this }
   def ~[T](x: T)(implicit app: App[T]): Appender = app(this, x)
   def ~(f: Update): Appender = f(this)
+  def ~(app: Appender) = app
   def ~[T](opt: &[T])(implicit app: App[T]): Appender = opt match {
-    case &(l, Some(v), r) => sb ++= l; app(this, v); sb ++= r; this
-    case _ => this
+    case &(l, None, r) => this
+    case &(l, Some(v), r) => this ~ l ~ v ~ r
+  }
+  def ~[T](opt: ^[T])(implicit app: App[List[T]]): Appender = opt match {
+    case ^(l, Nil, r) => this
+    case ^(l, list, r) => this ~ l ~ list ~ r
   }
   def ~[T](block: *[T])(implicit app: App[T]): Appender =
     this ~ newLine ~ indent ~ block.block ~ dedent
-  def ~[T, U](seq: ^[T, U])(implicit app1: App[T], app2: App[U]): Appender =
-    this ~ seq.l ~ seq.r
 
+  // TODO: Refactor
   def wrap(
     lr: (String, String) = ("", "")
   )(f: => Unit): Appender = {
@@ -53,12 +58,13 @@ object Appender {
   }
 
   // lists with separator
+  // if it is Nil, left and right is not appended
   def ListApp[T](
     left: String = "",
     sep: String = "",
     right: String = ""
   )(implicit tApp: App[T]): App[List[T]] = (app, list) => list match {
-    case Nil => app ~ left ~ right
+    case Nil => app
     case hd :: tl =>
       app ~ left ~ hd
       for (t <- tl) app ~ sep ~ t
@@ -71,5 +77,5 @@ object Appender {
   // TODO: Give appropriate name!
   case class &[T](l: String = "", opt: Option[T], r: String = "")
   case class *[T](block: T)
-  case class ^[T, U](l: T, r: U)
+  case class ^[T](l: String = "", list: List[T], r: String = "")
 }
