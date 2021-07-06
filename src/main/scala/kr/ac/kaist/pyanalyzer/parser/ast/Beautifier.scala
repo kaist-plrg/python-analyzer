@@ -14,9 +14,17 @@ object Beautifier {
     case argument: Argument => argumentApp(app, argument)
     case stmt: Stmt => stmtApp(app, stmt)
     case pattern: Pattern => patternApp(app, pattern)
+    case module: Module => moduleApp(app, module)
+    case alias: Alias => aliasApp(app, alias)
     case node =>
       println(node)
       ???
+  }
+
+  implicit lazy val moduleApp: App[Module] = (app, node) => node match {
+    case Module(stmtList) =>
+      implicit val lApp = ListApp[Stmt](sep = "\n")
+      app ~ stmtList
   }
 
   implicit lazy val patternApp: App[Pattern] = (app, pattern) => pattern match {
@@ -49,6 +57,12 @@ object Beautifier {
       app ~ "_"
     case MatchGroup(p) =>
       app ~ "(" ~ p ~ ")"
+  }
+
+  implicit lazy val aliasApp: App[Alias] = (app, alias) => alias match {
+    case Alias(nl, asOpt) =>
+      implicit val nlApp = ListApp[Id](sep = ".")
+      app ~ nl ~ &(" as ", asOpt, "")
   }
 
   // TODO

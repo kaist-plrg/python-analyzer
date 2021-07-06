@@ -205,7 +205,7 @@ trait Tokenizers extends RegexParsers {
 
   // parseAll
   lazy val literal: Parser[Token] = imagNumber | floatNumber | integer | stringLiteral | bytesLiteral
-  lazy val token: Parser[Token] = (literal | opBeforeDelim | delim | op | keyword | identifier)
+  lazy val token: Parser[Token] = (literal | opBeforeDelim | delim | op | (keyword ||| identifier))
   lazy val tokens: Parser[List[Token]] = rep(token)
   def parseText(input: String): List[Token] = parseAll(tokens, input).get
 }
