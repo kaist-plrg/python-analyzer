@@ -107,9 +107,21 @@ object Beautifier {
       app ~ "match " ~ e ~ ":" ~ *(cases)
     case RaiseStmt(e, from) =>
       app ~ "raise " ~ &(opt = e) ~ &(" from ", from) ~ app.newLine
-    case TryStmt(body, handlers, elseStmt, finStmt) => ???
-    case AssertStmt(c, opt) => app ~ "assert" ~ c ~ &("", opt, ", ") ~ app.newLine
-    case ImportStmt(aliases) => ???
+    case TryStmt(body, handlers, elseStmt, finStmt) =>
+      implicit val exApp: App[ExcHandler] = {
+        case (app, ExcHandler(eOpt, xOpt, body)) =>
+          app ~ "except" ~ &(" ", eOpt) ~ &(" as ", xOpt) ~ ":" ~ *(body)
+      }
+      implicit val lApp = ListApp[ExcHandler]()
+      val listOpt: Update = app => handlers match {
+        case Nil => app
+        case list => app ~ "else:" ~ *(list)
+      }
+      app ~ "try:" ~ *(body) ~ handlers ~ listOpt
+    case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &("", opt, ", ") ~ app.newLine
+    case ImportStmt(aliases) =>
+      implicit val lApp = ListApp[Alias](sep = ", ")
+      app ~ "import " ~ aliases
     case ImportFromStmt(level, form, aliases) => ???
     case GlobalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
@@ -117,7 +129,7 @@ object Beautifier {
     case NonlocalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "nonlocal " ~ xl ~ app.newLine
-    case ExprStmt(e) => ???
+    case ExprStmt(e) => app ~ e ~ app.newLine
     case PassStmt => app ~ "pass" ~ app.newLine
     case BreakStmt => app ~ "break" ~ app.newLine
     case ContinueStmt => app ~ "continue" ~ app.newLine
