@@ -874,16 +874,15 @@ trait TokenListParsers extends PackratParsers {
       case dl ~ (f: AsyncFunDef) => f.copy(decos = dl)
     }
   )
-  lazy val funcDefRaw: PackratParser[Stmt] = (
-    (("def" ~> id) ~ ("(" ~> opt(params) <~ ")")) ~ (opt("->" ~> expression) ~ opt(":" ~> funcTypeComment)) ~ block ^^ {
-      case (x ~ Some(ps)) ~ (tyopt ~ ftyopt) ~ b => FunDef(Nil, x, ps, tyopt, ftyopt, b)  
-      case (x ~ None) ~ (tyopt ~ ftyopt) ~ b => FunDef(Nil, x, Args(), tyopt, ftyopt, b) // TODO empty Args?
+  lazy val funcDefRaw: PackratParser[Stmt] = "def" ~> id ~ ("(" ~> opt(params) <~ ")") ~
+    opt("->" ~> expression) ~ (":" ~> opt(funcTypeComment)) ~ block ^^ {
+      case x ~ Some(ps) ~ tyopt ~ ftyopt ~ b => FunDef(Nil, x, ps, tyopt, ftyopt, b)
+      case x ~ None ~ tyopt ~ ftyopt ~ b => FunDef(Nil, x, Args(), tyopt, ftyopt, b) // TODO empty Args?
     } |
     (("async" ~ "def") ~> id) ~ ("(" ~> opt(params) <~ ")") ~ opt("->" ~> expression) ~ opt(":" ~> funcTypeComment) ~ block ^^ {
       case x ~ Some(ps) ~ tyopt ~ ftyopt ~ b => AsyncFunDef(Nil, x, ps, tyopt, ftyopt, b)  
       case (((x ~ None) ~ tyopt) ~ ftyopt) ~ b => AsyncFunDef(Nil, x, Args(), tyopt, ftyopt, b) // TODO empty Args?
     }
-  ) 
   // case class Args(posOnlys: List[(Arg, Option[Expr])], normArgs: List[(Arg, Option[Expr])], varArg: Option[Arg], keyOnlys: List[(Arg, Option[Expr])], kwArg: Option[Arg]) 
   lazy val params:  PackratParser[Args] = parameters
   lazy val parameters: PackratParser[Args] = (
