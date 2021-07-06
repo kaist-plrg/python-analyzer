@@ -102,3 +102,6 @@ case class ExprStmt(expr: Expr) extends Stmt
 case object PassStmt extends Stmt
 case object BreakStmt extends Stmt
 case object ContinueStmt extends Stmt
+
+// container for stmt list
+case class BlockStmt(stmts: List[Stmt]) extends Stmt

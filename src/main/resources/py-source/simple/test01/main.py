@@ -1,4 +1,4 @@
-from numpy import tensor as np
+import tensor as np
 
 asdf asdf asdf
 

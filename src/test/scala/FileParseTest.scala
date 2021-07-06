@@ -12,22 +12,22 @@ import scala.Console._
 
 class FileParseTest extends AnyFunSuite {
   val help = s"""Test parsing and unparsing Python source files"""
-  var epoch = 0
+  var epoch = 1
   var setPrompt = true
   def prompt(s: String): Unit = if (setPrompt) { println(s) }
 
   val srcFiles: List[String] = List(
     s"$PY_SOURCE_DIR/simple/test01/main.py",
-    //s"$PY_SOURCE_DIR/simple/parser-regress/main.py",
+    //s"$PY_SOURCE_DIR/simple/parser-regress/main.py", // TODO parsing comment required
   )
 
   def parseSource(t: String) = {
     val tokens = SourceParser.tokenizeText(t)
-    println(s"tokenized result:\n$tokens")
+    println(s"${CYAN}tokenized result:${RESET}\n$tokens")
     val reader = new PackratReader(TokenReader(tokens))
-    val parser = TokenListParser.module
+    val parser = TokenListParser.statements
     parser(reader) match {
-      case Success(result, rest) if rest.first == NewlineToken => result
+      case Success(result, rest) => result
       case result => throw new RuntimeException(s"Parsing fail\ntest:\n\n$result")
     }
   }
@@ -57,8 +57,10 @@ class FileParseTest extends AnyFunSuite {
       assert(pretty01 == pretty02)
       prompt("================================")
     } catch { 
-      case e => println(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
-      fail
+      case e => 
+        throw e
+        println(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
+        fail
     }
     finally {
       epoch += 1

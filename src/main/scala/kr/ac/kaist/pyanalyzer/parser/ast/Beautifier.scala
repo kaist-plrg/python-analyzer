@@ -23,8 +23,7 @@ object Beautifier {
 
   implicit lazy val moduleApp: App[Module] = (app, node) => node match {
     case Module(stmtList) =>
-      implicit val lApp = ListApp[Stmt](sep = "\n")
-      app ~ stmtList
+      lsApp(app, stmtList)
   }
 
   implicit lazy val patternApp: App[Pattern] = (app, pattern) => pattern match {
@@ -66,7 +65,7 @@ object Beautifier {
   }
 
   // TODO
-  implicit val lsApp = ListApp[Stmt]()
+  implicit val lsApp = ListApp[Stmt](sep = "\n")
 
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
     case FunDef(decos, name, args, retType, tyExpr, body) =>
@@ -147,6 +146,9 @@ object Beautifier {
     case PassStmt => app ~ "pass" ~ app.newLine
     case BreakStmt => app ~ "break" ~ app.newLine
     case ContinueStmt => app ~ "continue" ~ app.newLine
+    case BlockStmt(sl) =>
+      val blockApp = ListApp[Stmt](sep = "; ")
+      blockApp(app, sl)
   }
 
   implicit lazy val constApp: App[Const] = (app, c) => c match {

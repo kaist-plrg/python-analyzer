@@ -3,7 +3,7 @@ package kr.ac.kaist.pyanalyzer.parser
 // 2. Lexical analysis
 object Token {
   def toPrettyString(token: Token): String = token match {
-    case NewlineToken => "\\n\n"
+    case NewlineToken => "\\n"
     case IndentToken => "INDENT"
     case DedentToken => "DEDENT"
     case IdToken(s) => s"id($s)"

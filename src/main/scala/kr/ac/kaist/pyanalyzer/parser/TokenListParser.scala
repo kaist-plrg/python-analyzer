@@ -575,18 +575,15 @@ trait TokenListParsers extends PackratParsers {
   ////////////////////////////////////////////////////////////////////////////////
   // Statements
   //////////////////////////////////////////////////////////////////////////////
-  lazy val statements: PackratParser[List[Stmt]] = rep1(statement) ^^ { _.flatten }
-  lazy val statement: PackratParser[List[Stmt]] =
-    compoundStmt ^^ { List(_) } | simpleStmts
-  lazy val statementNewline: PackratParser[List[Stmt]] = 
-    (compoundStmt <~ "\n") ^^ { case s => List(s) } | 
-    simpleStmts | 
-    ("\n" ^^^ Nil) //| endmarker  //TODO ad rule for endmarker  
+  lazy val statements: PackratParser[List[Stmt]] = rep1(statement)
+  lazy val statement: PackratParser[Stmt] =
+    compoundStmt | simpleStmts  
   
-  lazy val simpleStmtsOne: PackratParser[List[Stmt]] = 
-    (simpleStmt <~ (not(";") ~ "\n")) ^^ { case s => List(s) }
-  lazy val simpleStmts: PackratParser[List[Stmt]] = 
-    simpleStmtsOne | (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n"))
+  lazy val simpleStmtsOne: PackratParser[Stmt] = (simpleStmt <~ (not(";") ~ "\n")) 
+  lazy val simpleStmts: PackratParser[Stmt] = ( 
+    simpleStmtsOne | 
+    (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n")) ^^ BlockStmt
+  )
 
   lazy val simpleStmt: PackratParser[Stmt] =
     assignment |
@@ -981,8 +978,11 @@ trait TokenListParsers extends PackratParsers {
   // Block : List of Stmt
   /////////////////////////////////
   lazy val block: PackratParser[List[Stmt]] = (
-    ("\n" ~ indent) ~> statements <~ dedent
-    | simpleStmts
+    ("\n" ~ indent) ~> statements <~ dedent | 
+    simpleStmts ^^ {
+      case BlockStmt(sl) =>  sl
+      case s => List(s)
+    }
   )
 
   /////////////////////////////////
