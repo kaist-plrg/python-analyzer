@@ -30,7 +30,11 @@ case object MatchWildcard extends Pattern
 case class MatchGroup(pattern: Pattern) extends Pattern
 
 // Exception handler
-case class ExcHandler(except: Expr, asName: Option[Id], body: List[Stmt]) extends Node
+case class ExcHandler(
+  except: Option[Expr],
+  asName: Option[Id],
+  body: List[Stmt]
+) extends Node
 
 // Args
 sealed trait Argument extends Node

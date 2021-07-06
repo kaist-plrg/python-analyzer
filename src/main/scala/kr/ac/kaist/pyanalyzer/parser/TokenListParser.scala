@@ -747,14 +747,10 @@ trait TokenListParsers extends PackratParsers {
       case b ~ hl ~ eopt ~ fopt => TryStmt(b, hl, eopt.getOrElse(Nil), fopt.getOrElse(Nil))
     }
   )
-  lazy val exceptBlock: PackratParser[ExcHandler] = (
-    ("except" ~> expression) ~ opt("as" ~> id) ~ (":" ~> block) ^^ {
-      case e ~ iopt ~ b => ExcHandler(e, iopt, b)
-    }
-    | ("except" ~ ":") ~> block ^^ {
-      case b => ExcHandler(???, None, b)
-    }
-  )
+  lazy val exceptBlock: PackratParser[ExcHandler] =
+    "except" ~> expression ~ opt("as" ~> id) ~ (":" ~> block) ^^ {
+      case e ~ iopt ~ b => ExcHandler(Some(e), iopt, b)
+    } | "except" ~ ":" ~> block ^^ { ExcHandler(None, None, _) }
   lazy val finallyBlock: PackratParser[List[Stmt]] = ("finally" ~ ":") ~> block
 
   //////////////////////////////////////
