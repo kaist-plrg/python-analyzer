@@ -10,17 +10,21 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import scala.Console._ 
 
+// FileParseTest: iterate over Python source files, test to parse and unparse correctly
+// files should locate in $PY_SOURCE_DIR, and subdirectories must be category and name
+// and the filename should be `main.py` (refer to makeFileName)
+
 class FileParseTest extends AnyFunSuite {
   val help = s"""Test parsing and unparsing Python source files"""
   var epoch = 1
+  // `setPrompt = true` to see message
   var setPrompt = true
   def prompt(s: String): Unit = if (setPrompt) { println(s) }
 
-  val srcFiles: List[String] = List(
-    s"$PY_SOURCE_DIR/simple/test01/main.py",
-    //s"$PY_SOURCE_DIR/simple/parser-regress/main.py", // TODO parsing comment required
-  )
+  // locating python source file
+  def makeFileName(cat: String, name: String): String = s"$PY_SOURCE_DIR/$cat/$name/main.py"
 
+  // parsing routine
   def parseSource(t: String) = {
     val tokens = SourceParser.tokenizeText(t)
     println(s"${CYAN}tokenized result:${RESET}\n$tokens")
@@ -32,7 +36,9 @@ class FileParseTest extends AnyFunSuite {
     }
   }
   
-  def testFile(filename: String): Unit = test(s"FileParseTest:$filename"){
+  // main testing routine
+  def testFile(cat: String, name: String): Unit = test(s"FileParseTest [$cat:$name]"){
+    val filename = makeFileName(cat, name)
     try { 
       prompt("================================")
       prompt(s"${MAGENTA}Test count: $epoch\n${RESET}")
@@ -67,12 +73,20 @@ class FileParseTest extends AnyFunSuite {
     }
   }
 
+  // test targets : list of (category_name, test_name list)
+  // refer to src/main/resources/py-source
+  val targets: List[(String, List[String])] = List(
+    ("simple", List("test01", "parser-regress")),
+    //("returns", List("call", "return_complex")), 
+  )
+
   def init: Unit = {
-    println(help)
+    prompt(help)
     
-    for (filename <- srcFiles) {
-      testFile(filename)
-    }
+    for {
+      (cat, names) <- targets
+      name <- names
+    } testFile(cat, name)
   }
 
   init
