@@ -237,7 +237,7 @@ object Beautifier {
 
   implicit lazy val comprehensionApp: App[Comprehension] = {
     case (app, Comprehension(target, inExpr, ifExpr, async)) =>
-      implicit val lApp = ListApp[Expr](" if", " if")
+      implicit val lApp = ListApp[Expr](" if ", " if ")
       app ~ (if (async) "async " else "") ~
         "for " ~ target ~ " in " ~ inExpr ~ ifExpr
   }
