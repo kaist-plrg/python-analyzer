@@ -43,17 +43,17 @@ case class IndentParser(var st: IndentState) {
     val delta =  newIndent - st.cur
     if (delta > 0) {
       val newSt = st.doIndent(delta)
-      (IndentToken +: onelineParser(trimmed) :+ NewlineToken, newSt) 
+      (IndentToken +: onelineParser(trimmed) :+ NewlineToken(), newSt) 
     }
     // dedent case
     else if (delta < 0) {
       val (k, newSt) = st.doDedent(delta)
       val dedents = List.fill(k)(DedentToken)
-      (dedents ++ onelineParser(trimmed) :+ NewlineToken, newSt)
+      (dedents ++ onelineParser(trimmed) :+ NewlineToken(), newSt)
     }
     // same case
     else {
-      (onelineParser(trimmed) :+ NewlineToken, st)      
+      (onelineParser(trimmed) :+ NewlineToken(), st)      
     }
   }
 

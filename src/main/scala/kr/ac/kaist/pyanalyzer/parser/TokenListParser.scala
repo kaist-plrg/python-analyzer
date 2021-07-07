@@ -152,7 +152,7 @@ trait TokenListParsers extends PackratParsers {
   implicit def text(str: String): PackratParser[String] = {
     Parser(in => {
       firstMap(in, t => t match {
-          case NewlineToken if str == "\n" => Success(s"\n", in.rest) 
+          case NewlineToken(_) if str == "\n" => Success(s"\n", in.rest) 
           case OpToken(s) if s == str => Success(s, in.rest)
           case DelimToken(s) if s == str => Success(s, in.rest)
           case KeywordToken(s) if s == str => Success(s, in.rest)
