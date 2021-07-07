@@ -135,7 +135,15 @@ object Beautifier {
     case ImportStmt(aliases) =>
       implicit val lApp = ListApp[Alias](sep = ", ")
       app ~ "import " ~ aliases
-    case ImportFromStmt(level, form, aliases) => ???
+    case ImportFromStmt(level, from, aliases) =>
+      implicit val lxApp = ListApp[Id]("", ", ", " ")
+      implicit val laApp = ListApp[Alias](sep = ", ")
+      val aliasesApp: Update = app => aliases match {
+        case Nil => app ~ "*"
+        case l => app ~ l
+      }
+      // TODO: consider ellipsis
+      app ~ "from " ~ ("."*level) ~ " import " ~ from ~ aliasesApp
     case GlobalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "global " ~ xl ~ app.newLine

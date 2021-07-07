@@ -648,7 +648,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val importStmt: PackratParser[Stmt] = (importName | importFrom)
   lazy val importName: PackratParser[Stmt] = ("import" ~> dottedAsNames) ^^ ImportStmt
   // helper fn for relative import
-  def relLevel(l: List[String]): Int = l.mkString("").length() - 1
+  def relLevel(l: List[String]): Int = l.mkString("").length()
   lazy val importFrom: PackratParser[Stmt] = ( 
     (("from" ~> rep("." | "...")) ~ dottedName ~ ("import" ~> importFromTargets) ^^ {
       case rl ~ x ~ tl => ImportFromStmt(relLevel(rl), x, tl)
