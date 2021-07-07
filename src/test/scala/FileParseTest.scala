@@ -76,7 +76,7 @@ class FileParseTest extends AnyFunSuite {
   // test targets : list of (category_name, test_name list)
   // refer to src/main/resources/py-source
   val targets: List[(String, List[String])] = List(
-    ("simple", List("test01", "parser-regress")),
+    ("simple", List("test01")),
     //("returns", List("call", "return_complex")), 
   )
 

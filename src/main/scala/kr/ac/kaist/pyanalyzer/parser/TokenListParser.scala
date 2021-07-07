@@ -51,7 +51,7 @@ trait TokenListParsers extends PackratParsers {
             println(name + " --> " + r)
             r
         }
-      }
+    }
     }
   }
   protected def stop(msg: String): String = {
@@ -123,6 +123,12 @@ trait TokenListParsers extends PackratParsers {
     case t => Failure(s"", in)
   })))("imagLiteral")
 
+  lazy val boolLiteral: PackratParser[Const] =
+    "True" ^^^ BooleanLiteral(true) |
+    "False" ^^^ BooleanLiteral(false)
+  lazy val noneLiteral: PackratParser[Const] = "None" ^^^ NoneLiteral
+
+ // some token parsers
   lazy val indent: PackratParser[Unit] = log(Parser(in => firstMap(in, _ match {
     case IndentToken => Success((), in.rest)
     case _ => Failure(s"", in)
@@ -131,15 +137,23 @@ trait TokenListParsers extends PackratParsers {
     case DedentToken => Success((), in.rest)
     case _ => Failure(s"", in)
   })))("dedent")
+  lazy val nl: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
+    case NewlineToken(None) => Success("", in.rest)
+    case NewlineToken(Some(s)) => Success(s, in.rest)
+    case _ => Failure(s"", in)
+  })))("nl")
+  lazy val comment: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
+    case CommentToken(s) => Success(s, in.rest)
+    case _ => Failure(s"", in)
+  })))("comment")
   
-  lazy val boolLiteral: PackratParser[Const] =
-    "True" ^^^ BooleanLiteral(true) |
-    "False" ^^^ BooleanLiteral(false)
-  lazy val noneLiteral: PackratParser[Const] = "None" ^^^ NoneLiteral
-
-  // TODO need impl. is this parser or tokenizer?
-  lazy val typeComment: PackratParser[String] = "TODO" ^^^ ""
-  lazy val funcTypeComment: PackratParser[String] = "TODO" ^^^ ""
+   // type comment starts with `# type: ` (including whitespaces)
+   // corresponds to `TYPE_COMMENT` in spec
+  lazy val typeComment: PackratParser[String] = log(comment)("typeComment")
+  lazy val funcTypeComment: PackratParser[String] = (
+    "\n" ~> typeComment <~ guard(nl ~ indent) |
+    typeComment
+  )
 
   lazy val number: PackratParser[Expr] =
     (intLiteral | floatLiteral | imagLiteral) ^^ EConst

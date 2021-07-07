@@ -3,8 +3,9 @@ package kr.ac.kaist.pyanalyzer.parser
 // 2. Lexical analysis
 object Token {
   def toPrettyString(token: Token): String = token match {
-    case NewlineToken(None) => "\\n"
-    case NewlineToken(Some(s)) => s"#${s}\\n"
+    case NewlineToken(None) => "\\NL"
+    case NewlineToken(Some(s)) => s"${s}\\NL"
+    case CommentToken(s) => s"# type:$s"
     case IndentToken => "INDENT"
     case DedentToken => "DEDENT"
     case IdToken(s) => s"id($s)"
@@ -26,6 +27,8 @@ abstract class Token(name: String, content: String) {
 case class NewlineToken(comment: Option[String] = None) extends Token(
   "NEWLINE", s"${if (comment.isEmpty) "" else ("#" + comment.get)}\n"
 )
+// only type comments
+case class CommentToken(s: String) extends Token("COMMENT", s"# type: $s")
 case object IndentToken extends Token("INDENT", "\t")
 case object DedentToken extends Token("DEDENT", "\t")
 case class IdToken(s: String) extends Token("id", s)

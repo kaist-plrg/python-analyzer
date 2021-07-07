@@ -2,6 +2,7 @@ package kr.ac.kaist.pyanalyzer.parser
 
 import scala.util.parsing.combinator._
 import scala.collection.mutable.Stack
+import kr.ac.kaist.pyanalyzer.util.Useful._
 
 case class IndentError(expected: Int, actual: Int) extends Exception
 case class IndentState(tabs: List[Int], cur: Int) {
@@ -37,25 +38,46 @@ case class IndentParser(var st: IndentState) {
     // get current line's indentation 
     val trimmed = leftTrim(line)
     val newIndent = line.length() - trimmed.length()
-    
-    // try parsing a line
+    val parsed: List[Token] = onelineParser(trimmed)
+
+    // TODO add this in test 
+    // ASSERT parse result must be nonempty, and ends with NewlineToken
+    assert(parsed.length > 0)("line parse result must be nonempty")
+    assert(parsed.last match {
+      case NewlineToken(_) => true
+      case _ => false
+    })("last token must be Newline")
+
+    // if only NewlineToken or CommentToken returned, don't consider the indent. (no state update)
+    // TODO refactor this functionally
+    parsed match {
+      // Blank NewlineToken: safely ignore
+      case NewlineToken(None) :: Nil => return (Nil, st)
+      case CommentToken(_) :: NewlineToken(_) :: Nil => return (parsed, st)
+      case t :: Nil => return (parsed, st)
+      case _ => 
+    }
+
     // indent case
     val delta =  newIndent - st.cur
     if (delta > 0) {
       val newSt = st.doIndent(delta)
-      (IndentToken +: onelineParser(trimmed) :+ NewlineToken(), newSt) 
+      (IndentToken +: parsed, newSt) 
     }
     // dedent case
     else if (delta < 0) {
       val (k, newSt) = st.doDedent(delta)
       val dedents = List.fill(k)(DedentToken)
-      (dedents ++ onelineParser(trimmed) :+ NewlineToken(), newSt)
+      (dedents ++ parsed, newSt)
     }
     // same case
     else {
-      (onelineParser(trimmed) :+ NewlineToken(), st)      
+      (parsed, st)      
     }
   }
+
+  // flushes remaining dedent tokens 
+  def flush: List[Token] = st.tabs.map(_ => DedentToken)
 
   // applies parseLine to all lines, maintaining the state 
   def apply(text: String): List[Token] = {
@@ -69,7 +91,7 @@ case class IndentParser(var st: IndentState) {
       tokens = tokens ++ lineToks
     }
 
-    tokens
+    tokens ++ this.flush
   }
 }
 
@@ -86,8 +108,8 @@ case class IndentParsers(lineParser: String => List[Token]) {
 object Tokenizer extends Tokenizers
 trait Tokenizers extends RegexParsers {
   // line, comments, indents, whitespaces
-  lazy val line = ".*\n".r
-  lazy val comments = "#[^\n]*".r
+  // lazy val line = ".*\n".r
+  lazy val comment = "#[^\n]*".r
   // TODO implicit line joining
   lazy val whitespace = """[ \f\t]*""".r //TODO just use \s in needed
   
@@ -203,9 +225,18 @@ trait Tokenizers extends RegexParsers {
     "&=", "\\|=", "\\^=", ">>=", "<<=", "\\*\\*=",
   ).mkString("|").r ^^ { case s => DelimToken(s) }
 
-  // parseAll
+  // top level
   lazy val literal: Parser[Token] = imagNumber | floatNumber | integer | stringLiteral | bytesLiteral
   lazy val token: Parser[Token] = (literal | opBeforeDelim | delim | op | (keyword ||| identifier))
   lazy val tokens: Parser[List[Token]] = rep(token)
-  def parseText(input: String): List[Token] = parseAll(tokens, input).get
+
+  // line tokenizer considering comment and newline
+  lazy val line: Parser[List[Token]] = tokens ~ opt(comment) ^^ {
+    case tl ~ Some(s) if s.startsWith("# type:") => 
+      tl ++ List(CommentToken(s.replaceFirst("# type:", "")), NewlineToken())
+    case tl ~ copt => tl :+ NewlineToken(copt)
+  }
+
+  // parseAll
+  def parseText(input: String): List[Token] = parseAll(line, input).get
 }
