@@ -582,7 +582,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val simpleStmtsOne: PackratParser[Stmt] = (simpleStmt <~ (not(";") ~ "\n")) 
   lazy val simpleStmts: PackratParser[Stmt] = ( 
     simpleStmtsOne | 
-    (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n")) ^^ BlockStmt
+    (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n")) ^^ OnelineStmt
   )
 
   lazy val simpleStmt: PackratParser[Stmt] =
@@ -660,7 +660,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val importFromTargets: PackratParser[List[Alias]] = (
     ("(" ~> importFromAsNames <~ (opt(",") ~ ")"))
     | importFromAsNames <~ not(",")
-    | ("*" ^^ ???) // TODO: extends Alias for *
+    | ("*" ^^^ Nil) // Remark: Nil means import all `*`
   )
   lazy val importFromAsNames: PackratParser[List[Alias]] =
     rep1sep(importFromAsName, ",")
@@ -980,7 +980,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val block: PackratParser[List[Stmt]] = (
     ("\n" ~ indent) ~> statements <~ dedent | 
     simpleStmts ^^ {
-      case BlockStmt(sl) =>  sl
+      case OnelineStmt(sl) =>  sl
       case s => List(s)
     }
   )

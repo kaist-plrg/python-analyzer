@@ -104,4 +104,4 @@ case object BreakStmt extends Stmt
 case object ContinueStmt extends Stmt
 
 // container for stmt list
-case class BlockStmt(stmts: List[Stmt]) extends Stmt
+case class OnelineStmt(stmts: List[Stmt]) extends Stmt

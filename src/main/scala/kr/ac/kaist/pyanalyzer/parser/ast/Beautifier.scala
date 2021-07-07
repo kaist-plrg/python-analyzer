@@ -146,7 +146,7 @@ object Beautifier {
     case PassStmt => app ~ "pass" ~ app.newLine
     case BreakStmt => app ~ "break" ~ app.newLine
     case ContinueStmt => app ~ "continue" ~ app.newLine
-    case BlockStmt(sl) =>
+    case OnelineStmt(sl) =>
       val blockApp = ListApp[Stmt](sep = "; ")
       blockApp(app, sl)
   }
