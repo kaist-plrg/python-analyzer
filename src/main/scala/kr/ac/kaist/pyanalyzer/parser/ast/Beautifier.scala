@@ -22,7 +22,7 @@ object Beautifier {
   }
 
   implicit lazy val moduleApp: App[Module] = (app, node) => node match {
-    case Module(stmtList) =>
+    case Module(stmtList, _) =>
       lsApp(app, stmtList)
   }
 
