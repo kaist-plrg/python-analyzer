@@ -23,8 +23,11 @@ object Grammar {
     override def toString: String = this match {
       case Normal(test) => test
       case Prod(name) =>
-        val candidate = PEG_Grammar(name)
-        candidate(weightedRandomIndex(candidate.length))
+        if (name == "genId") genId
+        else {
+          val candidate = PEG_Grammar(name)
+          candidate(weightedRandomIndex(candidate.length))
+        }
       case ~(a, b) => (s"$a", s"$b") match {
         case ("", str2) => str2
         case (str1, "") => str1
@@ -40,10 +43,13 @@ object Grammar {
     def testWithDepth(depth: Int): String = this match {
       case Normal(test) => test
       case Prod(name) =>
-        val candidate = PEG_Grammar(name)
-        val index = nextInt(candidate.length)
-        if (depth == 0 || index == 0) candidate(0).testWithDepth(depth)
-        else candidate(index).testWithDepth(depth - 1)
+        if (name == "genId") genId
+        else {
+          val candidate = PEG_Grammar(name)
+          val index = nextInt(candidate.length)
+          if (depth == 0 || index == 0) candidate(0).testWithDepth(depth)
+          else candidate(index).testWithDepth(depth - 1)
+        }
       case ~(a, b) => (a.testWithDepth(depth), b.testWithDepth(depth)) match {
         case ("", str2) => str2
         case (str1, "") => str1
@@ -156,11 +162,11 @@ object Grammar {
     // TODO: Add negative lookahead
     "TargetWithStarAtom" -> List(
       Prod("StarAtom"),
-      Prod("TPrimary") ~ "." ~ genId,
+      Prod("TPrimary") ~ "." ~ Prod("genId"),
       // Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
     ),
     "StarAtom" -> List(
-      genId,
+      Prod("genId"),
       "(" ~ Prod("TargetWithStarAtom") ~ ")",
       "(" ~ Opt(Prod("StarTargetsTupleSeq")) ~ ")",
       "[" ~ Opt(Prod("StarTargetsListSeq")) ~ "]",
@@ -168,7 +174,7 @@ object Grammar {
     // TODO: Add negative lookahead
     "TPrimary" -> List(
       Prod("Atom"),
-      Prod("TPrimary") ~ "." ~ genId,
+      Prod("TPrimary") ~ "." ~ Prod("genId"),
       Prod("TPrimary") ~ "[" ~ Prod("Slices") ~ "]",
       Prod("TPrimary") ~ Prod("Genexp"),
       Prod("TPrimary") ~ "(" ~ Opt(Prod("Arguments")) ~ ")",
@@ -178,7 +184,7 @@ object Grammar {
       // "1",
       "1.0", "1j",
       "True", "False",
-      genId,
+      Prod("genId"),
       """"str"""",
       Prod("Group"), Prod("List"), Prod("Tuple"), Prod("Set"),
       Prod("Dict"), Prod("Listcomp"), Prod("Dictcomp"), Prod("Setcomp"),
@@ -202,7 +208,7 @@ object Grammar {
     ),
     "Primary" -> List(
       Prod("Atom"),
-      Prod("Primary") ~ "." ~ genId,
+      Prod("Primary") ~ "." ~ Prod("genId"),
       Prod("Primary") ~ Prod("Genexp"),
       Prod("Primary") ~ "(" ~ Prod("Arguments") ~ ")",
       Prod("Primary") ~ "[" ~ Prod("Slices") ~ "]",
@@ -296,13 +302,13 @@ object Grammar {
       "**" ~ Prod("LambdaParamNoDefault"),
     ),
     "LambdaParamNoDefault" -> List(
-      genId,
+      Prod("genId"),
     ),
     "LambdaParamWithDefault" -> List(
-      genId ~ Prod("Default"),
+      Prod("genId") ~ Prod("Default"),
     ),
     "LambdaParamMaybeDefault" -> List(
-      genId ~ Opt(Prod("Default")),
+      Prod("genId") ~ Opt(Prod("Default")),
     ),
     "Default" -> List(
       "=" ~ Prod("Expression"),
@@ -323,7 +329,7 @@ object Grammar {
       Prod("AssignExpr"),
     ),
     "AssignExpr" -> List(
-      genId ~ ":=" ~ Prod("Expression"),
+      Prod("genId") ~ ":=" ~ Prod("Expression"),
     ),
     "StarNamedExpr" -> List(
       Prod("NamedExpr"),
@@ -364,11 +370,11 @@ object Grammar {
       "*" ~ Prod("Expression"),
     ),
     "KwargOrStarred" -> List(
-      genId ~ "=" ~ Prod("Expression"),
+      Prod("genId") ~ "=" ~ Prod("Expression"),
       Prod("StarredExpr"),
     ),
     "KwargOrDoubleStarred" -> List(
-      genId ~ "=" ~ Prod("Expression"),
+      Prod("genId") ~ "=" ~ Prod("Expression"),
       "**" ~ Prod("Expression"),
     ),
     // Statement
@@ -387,7 +393,6 @@ object Grammar {
     "AssertStmt" -> List(
       "assert" ~ Prod("Expression") ~ Opt("," ~ Prod("Expression")),
     ),
-    "genId" -> List(genId),
     // Patterns
     "patterns" -> List(
       Prod("openSeqPat"),   
@@ -446,7 +451,7 @@ object Grammar {
     ),
     // TODO negative lookahead
     "patCaptureTarget" -> List(
-      genId
+      Prod("genId")
     ),
     "wildcardPat" -> List(
       "_"
@@ -456,10 +461,10 @@ object Grammar {
       Prod("attr")
     ),
     "attr" -> List(
-      Prod("nameOrAttr") ~ ("," ~ genId), 
+      Prod("nameOrAttr") ~ ("," ~ Prod("genId")),
     ),
     "nameOrAttr" -> List(
-      "." ~ genId,
+      "." ~ Prod("genId"),
       Prod("attr"),
     ),
     "groupPat" -> List(
@@ -512,7 +517,7 @@ object Grammar {
       Rep1Sep(Prod("keywordPat"), ",") 
     ),
     "keywordPat" -> List(
-      genId ~ "=" ~ Prod("pattern"),
+      Prod("genId") ~ "=" ~ Prod("pattern"),
     ),
   )
 }
