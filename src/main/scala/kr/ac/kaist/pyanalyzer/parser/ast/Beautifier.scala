@@ -71,8 +71,8 @@ object Beautifier {
     case FunDef(decos, name, args, retType, tyExpr, body) =>
       implicit val leApp: App[List[Expr]] = (app, le) =>
         le.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine)
-      app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", tyExpr) ~ ":" ~
-        &(app.newLine, retType) ~ *(body)
+      app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", retType) ~ ":" ~
+        &(app.newLine + "# type: ", tyExpr) ~ *(body)
     case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
       app ~ "async " ~ FunDef(decos, name, args, retType, tyExpr, body)
     case ClassDef(decos, name, exprs, kwds, body) =>
@@ -87,20 +87,20 @@ object Beautifier {
       app ~ "del " ~ le
     case AssignStmt(targets, e, ty) =>
       targets.foldLeft(app)((app, target) => app ~ target ~ " = ") ~
-        e ~ " " ~ &(opt = ty)
+        e ~ &(" # type: ", ty) ~ app.newLine
     case AugAssign(target, op, e) =>
-      app ~ target ~ " " ~ op ~ "= " ~ e
+      app ~ target ~ " " ~ op ~ "= " ~ e ~ app.newLine
     case AnnAssign(target, ann, e) =>
-      app ~ target ~ ": " ~ ann ~ &(" = ", e)
+      app ~ target ~ ": " ~ ann ~ &(" = ", e) ~ app.newLine
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ": " ~ &(opt = ty) ~
+      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~
         *(doStmt) ~ "else:" ~ *(elseStmt)
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
     case WhileStmt(cond, body, elseStmt) =>
-      app ~ "while " ~ cond ~ ": " ~ *(body) ~ "else:" ~ *(elseStmt)
+      app ~ "while " ~ cond ~ ":" ~ *(body) ~ "else:" ~ *(elseStmt)
     case IfStmt(cond, thenStmt, elseStmt) =>
-      app ~ "if " ~ cond ~ ": " ~ *(thenStmt)
+      app ~ "if " ~ cond ~ ":" ~ *(thenStmt)
       elseStmt match {
         case Nil => app
         case s :: Nil if s.isInstanceOf[IfStmt] => app ~ "el" ~ s
@@ -108,7 +108,7 @@ object Beautifier {
       }
     case WithStmt(ty, items, body) =>
       implicit val lApp = ListApp[WithItem](sep = ", ")
-      app ~ "with" ~ items ~ ": " ~ &(opt = ty) ~ *(body)
+      app ~ "with" ~ items ~ ":" ~ &(" # type: ", ty) ~ *(body)
     case AsyncWithStmt(ty, items, body) =>
       app ~ "async " ~ WithStmt(ty, items, body)
     case MatchStmt(e, cases) =>
@@ -134,7 +134,7 @@ object Beautifier {
     case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &("", opt, ", ") ~ app.newLine
     case ImportStmt(aliases) =>
       implicit val lApp = ListApp[Alias](sep = ", ")
-      app ~ "import " ~ aliases
+      app ~ "import " ~ aliases ~ app.newLine
     case ImportFromStmt(level, from, aliases) =>
       implicit val lxApp = ListApp[Id]("", ", ", " ")
       implicit val laApp = ListApp[Alias](sep = ", ")
@@ -143,7 +143,7 @@ object Beautifier {
         case l => app ~ l
       }
       // TODO: consider ellipsis
-      app ~ "from " ~ ("."*level) ~ " import " ~ from ~ aliasesApp
+      app ~ "from " ~ ("."*level) ~ " import " ~ from ~ aliasesApp ~ app.newLine
     case GlobalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "global " ~ xl ~ app.newLine
@@ -259,7 +259,7 @@ object Beautifier {
       val star = if (varArg.isInstanceOf[None.type] && key.nonEmpty) "*, " else ""
       app ~ ^("", pos, "/, ") ~ norm ~ star ~ &("*", varArg, ", ") ~
         key ~ &("**", kwarg, ", ")
-    case Arg(x, ann, ty) => app ~ x // TODO: Add annotation and type
+    case Arg(x, ann, ty) => app ~ x ~ &(": ", ann) // TODO Add type comment
     case Kwarg(opt, e) => app ~ &("", opt, "=") ~ e
   }
 
