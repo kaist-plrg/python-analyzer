@@ -92,9 +92,10 @@ object Beautifier {
       app ~ target ~ " " ~ op ~ "= " ~ e ~ app.newLine
     case AnnAssign(target, ann, e) =>
       app ~ target ~ ": " ~ ann ~ &(" = ", e) ~ app.newLine
-    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~
-        *(doStmt) ~ "else:" ~ *(elseStmt)
+    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) => elseStmt match {
+      case Nil => app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~ *(doStmt)
+      case _ => app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~ *(doStmt) ~ "else:" ~ *(elseStmt)
+    } // TODO refactor above
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
     case WhileStmt(cond, body, elseStmt) =>
