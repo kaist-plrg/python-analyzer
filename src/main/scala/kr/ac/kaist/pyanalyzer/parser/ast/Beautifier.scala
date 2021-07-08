@@ -65,7 +65,7 @@ object Beautifier {
   }
 
   // TODO
-  implicit val lsApp = ListApp[Stmt](sep = "\n")
+  implicit val lsApp = ListApp[Stmt]()
 
   implicit lazy val stmtApp: App[Stmt] = (app, stmt) => stmt match {
     case FunDef(decos, name, args, retType, tyExpr, body) =>
