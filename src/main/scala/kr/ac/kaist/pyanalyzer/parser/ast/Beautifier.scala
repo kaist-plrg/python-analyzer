@@ -141,11 +141,15 @@ object Beautifier {
           app ~ "except" ~ &(" ", eOpt) ~ &(" as ", xOpt) ~ ":" ~ *(body)
       }
       implicit val lApp = ListApp[ExcHandler]()
-      val listOpt: Update = app => handlers match {
+      val listOpt: Update = app => elseStmt match {
         case Nil => app
         case list => app ~ "else:" ~ *(list)
       }
-      app ~ "try:" ~ *(body) ~ handlers ~ listOpt
+      val finOpt: Update = app => finStmt match {
+        case Nil => app
+        case list => app ~ "finally:" ~ *(list)
+      }
+      app ~ "try:" ~ *(body) ~ handlers ~ listOpt ~ finOpt
     case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &(",", opt, "") ~ app.newLine
     case ImportStmt(aliases) =>
       implicit val lApp = ListApp[Alias](sep = ", ")

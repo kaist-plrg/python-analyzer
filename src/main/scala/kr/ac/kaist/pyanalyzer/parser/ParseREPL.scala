@@ -67,7 +67,7 @@ case object CmdParseREPL extends Command {
       pairOpt.map(pair => {
         val targetLine = pair._2
         val prodName = pair._1.getOrElse("statements") 
-        println(s"${CYAN}Target String:${RESET} ${targetLine}\n")
+        println(s"${CYAN}Target String:${RESET}\n${targetLine}\n")
         
         val tokens = tokenizeText(targetLine)
         println(s"${GREEN}Tokenize result:\n${RESET} ${tokens}\n")
