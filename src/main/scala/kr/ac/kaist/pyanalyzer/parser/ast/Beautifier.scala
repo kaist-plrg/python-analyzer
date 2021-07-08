@@ -79,7 +79,7 @@ object Beautifier {
       implicit val leApp = ListApp[Expr]("", ", ", ", ")
       implicit val klApp = ListApp[Kwarg]("", ", ", ", ")
       decos.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine) ~
-        "def " ~ name ~ "(" ~ exprs ~ kwds ~ ")" ~ ":" ~
+        "class " ~ name ~ "(" ~ exprs ~ kwds ~ ")" ~ ":" ~
         *(body)
     case ReturnStmt(e) => app ~ "return " ~ &(opt = e) ~ app.newLine
     case DelStmt(le) =>

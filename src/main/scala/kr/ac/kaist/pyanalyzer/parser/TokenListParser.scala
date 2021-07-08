@@ -983,9 +983,10 @@ trait TokenListParsers extends PackratParsers {
     | classDefRaw
   )
   lazy val classDefRaw: PackratParser[ClassDef] =
-    ("class" ~> id) ~ opt("(" ~> args <~ ")") ~ (":" ~> block) ^^ {
+    ("class" ~> id) ~ opt("(" ~> opt(arguments) <~ ")") ~ (":" ~> block) ^^ {
       case x ~ None ~ b => ClassDef(Nil, x, Nil, Nil, b) 
-      case x ~ Some((el, kl)) ~ b => ClassDef(Nil, x, el, kl, b)
+      case x ~ Some(Some((el, kl))) ~ b => ClassDef(Nil, x, el, kl, b)
+      case x ~ Some(None) ~ b => ClassDef(Nil, x, Nil, Nil, b) 
     }
 
   /////////////////////////////////

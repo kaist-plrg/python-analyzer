@@ -11,7 +11,7 @@ class Microbenchmarks extends FileTestSet {
     for {
       (cat, names) <- targets.iterator
       name <- names.iterator
-    } yield (s"$cat:$name", makeFilePath(cat, name))
+    } yield (s"microbenchmarks:$cat:$name", makeFilePath(cat, name))
 
   val rootPath: String = s"$RESOURCE_DIR/microbenchmarks"
   
