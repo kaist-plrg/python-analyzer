@@ -16,6 +16,8 @@ object Beautifier {
     case pattern: Pattern => patternApp(app, pattern)
     case module: Module => moduleApp(app, module)
     case alias: Alias => aliasApp(app, alias)
+    case withItem: WithItem => withItemApp(app, withItem)
+    case handler: ExcHandler => excApp(app, handler)
     case node =>
       println(node)
       ???
@@ -64,6 +66,16 @@ object Beautifier {
       app ~ nl ~ &(" as ", asOpt, "")
   }
 
+  implicit lazy val withItemApp: App[WithItem] = (app, withItem) => withItem match {
+    case WithItem(e, aopt) =>
+      app ~ e ~ &(" as ", aopt, "")
+  }
+
+  implicit lazy val excApp: App[ExcHandler] = (app, handler) => handler match {
+    case ExcHandler(eopt, aopt, body) =>
+      app ~ "except " ~ &("", eopt, "") ~ &(" as ", aopt, "") ~ ":" ~ *(body)
+  }
+  
   // TODO
   implicit val lsApp = ListApp[Stmt]()
 
@@ -84,7 +96,7 @@ object Beautifier {
     case ReturnStmt(e) => app ~ "return " ~ &(opt = e) ~ app.newLine
     case DelStmt(le) =>
       implicit val lApp = ListApp[Expr](sep = ", ")
-      app ~ "del " ~ le
+      app ~ "del " ~ le ~ app.newLine
     case AssignStmt(targets, e, ty) =>
       targets.foldLeft(app)((app, target) => app ~ target ~ " = ") ~
         e ~ &(" # type: ", ty) ~ app.newLine
@@ -111,7 +123,7 @@ object Beautifier {
       }
     case WithStmt(ty, items, body) =>
       implicit val lApp = ListApp[WithItem](sep = ", ")
-      app ~ "with" ~ items ~ ":" ~ &(" # type: ", ty) ~ *(body)
+      app ~ "with " ~ items ~ ":" ~ &(" # type: ", ty) ~ *(body)
     case AsyncWithStmt(ty, items, body) =>
       app ~ "async " ~ WithStmt(ty, items, body)
     case MatchStmt(e, cases) =>
@@ -134,7 +146,7 @@ object Beautifier {
         case list => app ~ "else:" ~ *(list)
       }
       app ~ "try:" ~ *(body) ~ handlers ~ listOpt
-    case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &("", opt, ", ") ~ app.newLine
+    case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &(",", opt, "") ~ app.newLine
     case ImportStmt(aliases) =>
       implicit val lApp = ListApp[Alias](sep = ", ")
       app ~ "import " ~ aliases ~ app.newLine

@@ -388,7 +388,8 @@ trait TokenListParsers extends PackratParsers {
     number |
     (tuple | group | genexp) |
     (list | listcomp) |
-    (dict | set | dictcomp | setcomp)
+    (dict | set | dictcomp | setcomp) |
+    "..." ^^^ EConst(Ellipsis)
 
   // TODO make primitive parser for these
   lazy val strings: PackratParser[Expr] = stringLiteral ^^ EConst
@@ -589,7 +590,7 @@ trait TokenListParsers extends PackratParsers {
   ////////////////////////////////////////////////////////////////////////////////
   // Statements
   //////////////////////////////////////////////////////////////////////////////
-  lazy val statements: PackratParser[List[Stmt]] = rep1(statement)
+  lazy val statements: PackratParser[List[Stmt]] = rep1(statement <~ opt("\n"))
   lazy val statement: PackratParser[Stmt] =
     compoundStmt | simpleStmts  
   
