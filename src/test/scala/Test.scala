@@ -24,7 +24,8 @@ class ProdTest extends AnyFunSuite {
 
   println(help)
 
-  val times = 10
+  val times = 1
+  val depth = 10
   val CHECK = false
 
   for ((prod, p) <- prodMap) test(s"$prod") {
@@ -32,7 +33,8 @@ class ProdTest extends AnyFunSuite {
       (t, i) <- PEG_Grammar(prod).zipWithIndex
       time <- 1 to times
     } {
-      val test: String = t
+      val test = t.testWithDepth(depth) // test with depth
+      // val test: String = t // test with only random
       if (CHECK) {
         println(s"<$prod$i>")
         println(test)

@@ -36,6 +36,25 @@ object Grammar {
         val times = repetitions.charAt(nextInt(100)) - 48
         (for (i <- 1 to times) yield a).mkString(" ")
     }
+
+    def testWithDepth(depth: Int): String = this match {
+      case Normal(test) => test
+      case Prod(name) =>
+        val candidate = PEG_Grammar(name)
+        val index = nextInt(candidate.length)
+        if (depth == 0 || index == 0) candidate(0).testWithDepth(depth)
+        else candidate(index).testWithDepth(depth - 1)
+      case ~(a, b) => (a.testWithDepth(depth), b.testWithDepth(depth)) match {
+        case ("", str2) => str2
+        case (str1, "") => str1
+        case (str1, str2) => s"$str1 $str2"
+      }
+      case Rep(a) =>
+        val times = nextInt(4)
+        val seq = for (i <- 1 to times) yield a.testWithDepth(depth)
+        seq.foldLeft(Normal(""): TestGenerator)((t, e) => t ~ e).testWithDepth(depth)
+    }
+
   }
 
   case class Normal(test: String) extends TestGenerator
@@ -291,6 +310,7 @@ object Grammar {
     "Expression" -> List(
       Prod("Disjunction"),
       Prod("Disjunction") ~ "if" ~ Prod("Disjunction") ~ "else" ~ Prod("Expression"),
+      Prod("Lambdef"),
     ),
     "Expressions" -> List(
       Prod("Expression"),
