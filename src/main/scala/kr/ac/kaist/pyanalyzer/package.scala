@@ -5,7 +5,6 @@ package object pyanalyzer {
 
   val SRC_DIR = s"$BASE_DIR/src"
   val RESOURCE_DIR = s"$SRC_DIR/main/resources"
-  val PY_SOURCE_DIR = s"$RESOURCE_DIR/py-source"
 
   val LINE_SEP = System.getProperty("line.separator")
 }
