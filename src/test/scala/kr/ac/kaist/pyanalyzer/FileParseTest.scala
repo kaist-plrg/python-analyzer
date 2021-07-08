@@ -24,8 +24,11 @@ class FileParseTest extends AnyFunSuite {
   def parseSource(t: String) = {
     val tokens = SourceParser.tokenizeText(t)
     prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
-    val reader = new PackratReader(TokenReader(tokens))
-    val parser = TokenListParser.statements
+
+    val reader = new PackratReader(TokenListParser.TokenReader(tokens))
+    val parser = TokenListParser.module
+    val parseResult = parser(reader)
+
     parser(reader) match {
       case Success(result, rest) => result
       case result => throw new RuntimeException(s"Parsing fail\ntest:\n\n$result")
@@ -78,6 +81,7 @@ class FileParseTest extends AnyFunSuite {
   val testSetList: List[FileTestSet] = List(
     Microbenchmark   
   )
+
   def init: Unit = {
     prompt(help) 
     for (set <- testSetList) testFileSet(set)

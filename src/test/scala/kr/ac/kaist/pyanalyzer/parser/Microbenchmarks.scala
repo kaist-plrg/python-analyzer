@@ -3,6 +3,8 @@ package kr.ac.kaist.pyanalyzer.parser
 import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.parser._
 
+// Microbenchmark from PyCG
+// set of small Python source files
 object Microbenchmark extends Microbenchmarks
 class Microbenchmarks extends FileTestSet {
   def filePaths: Iterator[(String, String)] =
