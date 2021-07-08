@@ -67,26 +67,27 @@ case object CmdParseREPL extends Command {
       pairOpt.map(pair => {
         val targetLine = pair._2
         val prodName = pair._1.getOrElse("statements") 
-        println(s"${CYAN}Target String:${RESET} ${targetLine}")
+        println(s"${CYAN}Target String:${RESET} ${targetLine}\n")
         
         val tokens = tokenizeText(targetLine)
-        println(s"${GREEN}Tokenize result:${RESET} ${tokens}")
+        println(s"${GREEN}Tokenize result:\n${RESET} ${tokens}\n")
+        //println(s"${GREEN}Tokenize Beautified:\n${RESET} ${coloredTokens(tokens)}\n")
 
-        println(s"${GREEN}Goal production:${RESET} ${prodName}")
+        println(s"${GREEN}Goal production:${RESET} ${prodName}\n")
 
         val parseResult = prodMap.getOrElse(prodName.capitalize, statements)(
           new PackratReader(TokenListParser.TokenReader(tokens))
         )
-        println(s"${GREEN}Parse result${RESET}: ${parseResult}")
+        println(s"${GREEN}Parse result${RESET}: ${parseResult}\n")
 
         try {
           val ast = parseResult.get
           ast match {
             case l: List[Node] =>
               val stmts = l.foldLeft("")((s, e) => s + beautify(e))
-              println(s"${CYAN}Beautify result${RESET}:\n${stmts}")
+              println(s"${CYAN}Beautify result${RESET}:\n${stmts}\n")
             case node: Node =>
-              println(s"${CYAN}Beautify result${RESET}:\n${beautify(node)}")
+              println(s"${CYAN}Beautify result${RESET}:\n${beautify(node)}\n")
           }
         } catch {
           case e: Throwable => println(e)

@@ -1,10 +1,13 @@
 package kr.ac.kaist.pyanalyzer.parser
 
+import scala.Console._
+import kr.ac.kaist.pyanalyzer.util.Useful._
+
 // 2. Lexical analysis
 object Token {
   def toPrettyString(token: Token): String = token match {
-    case NewlineToken(None) => "\\NL"
-    case NewlineToken(Some(s)) => s"${s}\\NL"
+    case NewlineToken(None) => "\\NL\n"
+    case NewlineToken(Some(s)) => s"${s}\\NL\n"
     case CommentToken(s) => s"# type:$s"
     case IndentToken => "INDENT"
     case DedentToken => "DEDENT"
@@ -18,7 +21,33 @@ object Token {
     case OpToken(s) => s
     case DelimToken(s) => s
   }
+
+  def toColoredString(token: Token): String = token match {
+    case NewlineToken(None) => colored(GRAY)("\\n") + "\n"
+    case NewlineToken(Some(s)) => colored(GRAY)(s"#$s \\n") + "\n"
+    case CommentToken(s) => colored(GRAY)(s"# type:$s")
+    case IndentToken => colored(GRAY)("IN")
+    case DedentToken => colored(GRAY)("DE")
+    case IdToken(s) => bolded(s"$s")
+    case KeywordToken(s) => s
+    case StrToken(s) => colored(YELLOW)(s""""$s"""")
+    case BytesToken(b) => colored(YELLOW)(s"$b")
+    case IntToken(i) => colored(YELLOW)(s"$i")
+    case FloatToken(f) => colored(YELLOW)(s"$f")
+    case ImagToken(i) => colored(YELLOW)(s"${i}j")
+    case OpToken(s) => colored(CYAN)(s)
+    case DelimToken(s) => colored(CYAN)(s)
+  }
+
   def printTokens(tokens: List[Token]): Unit = tokens.foreach(t => print(toPrettyString(t)))
+  def prettyTokens(tokens: List[Token]): String = tokens.map(t => toPrettyString(t)).mkString(" ")
+  def coloredTokens(tokens: List[Token]): String = 
+    tokens.map(t => t match {
+      case NewlineToken(_) => toColoredString(t)
+      case IndentToken => toColoredString(t) + "\n" 
+      case DedentToken => toColoredString(t) + "\n"
+      case _ => toColoredString(t) + " "
+    }).mkString("")
 }
 abstract class Token(name: String, content: String) {
   override def toString: String = Token.toPrettyString(this)
