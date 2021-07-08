@@ -98,8 +98,10 @@ object Beautifier {
     } // TODO refactor above
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
-    case WhileStmt(cond, body, elseStmt) =>
-      app ~ "while " ~ cond ~ ":" ~ *(body) ~ "else:" ~ *(elseStmt)
+    case WhileStmt(cond, body, elseStmt) => elseStmt match {
+      case Nil => app ~ "while " ~ cond ~ ":" ~ *(body) 
+      case _ => app ~ "while " ~ cond ~ ":" ~ *(body) ~ "else:" ~ *(elseStmt)
+    }
     case IfStmt(cond, thenStmt, elseStmt) =>
       app ~ "if " ~ cond ~ ":" ~ *(thenStmt)
       elseStmt match {
