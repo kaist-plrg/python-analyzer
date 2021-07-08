@@ -259,7 +259,7 @@ trait TokenListParsers extends PackratParsers {
     }
   // vararg, keyword only arg, kwargs can appear
   lazy val lambdaStarEtc: PackratParser[Args] = ( 
-    ("*" ~> lambdaParamNoDefault) ~ rep(lambdaParamWithDefault) ~ opt(lambdaKwds) ^^ {
+    ("*" ~> lambdaParamNoDefault) ~ rep(lambdaParamMaybeDefault) ~ opt(lambdaKwds) ^^ {
       case a ~ pwl ~ kopt => Args(varArg = Some(a), keyOnlys = pwl, kwArg = kopt)
     } | "*" ~ "," ~> rep1(lambdaParamMaybeDefault) ~ opt(lambdaKwds) ^^ {
       case pml ~ kopt => Args(keyOnlys = pml, kwArg = kopt)
