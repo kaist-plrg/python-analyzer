@@ -71,11 +71,11 @@ object Beautifier {
       app ~ e ~ &(" as ", aopt, "")
   }
 
-  implicit lazy val excApp: App[ExcHandler] = (app, handler) => handler match {
-    case ExcHandler(eopt, aopt, body) =>
-      app ~ "except " ~ &("", eopt, "") ~ &(" as ", aopt, "") ~ ":" ~ *(body)
+  implicit lazy val excApp: App[ExcHandler] = {
+    case (app, ExcHandler(eOpt, xOpt, body)) =>
+      app ~ "except" ~ &(" ", eOpt) ~ &(" as ", xOpt) ~ ":" ~ *(body)
   }
-  
+
   // TODO
   implicit val lsApp = ListApp[Stmt]()
 
@@ -136,10 +136,6 @@ object Beautifier {
     case RaiseStmt(e, from) =>
       app ~ "raise " ~ &(opt = e) ~ &(" from ", from) ~ app.newLine
     case TryStmt(body, handlers, elseStmt, finStmt) =>
-      implicit val exApp: App[ExcHandler] = {
-        case (app, ExcHandler(eOpt, xOpt, body)) =>
-          app ~ "except" ~ &(" ", eOpt) ~ &(" as ", xOpt) ~ ":" ~ *(body)
-      }
       implicit val lApp = ListApp[ExcHandler]()
       val listOpt: Update = app => elseStmt match {
         case Nil => app
