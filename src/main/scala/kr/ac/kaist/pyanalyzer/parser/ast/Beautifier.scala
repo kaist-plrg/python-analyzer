@@ -104,16 +104,13 @@ object Beautifier {
       app ~ target ~ " " ~ op ~ "= " ~ e ~ app.newLine
     case AnnAssign(target, ann, e) =>
       app ~ target ~ ": " ~ ann ~ &(" = ", e) ~ app.newLine
-    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) => elseStmt match {
-      case Nil => app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~ *(doStmt)
-      case _ => app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~ *(doStmt) ~ "else:" ~ *(elseStmt)
-    } // TODO refactor above
+    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
+      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~
+        *(doStmt) ~ *(elseStmt, "else:")
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
-    case WhileStmt(cond, body, elseStmt) => elseStmt match {
-      case Nil => app ~ "while " ~ cond ~ ":" ~ *(body) 
-      case _ => app ~ "while " ~ cond ~ ":" ~ *(body) ~ "else:" ~ *(elseStmt)
-    }
+    case WhileStmt(cond, body, elseStmt) =>
+      app ~ "while " ~ cond ~ ":" ~ *(body) ~ *(elseStmt, "else:")
     case IfStmt(cond, thenStmt, elseStmt) =>
       app ~ "if " ~ cond ~ ":" ~ *(thenStmt)
       elseStmt match {
@@ -137,15 +134,7 @@ object Beautifier {
       app ~ "raise " ~ &(opt = e) ~ &(" from ", from) ~ app.newLine
     case TryStmt(body, handlers, elseStmt, finStmt) =>
       implicit val lApp = ListApp[ExcHandler]()
-      val listOpt: Update = app => elseStmt match {
-        case Nil => app
-        case list => app ~ "else:" ~ *(list)
-      }
-      val finOpt: Update = app => finStmt match {
-        case Nil => app
-        case list => app ~ "finally:" ~ *(list)
-      }
-      app ~ "try:" ~ *(body) ~ handlers ~ listOpt ~ finOpt
+      app ~ "try:" ~ *(body) ~ handlers ~ *(elseStmt, "else:") ~ *(finStmt, "finally:")
     case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &(",", opt, "") ~ app.newLine
     case ImportStmt(aliases) =>
       implicit val lApp = ListApp[Alias](sep = ", ")

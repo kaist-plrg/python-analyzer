@@ -27,8 +27,10 @@ class Appender(tab: String = "  ") {
     case ^(l, Nil, r) => this
     case ^(l, list, r) => this ~ l ~ list ~ r
   }
-  def ~[T](block: *[T])(implicit app: App[T]): Appender =
-    this ~ newLine ~ indent ~ block.block ~ dedent
+  def ~[T](block: *[T])(implicit app: App[T]): Appender = block match {
+    case *(Nil, l, r) => this
+    case *(list, l, r) => this ~ l ~ newLine ~ indent ~ list ~ dedent ~ r
+  }
 
   // TODO: Refactor
   def wrap(
@@ -76,6 +78,6 @@ object Appender {
 
   // TODO: Give appropriate name!
   case class &[T](l: String = "", opt: Option[T], r: String = "")
-  case class *[T](block: T)
+  case class *[T](block: T, l: String = "", r: String = "")
   case class ^[T](l: String = "", list: List[T], r: String = "")
 }
