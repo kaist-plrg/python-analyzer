@@ -49,6 +49,7 @@ class FileParseTest extends AnyFunSuite {
     try { 
       prompt("================================")
       prompt(s"${MAGENTA}Test count: $epoch\n${RESET}")
+      prompt(s"${MAGENTA}Test name: $testname\n${RESET}")
 
       val text = SourceParser.readSource(filename)
       prompt(s"${CYAN}Source Text:${RESET}\n$text\n")
