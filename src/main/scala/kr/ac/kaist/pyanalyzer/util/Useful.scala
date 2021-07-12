@@ -2,7 +2,7 @@ package kr.ac.kaist.pyanalyzer.util
 
 import kr.ac.kaist.pyanalyzer.util.Appender
 import scala.Console._
-import java.io.File
+import java.io._
 
 object Useful {
   def beautify[T](t: T)(implicit app: Appender.App[T]): String =
@@ -27,4 +27,17 @@ object Useful {
     }
     Seq(file) ++ children.flatMap(walkTree(_))
   }
+
+  // file writer
+  def getPrintWriter(filename: String): PrintWriter =
+    new PrintWriter(new File(filename))
+
+  // dump given data to a file
+  def dumpFile(data: Any, filename: String): Unit = {
+    val nf = getPrintWriter(filename)
+    nf.print(data)
+    nf.close()
+  }
+  def withoutColorCodes(msg: String): String =
+    msg.replaceAll("\u001B\\[[;\\d]*m", "");
 }

@@ -5,7 +5,7 @@ import org.scalatest.funsuite._
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
-import kr.ac.kaist.pyanalyzer.util.Appender._
+import kr.ac.kaist.pyanalyzer.util.Appender
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import scala.Console._ 
@@ -17,12 +17,14 @@ final case object EmptyFileException extends Exception("Empty File")
 class FileParseTest extends AnyFunSuite {
   val help = s"""Test parsing and unparsing Python source files"""
   val logPath = s"$TEST_LOG_DIR/FileParseTest"
+  val logWriter = getPrintWriter(logPath)
 
   var epoch = 1
   // `setPrompt = true` to see message
-  var setPrompt = true
-  def prompt(s: String): Unit = if (setPrompt) { 
-    println(s)
+  var setPrompt = false
+  def prompt(s: String): Unit = {
+    if (setPrompt) println(s)
+    logWriter.write(withoutColorCodes(s) + "\n")
   }
 
   // parsing routine
@@ -69,11 +71,10 @@ class FileParseTest extends AnyFunSuite {
       prompt("================================")
     } catch { 
       case EmptyFileException =>
-        println(s"${MAGENTA}Epoch $epoch: Empty File${RESET}\n\n")
+        prompt(s"${MAGENTA}Epoch $epoch: Empty File${RESET}\n\n")
         cancel 
       case e => 
-        throw e
-        println(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
+        prompt(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
         fail
     }
     finally {
@@ -97,6 +98,8 @@ class FileParseTest extends AnyFunSuite {
     prompt(help) 
 
     for (set <- testSetList) testFileSet(set)
+
+    logWriter.flush()
   }
 
   init
