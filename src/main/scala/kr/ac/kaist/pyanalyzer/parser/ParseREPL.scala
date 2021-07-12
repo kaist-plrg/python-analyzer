@@ -18,11 +18,18 @@ import scala.util.Try
 
 case object CmdParseREPL extends Command {
   val name = "parse-repl"
-  val help = "parse the expression on the REPL"
+  val help = s"""${CYAN}
+  Parse the stmt/expr/subterms on the REPL
+  You can give command starts with ":"
+  Using tab is helpful for checking the command and option
+${RESET}"""
 
-  val commands = List(
+  val commandList = List(
     "quit",
-  ).map(x => node(s":$x"))
+  )
+  val commands = commandList.map(x => node(s":$x"))
+  val commandHelp =
+    commandList.foldLeft("Commands: raw")((str, e) => str + s", $e")
 
   val prodNode = prodMap.keys.map(
     x => node(s"-${x.charAt(0).toLower}${x.drop(1)}")
@@ -40,60 +47,47 @@ case object CmdParseREPL extends Command {
   private val prompt: String =
     LINE_SEP + s"${MAGENTA}py-analyze>${RESET} "
 
-  // main apply : loop to get input line, and try parsing the line
+  // main apply: get input line and try parsing the line
   def apply(params: List[String]): Unit = {
-    try while (true) {
-      // 1. get input string, identify if it's empty, command starting with `:`,
-      // or target string to pars
+    println(help)
+    try while (true) try {
       val str = reader.readLine(prompt)
-      val pairOpt = str.split(" ").toList match {
-        // empty string
-        case Nil => None
-        // command case, starting with `:`
+      val (prodOpt, targetStr) = str.split(" ").toList match {
         case cmd :: rest if cmd.startsWith(":") => cmd.drop(1) match {
           case "quit" => throw new EndOfFileException
           case "raw" => rest match {
-            case Nil => Some(None, "")
+            case Nil => (None, "")
             case prod :: target if prod.startsWith("-") =>
-              Some(Some(prod.drop(1)), target.mkString(" "))
-            case target => Some(None, target.mkString(" "))
+              (Some(prod.drop(1)), target.mkString(" "))
+            case target => (None, target.mkString(" "))
           }
-          case _ => println("In appropriate command!\nAvailable commands are [:quit, :raw]"); None
+          case _ => throw new RuntimeException(
+            "In appropriate command!\n" + commandHelp
+          )
         }
-        // target string case
-        case _ => Some(None, str)
+        case _ => (None, str)
       }
-      //2. according to result, do the actual parsing
-      pairOpt.map(pair => {
-        val targetLine = pair._2
-        val prodName = pair._1.getOrElse("statements") 
-        println(s"${CYAN}Target String:${RESET}\n${targetLine}\n")
-        
-        val tokens = tokenizeText(targetLine)
-        println(s"${GREEN}Tokenize result:\n${RESET} ${tokens}\n")
-        //println(s"${GREEN}Tokenize Beautified:\n${RESET} ${coloredTokens(tokens)}\n")
+      val prodName = prodOpt.getOrElse("statements")
+      println(s"${GREEN}Goal production:${RESET} ${prodName}\n")
 
-        println(s"${GREEN}Goal production:${RESET} ${prodName}\n")
+      val tokens = tokenizeText(targetStr)
+      println(s"${GREEN}Tokenize result:\n${RESET} ${tokens}\n")
 
-        val parseResult = prodMap.getOrElse(prodName.capitalize, statements)(
-          new PackratReader(TokenListParser.TokenReader(tokens))
-        )
-        println(s"${GREEN}Parse result${RESET}: ${parseResult}\n")
+      val parseResult = prodMap.getOrElse(prodName.capitalize, statements)(
+        new PackratReader(TokenListParser.TokenReader(tokens))
+      )
+      println(s"${GREEN}Parse result${RESET}: ${parseResult}\n")
 
-        try {
-          val ast = parseResult.get
-          ast match {
-            case l: List[Node] =>
-              val stmts = l.foldLeft("")((s, e) => s + beautify(e))
-              println(s"${CYAN}Beautify result${RESET}:\n${stmts}\n")
-            case node: Node =>
-              println(s"${CYAN}Beautify result${RESET}:\n${beautify(node)}\n")
-          }
-        } catch {
-          case e: Throwable => println(e)
-        }
-      })
-    // -1. End when EOF thrown (:quit) case
+      parseResult.get match {
+        case l: List[Node] =>
+          val stmts = l.foldLeft("")((s, e) => s + beautify(e))
+          println(s"${CYAN}Beautify result${RESET}:\n${stmts}\n")
+        case node: Node =>
+          println(s"${CYAN}Beautify result${RESET}:\n${beautify(node)}\n")
+      }
+    } catch {
+      case e: EndOfFileException => throw new EndOfFileException
+      case e: Throwable => println(e.getMessage)
     } catch {
       case e: EndOfFileException => println("quit")
     }
