@@ -120,12 +120,14 @@ trait Tokenizers extends RegexParsers {
 }
 
 case class IndentError(expected: Int, actual: Int) extends Exception
+case class DelimError(expected: String, actual: String) extends Exception
 case class IndentState(
   tabs: List[Int] = Nil,
-  cur: Int = 0
+  cur: Int = 0,
+  delims: List[String] = Nil,
 ) {
   // expects positive int
-  def doIndent(n: Int): IndentState = IndentState(n:: tabs, cur + n)
+  def doIndent(n: Int): IndentState = IndentState(n :: tabs, cur + n)
   // expects negative int
   def doDedent(n: Int): (Int, IndentState) = {
     val delta = -n
@@ -141,6 +143,21 @@ case class IndentState(
     }
     // only breaks loop when sum == n
     (k, IndentState(tabs.drop(k), cur - sum))
+  }
+  // maintaining parenthesis state
+  // only "(", "[", or "{" should be pushed
+  def pushDelim(s: String): IndentState = IndentState(tabs, cur, s :: delims)
+  def popDelim(s: String): IndentState = {
+    if (delims.isEmpty) throw DelimError("", s)
+    delims.head match {
+      case "(" =>
+        if (s == ")") IndentState(tabs, cur, delims.drop(1)) else throw DelimError(")", s)
+      case "[" =>
+        if (s == "]") IndentState(tabs, cur, delims.drop(1)) else throw DelimError("]", s)
+      case "{" =>
+        if (s == "}") IndentState(tabs, cur, delims.drop(1)) else throw DelimError("}", s)
+      case _ => ???
+    }
   }
 }
 
@@ -175,22 +192,43 @@ case class IndentParser(var st: IndentState = IndentState()) {
       case t :: Nil => return (parsed, st)
       case _ =>
     }
+    
+    // Processing for implicit line joining
+    // scan the tokenlist, count the parenthesis state
+    val newDelimSt = parsed.foldLeft(st)((st, tok) => tok match {
+      case DelimToken("(") => st.pushDelim("(")
+      case DelimToken("[") => st.pushDelim("[")
+      case DelimToken("{") => st.pushDelim("{")
+      case DelimToken(")") => st.popDelim(")")
+      case DelimToken("]") => st.popDelim("]")
+      case DelimToken("}") => st.popDelim("}")
+      case _ => st
+    })
+    // if current state is already implicit line joining, do it
+    // ie. newline token at the last should be eliminated
+    if (newDelimSt.delims.nonEmpty) {
+      (parsed.dropRight(1), newDelimSt)
+    }
 
-    // indent case
-    val delta =  newIndent - st.cur
-    if (delta > 0) {
-      val newSt = st.doIndent(delta)
-      (IndentToken +: parsed, newSt)
-    }
-    // dedent case
-    else if (delta < 0) {
-      val (k, newSt) = st.doDedent(delta)
-      val dedents = List.fill(k)(DedentToken)
-      (dedents ++ parsed, newSt)
-    }
-    // same case
+    // else, normal mode
     else {
-      (parsed, st)
+      st = newDelimSt
+    // indent case
+      val delta =  newIndent - st.cur
+      if (delta > 0) {
+        val newSt = st.doIndent(delta)
+        (IndentToken +: parsed, newSt)
+      }
+      // dedent case
+      else if (delta < 0) {
+        val (k, newSt) = st.doDedent(delta)
+        val dedents = List.fill(k)(DedentToken)
+        (dedents ++ parsed, newSt)
+      }
+      // same case
+      else {
+        (parsed, st)
+      }
     }
   }
 

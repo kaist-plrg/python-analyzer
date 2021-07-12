@@ -20,7 +20,7 @@ class Microbenchmarks extends FileTestSet {
   val targets: List[(String, List[String])] = List(
     ("simple", List(
       "test01", 
-      "parser-regress"
+      //"parser-regress"
     )),
     ("assignments", List(
       "chained",
