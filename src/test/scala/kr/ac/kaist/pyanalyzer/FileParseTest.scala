@@ -79,11 +79,13 @@ class FileParseTest extends AnyFunSuite {
 
   // run parsing test for each test sets
   val testSetList: List[FileTestSet] = List(
-    Microbenchmark   
+    Microbenchmark,
+    HorovodTest
   )
 
   def init: Unit = {
     prompt(help) 
+
     for (set <- testSetList) testFileSet(set)
   }
 
