@@ -33,15 +33,14 @@ trait Tokenizers extends RegexParsers {
     "import", "in", "is", "lambda", "nonlocal", "not", "or",
     "pass", "raise", "return", "try", "while", "with", "yield",
   )
-  lazy val keyword = keywords.mkString("|").r ^^ { case s => KeywordToken(s) }
+  lazy val keyword = keywords.mkString("|").r ^^ KeywordToken
 
   // literals
-  lazy val escapeChar = ???
-  lazy val shortSingleQuote = "'".r ~> "[^']*".r <~ "'".r
-  lazy val shortDoubleQuote = "\"".r ~> "[^\"]*".r <~ "\"".r
+  lazy val shortSingleQuote = "'".r ~> "([^\\\\']|\\\\.)*".r <~ "'".r
+  lazy val shortDoubleQuote = "\"".r ~> "([^\\\\\"]|\\\\.)*".r <~ "\"".r
   lazy val shortQuote = shortSingleQuote | shortDoubleQuote
-  lazy val longSingleQuote = "'''".r ~> ".*(?=''')".r <~ "'''".r
-  lazy val longDoubleQuote = "\"\"\"".r ~> ".*(?=\"\"\")".r <~ "\"\"\"".r
+  lazy val longSingleQuote = "'''".r ~> "([^\\\\]|\\\\.)*(?=''')".r <~ "'''".r
+  lazy val longDoubleQuote = "\"\"\"".r ~> "([^\\\\]|\\\\.)*(?=\"\"\")".r <~ "\"\"\"".r
   lazy val longQuote = longSingleQuote | longDoubleQuote
   lazy val stringPrefix = List("fr", "Fr", "fR", "FR", "rf", "rF", "Rf",
     "RF", "r", "u", "R", "U", "f", "F").mkString("|").r
@@ -84,16 +83,12 @@ trait Tokenizers extends RegexParsers {
     "\\+", "-", "\\*\\*", "\\*", "//", "/", "%", "@",
     "<<", ">>", "&", "\\|", "\\^", "~",
     "<=", ">=", "<", ">", "!=",
-  ).mkString("|").r ^^ {
-    case s => OpToken(s)
-  }
+  ).mkString("|").r ^^ OpToken
 
   // some operator contians delimiters, so need to be tokenized first
   lazy val opBeforeDelim = List(
     ":=", "==", 
-  ).mkString("|").r ^^ {
-    case s => OpToken(s)
-  }
+  ).mkString("|").r ^^ OpToken
 
   // delimiter
   lazy val delim = List(
@@ -101,7 +96,7 @@ trait Tokenizers extends RegexParsers {
     ",", ":", "\\.\\.\\.", "\\.", ";", "@", "=", "->",
     "\\+=", "-=", "\\*=", "/=", "//=", "%=", "@=",
     "&=", "\\|=", "\\^=", ">>=", "<<=", "\\*\\*=",
-  ).mkString("|").r ^^ { case s => DelimToken(s) }
+  ).mkString("|").r ^^ DelimToken
 
   // top level
   lazy val literal: Parser[Token] = imagNumber | floatNumber | integer | stringLiteral | bytesLiteral
