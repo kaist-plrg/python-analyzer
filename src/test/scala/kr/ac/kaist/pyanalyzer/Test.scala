@@ -6,7 +6,7 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.Grammar._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
-import kr.ac.kaist.pyanalyzer.parser.SourceParser._
+import kr.ac.kaist.pyanalyzer.parser.Tokenizer.tokenizeText
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.util.Random._
 import scala.Console._
@@ -52,7 +52,7 @@ class ProdTest extends AnyFunSuite {
     }
   }
 
-  def doParse(p: Parser[Node], t: String): Node =
+  def doParse(p: PackratParser[Node], t: String): Node =
     p(new PackratReader(TokenReader(tokenizeText(t)))) match {
       case Success(res, rest) if rest.first == NewlineToken() => res
       case res => throw new RuntimeException(s"\nParsing fail\ntest:\n$t\n\n$res")

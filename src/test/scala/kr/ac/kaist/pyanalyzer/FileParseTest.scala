@@ -29,7 +29,7 @@ class FileParseTest extends AnyFunSuite {
 
   // parsing routine
   def parseSource(t: String) = {
-    val tokens = SourceParser.tokenizeText(t)
+    val tokens = Tokenizer.tokenizeText(t)
     prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
     
     if (tokens.isEmpty) throw EmptyFileException

@@ -13,9 +13,10 @@ lazy val root = (project in file("."))
   .settings(
     name := "python-analyzer",
     libraryDependencies ++= Seq(
+      "org.apache.commons" % "commons-text" % "1.8",
+      "org.jline" % "jline" % "3.13.3",
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.0.0",
       "org.scalatest" %% "scalatest-funsuite" % "3.2.9" % "test",
-      "org.jline" % "jline" % "3.13.3",
     ),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDG"),
     parallelExecution in Test := true,
