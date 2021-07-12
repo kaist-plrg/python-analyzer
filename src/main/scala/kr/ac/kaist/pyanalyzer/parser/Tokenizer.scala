@@ -131,10 +131,13 @@ trait Tokenizers extends RegexParsers {
   lazy val keyword = keywords.mkString("|").r ^^ { case s => KeywordToken(s) }
 
   // literals
-  lazy val quote = "['\"]".r
-  lazy val tripleQuote = "['\"]{3}".r
-  lazy val shortQuote = quote ~> "[^'\"]*".r <~ quote
-  lazy val longQuote = tripleQuote ~> "[^'\"]*".r <~ tripleQuote
+  lazy val escapeChar = ???
+  lazy val shortSingleQuote = "'".r ~> "[^']*".r <~ "'".r
+  lazy val shortDoubleQuote = "\"".r ~> "[^\"]*".r <~ "\"".r
+  lazy val shortQuote = shortSingleQuote | shortDoubleQuote
+  lazy val longSingleQuote = "'''".r ~> ".*(?=''')".r <~ "'''".r
+  lazy val longDoubleQuote = "\"\"\"".r ~> ".*(?=\"\"\")".r <~ "\"\"\"".r
+  lazy val longQuote = longSingleQuote | longDoubleQuote
   lazy val stringPrefix = List("fr", "Fr", "fR", "FR", "rf", "rF", "Rf",
     "RF", "r", "u", "R", "U", "f", "F").mkString("|").r
   lazy val stringLiteral: Parser[StrToken] = opt(stringPrefix) ~>
@@ -155,36 +158,6 @@ trait Tokenizers extends RegexParsers {
   lazy val integer: Parser[IntToken] = (decInteger | binInteger | octInteger | hexInteger) ^^ {
     case (s, b) => IntToken(Integer.parseInt(s, b)) 
   }
-
-  def comp2str(comp: ~[String, String]): String = {
-    val ~(lhs, rhs) = comp
-    lhs + rhs
-  }
-
-  implicit lazy val temp = (p: Parser[String ~ String]) => p ^^ { comp2str(_) }
-
-  /*
-  lazy val digitPart = digit ~ rep(opt("_".r) ~> digit) ^^ {
-    case d ~ ld =>  ld.foldLeft(d)((res, e) => res + e)
-  }
-  lazy val fraction: Parser[String] = "[.]".r ~ digitPart
-  lazy val exponent = "[eE]".r ~ opt("[+-]".r) ~ digitPart ^^ {
-    case e ~ Some("-") ~ d => s"$e-$d"
-    case e ~ _ ~ d => s"$e$d"
-  }
-  */
-  /* lazy val pointFloat: Parser[String] = opt(digitPart) ~ fraction ^^ {
-    case opt ~ f => opt.getOrElse("0") + f
-  } | digitPart ~ "[.]".r */
-  /*
-  lazy val pointFloat: Parser[String] = """(\d(_?\d)*\.\d(_?\d)*)|(\d(_?\d)*\.)""".r ^^ {
-    case s => s.replaceAll("_", "")
-  }
-  lazy val exponentFloat: Parser[String] = (pointFloat | digitPart) ~ exponent
-  lazy val floatNumber: Parser[FloatToken] = (exponentFloat | pointFloat) ^^ { 
-    case s => FloatToken(s.toDouble)
-  }
-  */
 
   lazy val imagNumber: Parser[ImagToken] = imagNumberRegex.r <~ "[jJ]".r ^^ {
     case s => ImagToken(s.toDouble)
