@@ -9,5 +9,9 @@ package object pyanalyzer {
 
   val HOROVOD_DIR = s"$BASE_DIR/tensorflow-models/tensorflow-to-horovod"
 
+  val LOG_DIR = s"$BASE_DIR/logs"
+  val TEST_LOG_DIR = s"$LOG_DIR/test"
+
+  // Others
   val LINE_SEP = System.getProperty("line.separator")
 }

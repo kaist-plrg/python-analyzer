@@ -9,21 +9,28 @@ import kr.ac.kaist.pyanalyzer.util.Appender._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import scala.Console._ 
+import java.io._
 
 // FileParseTest: iterate over Python source files, test to parse and unparse correctly
 // and the filename should be `main.py` (refer to makeFileName)
-
+final case object EmptyFileException extends Exception("Empty File")
 class FileParseTest extends AnyFunSuite {
   val help = s"""Test parsing and unparsing Python source files"""
+  val logPath = s"$TEST_LOG_DIR/FileParseTest"
+
   var epoch = 1
   // `setPrompt = true` to see message
-  var setPrompt = false
-  def prompt(s: String): Unit = if (setPrompt) { println(s) }
+  var setPrompt = true
+  def prompt(s: String): Unit = if (setPrompt) { 
+    println(s)
+  }
 
   // parsing routine
   def parseSource(t: String) = {
     val tokens = SourceParser.tokenizeText(t)
     prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
+    
+    if (tokens.isEmpty) throw EmptyFileException
 
     val reader = new PackratReader(TokenListParser.TokenReader(tokens))
     val parser = TokenListParser.module
@@ -61,6 +68,9 @@ class FileParseTest extends AnyFunSuite {
       assert(pretty01 == pretty02)
       prompt("================================")
     } catch { 
+      case EmptyFileException =>
+        println(s"${MAGENTA}Epoch $epoch: Empty File${RESET}\n\n")
+        cancel 
       case e => 
         throw e
         println(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
