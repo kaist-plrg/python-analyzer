@@ -12,6 +12,9 @@ object Useful {
     if (!f) { throw new RuntimeException(msg) }
   }
 
+  // create directories
+  def mkdir(name: String): Unit = new File(name).mkdirs
+
   // Console display styles
   def colored(color: String)(msg: String): String = s"${color}${msg}${RESET}"
   def bolded(msg: String): String = s"${BOLD}${msg}${RESET}"

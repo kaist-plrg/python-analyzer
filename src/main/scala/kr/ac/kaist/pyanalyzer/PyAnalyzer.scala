@@ -1,18 +1,25 @@
 package kr.ac.kaist.pyanalyzer
 
+import kr.ac.kaist.pyanalyzer.parser.CmdParseREPL
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.parser.CmdParseREPL
+import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object PyAnalyzer {
+  def init(): Unit = {
+    mkdir(TEST_LOG_DIR)
+  }
   // main entry point
-  def main(args: Array[String]): Unit = args.toList match {
-    case str :: params => cmdMap.get(str) match {
-      case Some(cmd) => cmd(params)
-      case None => CmdHelp(List(str))
+  def main(args: Array[String]): Unit = {
+    init
+    args.toList match {
+      case str :: params => cmdMap.get(str) match {
+        case Some(cmd) => cmd(params)
+        case None => CmdHelp(List(str))
+      }
+      case Nil => CmdHelp(List())
     }
-    case Nil => CmdHelp(List())
   }
 
   val commands: List[Command] = List(
