@@ -14,7 +14,7 @@ lazy val root = (project in file("."))
     name := "python-analyzer",
     libraryDependencies ++= Seq(
       "org.apache.commons" % "commons-text" % "1.8",
-      "org.jline" % "jline" % "3.13.3",
+      "org.jline" % "jline" % "3.20.0",
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.0.0",
       "org.scalatest" %% "scalatest-funsuite" % "3.2.9" % "test",
     ),

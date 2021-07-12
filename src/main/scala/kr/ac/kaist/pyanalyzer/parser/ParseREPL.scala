@@ -12,6 +12,7 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import org.jline.builtins.Completers.TreeCompleter
 import org.jline.builtins.Completers.TreeCompleter.{Node => CNode, node}
 import org.jline.reader._
+import org.jline.reader.impl._
 import org.jline.terminal._
 import scala.Console._
 import scala.util.parsing.input.Reader
@@ -42,7 +43,11 @@ ${RESET}"""
 
   private val terminal: Terminal = TerminalBuilder.builder().build()
 
-  private val reader: LineReader = LineReaderBuilder.builder()
+  private val lineBuilder = LineReaderBuilder.builder()
+  private val parser = new DefaultParser()
+  parser.setEscapeChars(null)
+  lineBuilder.parser(parser)
+  private val reader: LineReader = lineBuilder
     .terminal(terminal).completer(completer).build()
 
   private val prompt: String =
