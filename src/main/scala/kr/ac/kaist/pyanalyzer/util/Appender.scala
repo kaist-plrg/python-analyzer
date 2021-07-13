@@ -13,6 +13,7 @@ class Appender(tab: String = "  ") {
     ""
   }
   def pop = { sb.deleteCharAt(sb.length - 1); this }
+  def dropIndent = { sb.delete(sb.length - 2*k, sb.length); this }
   def newLine = "\n" + tab * k
   override def toString: String = sb.toString
   def ~(str: String): Appender = { sb ++= str; this }

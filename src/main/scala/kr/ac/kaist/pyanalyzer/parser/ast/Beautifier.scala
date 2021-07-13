@@ -159,8 +159,9 @@ object Beautifier {
     case BreakStmt => app ~ "break" ~ app.newLine
     case ContinueStmt => app ~ "continue" ~ app.newLine
     case OnelineStmt(sl) =>
-      val blockApp = ListApp[Stmt](sep = "; ")
-      blockApp(app, sl)
+      sl.foldLeft(app)((app, stmt) =>
+        app ~ stmt ~ app.dropIndent ~ app.pop ~ "; "
+      ) ~ app.pop.pop ~ app.newLine
   }
 
   implicit lazy val constApp: App[Const] = (app, c) => c match {
