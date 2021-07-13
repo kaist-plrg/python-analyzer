@@ -182,8 +182,8 @@ case class IndentParser(var st: IndentState = IndentState()) {
     // TODO refactor this functionally
     parsed match {
       // Blank NewlineToken: safely ignore
-      case NewlineToken(None) :: Nil => return (Nil, st)
-      case CommentToken(_) :: NewlineToken(_) :: Nil => return (parsed, st)
+      case NewlineToken(_) :: Nil => return (Nil, st)
+      case CommentToken(_) :: NewlineToken(_) :: Nil => return (Nil, st)
       case t :: Nil => return (parsed, st)
       case _ =>
     }
@@ -201,8 +201,16 @@ case class IndentParser(var st: IndentState = IndentState()) {
     })
     // if current state is already implicit line joining, do it
     // ie. newline token at the last should be eliminated
+    if (st.delims.nonEmpty) {
+      if (newDelimSt.delims.nonEmpty) {
+        return (parsed.dropRight(1), newDelimSt)
+      }
+      else {
+        return (parsed, newDelimSt)
+      }
+    }
     if (newDelimSt.delims.nonEmpty) {
-      (parsed.dropRight(1), newDelimSt)
+      return (parsed.dropRight(1), newDelimSt)
     }
 
     // else, normal mode

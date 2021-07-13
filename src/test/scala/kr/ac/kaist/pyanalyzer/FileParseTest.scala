@@ -30,6 +30,7 @@ class FileParseTest extends AnyFunSuite {
   // parsing routine
   def parseSource(t: String) = {
     val tokens = Tokenizer.tokenizeText(t)
+    prompt(s"${CYAN}tokenized raw:${RESET}\n${tokens}")
     prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
     
     if (tokens.isEmpty) throw EmptyFileException
@@ -75,6 +76,7 @@ class FileParseTest extends AnyFunSuite {
         prompt(s"${MAGENTA}Epoch $epoch: Empty File${RESET}\n\n")
         cancel 
       case e => 
+        throw e
         prompt(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
         fail
     }

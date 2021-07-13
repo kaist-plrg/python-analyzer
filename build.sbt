@@ -18,7 +18,7 @@ lazy val root = (project in file("."))
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.0.0",
       "org.scalatest" %% "scalatest-funsuite" % "3.2.9" % "test",
     ),
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDG"),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     parallelExecution in Test := true,
     prodTest := (testOnly in Test).toTask(" *ProdTest").value,
     fileParseTest := (testOnly in Test).toTask(" *FileParseTest").value,

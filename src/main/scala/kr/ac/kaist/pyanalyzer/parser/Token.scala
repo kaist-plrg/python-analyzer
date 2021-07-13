@@ -7,7 +7,7 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 object Token {
   def toPrettyString(token: Token): String = token match {
     case NewlineToken(None) => "\\NL\n"
-    case NewlineToken(Some(s)) => s"${s}\\NL\n"
+    case NewlineToken(Some(s)) => s"${s} \\NL\n"
     case CommentToken(s) => s"# type:$s"
     case IndentToken => "INDENT"
     case DedentToken => "DEDENT"
@@ -50,7 +50,7 @@ object Token {
     }).mkString("")
 }
 abstract class Token(name: String, content: String) {
-  override def toString: String = Token.toPrettyString(this)
+  //override def toString: String = Token.toPrettyString(this)
 }
 
 case class NewlineToken(comment: Option[String] = None) extends Token(
