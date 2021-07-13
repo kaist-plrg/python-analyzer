@@ -5,7 +5,9 @@ import scala.util.parsing.input._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object TokenListParser extends TokenListParsers {
-  def apply(ts: Seq[Token]) = ???
+  def apply(tokens: Seq[Token]) = statements(
+    new PackratReader(TokenListParser.TokenReader(tokens))
+  )
 }
 trait TokenListParsers extends PackratParsers {
   ///////////////////////////////////////////////////////////////////

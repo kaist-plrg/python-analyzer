@@ -1,6 +1,5 @@
 package kr.ac.kaist.pyanalyzer.parser
 
-import kr.ac.kaist.pyanalyzer.CmdParseREPL._
 import kr.ac.kaist.pyanalyzer.LINE_SEP
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
@@ -14,6 +13,11 @@ import org.jline.reader.impl._
 import org.jline.terminal._
 import scala.Console._
 object ParseREPL {
+  val help = s"""${CYAN}
+  Parse the stmt/expr/subterms on the REPL
+  You can give command starts with ":"
+  Using tab is helpful for checking the command and option
+${RESET}"""
   val commandList = List(
     "quit", "token",
   )
