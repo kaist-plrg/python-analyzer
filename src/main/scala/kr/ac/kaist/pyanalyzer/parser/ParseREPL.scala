@@ -1,13 +1,11 @@
 package kr.ac.kaist.pyanalyzer.parser
 
+import kr.ac.kaist.pyanalyzer.CmdParseREPL._
 import kr.ac.kaist.pyanalyzer.LINE_SEP
-import kr.ac.kaist.pyanalyzer.PyAnalyzer.Command
-import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
-import kr.ac.kaist.pyanalyzer.parser.Token._
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
-import kr.ac.kaist.pyanalyzer.parser.SourceParser._
+import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import org.jline.builtins.Completers.TreeCompleter
 import org.jline.builtins.Completers.TreeCompleter.{Node => CNode, node}
@@ -15,17 +13,7 @@ import org.jline.reader._
 import org.jline.reader.impl._
 import org.jline.terminal._
 import scala.Console._
-import scala.util.parsing.input.Reader
-import scala.util.Try
-
-case object CmdParseREPL extends Command {
-  val name = "parse-repl"
-  val help = s"""${CYAN}
-  Parse the stmt/expr/subterms on the REPL
-  You can give command starts with ":"
-  Using tab is helpful for checking the command and option
-${RESET}"""
-
+object ParseREPL {
   val commandList = List(
     "quit", "token",
   )
