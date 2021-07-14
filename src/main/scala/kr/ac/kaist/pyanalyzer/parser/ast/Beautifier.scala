@@ -84,7 +84,7 @@ object Beautifier {
       implicit val leApp: App[List[Expr]] = (app, le) =>
         le.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine)
       app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", retType) ~ ":" ~
-        &(app.newLine + "# type: ", tyExpr) ~ *(body)
+        &(app.newLine +"", tyExpr) ~ *(body)
     case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
       app ~ "async " ~ FunDef(decos, name, args, retType, tyExpr, body)
     case ClassDef(decos, name, exprs, kwds, body) =>
@@ -99,13 +99,13 @@ object Beautifier {
       app ~ "del " ~ le ~ app.newLine
     case AssignStmt(targets, e, ty) =>
       targets.foldLeft(app)((app, target) => app ~ target ~ " = ") ~
-        e ~ &(" # type: ", ty) ~ app.newLine
+        e ~ &("", ty) ~ app.newLine
     case AugAssign(target, op, e) =>
       app ~ target ~ " " ~ op ~ "= " ~ e ~ app.newLine
     case AnnAssign(target, ann, e) =>
       app ~ target ~ ": " ~ ann ~ &(" = ", e) ~ app.newLine
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &(" # type: ", ty) ~
+      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &("", ty) ~
         *(doStmt) ~ *(elseStmt, "else:")
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
@@ -120,7 +120,7 @@ object Beautifier {
       }
     case WithStmt(ty, items, body) =>
       implicit val lApp = ListApp[WithItem](sep = ", ")
-      app ~ "with " ~ items ~ ":" ~ &(" # type: ", ty) ~ *(body)
+      app ~ "with " ~ items ~ ":" ~ &("", ty) ~ *(body)
     case AsyncWithStmt(ty, items, body) =>
       app ~ "async " ~ WithStmt(ty, items, body)
     case MatchStmt(e, cases) =>

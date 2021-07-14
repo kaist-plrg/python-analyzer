@@ -8,7 +8,7 @@ object Token {
   def toPrettyString(token: Token): String = token match {
     case NewlineToken(None) => "\\NL\n"
     case NewlineToken(Some(s)) => s"${s} \\NL\n"
-    case CommentToken(s) => s"# type:$s"
+    case CommentToken(s) => s"$s"
     case IndentToken => "INDENT"
     case DedentToken => "DEDENT"
     case IdToken(s) => s"id($s)"
@@ -25,7 +25,7 @@ object Token {
   def toColoredString(token: Token): String = token match {
     case NewlineToken(None) => colored(GRAY)("\\n") + "\n"
     case NewlineToken(Some(s)) => colored(GRAY)(s"#$s \\n") + "\n"
-    case CommentToken(s) => colored(GRAY)(s"# type:$s")
+    case CommentToken(s) => colored(GRAY)(s"$s")
     case IndentToken => colored(GRAY)("IN")
     case DedentToken => colored(GRAY)("DE")
     case IdToken(s) => bolded(s"$s")
@@ -37,6 +37,9 @@ object Token {
     case ImagToken(i) => colored(YELLOW)(s"${i}j")
     case OpToken(s) => colored(CYAN)(s)
     case DelimToken(s) => colored(CYAN)(s)
+    case EndToken => colored(GRAY)("ENDTOKEN")
+    case ExpJoinToken => colored(GRAY)("\\")
+    case LongStrToken(q, s) => colored(YELLOW)(s"$q$s")
   }
 
   def printTokens(tokens: List[Token]): Unit = tokens.foreach(t => print(toPrettyString(t)))
@@ -71,3 +74,8 @@ case class ImagToken(i: Double) extends Token("imag literal", i.toString)
 
 case class OpToken(s: String) extends Token("op", s)
 case class DelimToken(s: String) extends Token("delim", s)
+
+case object EndToken extends Token("Endtoken", "END")
+// auxilary token for parsing context
+case object ExpJoinToken extends Token("ExpJoin", "\\")
+case class LongStrToken(quote: String, s: String) extends Token("LongStr", s)
