@@ -36,8 +36,8 @@ trait Tokenizers extends RegexParsers {
   lazy val keyword = keywords.mkString("|").r ^^ KeywordToken
 
   // literals
-  lazy val shortSingleQuote = "'".r ~> "([^\\\\']|\\\\.)*".r <~ "'".r
-  lazy val shortDoubleQuote = "\"".r ~> "([^\\\\\"]|\\\\.)*".r <~ "\"".r
+  lazy val shortSingleQuote = "'".r ~> "([^\n\\\\']|\\\\.)*".r <~ "'".r
+  lazy val shortDoubleQuote = "\"".r ~> "([^\n\\\\\"]|\\\\.)*".r <~ "\"".r
   lazy val shortQuote = shortSingleQuote | shortDoubleQuote
   lazy val longSingleQuote = "'''".r ~> "([^\\\\]|\\\\.)*(?=''')".r <~ "'''".r
   lazy val longDoubleQuote = "\"\"\"".r ~> "([^\\\\]|\\\\.)*(?=\"\"\")".r <~ "\"\"\"".r
