@@ -1,10 +1,7 @@
 package kr.ac.kaist.pyanalyzer
 
+import kr.ac.kaist.pyanalyzer.parser.Parse
 import kr.ac.kaist.pyanalyzer.parser.ParseREPL
-import kr.ac.kaist.pyanalyzer.parser.SourceParser._
-import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
-import kr.ac.kaist.pyanalyzer.parser.TokenListParser
-import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
@@ -47,30 +44,7 @@ case object CmdHelp extends Command {
 case object CmdParse extends Command {
   val name = "parse"
   val help = "Parse python code and build AST"
-  def apply(params: List[String]): Unit = {
-      // TODO: handle the AST
-      // TODO: refactor verbous call
-//    val files = walkTree(HOROVOD_DIR)
-//    for {
-//      file <- files
-//      path = file.getPath() if path endsWith ".py"
-//    } {
-      // this path is for debugging
-      // TODO: change the path to above commented path
-      val path = s"$BASE_DIR/test.py"
-      println
-      println(s"$CYAN<$path>$RESET")
-      try {
-        val text = readSource(path)
-        val tokens = tokenizeText(text)
-        val ast = TokenListParser(tokens).get
-        println(beautify(ast))
-      } catch {
-        case e: Throwable => println(e.getMessage)
-      }
-      println
-//    }
-  }
+  def apply(params: List[String]): Unit = Parse(params)
 }
 
 case object CmdParseREPL extends Command {
