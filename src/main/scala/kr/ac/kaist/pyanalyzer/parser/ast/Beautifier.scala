@@ -35,13 +35,13 @@ object Beautifier {
       implicit val lApp = ListApp[Pattern](sep =  ", ")
       app ~ "[" ~ pl ~ "]"
     case MatchStar(nopt) => 
-      app ~ "*" ~ &("", nopt, "")
+      app ~ "*" ~ ?(nopt)
     case MatchMapping(map, nopt) =>
       implicit val mapApp: App[(Expr, Pattern)] = {
         case (app, (e, p)) => app ~ e ~ " : " ~ p
       }
       implicit val lApp = ListApp[(Expr, Pattern)](sep = ", ")
-      app ~ "{" ~ map ~ &(",", nopt, "") ~ "}"
+      app ~ "{" ~ map ~ ?(nopt, ",") ~ "}"
     case MatchClass(ce, pl, map) =>
       implicit val mapApp: App[(Id, Pattern)] = {
         case (app, (x, p)) => app ~ x ~ " = " ~ p
@@ -50,7 +50,7 @@ object Beautifier {
       implicit val mlApp = ListApp[(Id, Pattern)]("", ", ", ", ")
       app ~ ce ~ "(" ~ pl ~ map ~ ")"
     case MatchAs(popt, x) =>
-      app ~ &("", popt, " as ") ~ x
+      app ~ ?(popt, "", " as ") ~ x
     case MatchOr(pl) =>
       implicit val plApp = ListApp[Pattern](sep = " | ")
       app ~ pl
@@ -63,17 +63,17 @@ object Beautifier {
   implicit lazy val aliasApp: App[Alias] = (app, alias) => alias match {
     case Alias(nl, asOpt) =>
       implicit val nlApp = ListApp[Id](sep = ".")
-      app ~ nl ~ &(" as ", asOpt, "")
+      app ~ nl ~ ?(asOpt, " as ")
   }
 
   implicit lazy val withItemApp: App[WithItem] = (app, withItem) => withItem match {
     case WithItem(e, aopt) =>
-      app ~ e ~ &(" as ", aopt, "")
+      app ~ e ~ ?(aopt, " as ")
   }
 
   implicit lazy val excApp: App[ExcHandler] = {
     case (app, ExcHandler(eOpt, xOpt, body)) =>
-      app ~ "except" ~ &(" ", eOpt) ~ &(" as ", xOpt) ~ ":" ~ *(body)
+      app ~ "except" ~ ?(eOpt, " ") ~ ?(xOpt, " as ") ~ ":" ~ wrap(body)
   }
 
   // TODO
@@ -83,8 +83,8 @@ object Beautifier {
     case FunDef(decos, name, args, retType, tyExpr, body) =>
       implicit val leApp: App[List[Expr]] = (app, le) =>
         le.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine)
-      app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ &("->", retType) ~ ":" ~
-        &(app.newLine +"", tyExpr) ~ *(body)
+      app ~ decos ~ "def " ~ name ~ "(" ~ args ~ ")" ~ ?(retType, "->") ~ ":" ~
+        ?(tyExpr, app.newLine) ~ wrap(body)
     case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
       app ~ "async " ~ FunDef(decos, name, args, retType, tyExpr, body)
     case ClassDef(decos, name, exprs, kwds, body) =>
@@ -92,55 +92,56 @@ object Beautifier {
       implicit val klApp = ListApp[Kwarg]("", ", ", ", ")
       decos.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine) ~
         "class " ~ name ~ "(" ~ exprs ~ kwds ~ ")" ~ ":" ~
-        *(body)
-    case ReturnStmt(e) => app ~ "return " ~ &(opt = e) ~ app.newLine
+        wrap(body)
+    case ReturnStmt(e) => app ~ "return " ~ ?(e) ~ app.newLine
     case DelStmt(le) =>
       implicit val lApp = ListApp[Expr](sep = ", ")
       app ~ "del " ~ le ~ app.newLine
     case AssignStmt(targets, e, ty) =>
       targets.foldLeft(app)((app, target) => app ~ target ~ " = ") ~
-        e ~ &("", ty) ~ app.newLine
+        e ~ ?(ty) ~ app.newLine
     case AugAssign(target, op, e) =>
       app ~ target ~ " " ~ op ~ "= " ~ e ~ app.newLine
     case AnnAssign(target, ann, e) =>
-      app ~ target ~ ": " ~ ann ~ &(" = ", e) ~ app.newLine
+      app ~ target ~ ": " ~ ann ~ ?(e, " = ") ~ app.newLine
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ &("", ty) ~
-        *(doStmt) ~ *(elseStmt, "else:")
+      app ~ "for " ~ forExpr ~ " in " ~ inExpr ~ ":" ~ ?(ty) ~
+        wrap(doStmt) ~ wrap(elseStmt, "else:")
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       app ~ "async " ~ ForStmt(ty, forExpr, inExpr, doStmt, elseStmt)
     case WhileStmt(cond, body, elseStmt) =>
-      app ~ "while " ~ cond ~ ":" ~ *(body) ~ *(elseStmt, "else:")
+      app ~ "while " ~ cond ~ ":" ~ wrap(body) ~ wrap(elseStmt, "else:")
     case IfStmt(cond, thenStmt, elseStmt) =>
-      app ~ "if " ~ cond ~ ":" ~ *(thenStmt)
+      app ~ "if " ~ cond ~ ":" ~ wrap(thenStmt)
       elseStmt match {
         case Nil => app
         case s :: Nil if s.isInstanceOf[IfStmt] => app ~ "el" ~ s
-        case stmts => app ~ "else:" ~ *(stmts)
+        case stmts => app ~ "else:" ~ wrap(stmts)
       }
     case WithStmt(ty, items, body) =>
       implicit val lApp = ListApp[WithItem](sep = ", ")
-      app ~ "with " ~ items ~ ":" ~ &("", ty) ~ *(body)
+      app ~ "with " ~ items ~ ":" ~ ?(ty) ~ wrap(body)
     case AsyncWithStmt(ty, items, body) =>
       app ~ "async " ~ WithStmt(ty, items, body)
     case MatchStmt(e, cases) =>
       implicit val caseApp: App[MatchCase] = {
         case (app, MatchCase(pat, cond, body)) =>
-          app ~ "case " ~ pat ~ &(" if ", cond) ~ ":" ~ *(body)
+          app ~ "case " ~ pat ~ ?(cond, " if ") ~ ":" ~ wrap(body)
       }
       implicit val lcApp = ListApp[MatchCase]()
-      app ~ "match " ~ e ~ ":" ~ *(cases)
+      app ~ "match " ~ e ~ ":" ~ wrap(cases)
     case RaiseStmt(e, from) =>
-      app ~ "raise " ~ &(opt = e) ~ &(" from ", from) ~ app.newLine
+      app ~ "raise " ~ ?(e) ~ ?(from, " from ") ~ app.newLine
     case TryStmt(body, handlers, elseStmt, finStmt) =>
       implicit val lApp = ListApp[ExcHandler]()
-      app ~ "try:" ~ *(body) ~ handlers ~ *(elseStmt, "else:") ~ *(finStmt, "finally:")
-    case AssertStmt(c, opt) => app ~ "assert " ~ c ~ &(",", opt, "") ~ app.newLine
+      app ~ "try:" ~ wrap(body) ~ handlers ~ wrap(elseStmt, "else:") ~
+        wrap(finStmt, "finally:")
+    case AssertStmt(c, opt) => app ~ "assert " ~ c ~ ?(opt, ",") ~ app.newLine
     case ImportStmt(aliases) =>
       implicit val lApp = ListApp[Alias](sep = ", ")
       app ~ "import " ~ aliases ~ app.newLine
     case ImportFromStmt(level, from, aliases) =>
-      implicit val lxApp = ListApp[Id]("", ".", "")
+      implicit val lxApp = ListApp[Id]("", ".")
       implicit val laApp = ListApp[Alias](sep = ", ")
       val aliasesApp: Update = app => aliases match {
         case Nil => app ~ "*"
@@ -198,15 +199,16 @@ object Beautifier {
       implicit val lApp = ListApp[Expr](sep = ", ")
       app ~ "[" ~ l ~ "]"
     case TupleExpr(tup) =>
-      val isSlices = !tup.forall(e => !e.isInstanceOf[Slice])
-      val wrapper = if (isSlices) ("", "") else ("(", ")")
-      lazy val tupApp = tup match {
+      val notSlices = tup.forall(e => !e.isInstanceOf[Slice])
+      val open = if (notSlices) Some("(") else None
+      val close = if (notSlices) Some(")") else None
+      lazy val tupApp: Update = app => tup match {
         case head :: Nil => app ~ head ~ ","
         case tup =>
           implicit val lApp = ListApp[Expr](sep = ", ")
           app ~ tup
       }
-      app.wrap(wrapper)(tupApp)
+      app ~ ?(open) ~ tupApp ~ ?(close)
     case ListComp(target, comp) =>
       implicit val lApp = ListApp[Comprehension](sep = " ")
       app ~ "[" ~ target ~ " " ~ comp ~ "]"
@@ -223,7 +225,7 @@ object Beautifier {
       implicit val lApp = ListApp[Comprehension](sep = " ")
       app ~ "(" ~ target ~ " "  ~ comp ~ ")"
     case AwaitExpr(e) => app ~ "await " ~ e
-    case YieldExpr(opt) => app ~ "yield " ~ &(opt = opt)
+    case YieldExpr(opt) => app ~ "yield " ~ ?(opt)
     case YieldFromExpr(e) => app ~ "yield from " ~ e
     case CompExpr(h, lp) =>
       implicit val pApp: App[(CompOp, Expr)] = {
@@ -244,28 +246,29 @@ object Beautifier {
     case Starred(e) => app ~ "*" ~ e
     case DoubleStarred(e) => app ~ "**" ~ e
     case EName(x) => app ~ x
-    case Slice(lb, ub, step) => app ~ &(opt = lb) ~ ":" ~ &(opt = ub) ~ &(":", step)
+    case Slice(lb, ub, step) => app ~ ?(lb) ~ ":" ~ ?(ub) ~ ?(step, ":")
     case GroupExpr(e) => app ~ "(" ~ e ~ ")"
   }
 
   implicit lazy val comprehensionApp: App[Comprehension] = {
-    case (app, Comprehension(target, inExpr, ifExpr, async)) =>
+    case (app, Compre(target, inExpr, ifExpr)) =>
       implicit val lApp = ListApp[Expr](" if ", " if ")
-      app ~ (if (async) "async " else "") ~
-        "for " ~ target ~ " in " ~ inExpr ~ ifExpr
+      app ~ "for " ~ target ~ " in " ~ inExpr ~ ifExpr
+    case (app, AsyncCompre(target, inExpr, ifExpr)) =>
+      app ~ "async " ~ Compre(target, inExpr, ifExpr)
   }
 
   implicit lazy val argumentApp: App[Argument] = (app, argument) => argument match {
     case Args(pos, norm, varArg, key, kwarg) =>
       implicit val pApp: App[(Arg, Option[Expr])] = {
-        case (app, (arg, opt)) => app ~ arg ~ &("=", opt)
+        case (app, (arg, opt)) => app ~ arg ~ ?(opt, "=")
       }
       implicit val lApp = ListApp[(Arg, Option[Expr])]("", ", ", ", ")
       val star = if (varArg.isInstanceOf[None.type] && key.nonEmpty) "*, " else ""
-      app ~ ^("", pos, "/, ") ~ norm ~ star ~ &("*", varArg, ", ") ~
-        key ~ &("**", kwarg, ", ")
-    case Arg(x, ann, ty) => app ~ x ~ &(": ", ann) // TODO Add type comment
-    case Kwarg(opt, e) => app ~ &("", opt, "=") ~ e
+      app ~ ?(pos, "", "/, ") ~ norm ~ star ~ ?(varArg, "*", ", ") ~
+        key ~ ?(kwarg, "**", ", ")
+    case Arg(x, ann, ty) => app ~ x ~ ?(ann, ": ") // TODO Add type comment
+    case Kwarg(opt, e) => app ~ ?(opt, "", "=") ~ e
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {

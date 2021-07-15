@@ -53,12 +53,17 @@ case class Arg(
 case class Kwarg(id: Option[Id], expr: Expr) extends Argument
 
 // Comprehension
-case class Comprehension(
+trait Comprehension extends Node
+case class Compre(
   target: Expr,
   in: Expr,
-  conds: List[Expr],
-  async: Boolean = false
-) extends Node
+  conds: List[Expr]
+) extends Comprehension
+case class AsyncCompre(
+  target: Expr,
+  in: Expr,
+  conds: List[Expr]
+) extends Comprehension
 
 /////////////////////////////////////////////
 // Statements

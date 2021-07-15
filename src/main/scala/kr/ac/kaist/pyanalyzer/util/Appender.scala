@@ -20,27 +20,13 @@ class Appender(tab: String = "  ") {
   def ~[T](x: T)(implicit app: App[T]): Appender = app(this, x)
   def ~(f: Update): Appender = f(this)
   def ~(app: Appender) = app
-  def ~[T](opt: &[T])(implicit app: App[T]): Appender = opt match {
-    case &(l, None, r) => this
-    case &(l, Some(v), r) => this ~ l ~ v ~ r
+  def ~[T](opt: ?[T])(implicit app: App[T]): Appender = opt match {
+    case ?(None, l, r) => this
+    case ?(Some(v), l, r) => this ~ l ~ v ~ r
   }
-  def ~[T](opt: ^[T])(implicit app: App[List[T]]): Appender = opt match {
-    case ^(l, Nil, r) => this
-    case ^(l, list, r) => this ~ l ~ list ~ r
-  }
-  def ~[T](block: *[T])(implicit app: App[T]): Appender = block match {
-    case *(Nil, l, r) => this
-    case *(list, l, r) => this ~ l ~ newLine ~ indent ~ list ~ dedent ~ r
-  }
-
-  // TODO: Refactor
-  def wrap(
-    lr: (String, String) = ("", "")
-  )(f: => Unit): Appender = {
-    val (l, r) = lr
-    this ~ l
-    f
-    this ~ r
+  def ~[T](block: wrap[T])(implicit app: App[T]): Appender = block match {
+    case wrap(Nil, l, r) => this
+    case wrap(list, l, r) => this ~ l ~ newLine ~ indent ~ list ~ dedent ~ r
   }
 }
 object Appender {
@@ -74,11 +60,11 @@ object Appender {
       app ~ right
   }
 
-  def sepOpt[T, U](l1: List[T], l2: List[U], sep: String): Option[String] =
-    if (l1.nonEmpty && l2.nonEmpty) Some(sep) else None
+  case class ?[T](opt: Option[T], l: String = "", r: String = "")
+  case class wrap[T](block: T, l: String = "", r: String = "")
 
-  // TODO: Give appropriate name!
-  case class &[T](l: String = "", opt: Option[T], r: String = "")
-  case class *[T](block: T, l: String = "", r: String = "")
-  case class ^[T](l: String = "", list: List[T], r: String = "")
+  implicit def toListOpt[T](l: List[T]): Option[List[T]] = l match {
+    case Nil => None
+    case l => Some(l)
+  }
 }
