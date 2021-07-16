@@ -142,16 +142,24 @@ trait TokenListParsers extends PackratParsers {
   lazy val nl: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
     case NewlineToken(None) => Success("", in.rest)
     case NewlineToken(Some(s)) => Success(s, in.rest)
+    case CommentToken(s) => firstMap(in.rest, _ match {
+      case NewlineToken(None) => Success(s, in.rest.rest)
+      case _ => Failure(s"", in) // CommentToken must be followed by NewlineToken
+    })
     case _ => Failure(s"", in)
   })))("nl")
   lazy val comment: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
     case CommentToken(s) => Success(s, in.rest)
     case _ => Failure(s"", in)
   })))("comment")
+  lazy val typeComment: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
+    case CommentToken(s) if s.startsWith("# type:") => Success(s, in.rest)
+    case _ =>  Failure(s"", in)
+  })))("typeComment")
   
    // type comment starts with `# type: ` (including whitespaces)
    // corresponds to `TYPE_COMMENT` in spec
-  lazy val typeComment: PackratParser[String] = log(comment)("typeComment")
+  //lazy val typeComment: PackratParser[String] = log(comment)("typeComment")
   lazy val funcTypeComment: PackratParser[String] = (
     "\n" ~> typeComment <~ guard(nl ~ indent) |
     typeComment
@@ -1001,7 +1009,7 @@ trait TokenListParsers extends PackratParsers {
   // Block : List of Stmt
   /////////////////////////////////
   lazy val block: PackratParser[List[Stmt]] = (
-    ("\n" ~ indent) ~> statements <~ dedent | 
+    (rep1(nl) ~ indent) ~> statements <~ dedent | 
     simpleStmts ^^ {
       case OnelineStmt(sl) =>  sl
       case s => List(s)

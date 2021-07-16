@@ -30,7 +30,7 @@ class FileParseTest extends AnyFunSuite {
   // parsing routine
   def parseSource(t: String) = {
     val tokens = Tokenizer.tokenizeText(t)
-    prompt(s"${CYAN}tokenized raw:${RESET}\n${tokens}")
+    //prompt(s"${CYAN}tokenized raw:${RESET}\n${tokens}")
     prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
     
     if (tokens.isEmpty) throw EmptyFileException
@@ -57,14 +57,14 @@ class FileParseTest extends AnyFunSuite {
 
       prompt("----First Parse--------------------")
       val ast01 = parseSource(text) 
-      prompt(s"${CYAN}First ast:${RESET}\n$ast01\n")
+      //prompt(s"${CYAN}First ast:${RESET}\n$ast01\n")
       
       val pretty01: String = beautify(ast01)
       prompt(s"${CYAN}Beautified as:${RESET}\n$pretty01\n")
 
       prompt("----Second Parse--------------------")
       val ast02 = parseSource(pretty01)
-      prompt(s"${CYAN}Second ast:${RESET}\n$ast02\n")
+      //prompt(s"${CYAN}Second ast:${RESET}\n$ast02\n")
 
       val pretty02: String = beautify(ast02)
       prompt(s"${CYAN}Beautified as:${RESET}\n$pretty02\n")
