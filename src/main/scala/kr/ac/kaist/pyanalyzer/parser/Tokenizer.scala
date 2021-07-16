@@ -275,6 +275,7 @@ case class IndentParser(var st: IndentState = IndentState()) {
               case Some(m) =>
                 result = result :+ StrToken(contStr + curLine.substring(0, m.start))
                 curLine = curLine.substring(m.end)
+                result = result :+ NewlineToken()
                 contStr = ""
                 needCont = false
                 contLine = ""
@@ -361,7 +362,7 @@ case class IndentParser(var st: IndentState = IndentState()) {
             case LongStrToken(q, s) => {
               result = result ++ parsed.init
               contStrQuote = q
-              contStrQuote = s
+              contStr = s.replaceFirst(q, "")
               needCont = true
               contLine = curLine
             }

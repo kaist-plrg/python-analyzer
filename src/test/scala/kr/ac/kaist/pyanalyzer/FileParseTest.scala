@@ -28,12 +28,12 @@ class FileParseTest extends AnyFunSuite {
   }
 
   // parsing routine
-  def parseSource(t: String) = {
+  def parseSource(t: String, checkEmpty: Boolean = false) = {
     val tokens = Tokenizer.tokenizeText(t)
     //prompt(s"${CYAN}tokenized raw:${RESET}\n${tokens}")
     prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
     
-    if (tokens.isEmpty) throw EmptyFileException
+    if (checkEmpty && tokens.isEmpty) throw EmptyFileException
 
     val reader = new PackratReader(TokenListParser.TokenReader(tokens))
     val parser = TokenListParser.module
@@ -56,7 +56,7 @@ class FileParseTest extends AnyFunSuite {
       prompt(s"${CYAN}Source Text:${RESET}\n$text\n")
 
       prompt("----First Parse--------------------")
-      val ast01 = parseSource(text) 
+      val ast01 = parseSource(text, true) 
       //prompt(s"${CYAN}First ast:${RESET}\n$ast01\n")
       
       val pretty01: String = beautify(ast01)
