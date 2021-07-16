@@ -70,7 +70,7 @@ ${RESET}"""
       }
     } catch {
       case e: EndOfFileException => throw new EndOfFileException
-      case e: Throwable => throw e
+      case e: Throwable => e.printStackTrace()
     } catch {
       case e: EndOfFileException => println("quit")
     }
