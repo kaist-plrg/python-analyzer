@@ -4,6 +4,8 @@ import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
+import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.util.Useful._
 
 trait Transformer {
   // transformed one AST into another AST
@@ -79,11 +81,11 @@ trait Transformer {
     case ExprStmt(Call(f, le, lk)) => (env.get("optimizer"), f) match {
       case (Some(x), Attribute(EName(fname), Id("apply_gradients")))
         if x == fname => 
-          val newid = newId()
+          val newid = newId
           findKwarg(lk, "grads_and_vars") match {
-            case Some(Kwarg(_, e)) => (parseStmt(s"""
+            case Some(Kwarg(_, e)) => (parseStmts(s"""
             $newid = ${beautify(e)}
-            """
+            """ +
             // TODO: Add arg change
             s"""global hvd_broadcast_done
             if not hvd_broadcast_done:
@@ -91,9 +93,9 @@ trait Transformer {
               hvd.broadcast_variables(optimizer.variables(), root_rank=0)
               hvd_broadcast_done = True
             """), env)
-            case None => (parseStmt(s"""
+            case None => (parseStmts(s"""
             $newid = ${beautify(le.head)}
-            """// TODO: assert le is nonempty
+            """ + // TODO: assert le is nonempty
             // TODO: Add arg change
             s"""global hvd_broadcast_done
             if not hvd_broadcast_done:
@@ -272,4 +274,7 @@ trait Transformer {
     TokenListParser(tokenizeText(code))
 
   }
+
+  def newId: String = ???
+  def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] = ???
 }

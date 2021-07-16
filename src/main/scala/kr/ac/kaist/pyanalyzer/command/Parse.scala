@@ -37,7 +37,7 @@ object Parse {
       try {
         val text = readSource(path)
         val tokens = tokenizeText(text)
-        val ast = TokenListParser(tokens).get
+        val ast = TokenListParser(tokens)
         println(beautify(ast))
       } catch {
         case e: Throwable => e.printStackTrace()
