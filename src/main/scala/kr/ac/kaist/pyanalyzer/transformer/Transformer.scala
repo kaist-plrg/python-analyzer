@@ -74,8 +74,70 @@ trait Transformer {
     case NonlocalStmt(il) => (List(NonlocalStmt(il)), env)
   }
 
-  def transform(expr: Expr)(env: Env): Expr = expr match {
-    case _ => ???
+  def transform(expr: Expr)(implicit env: Env): Expr = expr match {
+    case BoolExpr(op, lhs, rhs) =>
+      BoolExpr(op, transform(lhs), transform(rhs))
+    case NamedExpr(lhs, rhs) =>
+      NamedExpr(lhs, transform(rhs))
+    case BinaryExpr(op, lhs, rhs) =>
+      BinaryExpr(op, transform(lhs), transform(rhs))
+    case UnaryExpr(op, e) => UnaryExpr(op, transform(e))
+    case LambdaExpr(args, e) => LambdaExpr(args, transform(e))
+    case IfExpr(e, cond, ee) =>
+      IfExpr(transform(e),transform(cond),transform(ee))
+    case DictExpr(map, dstar) => DictExpr(
+      map.map {
+        case (k, v) => (k, transform(v))
+      },
+      dstar
+    )
+    case SetExpr(set) =>
+      SetExpr(set.map(transform))
+    case ListExpr(list) =>
+      ListExpr(list.map(transform))
+    case TupleExpr(tup) =>
+      TupleExpr(tup.map(transform))
+    case DictComp((k, v), comps) => DictComp(
+      (k, transform(v)),
+      comps.map(comp => transform(comp)(env))
+    )
+    case SetComp(target, comps) => SetComp(
+      transform(target),
+      comps.map(comp => transform(comp)(env))
+    )
+    case ListComp(target, comps) => ListComp(
+      transform(target),
+      comps.map(comp => transform(comp)(env))
+    )
+    case GenComp(target, comps) => GenComp(
+      transform(target),
+      comps.map(comp => transform(comp)(env))
+    )
+    case AwaitExpr(e) => AwaitExpr(transform(e))
+    case YieldExpr(opt) => YieldExpr(opt.map(transform))
+    case YieldFromExpr(e) => YieldFromExpr(transform(e))
+    case CompExpr(head, lp) => CompExpr(
+      transform(head),
+      lp.map {
+        case (op, e) => (op, transform(e))
+      }
+    )
+    case Call(f, e, kwds) => ???
+    case FormattedValue(lhs, n, rhs) => ???
+    case JoinedStr(le) => JoinedStr(le)
+    case EConst(e) => EConst(e)
+    case Attribute(e, field) => ??? // TODO id? e?
+    case Subscript(e, slice) =>
+      Subscript(transform(e), transform(slice))
+    case Starred(e) => Starred(e)
+    case DoubleStarred(e) => DoubleStarred(e)
+    case EName(x) => EName(x)
+    case Slice(begin, end, step) => Slice(
+      begin.map(transform),
+      end.map(transform),
+      step.map(transform)
+    )
+    case GroupExpr(e) => e
   }
 
   def transform(comp: Comprehension)(env: Env): Comprehension = comp match {
