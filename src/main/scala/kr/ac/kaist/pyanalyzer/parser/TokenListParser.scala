@@ -599,16 +599,16 @@ trait TokenListParsers extends PackratParsers {
     case ol => ol.flatten
   }
   lazy val stmtOrComments: PackratParser[Option[Stmt]] = (
-    statement <~ (opt(comment) ~ opt("\n")) ^^ { case s => Some(s) } |
-    opt(comment) ~ nl ^^ { case _ => None }
+    statement <~ opt(nl) ^^ { case s => Some(s) } |
+    nl ^^ { case _ => None }
   )
   lazy val statement: PackratParser[Stmt] =
     compoundStmt | simpleStmts  
   
-  lazy val simpleStmtsOne: PackratParser[Stmt] = (simpleStmt <~ (not(";") ~ "\n")) 
+  lazy val simpleStmtsOne: PackratParser[Stmt] = (simpleStmt <~ (not(";") ~ nl)) 
   lazy val simpleStmts: PackratParser[Stmt] = ( 
     simpleStmtsOne | 
-    (rep1sep(simpleStmt, ";") <~ (opt(";") ~ "\n")) ^^ OnelineStmt
+    (rep1sep(simpleStmt, ";") <~ (opt(";") ~ nl)) ^^ OnelineStmt
   )
 
   lazy val simpleStmt: PackratParser[Stmt] =
