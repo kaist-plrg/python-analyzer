@@ -1,6 +1,7 @@
 package kr.ac.kaist.pyanalyzer
 
-import kr.ac.kaist.pyanalyzer.Command._
+import kr.ac.kaist.pyanalyzer.command._
+import kr.ac.kaist.pyanalyzer.command.Command._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
 object PyAnalyzer {
