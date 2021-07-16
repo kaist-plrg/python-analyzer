@@ -46,7 +46,7 @@ case class FormattedValue(lhs: Expr, n: Option[Int], rhs: Option[Expr]) extends 
 // Other simple expressions
 case class JoinedStr(exprs: List[Expr]) extends Expr
 case class EConst(c: Const) extends Expr
-case class Attribute(expr: Expr, field: Expr) extends Expr
+case class Attribute(expr: Expr, field: Id) extends Expr
 case class Subscript(expr: Expr, slice: Expr) extends Expr
 case class Starred(expr: Expr) extends Expr
 case class DoubleStarred(expr: Expr) extends Expr

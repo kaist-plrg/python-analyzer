@@ -361,7 +361,7 @@ trait TokenListParsers extends PackratParsers {
     "await" ~> primary ^^ AwaitExpr | primary
   lazy val primary: PackratParser[Expr] =
     // //invalidPrimary |
-    primary ~ ("." ~> id) ^^ { case e ~ i => Attribute(e, EName(i)) } |
+    primary ~ ("." ~> id) ^^ { case e ~ i => Attribute(e, i) } |
     primary ~ genexp ^^ {
       case f ~ g => Call(f, List(g))
     } | primary ~ ("(" ~> opt(arguments) <~ ")") ^^ {
@@ -522,7 +522,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val starTarget: PackratParser[Expr] = ("*" ~ not("*")) ~> starTarget ^^ Starred |
     targetWithStarAtom
   lazy val targetWithStarAtom: PackratParser[Expr] = tPrimary ~ ("." ~> id <~ not(tLookahead)) ^^ {
-    case prim ~ x => Attribute(prim, EName(x))
+    case prim ~ x => Attribute(prim, x)
   } | tPrimary ~ ("[" ~> slices <~ "]" ~ not(tLookahead)) ^^ {
     case prim ~ s => Subscript(prim, s)
   } | starAtom
@@ -537,7 +537,7 @@ trait TokenListParsers extends PackratParsers {
   )
   lazy val singleSubscriptAttrTarget: PackratParser[Expr] = (
     tPrimary ~ ("." ~> id) <~ not(tLookahead) ^^ {
-      case prim ~ x => Attribute(prim, EName(x))
+      case prim ~ x => Attribute(prim, x)
     } | 
     tPrimary ~ ("[" ~> slices <~ "]") <~ not(tLookahead) ^^ {
       case prim ~ s => Subscript(prim, s)
@@ -553,7 +553,7 @@ trait TokenListParsers extends PackratParsers {
     }
   lazy val delTarget: PackratParser[List[Expr]] = (
     tPrimary ~ ("." ~> id) <~ not(tLookahead) ^^ {
-      case prim ~ x => List(Attribute(prim, EName(x)))  
+      case prim ~ x => List(Attribute(prim, x))
     }
     | tPrimary ~ ("[" ~> slices <~ "]") <~ not(tLookahead) ^^ {
       case prim ~ s => List(Subscript(prim, s)) 
@@ -569,7 +569,7 @@ trait TokenListParsers extends PackratParsers {
 
   lazy val tPrimary: PackratParser[Expr] = (
     tPrimary ~ ("." ~> id <~ guard(tLookahead)) ^^ {
-      case prim ~ x => Attribute(prim, EName(x))
+      case prim ~ x => Attribute(prim, x)
     } | 
     tPrimary ~ ("[" ~> slices <~ "]" ~ guard(tLookahead)) ^^ {
       case prim ~ s => Subscript(prim, s)
@@ -823,7 +823,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val wildcardPat: PackratParser[Pattern] = "_" ^^^ MatchWildcard
   lazy val valuePat: PackratParser[Pattern] = attr <~ not("." | "(" | "=") ^^ MatchValue
   lazy val attr: PackratParser[Expr] = nameOrAttr ~ ("." ~> id) ^^ {
-    case e ~ x => Attribute(e, EName(x))
+    case e ~ x => Attribute(e, x)
   }
   lazy val nameOrAttr: PackratParser[Expr] = attr | id ^^ EName
   lazy val groupPat: PackratParser[Pattern] = "(" ~> pattern <~ ")" ^^ MatchGroup

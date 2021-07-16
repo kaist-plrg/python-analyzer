@@ -11,7 +11,9 @@ trait Transformer {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
   }
 
-  def transform(stmts: List[Stmt])(env: Env): (List[Stmt], Env) = 
+  def transform(stmts: List[Stmt])(
+    implicit env: Env
+  ): (List[Stmt], Env) =
     stmts.foldLeft( 
       (List[Stmt](), Env())
     )((pair, stmt) => pair match {
@@ -21,7 +23,9 @@ trait Transformer {
     })
 
   // TODO refactor divide into List[Stmt] and [Stmt] returning versions
-  def transform(stmt: Stmt)(env: Env) : (List[Stmt], Env) = stmt match {
+  def transform(stmt: Stmt)(
+    implicit env: Env
+  ) : (List[Stmt], Env) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
       (List(FunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1)), env) 
@@ -61,7 +65,7 @@ trait Transformer {
     case TryStmt(tryStmt, handlers, elseStmt, finallyStmt) =>
       val newTryStmt =
         TryStmt(
-          transform(tryStmt)(env)._1, handlers.map(handler => transform(handler)(env)),
+          transform(tryStmt)(env)._1, handlers.map(transform),
           transform(elseStmt)(env)._1, transform(finallyStmt)(env)._1)
       (List(newTryStmt), env)
     case AssertStmt(expr, toRaise) =>
@@ -74,7 +78,9 @@ trait Transformer {
     case NonlocalStmt(il) => (List(NonlocalStmt(il)), env)
   }
 
-  def transform(expr: Expr)(implicit env: Env): Expr = expr match {
+  def transform(expr: Expr)(
+    implicit env: Env
+  ): Expr = expr match {
     case BoolExpr(op, lhs, rhs) =>
       BoolExpr(op, transform(lhs), transform(rhs))
     case NamedExpr(lhs, rhs) =>
@@ -99,19 +105,19 @@ trait Transformer {
       TupleExpr(tup.map(transform))
     case DictComp((k, v), comps) => DictComp(
       (k, transform(v)),
-      comps.map(comp => transform(comp)(env))
+      comps.map(transform)
     )
     case SetComp(target, comps) => SetComp(
       transform(target),
-      comps.map(comp => transform(comp)(env))
+      comps.map(transform)
     )
     case ListComp(target, comps) => ListComp(
       transform(target),
-      comps.map(comp => transform(comp)(env))
+      comps.map(transform)
     )
     case GenComp(target, comps) => GenComp(
       transform(target),
-      comps.map(comp => transform(comp)(env))
+      comps.map(transform)
     )
     case AwaitExpr(e) => AwaitExpr(transform(e))
     case YieldExpr(opt) => YieldExpr(opt.map(transform))
@@ -126,7 +132,7 @@ trait Transformer {
     case FormattedValue(lhs, n, rhs) => ???
     case JoinedStr(le) => JoinedStr(le)
     case EConst(e) => EConst(e)
-    case Attribute(e, field) => ??? // TODO id? e?
+    case Attribute(e, x) => Attribute(e, x)
     case Subscript(e, slice) =>
       Subscript(transform(e), transform(slice))
     case Starred(e) => Starred(e)
@@ -140,23 +146,54 @@ trait Transformer {
     case GroupExpr(e) => e
   }
 
-  def transform(comp: Comprehension)(env: Env): Comprehension = comp match {
-    case Compre(target, in, conds) => ??? 
-    case AsyncCompre(target, in, conds) => ???
+  def transform(comp: Comprehension)(
+    implicit env: Env
+  ): Comprehension = comp match {
+    case Compre(target, in, conds) =>
+      Compre(target, transform(in), conds.map(transform))
+    case AsyncCompre(target, in, conds) =>
+      AsyncCompre(target, transform(in), conds.map(transform))
   }
 
-  def transform(handler: ExcHandler)(env: Env): ExcHandler = handler match {
-    case ExcHandler(except, asName, body) => ???
+  def transform(handler: ExcHandler)(
+    implicit env: Env
+  ): ExcHandler = handler match {
+    case ExcHandler(except, idOpt, body) =>
+      ExcHandler(except, idOpt, transform(body)._1)
   }
 
-  def transform(al: List[Alias])(env: Env): Env = al.foldLeft(env)((e, a) => transform(a)(e))
-  def transform(alias: Alias)(env: Env): Env = alias match {
-    case _ => ???
+  def transform(al: List[Alias])(
+    implicit env: Env
+  ): Env = al.foldLeft(env)((e, a) => transform(a)(e))
+  def transform(alias: Alias)(
+    implicit env: Env
+  ): Env = alias match {
+    case Alias(List(x), None) if x.name == "tensorflow" =>
+      env.add("tensor_flow", x)
+    case Alias(List(x), Some(as)) if x.name == "tensorflow" =>
+      env.add("tensor_flow", as)
+    case _ => env
   }
 
   // name changed because of same type after type erasure
-  def transformWithlist(wl: List[WithItem])(env: Env): (List[WithItem], Env) = ???
-  def transform(wi: WithItem)(env: Env): (WithItem, Env) = ???
+  def transformWithlist(wl: List[WithItem])(
+    implicit env: Env
+  ): (List[WithItem], Env) = wl.foldRight(List[WithItem](), env) {
+    case (w, (lw, e)) =>
+      val (wTrans, eTrans) = transform(w)(e)
+      (wTrans :: lw, eTrans)
+  }
+  def transform(w: WithItem)(
+    implicit env: Env
+  ): (WithItem, Env) = w match {
+    case WithItem(e, None) => (WithItem(transform(e), None), env)
+    case WithItem(e, Some(asE)) => (env.get("tensor_flow"), asE) match {
+        case (Some(x), EName(asX))
+          if ??? => // expr1 == id1.GradientTape()
+            (WithItem(e, Some(asE)), env.add("gradient_tape", asX))
+        case _ => (WithItem(transform(e), Some(asE)), env)
+    }
+  }
 
   def transform(mc: MatchCase)(env: Env): MatchCase = ???
 
