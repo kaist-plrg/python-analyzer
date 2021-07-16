@@ -92,9 +92,7 @@ trait Transformer {
     case IfExpr(e, cond, ee) =>
       IfExpr(transform(e),transform(cond),transform(ee))
     case DictExpr(map, dstar) => DictExpr(
-      map.map {
-        case (k, v) => (k, transform(v))
-      },
+      map.map { case (k, v) => (k, transform(v)) },
       dstar
     )
     case SetExpr(set) =>
@@ -124,9 +122,7 @@ trait Transformer {
     case YieldFromExpr(e) => YieldFromExpr(transform(e))
     case CompExpr(head, lp) => CompExpr(
       transform(head),
-      lp.map {
-        case (op, e) => (op, transform(e))
-      }
+      lp.map { case (op, e) => (op, transform(e)) }
     )
     case Call(f, e, kwds) => ???
     case FormattedValue(lhs, n, rhs) => ???
@@ -195,7 +191,31 @@ trait Transformer {
     }
   }
 
-  def transform(mc: MatchCase)(env: Env): MatchCase = ???
+  def transform(mc: MatchCase)(
+    implicit env: Env
+  ): MatchCase = mc match {
+    case MatchCase(pat, cond, body) =>
+      MatchCase(transform(pat), cond.map(transform), transform(body)._1)
+  }
 
-  def transform(p: Pattern)(env: Env): Pattern = ???
+  def transform(pat: Pattern)(
+    implicit env: Env
+  ): Pattern = pat match {
+    case MatchValue(e) => MatchValue(transform(e))
+    case MatchSingleton(c) => MatchSingleton(c)
+    case MatchSeq(lpat) => MatchSeq(lpat.map(transform))
+    case MatchStar(opt) => MatchStar(opt)
+    case MatchMapping(map, opt) => MatchMapping(
+      map.map { case (e, pat) => (e, transform(pat)) },
+      opt
+    )
+    case MatchClass(e, lpat, map) => MatchClass(e,
+      lpat.map(transform),
+      map.map { case (k, v) => (k, transform(v)) }
+    )
+    case MatchAs(opt, x) => MatchAs(opt.map(transform), x)
+    case MatchOr(lpat) => MatchOr(lpat.map(transform))
+    case MatchWildcard => MatchWildcard
+    case MatchGroup(p) => p
+  }
 }
