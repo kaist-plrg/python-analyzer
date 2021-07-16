@@ -31,7 +31,7 @@ class FileParseTest extends AnyFunSuite {
   def parseSource(t: String, checkEmpty: Boolean = false) = {
     val tokens = Tokenizer.tokenizeText(t)
     //prompt(s"${CYAN}tokenized raw:${RESET}\n${tokens}")
-    prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
+    //prompt(s"${CYAN}tokenized result:${RESET}\n${Token.coloredTokens(tokens)}")
     
     if (checkEmpty && tokens.isEmpty) throw EmptyFileException
 

@@ -142,6 +142,10 @@ trait TokenListParsers extends PackratParsers {
   lazy val nl: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
     case NewlineToken(None) => Success("", in.rest)
     case NewlineToken(Some(s)) => Success(s, in.rest)
+    case CommentToken(s) => firstMap(in.rest, _ match {
+      case NewlineToken(None) => Success(s, in.rest.rest)
+      case _ => Failure(s"", in)
+    })
     case _ => Failure(s"", in)
   })))("nl")
   lazy val comment: PackratParser[String] = log(Parser(in => firstMap(in, _ match {
@@ -1001,7 +1005,7 @@ trait TokenListParsers extends PackratParsers {
   // Block : List of Stmt
   /////////////////////////////////
   lazy val block: PackratParser[List[Stmt]] = (
-    ("\n" ~ indent) ~> statements <~ dedent | 
+    (rep1(nl) ~ indent) ~> statements <~ dedent | 
     simpleStmts ^^ {
       case OnelineStmt(sl) =>  sl
       case s => List(s)
