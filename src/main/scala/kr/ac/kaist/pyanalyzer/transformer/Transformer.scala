@@ -1,6 +1,8 @@
 package kr.ac.kaist.pyanalyzer.transformer
 
 import kr.ac.kaist.pyanalyzer.parser._
+import kr.ac.kaist.pyanalyzer.parser.TokenListParser
+import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
 trait Transformer {
@@ -13,14 +15,11 @@ trait Transformer {
 
   def transform(stmts: List[Stmt])(
     implicit env: Env
-  ): (List[Stmt], Env) =
-    stmts.foldLeft( 
-      (List[Stmt](), Env())
-    )((pair, stmt) => pair match {
-      case (stmtList, env) =>
-        val (newStmtList, newEnv) = transform(stmt)(env)
-        (stmtList ++ newStmtList, newEnv)
-    })
+  ): (List[Stmt], Env) = stmts.foldLeft((List[Stmt](), Env())) {
+    case ((stmtList, env), stmt) =>
+      val (newStmtList, newEnv) = transform(stmt)(env)
+      (stmtList ++ newStmtList, newEnv)
+  }
 
   // TODO refactor divide into List[Stmt] and [Stmt] returning versions
   def transform(stmt: Stmt)(
@@ -76,6 +75,44 @@ trait Transformer {
       (List(ImportFromStmt(lv, fromId, al)), env)
     case GlobalStmt(il) => (List(GlobalStmt(il)), env)
     case NonlocalStmt(il) => (List(NonlocalStmt(il)), env)
+    // strict form of expr
+    case ExprStmt(Call(f, le, lk)) => (env.get("optimizer"), f) match {
+      case (Some(x), Attribute(EName(fname), Id("apply_gradients")))
+        if x == fname => 
+          val newid = newId()
+          findKwarg(lk, "grads_and_vars") match {
+            case Some(Kwarg(_, e)) => (parseStmt(s"""
+            $newid = ${beautify(e)}
+            """
+            // TODO: Add arg change
+            s"""global hvd_broadcast_done
+            if not hvd_broadcast_done:
+              hvd.broadcast_variables([x[1] for x in $newid], root_rank=0)
+              hvd.broadcast_variables(optimizer.variables(), root_rank=0)
+              hvd_broadcast_done = True
+            """), env)
+            case None => (parseStmt(s"""
+            $newid = ${beautify(le.head)}
+            """// TODO: assert le is nonempty
+            // TODO: Add arg change
+            s"""global hvd_broadcast_done
+            if not hvd_broadcast_done:
+              hvd.broadcast_variables([x[1] for x in $newid], root_rank=0)
+              hvd.broadcast_variables(optimizer.variables(), root_rank=0)
+              hvd_broadcast_done = True
+            """), env)
+          }
+      case _ => (List(ExprStmt(transform(Call(f, le, lk)))), env)
+    }
+    // general form of expr
+    case ExprStmt(e) => (List(ExprStmt(transform(e))), env)
+    case PassStmt => (List(PassStmt), env)
+    case BreakStmt => (List(BreakStmt), env)
+    case ContinueStmt => (List(ContinueStmt), env)
+    // TODO: check transform from simple to compound exists
+    case OnelineStmt(ls) =>
+      val (newLs, newEnv) = transform(ls)
+      (List(OnelineStmt(newLs)), newEnv)
   }
 
   def transform(expr: Expr)(
@@ -83,8 +120,7 @@ trait Transformer {
   ): Expr = expr match {
     case BoolExpr(op, lhs, rhs) =>
       BoolExpr(op, transform(lhs), transform(rhs))
-    case NamedExpr(lhs, rhs) =>
-      NamedExpr(lhs, transform(rhs))
+    case NamedExpr(lhs, rhs) => NamedExpr(lhs, transform(rhs))
     case BinaryExpr(op, lhs, rhs) =>
       BinaryExpr(op, transform(lhs), transform(rhs))
     case UnaryExpr(op, e) => UnaryExpr(op, transform(e))
@@ -95,12 +131,9 @@ trait Transformer {
       map.map { case (k, v) => (k, transform(v)) },
       dstar
     )
-    case SetExpr(set) =>
-      SetExpr(set.map(transform))
-    case ListExpr(list) =>
-      ListExpr(list.map(transform))
-    case TupleExpr(tup) =>
-      TupleExpr(tup.map(transform))
+    case SetExpr(set) => SetExpr(set.map(transform))
+    case ListExpr(list) => ListExpr(list.map(transform))
+    case TupleExpr(tup) => TupleExpr(tup.map(transform))
     case DictComp((k, v), comps) => DictComp(
       (k, transform(v)),
       comps.map(transform)
@@ -124,13 +157,26 @@ trait Transformer {
       transform(head),
       lp.map { case (op, e) => (op, transform(e)) }
     )
-    case Call(f, e, kwds) => ???
-    case FormattedValue(lhs, n, rhs) => ???
+    case Call(f, le, kwds) => (env.get("dataset"), f) match {
+      case (Some(x), Attribute(EName(fname), Id("take"))) =>
+        val containsCountKwarg = kwds.exists {
+          case Kwarg(Some(Id("count")), _) => true
+          case _ => false
+        }
+        // TODO: handle comment!!
+        val (newLe, newKwds) = (???, ???)
+        Call(f, newLe, newKwds)
+      case _ => Call(
+        transform(f),
+        le.map(transform),
+        kwds.map { case Kwarg(opt, e) => Kwarg(opt, transform(e)) }
+      )
+    }
+    case FormattedValue(lhs, n, rhs) => FormattedValue(lhs, n, rhs)
     case JoinedStr(le) => JoinedStr(le)
     case EConst(e) => EConst(e)
     case Attribute(e, x) => Attribute(e, x)
-    case Subscript(e, slice) =>
-      Subscript(transform(e), transform(slice))
+    case Subscript(e, slice) => Subscript(transform(e), transform(slice))
     case Starred(e) => Starred(e)
     case DoubleStarred(e) => DoubleStarred(e)
     case EName(x) => EName(x)
@@ -183,12 +229,15 @@ trait Transformer {
     implicit env: Env
   ): (WithItem, Env) = w match {
     case WithItem(e, None) => (WithItem(transform(e), None), env)
-    case WithItem(e, Some(asE)) => (env.get("tensor_flow"), asE) match {
-        case (Some(x), EName(asX))
-          if ??? => // expr1 == id1.GradientTape()
-            (WithItem(e, Some(asE)), env.add("gradient_tape", asX))
-        case _ => (WithItem(transform(e), Some(asE)), env)
-    }
+    case WithItem(e, Some(asE)) => (env.get("tensor_flow"), e, asE) match {
+      case (
+        Some(x),
+        Call(Attribute(EName(f), Id("GradientTape")), Nil, Nil),
+        EName(asX)
+      ) if x == f =>
+          (WithItem(e, Some(asE)), env.add("gradient_tape", asX))
+      case _ => (WithItem(transform(e), Some(asE)), env)
+      }
   }
 
   def transform(mc: MatchCase)(
@@ -217,5 +266,10 @@ trait Transformer {
     case MatchOr(lpat) => MatchOr(lpat.map(transform))
     case MatchWildcard => MatchWildcard
     case MatchGroup(p) => p
+  }
+
+  def parseStmts(code: String): List[Stmt] = {
+    TokenListParser(tokenizeText(code))
+
   }
 }
