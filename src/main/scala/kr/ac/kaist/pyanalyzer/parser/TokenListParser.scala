@@ -100,7 +100,15 @@ trait TokenListParsers extends PackratParsers {
   
   // literals, number, name(id)
   lazy val stringLiteral: PackratParser[Const] = log(Parser(in => firstMap(in, _ match {
-    case StrToken(s) => Success(StringLiteral(s), in.rest)
+    case StrToken(s) => {
+      def helper: (Input, String) => (Input, String) = (in, s) => in.first match {
+        case StrToken(newStr) => helper(in.rest, s + newStr)
+        case _ => (in, s)  
+      }
+      val (resIn, resStr) = helper(in.rest, s)
+      
+      Success(StringLiteral(resStr), resIn)
+    }
     case t => Failure(s"", in)
   })))("stringLiteral")
 
@@ -152,6 +160,10 @@ trait TokenListParsers extends PackratParsers {
     case CommentToken(s) => Success(s, in.rest)
     case _ => Failure(s"", in)
   })))("comment")
+  lazy val endmarker: PackratParser[Unit] = log(Parser(in => firstMap(in, _ match {
+    case EndToken => Success((), in.rest)
+    case _ => Failure(s"", in)
+  })))("endmarker")
   
    // type comment starts with `# type: ` (including whitespaces)
    // corresponds to `TYPE_COMMENT` in spec
@@ -591,7 +603,10 @@ trait TokenListParsers extends PackratParsers {
   ////////////////////////////////////////////////////////////////////////////////
   // Top-level module
   ////////////////////////////////////////////////////////////////////////////////
-  lazy val module: PackratParser[Module] = statements ^^ { case sl => Module(sl) }
+  lazy val module: PackratParser[Module] = opt(statements) <~ endmarker ^^ { 
+    case Some(sl) => Module(sl)
+    case None => Module(Nil)
+  }
   ////////////////////////////////////////////////////////////////////////////////
   // Statements
   //////////////////////////////////////////////////////////////////////////////

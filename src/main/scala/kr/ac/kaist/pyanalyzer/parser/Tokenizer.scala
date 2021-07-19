@@ -382,8 +382,6 @@ case class IndentParser(var st: IndentState = IndentState()) {
     indents.init.foreach(t => { result = result :+ DedentToken })
     // add endmarker
     result :+ EndToken
-    result
-
   }
 
   // flushes remaining dedent tokens
