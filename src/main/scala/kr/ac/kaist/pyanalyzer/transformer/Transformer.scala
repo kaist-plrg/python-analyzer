@@ -23,7 +23,6 @@ trait Transformer {
       (stmtList ++ newStmtList, newEnv)
   }
 
-  // TODO refactor divide into List[Stmt] and [Stmt] returning versions
   def transform(stmt: Stmt)(
     implicit env: Env
   ) : (List[Stmt], Env) = stmt match {

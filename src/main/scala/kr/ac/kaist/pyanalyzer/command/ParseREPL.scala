@@ -87,8 +87,8 @@ ${RESET}"""
     println(s"${GREEN}Goal production:${RESET} ${prodName}\n")
 
     val tokens = tokenizeText(targetStr)
-    println(s"${GREEN}Tokenize raw:\n${RESET} ${tokens}\n")
-    println(s"${GREEN}Tokenize result:\n${RESET} ${Token.coloredTokens(tokens)}\n")
+    println(s"${GREEN}Tokenize raw:\n${RESET}${tokens}\n")
+    println(s"${GREEN}Tokenize result:\n${RESET}${Token.coloredTokens(tokens)}\n")
 
     val parseResult = prodMap.getOrElse(prodName.capitalize, statements)(
       new PackratReader(TokenListParser.TokenReader(tokens))
