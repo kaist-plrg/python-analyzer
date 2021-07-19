@@ -72,7 +72,26 @@ trait Transformer {
     case AssertStmt(expr, toRaise) =>
       (List(AssertStmt(transform(expr)(env), toRaise)), env)
     // module, scope related statements
-    case ImportStmt(al) => ???
+    case ImportStmt(al) =>
+      val newEnv = transform(al)
+      val diffEnv = newEnv \ env
+      diffEnv.get("tensor_flow") match {
+        case Some(x) if diffEnv.size == 1 => (
+          ImportStmt(al) ::
+          parseStmts(s"""
+            import horovod.tensorflow as hvd
+            hvd_broadcast_done = False
+            hvd_init()
+            gpus = $x.config.experimental.list_pysical_devices('GPU')
+            for gpu in gpus:
+              $x.config.expreimental.set_memory_growth(gpu, True)
+            if gpus:
+              $x.config.experimental.\\
+                set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+            """),
+          env)
+        case _ => (List(ImportStmt(al)), newEnv)
+      }
     case ImportFromStmt(lv, fromId, al) =>
       (List(ImportFromStmt(lv, fromId, al)), env)
     case GlobalStmt(il) => (List(GlobalStmt(il)), env)
@@ -83,26 +102,47 @@ trait Transformer {
         if x == fname => 
           val newid = newId
           findKwarg(lk, "grads_and_vars") match {
-            case Some(Kwarg(_, e)) => (parseStmts(s"""
-            $newid = ${beautify(e)}
-            """ +
-            // TODO: Add arg change
-            s"""global hvd_broadcast_done
-            if not hvd_broadcast_done:
-              hvd.broadcast_variables([x[1] for x in $newid], root_rank=0)
-              hvd.broadcast_variables(optimizer.variables(), root_rank=0)
-              hvd_broadcast_done = True
-            """), env)
-            case None => (parseStmts(s"""
-            $newid = ${beautify(le.head)}
-            """ + // TODO: assert le is nonempty
-            // TODO: Add arg change
-            s"""global hvd_broadcast_done
-            if not hvd_broadcast_done:
-              hvd.broadcast_variables([x[1] for x in $newid], root_rank=0)
-              hvd.broadcast_variables(optimizer.variables(), root_rank=0)
-              hvd_broadcast_done = True
-            """), env)
+            case Some(kwarg) => (
+              parseStmts(s"""
+                $newid = ${beautify(kwarg.expr)}
+              """) ++ (
+              ExprStmt(Call(f, le,
+                replaceElement(lk, kwarg, kwarg.copy(expr = Id(newid)))
+              )) ::
+              parseStmts(s"""
+                global hvd_broadcast_done
+                if not hvd_broadcast_done:
+                  hvd.broadcast_variables(
+                    [x[1] for x in $newid],
+                    root_rank=0
+                  )
+                  hvd.broadcast_variables(
+                    optimizer.variables(),
+                    root_rank=0
+                  )
+                  hvd_broadcast_done = True
+                """)),
+              env)
+            case None => (
+              // TODO: assert le is nonempty
+              parseStmts(s"""
+                $newid = ${beautify(le.head)}
+              """) ++ (
+              Call(f, Id(newid) :: le.tail, lk) ::
+              parseStmts(s"""
+                global hvd_broadcast_done
+                if not hvd_broadcast_done:
+                  hvd.broadcast_variables(
+                    [x[1] for x in $newid],
+                    root_rank=0
+                  )
+                  hvd.broadcast_variables(
+                    optimizer.variables(),
+                    root_rank=0
+                  )
+                  hvd_broadcast_done = True
+              """)),
+              env)
           }
       case _ => (List(ExprStmt(transform(Call(f, le, lk)))), env)
     }
@@ -220,7 +260,7 @@ trait Transformer {
   }
 
   // name changed because of same type after type erasure
-  def transformWithlist(wl: List[WithItem])(
+  def transformWithList(wl: List[WithItem])(
     implicit env: Env
   ): (List[WithItem], Env) = wl.foldRight(List[WithItem](), env) {
     case (w, (lw, e)) =>
@@ -276,5 +316,18 @@ trait Transformer {
   }
 
   def newId: String = ???
-  def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] = ???
+  def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] =
+    lk.find {
+      case Kwarg(Some(Id(x)), _) if x == str => true
+      case _ => false
+    }
+  def replaceElement[T](lk: List[T], from: T, to: T): List[T] = {
+    lk.zipWithIndex.find(e => e._1 == from) match {
+      case Some((e, index)) =>
+        lk.slice(0, index) ++ (to :: lk.slice(index + 1, lk.length))
+      case None => lk
+    }
+  }
+  implicit def expr2stmt(e: Expr): Stmt = ExprStmt(e)
+  implicit def id2expr(x: Id): Expr = EName(x)
 }
