@@ -15,62 +15,16 @@ trait Transformer {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
   }
 
-  def transform(stmts: List[Stmt])(
-    implicit env: Env
-  ): (List[Stmt], Env) = stmts.foldLeft((List[Stmt](), Env())) {
-    case ((stmtList, env), stmt) =>
-      val (newStmtList, newEnv) = transform(stmt)(env)
-      (stmtList ++ newStmtList, newEnv)
-  }
+  def transform(stmts: List[Stmt])(implicit env: Env): (List[Stmt], Env) = 
+    stmts.foldLeft((List[Stmt](), Env())) {
+      case ((stmtList, env), stmt) =>
+        val (newStmtList, newEnv) = transform(stmt)(env)
+        (stmtList ++ newStmtList, newEnv)
+    }
 
-  // TODO refactor divide into List[Stmt] and [Stmt] returning versions
-  def transform(stmt: Stmt)(
-    implicit env: Env
-  ) : (List[Stmt], Env) = stmt match {
-    // function def
-    case FunDef(decos, name, args, retTy, tyExpr, body) =>
-      (List(FunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1)), env) 
-    case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
-      (List(AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1)), env) 
-    // class def
-    case ClassDef(decos, name, exprs, kwds, body) =>
-      (List(ClassDef(decos, name, exprs, kwds, transform(body)(env)._1)), env)
-    // return, del
-    case ReturnStmt(eopt) => (List(ReturnStmt(eopt.map(expr => transform(expr)(env)))), env)
-    case DelStmt(tl) => (List(DelStmt(tl)), env)
-    // strict form of assignment
-    case AssignStmt(ts, expr, ty) => ???
-    // other form of assignment
-    case AugAssign(lhs, bop, rhs) => (List(AugAssign(lhs, bop, transform(rhs)(env))), env)
-    case AnnAssign(t, ann, e) => ???
-    // for statement
-    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (List(ForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env)
-    case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (List(AsyncForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env)
-    // while statement
-    case WhileStmt(wExpr, doStmt, elseStmt) =>
-      (List(WhileStmt(transform(wExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env) 
-    // if statement
-    case IfStmt(cond, thenStmt, elseStmt) =>
-      (List(IfStmt(transform(cond)(env), transform(thenStmt)(env)._1, transform(elseStmt)(env)._1)), env)
-    // with statement
-    case WithStmt(ty, items, doStmt) => ???
-    case AsyncWithStmt(ty, items, doStmt) => ???
-    // match statement
-    case MatchStmt(expr, cases) =>
-      (List(MatchStmt(transform(expr)(env), cases.map(c => transform(c)(env)))), env)  
-    // exception-related statements
-    case RaiseStmt(expr, from) =>
-      (List(RaiseStmt(expr, from)), env)
-    case TryStmt(tryStmt, handlers, elseStmt, finallyStmt) =>
-      val newTryStmt =
-        TryStmt(
-          transform(tryStmt)(env)._1, handlers.map(transform),
-          transform(elseStmt)(env)._1, transform(finallyStmt)(env)._1)
-      (List(newTryStmt), env)
-    case AssertStmt(expr, toRaise) =>
-      (List(AssertStmt(transform(expr)(env), toRaise)), env)
+  // stmt transformer: stmt -> stmt list
+  // stmt -> single stmt cases are defined in transformSingleStmt
+  def transform(stmt: Stmt)(implicit env: Env) : (List[Stmt], Env) = stmt match { 
     // module, scope related statements
     case ImportStmt(al) =>
       val newEnv = transform(al)
@@ -93,9 +47,7 @@ trait Transformer {
         case _ => (List(ImportStmt(al)), newEnv)
       }
     case ImportFromStmt(lv, fromId, al) =>
-      (List(ImportFromStmt(lv, fromId, al)), env)
-    case GlobalStmt(il) => (List(GlobalStmt(il)), env)
-    case NonlocalStmt(il) => (List(NonlocalStmt(il)), env)
+      (List(ImportFromStmt(lv, fromId, al)), env) 
     // strict form of expr
     case ExprStmt(Call(f, le, lk)) => (env.get("optimizer"), f) match {
       case (Some(x), Attribute(EName(fname), Id("apply_gradients")))
@@ -146,20 +98,76 @@ trait Transformer {
           }
       case _ => (List(ExprStmt(transform(Call(f, le, lk)))), env)
     }
-    // general form of expr
-    case ExprStmt(e) => (List(ExprStmt(transform(e))), env)
-    case PassStmt => (List(PassStmt), env)
-    case BreakStmt => (List(BreakStmt), env)
-    case ContinueStmt => (List(ContinueStmt), env)
+    // single stmt cases
+    case _ => {
+      val (newStmt: Stmt, newEnv:Env ) = transformSingleStmt(stmt)(env)
+      (List(newStmt), env)
+    }
+  }
+
+  // tranformers that changes single stmt to single stmt.
+  // stmt -> stmt list transformer uses this to make stmt list
+  def transformSingleStmt(stmt: Stmt)(implicit env: Env): (Stmt, Env) = stmt match {  
+   // function def
+    case FunDef(decos, name, args, retTy, tyExpr, body) =>
+      (FunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1), env) 
+    case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
+      (AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1), env) 
+    // class def
+    case ClassDef(decos, name, exprs, kwds, body) =>
+      (ClassDef(decos, name, exprs, kwds, transform(body)(env)._1), env)
+    // return, del
+    case ReturnStmt(eopt) => (ReturnStmt(eopt.map(expr => transform(expr)(env))), env)
+    case DelStmt(tl) => (DelStmt(tl), env)
+    // strict form of assignment
+    case AssignStmt(ts, expr, ty) => ???
+    // other form of assignment
+    case AugAssign(lhs, bop, rhs) => (AugAssign(lhs, bop, transform(rhs)(env)), env)
+    case AnnAssign(t, ann, e) => ???
+    // for statement
+    case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
+      (ForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1), env)
+    case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
+      (AsyncForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1), env)
+    // while statement
+    case WhileStmt(wExpr, doStmt, elseStmt) =>
+      (WhileStmt(transform(wExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1), env) 
+    // if statement
+    case IfStmt(cond, thenStmt, elseStmt) =>
+      (IfStmt(transform(cond)(env), transform(thenStmt)(env)._1, transform(elseStmt)(env)._1), env)
+    // with statement
+    case WithStmt(ty, items, doStmt) => ???
+    case AsyncWithStmt(ty, items, doStmt) => ???
+    // match statement
+    case MatchStmt(expr, cases) => (MatchStmt(transform(expr)(env), cases.map(c => transform(c)(env))), env)  
+    // exception-related statements
+    case RaiseStmt(expr, from) => (RaiseStmt(expr, from), env)
+    case TryStmt(tryStmt, handlers, elseStmt, finallyStmt) =>
+      val newTryStmt =
+        TryStmt(
+          transform(tryStmt)(env)._1, handlers.map(transform),
+          transform(elseStmt)(env)._1, transform(finallyStmt)(env)._1)
+      (newTryStmt, env)
+    case AssertStmt(expr, toRaise) =>
+      (AssertStmt(transform(expr)(env), toRaise), env)
+    // scope related
+    case GlobalStmt(il) => (GlobalStmt(il), env)
+    case NonlocalStmt(il) => (NonlocalStmt(il), env) // general form of expr
+    // expression, object stmts
+    case ExprStmt(e) => (ExprStmt(transform(e)), env)
+    case PassStmt => (PassStmt, env)
+    case BreakStmt => (BreakStmt, env)
+    case ContinueStmt => (ContinueStmt, env)
     // TODO: check transform from simple to compound exists
     case OnelineStmt(ls) =>
       val (newLs, newEnv) = transform(ls)
-      (List(OnelineStmt(newLs)), newEnv)
+      (OnelineStmt(newLs), newEnv)
+    // other stmts: should not appear
+    case _ => ???
   }
 
-  def transform(expr: Expr)(
-    implicit env: Env
-  ): Expr = expr match {
+  // Expression transformer: expr -> single expr
+  def transform(expr: Expr)(implicit env: Env): Expr = expr match {
     case BoolExpr(op, lhs, rhs) =>
       BoolExpr(op, transform(lhs), transform(rhs))
     case NamedExpr(lhs, rhs) => NamedExpr(lhs, transform(rhs))
@@ -230,28 +238,20 @@ trait Transformer {
     case GroupExpr(e) => e
   }
 
-  def transform(comp: Comprehension)(
-    implicit env: Env
-  ): Comprehension = comp match {
+  def transform(comp: Comprehension)(implicit env: Env): Comprehension = comp match {
     case Compre(target, in, conds) =>
       Compre(target, transform(in), conds.map(transform))
     case AsyncCompre(target, in, conds) =>
       AsyncCompre(target, transform(in), conds.map(transform))
   }
 
-  def transform(handler: ExcHandler)(
-    implicit env: Env
-  ): ExcHandler = handler match {
+  def transform(handler: ExcHandler)(implicit env: Env): ExcHandler = handler match {
     case ExcHandler(except, idOpt, body) =>
       ExcHandler(except, idOpt, transform(body)._1)
   }
 
-  def transform(al: List[Alias])(
-    implicit env: Env
-  ): Env = al.foldLeft(env)((e, a) => transform(a)(e))
-  def transform(alias: Alias)(
-    implicit env: Env
-  ): Env = alias match {
+  def transform(al: List[Alias])(implicit env: Env): Env = al.foldLeft(env)((e, a) => transform(a)(e))
+  def transform(alias: Alias)(implicit env: Env): Env = alias match {
     case Alias(List(x), None) if x.name == "tensorflow" =>
       env.add("tensor_flow", x)
     case Alias(List(x), Some(as)) if x.name == "tensorflow" =>
@@ -260,16 +260,15 @@ trait Transformer {
   }
 
   // name changed because of same type after type erasure
-  def transformWithList(wl: List[WithItem])(
-    implicit env: Env
-  ): (List[WithItem], Env) = wl.foldRight(List[WithItem](), env) {
-    case (w, (lw, e)) =>
-      val (wTrans, eTrans) = transform(w)(e)
-      (wTrans :: lw, eTrans)
-  }
-  def transform(w: WithItem)(
-    implicit env: Env
-  ): (WithItem, Env) = w match {
+  def transformWithList(wl: List[WithItem])(implicit env: Env): (List[WithItem], Env) = 
+    wl.foldRight(List[WithItem](), env) {
+      case (w, (lw, e)) =>
+        val (wTrans, eTrans) = transform(w)(e)
+        (wTrans :: lw, eTrans)
+    }
+
+  // WithItem
+  def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
     case WithItem(e, None) => (WithItem(transform(e), None), env)
     case WithItem(e, Some(asE)) => (env.get("tensor_flow"), e, asE) match {
       case (
@@ -282,16 +281,12 @@ trait Transformer {
       }
   }
 
-  def transform(mc: MatchCase)(
-    implicit env: Env
-  ): MatchCase = mc match {
+  def transform(mc: MatchCase)(implicit env: Env): MatchCase = mc match {
     case MatchCase(pat, cond, body) =>
       MatchCase(transform(pat), cond.map(transform), transform(body)._1)
   }
 
-  def transform(pat: Pattern)(
-    implicit env: Env
-  ): Pattern = pat match {
+  def transform(pat: Pattern)(implicit env: Env): Pattern = pat match {
     case MatchValue(e) => MatchValue(transform(e))
     case MatchSingleton(c) => MatchSingleton(c)
     case MatchSeq(lpat) => MatchSeq(lpat.map(transform))
