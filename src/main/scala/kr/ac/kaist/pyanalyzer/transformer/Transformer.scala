@@ -39,10 +39,111 @@ trait Transformer {
     case ReturnStmt(eopt) => (List(ReturnStmt(eopt.map(expr => transform(expr)(env)))), env)
     case DelStmt(tl) => (List(DelStmt(tl)), env)
     // strict form of assignment
-    case AssignStmt(ts, expr, ty) => ???
-    // other form of assignment
+    // id_r = expr_1(le, lk) (# type: s)?
+    case AssignStmt(targets, Call(expr1, le, lk), ty)
+      if targets.size == 1 && targets.head.isInstanceOf[EName] =>
+        val EName(idr) = targets.head
+        expr1 match {
+          // σ("tensor_flow") = id_t and expr_1 = id_t.data.Dataset.expr_3
+          // TODO: is expr_3 means id?
+          case Attribute(Attribute(Attribute(
+            EName(idt), Id("data")), Id("Dataset")), _)
+            if env.get("tensor_flow") contains idt =>
+              // id_r = expr_1(le, lk) (# type: s)?
+              // TODO: where is id_1?
+              (AssignStmt(targets, Call(expr1, le, lk), ty),
+                env.add("dataset", idr))
+          // σ("tensor_flow") = id_t and expr_1 = id_t.optimizer.Adam
+          case Attribute(Attribute(
+            EName(fid), Id("optimizer")), Id("Adam")) =>
+              findKwarg(lk, "learning_rate") match {
+                // id_i = learning_rate when 1 <= i <= k
+                case Some(kwarg) =>
+                  val expr2i = kwarg.expr
+                  val newLk = replaceElement(lk, kwarg, kwarg.copy(
+                    // TODO: check precidence
+                    expr = parseExpr(s"${beautify(expr2i)} * hvd.size()")
+                  ))
+                  // id_r = expr1(le, lk[expr_2i -> expr_2i * hvd.size()])
+                  //   (# type: s)?
+                  (AssignStmt(targets, Call(expr1, le, newLk), ty),
+                    env.add("optimizer", idr))
+                // such id_i doesn't exist
+                case None =>
+                  // id_r = expr1(le[expr_11 -> expr_11 * hvd.size()], lk)
+                  //   (# type: s)?
+                  (AssignStmt(targets, Call(expr1,
+                    parseExpr(s"${beautify(le.head)} * hvd.size()") ::
+                    le.tail, lk), ty), env.add("optimizer", idr))
+              }
+          // σ("optimizer") = id_t and expr = id_t.apply_gradients
+          case Attribute(EName(idt), Id("apply_gradients"))
+            if env.get("optimizer") contains idt =>
+              val idz = newId
+              findKwarg(lk, "grads_and_vars") match {
+                // id_i = grads_and_vars when 1 <= i <= k
+                case Some(kwarg) =>
+                  val expr2i = kwarg.expr
+                  val newLk = replaceElement(lk, kwarg,
+                    kwarg.copy(expr = EName(idz)))
+                  (
+                    // id_z = expr_2i
+                    AssignStmt(List(EName(idz)), expr2i) ::
+                    // id_r = expr_1(le, lk[expr_2i -> id_z]) (# type: s)?
+                    AssignStmt(targets, Call(expr1, le, newLk), ty) ::
+                    parseStmts(s"""
+                      global hvd_broadcast_done
+                      if not hvd_broadcast_done:
+                        hvd.broadcast_variables(
+                          [x[1] for x in ${idz.name}],
+                          root_rank=0
+                        )
+                        hvd_broadcast_done = True
+                    """),
+                    env
+                  )
+                // such id_i doesn't exist
+                case None => (
+                  // TODO: assert le is nonempty
+                  // id_z = expr_11
+                  AssignStmt(List(EName(idz)), le.head) ::
+                  // id_r = expr_1(le[expr_11 -> id_z], lk) (# type: s)?
+                  AssignStmt(targets, Call(expr1,
+                    EName(idz) :: le.tail, lk), ty) ::
+                  parseStmts(s"""
+                    global hvd_broadcast_done
+                    if not hvd_broadcast_done:
+                      hvd.broadcast_variables(
+                        [x[1] for x in ${idz.name}],
+                        root_rank=0
+                      )
+                      hvd_broadcast_done = True
+                  """),
+                  env
+                )
+              }
+          case _ => (
+            // id_r = TRANS(expr_1(le, lk))(σ) (# type: s)?
+            AssignStmt(targets, transform(Call(expr1, le, lk)), ty),
+            env
+          )
+        }
+    // general form of assignment
+    case AssignStmt(targets, e, ty) =>
+      (List(AssignStmt(targets, transform(e), ty)), env)
     case AugAssign(lhs, bop, rhs) => (List(AugAssign(lhs, bop, transform(rhs)(env))), env)
-    case AnnAssign(t, ann, e) => ???
+    case AnnAssign(expr1, expr2, expr3) =>
+      (expr1, expr3) match {
+        // expr_1 = id_1 and σ("tensor_flow") = id_2 and
+        //   expr_3 = id_2.data.Dataset.expr_4(le, lk)
+        //   TODO: expr_4 id?
+        case (EName(id1), Some(Call(Attribute(Attribute(Attribute(
+          EName(id2), Id("data")), Id("Dataset")), _), le, lk)))
+          if env.get("tensor_flow") contains id2 =>
+            // TODO: type comment?
+            ???
+        case _ => ???
+      }
     // for statement
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       (List(ForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env)
@@ -55,8 +156,34 @@ trait Transformer {
     case IfStmt(cond, thenStmt, elseStmt) =>
       (List(IfStmt(transform(cond)(env), transform(thenStmt)(env)._1, transform(elseStmt)(env)._1)), env)
     // with statement
-    case WithStmt(ty, items, doStmt) => ???
-    case AsyncWithStmt(ty, items, doStmt) => ???
+    case WithStmt(ty, items, doStmt) =>
+      val (newItems, tempEnv) = transformWithList(items)
+      val (newStmts, newEnv) = transform(doStmt)(tempEnv)
+      val diffEnv = env \ tempEnv
+      diffEnv.get("gradient_tape") match {
+        // σ1 \ σ = ["gradient_tape" -> id]
+        case Some(id) if diffEnv.size == 1 => (
+          WithStmt(ty, newItems, newStmts) ::
+          parseStmts(s"""
+            ${id.name} = hvd.DistributedGradientTape(${id.name})
+          """),
+          newEnv)
+        case _ => (WithStmt(ty, newItems, newStmts), newEnv)
+      }
+    case AsyncWithStmt(ty, items, doStmt) =>
+      val (newItems, tempEnv) = transformWithList(items)
+      val (newStmts, newEnv) = transform(doStmt)(tempEnv)
+      val diffEnv = env \ tempEnv
+      diffEnv.get("gradient_tape") match {
+        // σ1 \ σ = ["gradient_tape" -> id]
+        case Some(id) if diffEnv.size == 1 => (
+          AsyncWithStmt(ty, newItems, newStmts) ::
+          parseStmts(s"""
+            ${id.name} = hvd.DistributedGradientTape(${id.name})
+          """),
+          newEnv)
+        case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv)
+      }
     // match statement
     case MatchStmt(expr, cases) =>
       (List(MatchStmt(transform(expr)(env), cases.map(c => transform(c)(env)))), env)  
@@ -72,48 +199,57 @@ trait Transformer {
     case AssertStmt(expr, toRaise) =>
       (List(AssertStmt(transform(expr)(env), toRaise)), env)
     // module, scope related statements
-    case ImportStmt(al) =>
-      val newEnv = transform(al)
+    case ImportStmt(alias) =>
+      val newEnv = transform(alias)
       val diffEnv = newEnv \ env
       diffEnv.get("tensor_flow") match {
-        case Some(x) if diffEnv.size == 1 => (
-          ImportStmt(al) ::
+        // σ1 \ σ = ["tensor_flow" -> id]
+        case Some(id) if diffEnv.size == 1 => (
+          // import alias
+          ImportStmt(alias) ::
           parseStmts(s"""
             import horovod.tensorflow as hvd
             hvd_broadcast_done = False
             hvd_init()
-            gpus = $x.config.experimental.list_pysical_devices('GPU')
+            gpus = ${id.name}.config.experimental.list_pysical_devices('GPU')
             for gpu in gpus:
-              $x.config.expreimental.set_memory_growth(gpu, True)
+              ${id.name}.config.expreimental.set_memory_growth(gpu, True)
             if gpus:
-              $x.config.experimental.\\
+              ${id.name}.config.experimental.\\
                 set_visible_devices(gpus[hvd.local_rank()], 'GPU')
-            """),
-          env)
-        case _ => (List(ImportStmt(al)), newEnv)
+          """),
+          newEnv)
+        case _ =>
+          // import alias
+          (ImportStmt(alias), newEnv)
       }
     case ImportFromStmt(lv, fromId, al) =>
       (List(ImportFromStmt(lv, fromId, al)), env)
     case GlobalStmt(il) => (List(GlobalStmt(il)), env)
     case NonlocalStmt(il) => (List(NonlocalStmt(il)), env)
     // strict form of expr
-    case ExprStmt(Call(f, le, lk)) => (env.get("optimizer"), f) match {
-      case (Some(x), Attribute(EName(fname), Id("apply_gradients")))
-        if x == fname => 
-          val newid = newId
+    // expr1(le, lk)
+    case ExprStmt(Call(expr1, le, lk)) => expr1 match {
+      // σ("optimizer") = id_t and expr_1 = id_t.apply_gradients
+      case Attribute(EName(idt), Id("apply_gradients"))
+        if env.get("optimizer") contains idt =>
+          val idz = newId
           findKwarg(lk, "grads_and_vars") match {
-            case Some(kwarg) => (
-              parseStmts(s"""
-                $newid = ${beautify(kwarg.expr)}
-              """) ++ (
-              ExprStmt(Call(f, le,
-                replaceElement(lk, kwarg, kwarg.copy(expr = Id(newid)))
-              )) ::
+            // id_i = grads_and_vars when 1 <= i <= k
+            case Some(kwarg) =>
+              val expr2i = kwarg.expr
+              val newLk = replaceElement(lk, kwarg,
+                kwarg.copy(expr = EName(idz)))
+            (
+              // id_z = expr_2i
+              AssignStmt(List(EName(idz)), expr2i) ::
+              // expr_1(le, lk[expr_2i -> id_z])
+              ExprStmt(Call(expr1, le, newLk)) ::
               parseStmts(s"""
                 global hvd_broadcast_done
                 if not hvd_broadcast_done:
                   hvd.broadcast_variables(
-                    [x[1] for x in $newid],
+                    [x[1] for x in ${idz.name}],
                     root_rank=0
                   )
                   hvd.broadcast_variables(
@@ -121,19 +257,19 @@ trait Transformer {
                     root_rank=0
                   )
                   hvd_broadcast_done = True
-                """)),
+              """),
               env)
             case None => (
               // TODO: assert le is nonempty
-              parseStmts(s"""
-                $newid = ${beautify(le.head)}
-              """) ++ (
-              Call(f, Id(newid) :: le.tail, lk) ::
+              // id_z = expr_11
+              AssignStmt(List(EName(idz)), le.head) ::
+              // expr1(le[expr_11 -> id_z], lk)
+              ExprStmt(Call(expr1, EName(idz) :: le.tail, lk)) ::
               parseStmts(s"""
                 global hvd_broadcast_done
                 if not hvd_broadcast_done:
                   hvd.broadcast_variables(
-                    [x[1] for x in $newid],
+                    [x[1] for x in ${idz.name}],
                     root_rank=0
                   )
                   hvd.broadcast_variables(
@@ -141,10 +277,12 @@ trait Transformer {
                     root_rank=0
                   )
                   hvd_broadcast_done = True
-              """)),
+              """),
               env)
           }
-      case _ => (List(ExprStmt(transform(Call(f, le, lk)))), env)
+      case _ =>
+        // TRANS(expr1(le, lk))(σ)
+        (ExprStmt(transform(Call(expr1, le, lk))), env)
     }
     // general form of expr
     case ExprStmt(e) => (List(ExprStmt(transform(e))), env)
@@ -312,10 +450,16 @@ trait Transformer {
 
   def parseStmts(code: String): List[Stmt] = {
     TokenListParser(tokenizeText(code))
-
+  }
+  def parseExpr(str: String): Expr = {
+    val stmts = parseStmts(str)
+    stmts.headOption match {
+      case Some(ExprStmt(e)) if stmts.size == 1 => e
+      case _ => ???
+    }
   }
 
-  def newId: String = ???
+  def newId: Id = ???
   def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] =
     lk.find {
       case Kwarg(Some(Id(x)), _) if x == str => true
@@ -328,6 +472,5 @@ trait Transformer {
       case None => lk
     }
   }
-  implicit def expr2stmt(e: Expr): Stmt = ExprStmt(e)
-  implicit def id2expr(x: Id): Expr = EName(x)
+  implicit def stmt2stmts(stmt: Stmt): List[Stmt] = List(stmt)
 }
