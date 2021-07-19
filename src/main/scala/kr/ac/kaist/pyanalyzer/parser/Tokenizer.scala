@@ -102,7 +102,7 @@ trait Tokenizers extends RegexParsers {
 
   // line end : take account of comment, explicit line joining, and starting of longstring
   lazy val longSingleStart = logg("'''.*".r)("lss")
-  lazy val longDoubleStart = logg("\"\"\"[\\s\\S]*".r)("lds")  
+  lazy val longDoubleStart = logg("\"\"\".*".r)("lds")  
   lazy val lineEnd: Parser[List[Token]] = logg((
     comment ^^ { case s => List(CommentToken(s), NewlineToken()) } |
     longSingleStart ^^ { case s => List(LongStrToken("'''", s)) } |
@@ -247,7 +247,7 @@ case class IndentParser(var st: IndentState = IndentState()) {
 
   // tokenizes the whole source code, considering each lines
   def tokenizeSource(text: String): List[Token] = {
-    val lines = text.split("\n") //.map(s => s + "\n") 
+    val lines = text.split("\n") //.map(s => s + "\n")
     var indents: List[Int] = List(0)
     var needCont: Boolean = false
     var contStr: String = ""
@@ -264,11 +264,13 @@ case class IndentParser(var st: IndentState = IndentState()) {
       //////////////////////////////////////////
         try {
           //////////////////////////////////////////
-          // println(s"current tokens: $result")
-          // println(s"line trying:\n------\n$line\n------\n")
+          //println(s"current tokens: $result")
+          //println(s"curent contStr: $contStr")
+          //println(s"line trying:\n------\n$line\n------\n")
+          //println(s"needcont $needCont")
           var curLine = line
           // continued string case
-          if (contStr.nonEmpty) {
+          if (needCont) {
             // try find the quote, `'''` or `"""`
             contStrQuote.r.findFirstMatchIn(curLine) match {
               // match found
@@ -279,7 +281,7 @@ case class IndentParser(var st: IndentState = IndentState()) {
                 contStr = ""
                 needCont = false
                 contLine = ""
-                throw Continue
+                throw Continue // TODO: remaining string must be parsed
               // match not found
               case None =>
                 contStr = contStr + curLine
@@ -360,9 +362,11 @@ case class IndentParser(var st: IndentState = IndentState()) {
             }
             // long string case: start contStr
             case LongStrToken(q, s) => {
+              //println("quote" + q)
+              //println("string" + s)
               result = result ++ parsed.init
               contStrQuote = q
-              contStr = s.replaceFirst(q, "")
+              contStr = s.replaceFirst(q, "") + "\n"
               needCont = true
               contLine = curLine
             }

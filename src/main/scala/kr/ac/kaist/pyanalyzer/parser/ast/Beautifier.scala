@@ -170,7 +170,10 @@ object Beautifier {
     case IntLiteral(i) => app ~ s"$i"
     case FloatLiteral(f) => app ~ s"$f"
     case ComplexLiteral(c) => app ~ s"${c}j"
-    case StringLiteral(s) => app ~ s""""$s""""
+    case StringLiteral(s) => {
+      if (s contains "\n") app ~ s"""\"\"\"$s\"\"\""""
+      else app ~ s""""$s""""
+    }
     case BooleanLiteral(b) => app ~ (if (b) "True" else "False")
     case TupleLiteral(tup) =>
       implicit val lApp = ListApp[Const](sep = ", ")
