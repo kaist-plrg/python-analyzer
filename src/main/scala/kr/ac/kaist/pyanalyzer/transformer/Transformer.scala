@@ -15,6 +15,7 @@ object Transformer {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
   }
 
+  // transformer for statements
   def transform(stmts: List[Stmt])(implicit env: Env): (List[Stmt], Env) = 
     stmts.foldLeft((List[Stmt](), env)) {
       case ((stmtList, e), stmt) =>
@@ -25,15 +26,15 @@ object Transformer {
   def transform(stmt: Stmt)(implicit env: Env) : (List[Stmt], Env) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
-      (List(FunDef(decos, name, args, retTy, tyExpr, transform(body)._1)), env) 
+      (FunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
     case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
-      (List(AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)._1)), env) 
+      (AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
     // class def
     case ClassDef(decos, name, exprs, kwds, body) =>
-      (List(ClassDef(decos, name, exprs, kwds, transform(body)._1)), env)
+      (ClassDef(decos, name, exprs, kwds, transform(body)._1), env)
     // return, del
-    case ReturnStmt(eopt) => (List(ReturnStmt(eopt.map(expr => transform(expr)))), env)
-    case DelStmt(tl) => (List(DelStmt(tl)), env)
+    case ReturnStmt(eopt) => (ReturnStmt(eopt.map(expr => transform(expr))), env)
+    case DelStmt(tl) => (DelStmt(tl), env)
     // strict form of assignment
     // id_r = expr_1(le, lk) (# type: s)?
     case AssignStmt(targets, Call(expr1, le, lk), ty)
@@ -124,8 +125,8 @@ if not hvd_broadcast_done:
         }
     // general form of assignment
     case AssignStmt(targets, e, ty) =>
-      (List(AssignStmt(targets, transform(e), ty)), env)
-    case AugAssign(lhs, bop, rhs) => (List(AugAssign(lhs, bop, transform(rhs))), env)
+      (AssignStmt(targets, transform(e), ty), env)
+    case AugAssign(lhs, bop, rhs) => (AugAssign(lhs, bop, transform(rhs)), env)
     case AnnAssign(expr1, expr2, expr3) =>
       (expr1, expr3) match {
         // expr_1 = id_1 and σ("tensor_flow") = id_2 and
@@ -145,15 +146,15 @@ if not hvd_broadcast_done:
       }
     // for statement
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (List(ForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1)), env)
+      (ForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1), env)
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (List(AsyncForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1)), env)
+      (AsyncForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1), env)
     // while statement
     case WhileStmt(wExpr, doStmt, elseStmt) =>
-      (List(WhileStmt(transform(wExpr), transform(doStmt)._1, transform(elseStmt)._1)), env) 
+      (WhileStmt(transform(wExpr), transform(doStmt)._1, transform(elseStmt)._1), env) 
     // if statement
     case IfStmt(cond, thenStmt, elseStmt) =>
-      (List(IfStmt(transform(cond), transform(thenStmt)._1, transform(elseStmt)._1)), env)
+      (IfStmt(transform(cond), transform(thenStmt)._1, transform(elseStmt)._1), env)
     // with statement
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
@@ -185,18 +186,18 @@ ${id.name} = hvd.DistributedGradientTape(${id.name})
       }
     // match statement
     case MatchStmt(expr, cases) =>
-      (List(MatchStmt(transform(expr), cases.map(c => transform(c)))), env)  
+      (MatchStmt(transform(expr), cases.map(c => transform(c))), env)  
     // exception-related statements
     case RaiseStmt(expr, from) =>
-      (List(RaiseStmt(expr, from)), env)
+      (RaiseStmt(expr, from), env)
     case TryStmt(tryStmt, handlers, elseStmt, finallyStmt) =>
       val newTryStmt =
         TryStmt(
           transform(tryStmt)._1, handlers.map(transform),
           transform(elseStmt)._1, transform(finallyStmt)._1)
-      (List(newTryStmt), env)
+      (newTryStmt, env)
     case AssertStmt(expr, toRaise) =>
-      (List(AssertStmt(transform(expr), toRaise)), env)
+      (AssertStmt(transform(expr), toRaise), env)
     // module, scope related statements
     case ImportStmt(alias) =>
       val newEnv = transform(alias)
@@ -223,9 +224,9 @@ if gpus:
           (ImportStmt(alias), newEnv)
       }
     case ImportFromStmt(lv, fromId, al) =>
-      (List(ImportFromStmt(lv, fromId, al)), env)
-    case GlobalStmt(il) => (List(GlobalStmt(il)), env)
-    case NonlocalStmt(il) => (List(NonlocalStmt(il)), env)
+      (ImportFromStmt(lv, fromId, al), env)
+    case GlobalStmt(il) => (GlobalStmt(il), env)
+    case NonlocalStmt(il) => (NonlocalStmt(il), env)
     // strict form of expr
     // expr1(le, lk)
     case ExprStmt(Call(expr1, le, lk)) => expr1 match {
@@ -283,16 +284,17 @@ if not hvd_broadcast_done:
         (ExprStmt(transform(Call(expr1, le, lk))), env)
     }
     // general form of expr
-    case ExprStmt(e) => (List(ExprStmt(transform(e))), env)
-    case PassStmt => (List(PassStmt), env)
-    case BreakStmt => (List(BreakStmt), env)
-    case ContinueStmt => (List(ContinueStmt), env)
+    case ExprStmt(e) => (ExprStmt(transform(e)), env)
+    case PassStmt => (PassStmt, env)
+    case BreakStmt => (BreakStmt, env)
+    case ContinueStmt => (ContinueStmt, env)
     // TODO: check transform from simple to compound exists
     case OnelineStmt(ls) =>
       val (newLs, newEnv) = transform(ls)
-      (List(OnelineStmt(newLs)), newEnv)
+      (OnelineStmt(newLs), newEnv)
   }
 
+  // transformer for Expression
   def transform(expr: Expr)(implicit env: Env): Expr = expr match {
     case BoolExpr(op, lhs, rhs) =>
       BoolExpr(op, transform(lhs), transform(rhs))
@@ -371,6 +373,7 @@ if not hvd_broadcast_done:
     case GroupExpr(e) => e
   }
 
+  // transformers for sub-constructs
   def transform(comp: Comprehension)(implicit env: Env): Comprehension = comp match {
     case Compre(target, in, conds) =>
       Compre(target, transform(in), conds.map(transform))
@@ -438,6 +441,7 @@ if not hvd_broadcast_done:
     case MatchGroup(p) => p
   }
 
+  // helper functions
   def parseStmts(code: String): List[Stmt] = {
     TokenListParser(tokenizeText(code))
   }
@@ -463,5 +467,7 @@ if not hvd_broadcast_done:
       case None => lk
     }
   }
+
+  // implicit conversion for Stmt
   implicit def stmt2stmts(stmt: Stmt): List[Stmt] = List(stmt)
 }
