@@ -81,7 +81,7 @@ object Transformer {
                   val newStmts = List(
                     AssignStmt(List(EName(idz)), expr2i),
                     AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-                  ) ++ parseStmts(strictAssignData("optimizer-some")(idz.name))
+                  ) ++ parseStmts(stmtData("assign-optimizer-some")(idz.name))
                   (newStmts, env) 
                 // such id_i doesn't exist
                 case None => 
@@ -89,7 +89,7 @@ object Transformer {
                   val newStmts = List(
                     AssignStmt(List(EName(idz)), exprs.head),
                     AssignStmt(targets, Call(expr1, EName(idz) :: exprs.tail, kwds), ty)
-                  ) ++ parseStmts(strictAssignData("optimizer-none")(idz.name))
+                  ) ++ parseStmts(stmtData("assign-optimizer-none")(idz.name))
                   (newStmts, env)
               }
 
@@ -100,26 +100,27 @@ object Transformer {
     /////////////////////////////////////////////////////////////////
     // general form of assignment
     /////////////////////////////////////////////////////////////////
-    case AssignStmt(targets, e, ty) =>
-      (AssignStmt(targets, transform(e), ty), env)
+
+    // AssignStmt that targets is non-singular or non-id
+    case AssignStmt(targets, e, ty) => (AssignStmt(targets, transform(e), ty), env)
+    // AugAssign case
     case AugAssign(lhs, bop, rhs) => (AugAssign(lhs, bop, transform(rhs)), env)
-    case AnnAssign(expr1, expr2, expr3) =>
-      (expr1, expr3) match {
-        // expr_1 = id_1 and σ("tensor_flow") = id_2 and
-        //   expr_3 = id_2.data.Dataset.expr_4(le, lk)
-        //   TODO: expr_4 id?
-        case (EName(id1), Some(Call(Attribute(Attribute(Attribute(
-          EName(id2), Id("data")), Id("Dataset")), _), le, lk)))
+    // AnnAssign case: 
+    case AnnAssign(e1, e2, e3) =>
+      (e1, e3) match {
+        // case 1) "tensor_flow" -> Dataset case
+        case (EName(id1), 
+              Some(Call(Attribute(Attribute(Attribute(EName(id2), Id("data")), Id("Dataset")), _), le, lk)))
           if env.get("tensor_flow") contains id2 => (
-            // expr_1 : expr_2 = expr_3
-            // TODO: expr_3 means expr_3? ?
-            AnnAssign(expr1, expr2, expr3),
+            AnnAssign(e1, e2, e3),
             env.add("dataset", id1)
           )
-        case _ =>
-          // expr_1 : expr_2 (= TRANS(expr_3)(σ))?
-          (AnnAssign(expr1, expr2, expr3.map(transform)), env)
+        // case 2) otherwise
+        case _ => (AnnAssign(e1, e2, e3.map(transform)), env)
       }
+
+
+    /////////////////////////////////////////////////////////////////
     // for statement
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
       (ForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1), env)
@@ -131,38 +132,49 @@ object Transformer {
     // if statement
     case IfStmt(cond, thenStmt, elseStmt) =>
       (IfStmt(transform(cond), transform(thenStmt)._1, transform(elseStmt)._1), env)
+
+    /////////////////////////////////////////////////////////////////
     // with statement
+    /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
       val (newStmts, newEnv) = transform(doStmt)(tempEnv)
       val diffEnv = env \ tempEnv
+      // get "gradient_tape" id
       diffEnv.get("gradient_tape") match {
-        // σ1 \ σ = ["gradient_tape" -> id]
-        case Some(id) if diffEnv.size == 1 => (
-          WithStmt(ty, newItems, newStmts) ::
-          parseStmts(s"""
-${id.name} = hvd.DistributedGradientTape(${id.name})
-          """),
-          newEnv)
+        // corresponding id found
+        case Some(id) if diffEnv.size == 1 => 
+          val newerStmts = 
+            List(WithStmt(ty, newItems, newStmts)) ++ 
+            parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
+          (newerStmts, newEnv)
+        // not found
         case _ => (WithStmt(ty, newItems, newStmts), newEnv)
       }
+    /////////////////////////////////////////////////////////////////
+    // Async with statement
+    /////////////////////////////////////////////////////////////////
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
       val (newStmts, newEnv) = transform(doStmt)(tempEnv)
       val diffEnv = env \ tempEnv
+      // get "gradient_tap" id
       diffEnv.get("gradient_tape") match {
-        // σ1 \ σ = ["gradient_tape" -> id]
-        case Some(id) if diffEnv.size == 1 => (
-          AsyncWithStmt(ty, newItems, newStmts) ::
-          parseStmts(s"""
-${id.name} = hvd.DistributedGradientTape(${id.name})
-          """),
-          newEnv)
+        // corresponding id found
+        case Some(id) if diffEnv.size == 1 => 
+          val newerStmts =
+            List(AsyncWithStmt(ty, newItems, newStmts)) ++
+            parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
+          (newerStmts, newEnv)
         case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv)
       }
+
+    /////////////////////////////////////////////////////////////////
     // match statement
+    /////////////////////////////////////////////////////////////////
     case MatchStmt(expr, cases) =>
       (MatchStmt(transform(expr), cases.map(c => transform(c))), env)  
+
     // exception-related statements
     case RaiseStmt(expr, from) =>
       (RaiseStmt(expr, from), env)
@@ -174,91 +186,61 @@ ${id.name} = hvd.DistributedGradientTape(${id.name})
       (newTryStmt, env)
     case AssertStmt(expr, toRaise) =>
       (AssertStmt(transform(expr), toRaise), env)
-    // module, scope related statements
+
+    /////////////////////////////////////////////////////////////////
+    // importstmt
+    /////////////////////////////////////////////////////////////////
     case ImportStmt(alias) =>
       val newEnv = transform(alias)
       val diffEnv = newEnv \ env
+      // get "tensor_flow" id 
       diffEnv.get("tensor_flow") match {
-        // σ1 \ σ = ["tensor_flow" -> id]
-        case Some(id) if diffEnv.size == 1 => (
-          // import alias
-          ImportStmt(alias) ::
-          parseStmts(s"""
-import horovod.tensorflow as hvd
-hvd_broadcast_done = False
-hvd_init()
-gpus = ${id.name}.config.experimental.list_pysical_devices('GPU')
-for gpu in gpus:
-  ${id.name}.config.expreimental.set_memory_growth(gpu, True)
-if gpus:
-  ${id.name}.config.experimental.\\
-    set_visible_devices(gpus[hvd.local_rank()], 'GPU')
-          """),
-          newEnv)
-        case _ =>
-          // import alias
-          (ImportStmt(alias), newEnv)
+        // corresponding id found
+        case Some(id) if diffEnv.size == 1 => 
+          val newStmts = List(ImportStmt(alias)) ++ 
+            parseStmts(stmtData("import-some")(id.name)) 
+          (newStmts, newEnv)
+        // corresponding not found
+        case _ => (ImportStmt(alias), newEnv)
       }
-    case ImportFromStmt(lv, fromId, al) =>
-      (ImportFromStmt(lv, fromId, al), env)
+
+    /////////////////////////////////////////////////////////////////
+    // other scope-related
+    case ImportFromStmt(lv, fromId, al) => (ImportFromStmt(lv, fromId, al), env)
     case GlobalStmt(il) => (GlobalStmt(il), env)
     case NonlocalStmt(il) => (NonlocalStmt(il), env)
-    // strict form of expr
-    // expr1(le, lk)
-    case ExprStmt(Call(expr1, le, lk)) => expr1 match {
-      // σ("optimizer") = id_t and expr_1 = id_t.apply_gradients
-      case Attribute(EName(idt), Id("apply_gradients"))
-        if env.get("optimizer") contains idt =>
+
+    /////////////////////////////////////////////////////////////////
+    // strict form of expr stmts
+    case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
+      // func expr is "optimizer.apply_gradients"
+      case Attribute(EName(idt), Id("apply_gradients")) if env.get("optimizer") contains idt =>
           val idz = newId
-          findKwarg(lk, "grads_and_vars") match {
-            // id_i = grads_and_vars when 1 <= i <= k
+          // get "grads_and_vars" id
+          findKwarg(kwds, "grads_and_vars") match {
+            // found 
             case Some(kwarg) =>
               val expr2i = kwarg.expr
-              val newLk = replaceElement(lk, kwarg,
-                kwarg.copy(expr = EName(idz)))
-            (
-              // id_z = expr_2i
-              AssignStmt(List(EName(idz)), expr2i) ::
-              // expr_1(le, lk[expr_2i -> id_z])
-              ExprStmt(Call(expr1, le, newLk)) ::
-              parseStmts(s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${idz.name}],
-    root_rank=0
-  )
-  hvd.broadcast_variables(
-    optimizer.variables(),
-    root_rank=0
-  )
-  hvd_broadcast_done = True
-              """),
-              env)
-            case None => (
-              // id_z = expr_11
-              AssignStmt(List(EName(idz)), le.head) ::
-              // expr1(le[expr_11 -> id_z], lk)
-              ExprStmt(Call(expr1, EName(idz) :: le.tail, lk)) ::
-              parseStmts(s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${idz.name}],
-    root_rank=0
-  )
-  hvd.broadcast_variables(
-    optimizer.variables(),
-    root_rank=0
-  )
-  hvd_broadcast_done = True
-              """),
-              env)
+              val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(idz)))
+              val newStmts = List(
+                AssignStmt(List(EName(idz)), expr2i),
+                ExprStmt(Call(expr1, exprs, newkwds)),
+              ) ++ parseStmts(stmtData("expr-optimizer-some")(idz.name))
+
+              (newStmts, env)
+            // not found
+            case None => 
+              val newStmts = List(
+                AssignStmt(List(EName(idz)), exprs.head),
+                ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
+              ) ++ parseStmts(stmtData("expr-optimizer-none")(idz.name))
+              (newStmts, env)
           }
-      case _ =>
-        // TRANS(expr1(le, lk))(σ)
-        (ExprStmt(transform(Call(expr1, le, lk))), env)
+      // other expr stmts
+      case _ => (ExprStmt(transform(Call(expr1, exprs, kwds))), env)
     }
+
+    /////////////////////////////////////////////////////////////////
     // general form of expr
     case ExprStmt(e) => (ExprStmt(transform(e)), env)
     case PassStmt => (PassStmt, env)
@@ -451,10 +433,22 @@ if not hvd_broadcast_done:
   /////////////////////////////////////////
   // Data needed for transformation
   // TODO refactor this
+  // TODO this is actually static thingy...
   /////////////////////////////////////////
-  val strictAssignData: Map[String, String => String] =
+  val stmtData: Map[String, String => String] =
 Map(
-  "optimizer-some" -> (name => s"""
+  // strict assign
+  "assign-optimizer-some" -> (name => s"""
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${name}],
+    root_rank=0
+  )
+  hvd_broadcast_done = True"""
+  // strict assign
+  ),
+  "assign-optimizer-none" -> (name => s"""
 global hvd_broadcast_done
 if not hvd_broadcast_done:
   hvd.broadcast_variables(
@@ -463,15 +457,46 @@ if not hvd_broadcast_done:
   )
   hvd_broadcast_done = True"""
   ),
-  "optimizer-none" -> (name => s"""
+  // import stmt
+  "import-some" -> (name => s"""
+import horovod.tensorflow as hvd
+hvd_broadcast_done = False
+hvd_init()
+gpus = ${name}.config.experimental.list_pysical_devices('GPU')
+for gpu in gpus:
+  ${name}.config.expreimental.set_memory_growth(gpu, True)
+if gpus:
+  ${name}.config.experimental.\\
+    set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+"""),
+  // expression stmt
+  "expr-optimizer-some" -> (name => s"""
 global hvd_broadcast_done
 if not hvd_broadcast_done:
   hvd.broadcast_variables(
     [x[1] for x in ${name}],
     root_rank=0
   )
-  hvd_broadcast_done = True"""
-  ),
+  hvd.broadcast_variables(
+    optimizer.variables(),
+    root_rank=0
+  )
+  hvd_broadcast_done = True
+"""),
+  // expression stmt
+  "expr-optimizer-non" -> (name => s"""
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${name}],
+    root_rank=0
+  )
+  hvd.broadcast_variables(
+    optimizer.variables(),
+    root_rank=0
+  )
+  hvd_broadcast_done = True
+"""),
 )
 
   // implicit conversion for Stmt
