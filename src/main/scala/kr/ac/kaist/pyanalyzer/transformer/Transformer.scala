@@ -15,27 +15,24 @@ object Transformer {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
   }
 
-  def transform(stmts: List[Stmt])(
-    implicit env: Env
-  ): (List[Stmt], Env) = stmts.foldLeft((List[Stmt](), env)) {
-    case ((stmtList, e), stmt) =>
-      val (newStmtList, newEnv) = transform(stmt)(e)
-      (stmtList ++ newStmtList, newEnv)
-  }
+  def transform(stmts: List[Stmt])(implicit env: Env): (List[Stmt], Env) = 
+    stmts.foldLeft((List[Stmt](), env)) {
+      case ((stmtList, e), stmt) =>
+        val (newStmtList, newEnv) = transform(stmt)(e)
+        (stmtList ++ newStmtList, newEnv)
+    }
 
-  def transform(stmt: Stmt)(
-    implicit env: Env
-  ) : (List[Stmt], Env) = stmt match {
+  def transform(stmt: Stmt)(implicit env: Env) : (List[Stmt], Env) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
-      (List(FunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1)), env) 
+      (List(FunDef(decos, name, args, retTy, tyExpr, transform(body)._1)), env) 
     case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
-      (List(AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)(env)._1)), env) 
+      (List(AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)._1)), env) 
     // class def
     case ClassDef(decos, name, exprs, kwds, body) =>
-      (List(ClassDef(decos, name, exprs, kwds, transform(body)(env)._1)), env)
+      (List(ClassDef(decos, name, exprs, kwds, transform(body)._1)), env)
     // return, del
-    case ReturnStmt(eopt) => (List(ReturnStmt(eopt.map(expr => transform(expr)(env)))), env)
+    case ReturnStmt(eopt) => (List(ReturnStmt(eopt.map(expr => transform(expr)))), env)
     case DelStmt(tl) => (List(DelStmt(tl)), env)
     // strict form of assignment
     // id_r = expr_1(le, lk) (# type: s)?
@@ -128,7 +125,7 @@ if not hvd_broadcast_done:
     // general form of assignment
     case AssignStmt(targets, e, ty) =>
       (List(AssignStmt(targets, transform(e), ty)), env)
-    case AugAssign(lhs, bop, rhs) => (List(AugAssign(lhs, bop, transform(rhs)(env))), env)
+    case AugAssign(lhs, bop, rhs) => (List(AugAssign(lhs, bop, transform(rhs))), env)
     case AnnAssign(expr1, expr2, expr3) =>
       (expr1, expr3) match {
         // expr_1 = id_1 and σ("tensor_flow") = id_2 and
@@ -148,15 +145,15 @@ if not hvd_broadcast_done:
       }
     // for statement
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (List(ForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env)
+      (List(ForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1)), env)
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (List(AsyncForStmt(ty, forExpr, transform(inExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env)
+      (List(AsyncForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1)), env)
     // while statement
     case WhileStmt(wExpr, doStmt, elseStmt) =>
-      (List(WhileStmt(transform(wExpr)(env), transform(doStmt)(env)._1, transform(elseStmt)(env)._1)), env) 
+      (List(WhileStmt(transform(wExpr), transform(doStmt)._1, transform(elseStmt)._1)), env) 
     // if statement
     case IfStmt(cond, thenStmt, elseStmt) =>
-      (List(IfStmt(transform(cond)(env), transform(thenStmt)(env)._1, transform(elseStmt)(env)._1)), env)
+      (List(IfStmt(transform(cond), transform(thenStmt)._1, transform(elseStmt)._1)), env)
     // with statement
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
@@ -188,18 +185,18 @@ ${id.name} = hvd.DistributedGradientTape(${id.name})
       }
     // match statement
     case MatchStmt(expr, cases) =>
-      (List(MatchStmt(transform(expr)(env), cases.map(c => transform(c)(env)))), env)  
+      (List(MatchStmt(transform(expr), cases.map(c => transform(c)))), env)  
     // exception-related statements
     case RaiseStmt(expr, from) =>
       (List(RaiseStmt(expr, from)), env)
     case TryStmt(tryStmt, handlers, elseStmt, finallyStmt) =>
       val newTryStmt =
         TryStmt(
-          transform(tryStmt)(env)._1, handlers.map(transform),
-          transform(elseStmt)(env)._1, transform(finallyStmt)(env)._1)
+          transform(tryStmt)._1, handlers.map(transform),
+          transform(elseStmt)._1, transform(finallyStmt)._1)
       (List(newTryStmt), env)
     case AssertStmt(expr, toRaise) =>
-      (List(AssertStmt(transform(expr)(env), toRaise)), env)
+      (List(AssertStmt(transform(expr), toRaise)), env)
     // module, scope related statements
     case ImportStmt(alias) =>
       val newEnv = transform(alias)
@@ -296,9 +293,7 @@ if not hvd_broadcast_done:
       (List(OnelineStmt(newLs)), newEnv)
   }
 
-  def transform(expr: Expr)(
-    implicit env: Env
-  ): Expr = expr match {
+  def transform(expr: Expr)(implicit env: Env): Expr = expr match {
     case BoolExpr(op, lhs, rhs) =>
       BoolExpr(op, transform(lhs), transform(rhs))
     case NamedExpr(lhs, rhs) => NamedExpr(lhs, transform(rhs))
@@ -376,28 +371,22 @@ if not hvd_broadcast_done:
     case GroupExpr(e) => e
   }
 
-  def transform(comp: Comprehension)(
-    implicit env: Env
-  ): Comprehension = comp match {
+  def transform(comp: Comprehension)(implicit env: Env): Comprehension = comp match {
     case Compre(target, in, conds) =>
       Compre(target, transform(in), conds.map(transform))
     case AsyncCompre(target, in, conds) =>
       AsyncCompre(target, transform(in), conds.map(transform))
   }
 
-  def transform(handler: ExcHandler)(
-    implicit env: Env
-  ): ExcHandler = handler match {
+  def transform(handler: ExcHandler)(implicit env: Env): ExcHandler = handler match {
     case ExcHandler(except, idOpt, body) =>
       ExcHandler(except, idOpt, transform(body)._1)
   }
 
-  def transform(al: List[Alias])(
-    implicit env: Env
-  ): Env = al.foldLeft(env)((e, a) => transform(a)(e))
-  def transform(alias: Alias)(
-    implicit env: Env
-  ): Env = alias match {
+  def transform(al: List[Alias])(implicit env: Env): Env = 
+    al.foldLeft(env)((e, a) => transform(a)(e))
+
+  def transform(alias: Alias)(implicit env: Env): Env = alias match {
     case Alias(List(x), None) if x.name == "tensorflow" =>
       env.add("tensor_flow", x)
     case Alias(List(x), Some(as)) if x.name == "tensorflow" =>
@@ -406,16 +395,13 @@ if not hvd_broadcast_done:
   }
 
   // name changed because of same type after type erasure
-  def transformWithList(wl: List[WithItem])(
-    implicit env: Env
-  ): (List[WithItem], Env) = wl.foldRight(List[WithItem](), env) {
-    case (w, (lw, e)) =>
-      val (wTrans, eTrans) = transform(w)(e)
-      (wTrans :: lw, eTrans)
-  }
-  def transform(w: WithItem)(
-    implicit env: Env
-  ): (WithItem, Env) = w match {
+  def transformWithList(wl: List[WithItem])(implicit env: Env): (List[WithItem], Env) = 
+    wl.foldRight(List[WithItem](), env) {
+      case (w, (lw, e)) =>
+        val (wTrans, eTrans) = transform(w)(e)
+        (wTrans :: lw, eTrans)
+    }
+  def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
     case WithItem(e, None) => (WithItem(transform(e), None), env)
     case WithItem(e, Some(asE)) => (env.get("tensor_flow"), e, asE) match {
       case (
@@ -428,16 +414,12 @@ if not hvd_broadcast_done:
       }
   }
 
-  def transform(mc: MatchCase)(
-    implicit env: Env
-  ): MatchCase = mc match {
+  def transform(mc: MatchCase)(implicit env: Env): MatchCase = mc match {
     case MatchCase(pat, cond, body) =>
       MatchCase(transform(pat), cond.map(transform), transform(body)._1)
   }
 
-  def transform(pat: Pattern)(
-    implicit env: Env
-  ): Pattern = pat match {
+  def transform(pat: Pattern)(implicit env: Env): Pattern = pat match {
     case MatchValue(e) => MatchValue(transform(e))
     case MatchSingleton(c) => MatchSingleton(c)
     case MatchSeq(lpat) => MatchSeq(lpat.map(transform))
