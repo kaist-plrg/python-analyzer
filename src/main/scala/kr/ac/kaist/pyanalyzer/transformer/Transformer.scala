@@ -7,9 +7,9 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
-trait Transformer {
+object Transformer {
   // transformed one AST into another AST
-  def apply(ast: Node): Node = ???
+  def apply(ast: List[Stmt]): List[Stmt] = transform(ast)(Env(Map()))._1
 
   def transform(ast: Node): Node = ast match {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
@@ -17,9 +17,9 @@ trait Transformer {
 
   def transform(stmts: List[Stmt])(
     implicit env: Env
-  ): (List[Stmt], Env) = stmts.foldLeft((List[Stmt](), Env())) {
-    case ((stmtList, env), stmt) =>
-      val (newStmtList, newEnv) = transform(stmt)(env)
+  ): (List[Stmt], Env) = stmts.foldLeft((List[Stmt](), env)) {
+    case ((stmtList, e), stmt) =>
+      val (newStmtList, newEnv) = transform(stmt)(e)
       (stmtList ++ newStmtList, newEnv)
   }
 
@@ -49,7 +49,6 @@ trait Transformer {
             EName(idt), Id("data")), Id("Dataset")), _)
             if env.get("tensor_flow") contains idt =>
               // id_r = expr_1(le, lk) (# type: s)?
-              // TODO: where is id_1?
               (AssignStmt(targets, Call(expr1, le, lk), ty),
                 env.add("dataset", idr))
           // σ("tensor_flow") = id_t and expr_1 = id_t.optimizer.Adam
@@ -61,7 +60,7 @@ trait Transformer {
                   val expr2i = kwarg.expr
                   val newLk = replaceElement(lk, kwarg, kwarg.copy(
                     // TODO: check precidence
-                    expr = parseExpr(s"${beautify(expr2i)} * hvd.size()")
+                    expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
                   ))
                   // id_r = expr1(le, lk[expr_2i -> expr_2i * hvd.size()])
                   //   (# type: s)?
@@ -72,7 +71,7 @@ trait Transformer {
                   // id_r = expr1(le[expr_11 -> expr_11 * hvd.size()], lk)
                   //   (# type: s)?
                   (AssignStmt(targets, Call(expr1,
-                    parseExpr(s"${beautify(le.head)} * hvd.size()") ::
+                    parseExpr(s"(${beautify(le.head)}) * hvd.size()") ::
                     le.tail, lk), ty), env.add("optimizer", idr))
               }
           // σ("optimizer") = id_t and expr = id_t.apply_gradients
@@ -91,32 +90,31 @@ trait Transformer {
                     // id_r = expr_1(le, lk[expr_2i -> id_z]) (# type: s)?
                     AssignStmt(targets, Call(expr1, le, newLk), ty) ::
                     parseStmts(s"""
-                      global hvd_broadcast_done
-                      if not hvd_broadcast_done:
-                        hvd.broadcast_variables(
-                          [x[1] for x in ${idz.name}],
-                          root_rank=0
-                        )
-                        hvd_broadcast_done = True
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${idz.name}],
+    root_rank=0
+  )
+  hvd_broadcast_done = True
                     """),
                     env
                   )
                 // such id_i doesn't exist
                 case None => (
-                  // TODO: assert le is nonempty
                   // id_z = expr_11
                   AssignStmt(List(EName(idz)), le.head) ::
                   // id_r = expr_1(le[expr_11 -> id_z], lk) (# type: s)?
                   AssignStmt(targets, Call(expr1,
                     EName(idz) :: le.tail, lk), ty) ::
                   parseStmts(s"""
-                    global hvd_broadcast_done
-                    if not hvd_broadcast_done:
-                      hvd.broadcast_variables(
-                        [x[1] for x in ${idz.name}],
-                        root_rank=0
-                      )
-                      hvd_broadcast_done = True
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${idz.name}],
+    root_rank=0
+  )
+  hvd_broadcast_done = True
                   """),
                   env
                 )
@@ -138,10 +136,15 @@ trait Transformer {
         //   TODO: expr_4 id?
         case (EName(id1), Some(Call(Attribute(Attribute(Attribute(
           EName(id2), Id("data")), Id("Dataset")), _), le, lk)))
-          if env.get("tensor_flow") contains id2 =>
-            // TODO: type comment?
-            ???
-        case _ => ???
+          if env.get("tensor_flow") contains id2 => (
+            // expr_1 : expr_2 = expr_3
+            // TODO: expr_3 means expr_3? ?
+            AnnAssign(expr1, expr2, expr3),
+            env.add("dataset", id1)
+          )
+        case _ =>
+          // expr_1 : expr_2 (= TRANS(expr_3)(σ))?
+          (AnnAssign(expr1, expr2, expr3.map(transform)), env)
       }
     // for statement
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
@@ -164,7 +167,7 @@ trait Transformer {
         case Some(id) if diffEnv.size == 1 => (
           WithStmt(ty, newItems, newStmts) ::
           parseStmts(s"""
-            ${id.name} = hvd.DistributedGradientTape(${id.name})
+${id.name} = hvd.DistributedGradientTape(${id.name})
           """),
           newEnv)
         case _ => (WithStmt(ty, newItems, newStmts), newEnv)
@@ -178,7 +181,7 @@ trait Transformer {
         case Some(id) if diffEnv.size == 1 => (
           AsyncWithStmt(ty, newItems, newStmts) ::
           parseStmts(s"""
-            ${id.name} = hvd.DistributedGradientTape(${id.name})
+${id.name} = hvd.DistributedGradientTape(${id.name})
           """),
           newEnv)
         case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv)
@@ -207,15 +210,15 @@ trait Transformer {
           // import alias
           ImportStmt(alias) ::
           parseStmts(s"""
-            import horovod.tensorflow as hvd
-            hvd_broadcast_done = False
-            hvd_init()
-            gpus = ${id.name}.config.experimental.list_pysical_devices('GPU')
-            for gpu in gpus:
-              ${id.name}.config.expreimental.set_memory_growth(gpu, True)
-            if gpus:
-              ${id.name}.config.experimental.\\
-                set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+import horovod.tensorflow as hvd
+hvd_broadcast_done = False
+hvd_init()
+gpus = ${id.name}.config.experimental.list_pysical_devices('GPU')
+for gpu in gpus:
+  ${id.name}.config.expreimental.set_memory_growth(gpu, True)
+if gpus:
+  ${id.name}.config.experimental.\\
+    set_visible_devices(gpus[hvd.local_rank()], 'GPU')
           """),
           newEnv)
         case _ =>
@@ -245,37 +248,36 @@ trait Transformer {
               // expr_1(le, lk[expr_2i -> id_z])
               ExprStmt(Call(expr1, le, newLk)) ::
               parseStmts(s"""
-                global hvd_broadcast_done
-                if not hvd_broadcast_done:
-                  hvd.broadcast_variables(
-                    [x[1] for x in ${idz.name}],
-                    root_rank=0
-                  )
-                  hvd.broadcast_variables(
-                    optimizer.variables(),
-                    root_rank=0
-                  )
-                  hvd_broadcast_done = True
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${idz.name}],
+    root_rank=0
+  )
+  hvd.broadcast_variables(
+    optimizer.variables(),
+    root_rank=0
+  )
+  hvd_broadcast_done = True
               """),
               env)
             case None => (
-              // TODO: assert le is nonempty
               // id_z = expr_11
               AssignStmt(List(EName(idz)), le.head) ::
               // expr1(le[expr_11 -> id_z], lk)
               ExprStmt(Call(expr1, EName(idz) :: le.tail, lk)) ::
               parseStmts(s"""
-                global hvd_broadcast_done
-                if not hvd_broadcast_done:
-                  hvd.broadcast_variables(
-                    [x[1] for x in ${idz.name}],
-                    root_rank=0
-                  )
-                  hvd.broadcast_variables(
-                    optimizer.variables(),
-                    root_rank=0
-                  )
-                  hvd_broadcast_done = True
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${idz.name}],
+    root_rank=0
+  )
+  hvd.broadcast_variables(
+    optimizer.variables(),
+    root_rank=0
+  )
+  hvd_broadcast_done = True
               """),
               env)
           }
@@ -336,19 +338,26 @@ trait Transformer {
       transform(head),
       lp.map { case (op, e) => (op, transform(e)) }
     )
-    case Call(f, le, kwds) => (env.get("dataset"), f) match {
-      case (Some(x), Attribute(EName(fname), Id("take"))) =>
-        val containsCountKwarg = kwds.exists {
-          case Kwarg(Some(Id("count")), _) => true
-          case _ => false
-        }
-        // TODO: handle comment!!
-        val (newLe, newKwds) = (???, ???)
-        Call(f, newLe, newKwds)
+    case Call(expr1, le, lk) => expr1 match {
+      // σ("dataset") = id_t and expr_1 = id_t.take
+      case Attribute(EName(idt), Id("take"))
+        if env.get("dataset") contains idt =>
+          findKwarg(lk, "count") match {
+            case Some(kwarg) =>
+              val expr2i = kwarg.expr
+              val newLk = replaceElement(lk, kwarg,
+                kwarg.copy(expr = parseExpr(s"${beautify(expr2i)} // hvd.size()")))
+              Call(expr1, le, newLk)
+            case None => Call(
+              expr1,
+              parseExpr(s"${beautify(le.head)} // hvd.size()") :: le.tail,
+              lk
+            )
+          }
       case _ => Call(
-        transform(f),
+        transform(expr1),
         le.map(transform),
-        kwds.map { case Kwarg(opt, e) => Kwarg(opt, transform(e)) }
+        lk.map { case Kwarg(opt, e) => Kwarg(opt, transform(e)) }
       )
     }
     case FormattedValue(lhs, n, rhs) => FormattedValue(lhs, n, rhs)
@@ -458,7 +467,8 @@ trait Transformer {
     }
   }
 
-  def newId: Id = ???
+  // TODO: need new id gen algorithm
+  def newId: Id = Id("id_new")
   def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] =
     lk.find {
       case Kwarg(Some(Id(x)), _) if x == str => true

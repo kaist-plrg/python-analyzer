@@ -2,6 +2,7 @@ package kr.ac.kaist.pyanalyzer.command
 
 import kr.ac.kaist.pyanalyzer.command.Parse
 import kr.ac.kaist.pyanalyzer.command.ParseREPL
+import kr.ac.kaist.pyanalyzer.command.Transform
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
@@ -10,13 +11,14 @@ object Command {
     CmdHelp,
     CmdParse,
     CmdParseREPL,
+    CmdTransform,
   )
   val cmdMap = commands.foldLeft(Map[String, Command]()) {
     case (map, command) => map + (command.name -> command)
   }
 }
 
-trait Command {
+sealed trait Command {
   val name: String
   val help: String
   def apply(params: List[String]): Any
@@ -51,4 +53,10 @@ case object CmdParseREPL extends Command {
   val name = "parse-repl"
   val help = "Parse REPL"
   def apply(params: List[String]): Unit = ParseREPL(params)
+}
+
+case object CmdTransform extends Command {
+  val name = "transform"
+  val help = "transform signle gpu code to multi gpu code"
+  def apply(params: List[String]): Unit = Transform(params)
 }
