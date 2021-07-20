@@ -25,7 +25,7 @@ object Transformer {
         (stmtList ++ newStmtList, newEnv)
     }
 
-  def transform(stmt: Stmt)(implicit env: Env) : (List[Stmt], Env) = stmt match {
+  def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
       (FunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
@@ -37,7 +37,8 @@ object Transformer {
       (ClassDef(decos, name, exprs, kwds, transform(body)._1), env)
 
     // return, del
-    case ReturnStmt(eopt) => (ReturnStmt(eopt.map(expr => transform(expr))), env)
+    case ReturnStmt(eopt) =>
+      (ReturnStmt(eopt.map(expr => transform(expr))), env)
     case DelStmt(tl) => (DelStmt(tl), env)
 
     /////////////////////////////////////////////////////////////////
@@ -50,7 +51,8 @@ object Transformer {
           // case 1) "tensor_flow" -> data.Dataset
           case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
             if env.get("tensor_flow") == Id(idt.name) =>
-              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), env.add("dataset", idr))
+              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
+                env.add("dataset", idr))
 
           // case 2) "tensor_flow" -> optimizers.Adam 
           case Attribute(Attribute(EName(fid), Id("optimizer")), Id("Adam")) =>
@@ -59,13 +61,17 @@ object Transformer {
               case Some(kwarg) =>
                 val expr2i = kwarg.expr
                 val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()") // TODO check precedence
+                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
                 ))
-                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), env.add("optimizer", idr))
+                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
+                  env.add("optimizer", idr))
               // such id_i doesn't exist
               case None =>
-                val newexprs = parseExpr(s"(${beautify(exprs.head)}) * hvd.size()") :: exprs.tail
-                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), env.add("optimizer", idr))
+                val newexprs = 
+                  List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
+                  exprs.tail
+                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
+                  env.add("optimizer", idr))
             }
 
           // case 3) "optimizer" -> apply_gradients
@@ -88,7 +94,7 @@ object Transformer {
                   // idz == expr_11
                   val newStmts = List(
                     AssignStmt(List(EName(idz)), exprs.head),
-                    AssignStmt(targets, Call(expr1, EName(idz) :: exprs.tail, kwds), ty)
+                    AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
                   ) ++ parseStmts(stmtData("assign-optimizer-none")(idz.name))
                   (newStmts, env)
               }
@@ -102,7 +108,8 @@ object Transformer {
     /////////////////////////////////////////////////////////////////
 
     // AssignStmt that targets is non-singular or non-id
-    case AssignStmt(targets, e, ty) => (AssignStmt(targets, transform(e), ty), env)
+    case AssignStmt(targets, e, ty) => 
+      (AssignStmt(targets, transform(e), ty), env)
     // AugAssign case
     case AugAssign(lhs, bop, rhs) => (AugAssign(lhs, bop, transform(rhs)), env)
     // AnnAssign case: 
@@ -214,14 +221,16 @@ object Transformer {
     // strict form of expr stmts
     case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       // func expr is "optimizer.apply_gradients"
-      case Attribute(EName(idt), Id("apply_gradients")) if env.get("optimizer") contains idt =>
+      case Attribute(EName(idt), Id("apply_gradients")) 
+        if env.get("optimizer") contains idt =>
           val idz = newId
           // get "grads_and_vars" id
           findKwarg(kwds, "grads_and_vars") match {
             // found 
             case Some(kwarg) =>
               val expr2i = kwarg.expr
-              val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(idz)))
+              val newkwarg = kwarg.copy(expr = EName(idz))
+              val newkwds = replaceElement(kwds, kwarg, newkwarg)
               val newStmts = List(
                 AssignStmt(List(EName(idz)), expr2i),
                 ExprStmt(Call(expr1, exprs, newkwds)),
@@ -256,14 +265,17 @@ object Transformer {
   // transformer for Expression
   /////////////////////////////////////////
   def transform(expr: Expr)(implicit env: Env): Expr = expr match {
-    case BoolExpr(op, lhs, rhs) =>
+    case BoolExpr(op, lhs, rhs) => 
       BoolExpr(op, transform(lhs), transform(rhs))
-    case NamedExpr(lhs, rhs) => NamedExpr(lhs, transform(rhs))
-    case BinaryExpr(op, lhs, rhs) =>
+    case NamedExpr(lhs, rhs) => 
+      NamedExpr(lhs, transform(rhs))
+    case BinaryExpr(op, lhs, rhs) => 
       BinaryExpr(op, transform(lhs), transform(rhs))
-    case UnaryExpr(op, e) => UnaryExpr(op, transform(e))
-    case LambdaExpr(args, e) => LambdaExpr(args, transform(e))
-    case IfExpr(e, cond, ee) =>
+    case UnaryExpr(op, e) => 
+      UnaryExpr(op, transform(e))
+    case LambdaExpr(args, e) => 
+      LambdaExpr(args, transform(e))
+    case IfExpr(e, cond, ee) => 
       IfExpr(transform(e),transform(cond),transform(ee))
     case DictExpr(map, dstar) => DictExpr(
       map.map { case (k, v) => (k, transform(v)) },
@@ -297,7 +309,7 @@ object Transformer {
     )
     case Call(expr1, le, lk) => expr1 match {
       // σ("dataset") = id_t and expr_1 = id_t.take
-      case Attribute(EName(idt), Id("take"))
+      case Attribute(EName(idt), Id("take")) 
         if env.get("dataset") contains idt =>
           findKwarg(lk, "count") match {
             case Some(kwarg) =>
@@ -333,18 +345,22 @@ object Transformer {
     case GroupExpr(e) => e
   }
 
+  /////////////////////////////////////////
   // transformers for sub-constructs
-  def transform(comp: Comprehension)(implicit env: Env): Comprehension = comp match {
-    case Compre(target, in, conds) =>
-      Compre(target, transform(in), conds.map(transform))
-    case AsyncCompre(target, in, conds) =>
-      AsyncCompre(target, transform(in), conds.map(transform))
-  }
+  /////////////////////////////////////////
+  def transform(comp: Comprehension)(implicit env: Env): Comprehension = 
+    comp match {
+      case Compre(target, in, conds) =>
+        Compre(target, transform(in), conds.map(transform))
+      case AsyncCompre(target, in, conds) =>
+        AsyncCompre(target, transform(in), conds.map(transform))
+    }
 
-  def transform(handler: ExcHandler)(implicit env: Env): ExcHandler = handler match {
-    case ExcHandler(except, idOpt, body) =>
-      ExcHandler(except, idOpt, transform(body)._1)
-  }
+  def transform(handler: ExcHandler)(implicit env: Env): ExcHandler = 
+    handler match {
+      case ExcHandler(except, idOpt, body) =>
+        ExcHandler(except, idOpt, transform(body)._1)
+    }
 
   def transform(al: List[Alias])(implicit env: Env): Env = 
     al.foldLeft(env)((e, a) => transform(a)(e))
@@ -364,6 +380,7 @@ object Transformer {
         val (wTrans, eTrans) = transform(w)(e)
         (wTrans :: lw, eTrans)
     }
+
   def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
     case WithItem(e, None) => (WithItem(transform(e), None), env)
     case WithItem(e, Some(asE)) => (env.get("tensor_flow"), e, asE) match {
@@ -432,7 +449,6 @@ object Transformer {
 
   /////////////////////////////////////////
   // Data needed for transformation
-  // TODO refactor this
   // TODO this is actually static thingy...
   /////////////////////////////////////////
   val stmtData: Map[String, String => String] = Map(
