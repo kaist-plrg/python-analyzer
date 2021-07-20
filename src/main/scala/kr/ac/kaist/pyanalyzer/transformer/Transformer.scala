@@ -435,69 +435,68 @@ object Transformer {
   // TODO refactor this
   // TODO this is actually static thingy...
   /////////////////////////////////////////
-  val stmtData: Map[String, String => String] =
-Map(
-  // strict assign
-  "assign-optimizer-some" -> (name => s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${name}],
-    root_rank=0
+  val stmtData: Map[String, String => String] = Map(
+    // strict assign
+    "assign-optimizer-some" -> (name => 
+        s"""global hvd_broadcast_done
+           |if not hvd_broadcast_done:
+           |  hvd.broadcast_variables(
+           |    [x[1] for x in ${name}],
+           |    root_rank=0
+           |  )
+           |  hvd_broadcast_done = True""".stripMargin
+    ),
+    // strict assign
+    "assign-optimizer-none" -> (name => 
+        s"""global hvd_broadcast_done
+           |if not hvd_broadcast_done:
+           |  hvd.broadcast_variables(
+           |    [x[1] for x in ${name}],
+           |    root_rank=0
+           |  )
+           |  hvd_broadcast_done = True""".stripMargin
+    ),
+    // import stmt
+    "import-some" -> (name => 
+        s"""import horovod.tensorflow as hvd
+           |hvd_broadcast_done = False
+           |hvd_init()
+           |gpus = ${name}.config.experimental.list_pysical_devices('GPU')
+           |for gpu in gpus:
+           |  ${name}.config.expreimental.set_memory_growth(gpu, True)
+           |if gpus:
+           |  ${name}.config.experimental.\\
+           |    set_visible_devices(gpus[hvd.local_rank()], 'GPU')""".stripMargin
+    ),
+    // expression stmt
+    "expr-optimizer-some" -> (name => 
+        s"""global hvd_broadcast_done
+           |if not hvd_broadcast_done:
+           |  hvd.broadcast_variables(
+           |    [x[1] for x in ${name}],
+           |    root_rank=0
+           |  )
+           |  hvd.broadcast_variables(
+           |    optimizer.variables(),
+           |    root_rank=0
+           |  )
+           |  hvd_broadcast_done = True""".stripMargin
+    ),
+    // expression stmt
+    "expr-optimizer-none" -> (name => 
+        s"""global hvd_broadcast_done
+           |if not hvd_broadcast_done:
+           |  hvd.broadcast_variables(
+           |    [x[1] for x in ${name}],
+           |    root_rank=0
+           |  )
+           |  hvd.broadcast_variables(
+           |    optimizer.variables(),
+           |    root_rank=0
+           |  )
+           |  hvd_broadcast_done = True""".stripMargin
+    ),
   )
-  hvd_broadcast_done = True"""
-  // strict assign
-  ),
-  "assign-optimizer-none" -> (name => s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${name}],
-    root_rank=0
-  )
-  hvd_broadcast_done = True"""
-  ),
-  // import stmt
-  "import-some" -> (name => s"""
-import horovod.tensorflow as hvd
-hvd_broadcast_done = False
-hvd_init()
-gpus = ${name}.config.experimental.list_pysical_devices('GPU')
-for gpu in gpus:
-  ${name}.config.expreimental.set_memory_growth(gpu, True)
-if gpus:
-  ${name}.config.experimental.\\
-    set_visible_devices(gpus[hvd.local_rank()], 'GPU')
-"""),
-  // expression stmt
-  "expr-optimizer-some" -> (name => s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${name}],
-    root_rank=0
-  )
-  hvd.broadcast_variables(
-    optimizer.variables(),
-    root_rank=0
-  )
-  hvd_broadcast_done = True
-"""),
-  // expression stmt
-  "expr-optimizer-non" -> (name => s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${name}],
-    root_rank=0
-  )
-  hvd.broadcast_variables(
-    optimizer.variables(),
-    root_rank=0
-  )
-  hvd_broadcast_done = True
-"""),
-)
 
   // implicit conversion for Stmt
   implicit def stmt2stmts(stmt: Stmt): List[Stmt] = List(stmt)
