@@ -15,7 +15,9 @@ object Transformer {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
   }
 
+  /////////////////////////////////////////
   // transformer for statements
+  /////////////////////////////////////////
   def transform(stmts: List[Stmt])(implicit env: Env): (List[Stmt], Env) = 
     stmts.foldLeft((List[Stmt](), env)) {
       case ((stmtList, e), stmt) =>
@@ -268,7 +270,9 @@ if not hvd_broadcast_done:
       (OnelineStmt(newLs), newEnv)
   }
 
+  /////////////////////////////////////////
   // transformer for Expression
+  /////////////////////////////////////////
   def transform(expr: Expr)(implicit env: Env): Expr = expr match {
     case BoolExpr(op, lhs, rhs) =>
       BoolExpr(op, transform(lhs), transform(rhs))
@@ -415,7 +419,9 @@ if not hvd_broadcast_done:
     case MatchGroup(p) => p
   }
 
+  /////////////////////////////////////////
   // helper functions
+  /////////////////////////////////////////
   def parseStmts(code: String): List[Stmt] = {
     TokenListParser(tokenizeText(code))
   }
@@ -442,6 +448,10 @@ if not hvd_broadcast_done:
     }
   }
 
+  /////////////////////////////////////////
+  // Data needed for transformation
+  // TODO refactor this
+  /////////////////////////////////////////
   val strictAssignData: Map[String, String => String] =
 Map(
   "optimizer-some" -> (name => s"""
