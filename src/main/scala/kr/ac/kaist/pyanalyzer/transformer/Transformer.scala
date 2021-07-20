@@ -29,101 +29,75 @@ object Transformer {
       (FunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
     case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
       (AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
+
     // class def
     case ClassDef(decos, name, exprs, kwds, body) =>
       (ClassDef(decos, name, exprs, kwds, transform(body)._1), env)
+
     // return, del
     case ReturnStmt(eopt) => (ReturnStmt(eopt.map(expr => transform(expr))), env)
     case DelStmt(tl) => (DelStmt(tl), env)
-    // strict form of assignment
-    // id_r = expr_1(le, lk) (# type: s)?
-    case AssignStmt(targets, Call(expr1, le, lk), ty)
-      if targets.size == 1 && targets.head.isInstanceOf[EName] =>
+
+    /////////////////////////////////////////////////////////////////
+    //// strict form of assignment
+    /////////////////////////////////////////////////////////////////
+    case AssignStmt(targets, Call(expr1, exprs, kwds), ty)
+      if (targets.size == 1 && targets.head.isInstanceOf[EName]) =>
         val EName(idr) = targets.head
         expr1 match {
-          // σ("tensor_flow") = id_t and expr_1 = id_t.data.Dataset.expr_3
-          // TODO: is expr_3 means id?
-          case Attribute(Attribute(Attribute(
-            EName(idt), Id("data")), Id("Dataset")), _)
-            if env.get("tensor_flow") contains idt =>
-              // id_r = expr_1(le, lk) (# type: s)?
-              (AssignStmt(targets, Call(expr1, le, lk), ty),
-                env.add("dataset", idr))
-          // σ("tensor_flow") = id_t and expr_1 = id_t.optimizer.Adam
-          case Attribute(Attribute(
-            EName(fid), Id("optimizer")), Id("Adam")) =>
-              findKwarg(lk, "learning_rate") match {
-                // id_i = learning_rate when 1 <= i <= k
-                case Some(kwarg) =>
-                  val expr2i = kwarg.expr
-                  val newLk = replaceElement(lk, kwarg, kwarg.copy(
-                    // TODO: check precidence
-                    expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-                  ))
-                  // id_r = expr1(le, lk[expr_2i -> expr_2i * hvd.size()])
-                  //   (# type: s)?
-                  (AssignStmt(targets, Call(expr1, le, newLk), ty),
-                    env.add("optimizer", idr))
-                // such id_i doesn't exist
-                case None =>
-                  // id_r = expr1(le[expr_11 -> expr_11 * hvd.size()], lk)
-                  //   (# type: s)?
-                  (AssignStmt(targets, Call(expr1,
-                    parseExpr(s"(${beautify(le.head)}) * hvd.size()") ::
-                    le.tail, lk), ty), env.add("optimizer", idr))
-              }
-          // σ("optimizer") = id_t and expr = id_t.apply_gradients
+          // case 1) "tensor_flow" -> data.Dataset
+          case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
+            if env.get("tensor_flow") == Id(idt.name) =>
+              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), env.add("dataset", idr))
+
+          // case 2) "tensor_flow" -> optimizers.Adam 
+          case Attribute(Attribute(EName(fid), Id("optimizer")), Id("Adam")) =>
+            // find id_i "learning_rate"
+            findKwarg(kwds, "learning_rate") match {
+              case Some(kwarg) =>
+                val expr2i = kwarg.expr
+                val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
+                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()") // TODO check precedence
+                ))
+                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), env.add("optimizer", idr))
+              // such id_i doesn't exist
+              case None =>
+                val newexprs = parseExpr(s"(${beautify(exprs.head)}) * hvd.size()") :: exprs.tail
+                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), env.add("optimizer", idr))
+            }
+
+          // case 3) "optimizer" -> apply_gradients
           case Attribute(EName(idt), Id("apply_gradients"))
             if env.get("optimizer") contains idt =>
               val idz = newId
-              findKwarg(lk, "grads_and_vars") match {
-                // id_i = grads_and_vars when 1 <= i <= k
+              // find id_i "grads_and_vars"
+              findKwarg(kwds, "grads_and_vars") match {
                 case Some(kwarg) =>
                   val expr2i = kwarg.expr
-                  val newLk = replaceElement(lk, kwarg,
+                  val newkwds = replaceElement(kwds, kwarg,
                     kwarg.copy(expr = EName(idz)))
-                  (
-                    // id_z = expr_2i
-                    AssignStmt(List(EName(idz)), expr2i) ::
-                    // id_r = expr_1(le, lk[expr_2i -> id_z]) (# type: s)?
-                    AssignStmt(targets, Call(expr1, le, newLk), ty) ::
-                    parseStmts(s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${idz.name}],
-    root_rank=0
-  )
-  hvd_broadcast_done = True
-                    """),
-                    env
-                  )
+                  val newStmts = List(
+                    AssignStmt(List(EName(idz)), expr2i),
+                    AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
+                  ) ++ parseStmts(strictAssignData("optimizer-some")(idz.name))
+                  (newStmts, env) 
                 // such id_i doesn't exist
-                case None => (
-                  // id_z = expr_11
-                  AssignStmt(List(EName(idz)), le.head) ::
-                  // id_r = expr_1(le[expr_11 -> id_z], lk) (# type: s)?
-                  AssignStmt(targets, Call(expr1,
-                    EName(idz) :: le.tail, lk), ty) ::
-                  parseStmts(s"""
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-  hvd.broadcast_variables(
-    [x[1] for x in ${idz.name}],
-    root_rank=0
-  )
-  hvd_broadcast_done = True
-                  """),
-                  env
-                )
+                case None => 
+                  // idz == expr_11
+                  val newStmts = List(
+                    AssignStmt(List(EName(idz)), exprs.head),
+                    AssignStmt(targets, Call(expr1, EName(idz) :: exprs.tail, kwds), ty)
+                  ) ++ parseStmts(strictAssignData("optimizer-none")(idz.name))
+                  (newStmts, env)
               }
-          case _ => (
-            // id_r = TRANS(expr_1(le, lk))(σ) (# type: s)?
-            AssignStmt(targets, transform(Call(expr1, le, lk)), ty),
-            env
-          )
+
+          // case 4) etc.
+          case _ =>
+            (AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
         }
+    /////////////////////////////////////////////////////////////////
     // general form of assignment
+    /////////////////////////////////////////////////////////////////
     case AssignStmt(targets, e, ty) =>
       (AssignStmt(targets, transform(e), ty), env)
     case AugAssign(lhs, bop, rhs) => (AugAssign(lhs, bop, transform(rhs)), env)
@@ -467,6 +441,28 @@ if not hvd_broadcast_done:
       case None => lk
     }
   }
+
+  val strictAssignData: Map[String, String => String] =
+Map(
+  "optimizer-some" -> (name => s"""
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${name}],
+    root_rank=0
+  )
+  hvd_broadcast_done = True"""
+  ),
+  "optimizer-none" -> (name => s"""
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables(
+    [x[1] for x in ${name}],
+    root_rank=0
+  )
+  hvd_broadcast_done = True"""
+  ),
+)
 
   // implicit conversion for Stmt
   implicit def stmt2stmts(stmt: Stmt): List[Stmt] = List(stmt)
