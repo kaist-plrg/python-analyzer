@@ -424,6 +424,7 @@ object Transformer {
   def parseStmts(code: String): List[Stmt] = {
     TokenListParser(tokenizeText(code))
   }
+
   def parseExpr(str: String): Expr = {
     val stmts = parseStmts(str)
     stmts.headOption match {
@@ -434,11 +435,13 @@ object Transformer {
 
   // TODO: need new id gen algorithm
   def newId: Id = Id("id_new")
+
   def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] =
     lk.find {
       case Kwarg(Some(Id(x)), _) if x == str => true
       case _ => false
     }
+
   def replaceElement[T](lk: List[T], from: T, to: T): List[T] = {
     lk.zipWithIndex.find(e => e._1 == from) match {
       case Some((e, index)) =>
@@ -514,6 +517,8 @@ object Transformer {
     ),
   )
 
+  /////////////////////////////////////////
   // implicit conversion for Stmt
+  /////////////////////////////////////////
   implicit def stmt2stmts(stmt: Stmt): List[Stmt] = List(stmt)
 }
