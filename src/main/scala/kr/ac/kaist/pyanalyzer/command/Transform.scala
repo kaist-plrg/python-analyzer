@@ -55,7 +55,8 @@ object Transform {
           try executeCmd(s"colordiff -u hvd trans") catch {
             case e: Throwable =>
               executeCmd(s"diff -u hvd trans")
-              println(s"${RED}install colordiff${RESET}")
+              println
+              println(s"${YELLOW}[Warning] install colordiff${RESET}")
           }
           executeCmd(s"rm hvd trans")
         }
