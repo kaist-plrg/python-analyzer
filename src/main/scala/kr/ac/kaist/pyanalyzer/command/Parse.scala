@@ -9,14 +9,9 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object Parse {
-  def apply(params: List[String]): Unit = {
-    var DEBUG = params contains "-d"
-    val target = params.headOption match {
-      case Some(option) if option startsWith "-target:" =>
-        Some(option.drop(8))
-      case opt => None
-    }
-
+  def apply(optionMap: Map[String, String]): Unit = {
+    var DEBUG = optionMap contains "d"
+    val target = optionMap.get("target")
     // TODO: handle the AST
     // TODO: refactor verbous call
     val files = walkTree(HOROVOD_DIR)

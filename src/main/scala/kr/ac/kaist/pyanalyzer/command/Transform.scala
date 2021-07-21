@@ -10,13 +10,8 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object Transform {
-  def apply(params: List[String]): Unit = {
-    var DEBUG = params contains "-d"
-    val target = params.headOption match {
-      case Some(option) if option startsWith "-target:" =>
-        Some(option.drop(8))
-      case opt => None
-    }
+  def apply(optionMap: Map[String, String]): Unit = {
+    val target = optionMap.get("target")
     val files = walkTree(HOROVOD_DIR)
     try for {
       file <- files
@@ -25,11 +20,6 @@ object Transform {
       relPath = orgPath.drop(HOROVOD_DIR.length + 1)
       if target.map(relPath contains _).getOrElse(true)
     } {
-      if (DEBUG) scala.io.StdIn.readLine match {
-        case "q" => throw new RuntimeException("quit")
-        case "c" => DEBUG = false
-        case _ => true
-      }
       // parse
       println
       println(s"$CYAN$relPath$RESET")

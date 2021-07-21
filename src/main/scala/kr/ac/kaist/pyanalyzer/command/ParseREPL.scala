@@ -48,7 +48,7 @@ ${RESET}"""
     LINE_SEP + s"${MAGENTA}py-analyze>${RESET} "
 
   // main apply: get input line and try parsing the line
-  def apply(params: List[String]): Unit = {
+  def apply(optionMap: Map[String, String]): Unit = {
     println(help)
     try while (true) try {
       val str = reader.readLine(prompt)
