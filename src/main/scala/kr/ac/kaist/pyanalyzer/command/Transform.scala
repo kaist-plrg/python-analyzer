@@ -49,8 +49,6 @@ object Transform {
           val hvdTokens = tokenizeText(hvdText)
           val hvdAst = TokenListParser(hvdTokens)
           val hvdResult = beautify(hvdAst)
-          dumpFile(transformedResult, BASE_DIR+"/org")
-          dumpFile(hvdResult, BASE_DIR+"/hvd")
           println
           println(s"${CYAN}ORG${RESET}")
           println(orgResult)
@@ -61,9 +59,11 @@ object Transform {
           println(s"${CYAN}HVD${RESET}")
           println(hvdResult)
           println("==================================================")
+          dumpFile(transformedResult, BASE_DIR+"/trans")
+          dumpFile(hvdResult, BASE_DIR+"/hvd")
           println(s"${CYAN}DIFF${RESET}")
-          executeCmd(s"diff org hvd")
-          executeCmd(s"rm org hvd")
+          executeCmd(s"colordiff -u hvd trans")
+          executeCmd(s"rm hvd trans")
         }
       } catch {
         case e: Throwable => e.printStackTrace()

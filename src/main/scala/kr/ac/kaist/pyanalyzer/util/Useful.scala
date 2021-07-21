@@ -46,8 +46,8 @@ object Useful {
     msg.replaceAll("\u001B\\[[;\\d]*m", "");
 
   // execute shell command with given dir, default to CUR_DIR
-  def executeCmd(given: String, dir: String = BASE_DIR): Int = {
-    println(s"[SHELL] $given")
+  def executeCmd(given: String, dir: String = BASE_DIR, log: Boolean = false): Int = {
+    if (log) println(s"[SHELL] $given")
     given.!
   }
 }
