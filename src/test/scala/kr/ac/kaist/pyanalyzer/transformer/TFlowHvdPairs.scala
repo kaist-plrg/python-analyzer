@@ -2,7 +2,7 @@ package kr.ac.kaist.pyanalyzer.transformer
 
 import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.transformer._
-import kr.ac.kaist.pyanalzyer.util.Useful._
+import kr.ac.kaist.pyanalyzer.util.Useful._
 
 object TFlowHvdPairs extends TFlowHvdPairs
 class TFlowHvdPairs extends FileTransformPairs {
@@ -11,6 +11,7 @@ class TFlowHvdPairs extends FileTransformPairs {
     walkTree(rootPath)
       .toList.map(f => f.getPath())
       .filter(s => s.endsWith(".py"))
+      .filter(s => s.contains("/org/"))
 
   // test name
   def makeTestName(path: String): String = path.slice(path.lastIndexOf("tensorflow-to-horovod"), path.length)
@@ -19,18 +20,19 @@ class TFlowHvdPairs extends FileTransformPairs {
   // **given path is full absolute path.
   // process includes conversion to relative path wrt. rootPath
   def orgToHvdPath(path: String): String = { 
-    assert(path endsWith ".py")
-    assert(path startsWith rootPath)
+    println(s"path $path")
+    assert(path endsWith ".py")("Not a .py file")
+    assert(path startsWith rootPath)("Invalid location")
     val relPath = path.drop(rootPath.length + 1)
-    assert(path contains "/org/"
+    //assert(path contains "/org/")("Not a org")
     val hvdPath = rootPath + "/" + relPath.replaceFirst("org", "hvd") 
     hvdPath
   }
 
-  def orgToPair(path: String): String = (path, orgToHvdPath(path))
+  def orgToPair(path: String): TransformPair = TransformPair(path, orgToHvdPath(path))
 
   def transformPairs: Iterator[(String, TransformPair)] =
     for {
       orgPath <- pyFiles.iterator
-    } yield (makeTestName(orgPath), orgToPair(path))
+    } yield (makeTestName(orgPath), orgToPair(orgPath))
 }

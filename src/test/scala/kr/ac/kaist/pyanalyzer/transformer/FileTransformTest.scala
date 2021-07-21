@@ -4,8 +4,12 @@ import kr.ac.kaist.pyanalyzer._
 import org.scalatest.funsuite._
 import kr.ac.kaist.pyanalyzer.parser.SourceParser._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.transformer._
 import kr.ac.kaist.pyanalyzer.transformer.Transformer
+import kr.ac.kaist.pyanalyzer.transformer.TFlowHvdPairs._
 import kr.ac.kaist.pyanalyzer.util.Useful._
+import kr.ac.kaist.pyanalyzer.util.Errors._
+import scala.Console._
 
 class FileTransformTest extends AnyFunSuite {
   val help = """Test tranformation between original and horovod source codes."""
@@ -23,42 +27,38 @@ class FileTransformTest extends AnyFunSuite {
         prompt(s"${MAGENTA}Test count: $epoch\n${RESET}")
         prompt(s"${MAGENTA}Test name: $testname\n${RESET}")
         val TransformPair(orgPath, ansPath) = pathPair
+
         // parse thee original source and answer source
         val orgAst = parseFile(orgPath)
         val ansAst = parseFile(ansPath)
+
         // transform the orgAst
-        val transAst = Transfomer(orgAst)
+        val transAst = Transformer(orgAst)
+
         // compare by prettyprint
         val transCode = beautify(transAst)
+        prompt("----------------------------")
+        prompt(s"${CYAN}Transformed Code:${RESET}\n$transCode\n")
         val ansCode = beautify(ansAst)
+        prompt("----------------------------")
+        prompt(s"${CYAN}Answer Code:${RESET}\b$ansCode\n")
+
         // assert
-        assert(ansCode == transCode)       
+        assert(ansCode == transCode) 
         prompt("============================")
       } catch {
         case EmptyFileException =>
           prompt(s"${MAGENTA}Epoch $epoch: Empty File${RESET}\n\n")
           cancel
         case e: Exception =>
-          prompt(s"${MAGNETA}Epoch $epoch failed:${RESET}\n$e\n")
+          prompt(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
           fail
       } finally{
         epoch += 1
       }
     }
 
-  val files = walkTree(HOROVOD_DIR)
-
-  for {
-    file <- files
-    path = file.getPath
-    if path endsWith ".py"
-    relPath = path.drop(HOROVOD_DIR.length + 1)
-    if relPath contains "/org/"
-  } test(relPath) {
-    val hvdPath = HOROVOD_DIR + "/" + relPath.replace("org", "hvd")
-    testFilePair(path, hvdPath)
-  }
-  
+  /*
   def testFilePair(givenPath: String, ansPath: String): Unit = {
     val givenAst = parseFile(givenPath)
     if (givenAst.body.isEmpty) cancel
@@ -71,9 +71,10 @@ class FileTransformTest extends AnyFunSuite {
       assert(success)
     }
   }
+  */
 
   def testFilePairs(set: FileTransformPairs): Unit = {
-    for ((testname, transPair)) <- set.transformPairs) 
+    for ((testname, transPair) <- set.transformPairs) 
       testFilePair(testname, transPair)
   }
 
