@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
+import kr.ac.kaist.pyanalyzer.util.Errors._
 import java.io._
 
 
@@ -23,6 +24,7 @@ object SourceParser {
    // parse the source code text into ast
    def parseSource(source: String): Module = {
      val tokens = Tokenizer.tokenizeText(source)  
+     if (tokens ==  List(EndToken)) throw EmptyFileException
 
      val reader = new PackratReader(TokenListParser.TokenReader(tokens))
      val parser = TokenListParser.module

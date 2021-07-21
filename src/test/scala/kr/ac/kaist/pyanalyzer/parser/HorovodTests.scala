@@ -4,7 +4,7 @@ import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import java.io._
 
-object HorovodTest extends HorovodTests
+object HorovodTests extends HorovodTests
 class HorovodTests extends FileTestSet {
   val rootPath: String = s"$HOROVOD_DIR" 
 
