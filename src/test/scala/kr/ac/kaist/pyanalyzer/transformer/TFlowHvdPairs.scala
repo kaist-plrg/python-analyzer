@@ -20,7 +20,7 @@ class TFlowHvdPairs extends FileTransformPairs {
   // **given path is full absolute path.
   // process includes conversion to relative path wrt. rootPath
   def orgToHvdPath(path: String): String = { 
-    println(s"path $path")
+    //println(s"path $path")
     assert(path endsWith ".py")("Not a .py file")
     assert(path startsWith rootPath)("Invalid location")
     val relPath = path.drop(rootPath.length + 1)

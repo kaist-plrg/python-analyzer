@@ -37,11 +37,15 @@ class FileTransformTest extends AnyFunSuite {
 
         // compare by prettyprint
         val transCode = beautify(transAst)
-        prompt("----------------------------")
-        prompt(s"${CYAN}Transformed Code:${RESET}\n$transCode\n")
+        prompt(colored(s"${CYAN}")("----------------------------"))
+        prompt(s"${CYAN}Transformed Code:${RESET}\n")
+        prompt(colored(s"${CYAN}")("----------------------------"))
+        prompt(s"$transCode")
         val ansCode = beautify(ansAst)
-        prompt("----------------------------")
-        prompt(s"${CYAN}Answer Code:${RESET}\b$ansCode\n")
+        prompt(colored(s"${CYAN}")("----------------------------"))
+        prompt(s"${CYAN}Answer Code:${RESET}\n")
+        prompt(colored(s"${CYAN}")("----------------------------"))
+        prompt(s"$ansCode")
 
         // assert
         assert(ansCode == transCode) 
