@@ -340,7 +340,7 @@ object Transformer {
       end.map(transform),
       step.map(transform)
     )
-    case GroupExpr(e) => e
+    case GroupExpr(e) => GroupExpr(e)
   }
 
   /////////////////////////////////////////
@@ -413,7 +413,7 @@ object Transformer {
     case MatchAs(opt, x) => MatchAs(opt.map(transform), x)
     case MatchOr(lpat) => MatchOr(lpat.map(transform))
     case MatchWildcard => MatchWildcard
-    case MatchGroup(p) => p
+    case MatchGroup(p) => MatchGroup(p)
   }
 
   /////////////////////////////////////////

@@ -1,8 +1,9 @@
 package kr.ac.kaist.pyanalyzer.util
 
-import kr.ac.kaist.pyanalyzer.util.Appender
-import scala.Console._
 import java.io._
+import kr.ac.kaist.pyanalyzer._
+import scala.Console._
+import scala.sys.process._
 
 object Useful {
   def beautify[T](t: T)(implicit app: Appender.App[T]): String =
@@ -43,4 +44,10 @@ object Useful {
   }
   def withoutColorCodes(msg: String): String =
     msg.replaceAll("\u001B\\[[;\\d]*m", "");
+
+  // execute shell command with given dir, default to CUR_DIR
+  def executeCmd(given: String, dir: String = BASE_DIR): Int = {
+    println(s"[SHELL] $given")
+    given.!
+  }
 }

@@ -20,8 +20,9 @@ object Transform {
     val files = walkTree(HOROVOD_DIR)
     try for {
       file <- files
-      path = file.getPath() if path endsWith ".py"
-      relPath = path.drop(HOROVOD_DIR.length + 1)
+      orgPath = file.getPath()
+      if (orgPath endsWith ".py") && (orgPath contains "/org/")
+      relPath = orgPath.drop(HOROVOD_DIR.length + 1)
       if target.map(relPath contains _).getOrElse(true)
     } {
       if (DEBUG) scala.io.StdIn.readLine match {
@@ -33,15 +34,29 @@ object Transform {
       println
       println(s"$CYAN$relPath$RESET")
       try {
-        val text = readSource(path)
-        if (text == "") println(s"${RED}empty file${RESET}")
+        val orgText = readSource(orgPath)
+        if (orgText == "") println(s"${RED}empty file${RESET}")
         else {
-          val tokens = tokenizeText(text)
-          val ast = TokenListParser(tokens)
-          println(beautify(ast))
-          println("==================================================")
+          val orgTokens = tokenizeText(orgText)
+          val orgAst = TokenListParser(orgTokens)
+          val orgResult = beautify(orgAst)
           // transform
-          println(beautify(Transformer(ast)))
+          val transformedAst = Transformer(orgAst)
+          val transformedResult = beautify(transformedAst)
+          dumpFile(orgResult, BASE_DIR + "/org")
+          dumpFile(transformedResult, BASE_DIR + "/trans")
+          executeCmd(s"diff org trans")
+          executeCmd(s"rm org trans")
+//          val hvdPath = HOROVOD_DIR + "/" + 
+//            relPath.replace("/org/", "/hvd/")
+//          val hvdText = readSource(hvdPath)
+//          val hvdTokens = tokenizeText(hvdText)
+//          val hvdAst = TokenListParser(hvdTokens)
+//          val hvdResult = beautify(hvdAst)
+//          dumpFile(transformedResult, BASE_DIR+"/org")
+//          dumpFile(hvdResult, BASE_DIR+"/hvd")
+//          executeCmd(s"diff org hvd")
+//          executeCmd(s"rm org hvd")
         }
       } catch {
         case e: Throwable => e.printStackTrace()
