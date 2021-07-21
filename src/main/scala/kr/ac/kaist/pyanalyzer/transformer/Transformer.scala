@@ -48,29 +48,30 @@ object Transformer {
         expr1 match {
           // case 1) "tensor_flow" -> data.Dataset
           case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
-            if env.get("tensor_flow") == Id(idt.name) =>
+            if env.get("tensor_flow") contains Id(idt.name) =>
               (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
                 env.add("dataset", idr))
 
           // case 2) "tensor_flow" -> optimizers.Adam 
-          case Attribute(Attribute(EName(fid), Id("optimizer")), Id("Adam")) =>
-            // find id_i "learning_rate"
-            findKwarg(kwds, "learning_rate") match {
-              case Some(kwarg) =>
-                val expr2i = kwarg.expr
-                val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-                ))
-                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
-                  env.add("optimizer", idr))
-              // such id_i doesn't exist
-              case None =>
-                val newexprs = 
-                  List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
-                  exprs.tail
-                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
-                  env.add("optimizer", idr))
-            }
+          case Attribute(Attribute(EName(idt), Id("optimizers")), Id("Adam"))
+            if env.get("tensor_flow") contains Id(idt.name) =>
+              // find id_i "learning_rate"
+              findKwarg(kwds, "learning_rate") match {
+                case Some(kwarg) =>
+                  val expr2i = kwarg.expr
+                  val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
+                    expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
+                  ))
+                  (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
+                    env.add("optimizer", idr))
+                // such id_i doesn't exist
+                case None =>
+                  val newexprs = 
+                    List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
+                    exprs.tail
+                  (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
+                    env.add("optimizer", idr))
+              }
 
           // case 3) "optimizer" -> apply_gradients
           case Attribute(EName(idt), Id("apply_gradients"))
@@ -477,10 +478,10 @@ object Transformer {
     "import-some" -> (name => 
         s"""import horovod.tensorflow as hvd
            |hvd_broadcast_done = False
-           |hvd_init()
-           |gpus = ${name}.config.experimental.list_pysical_devices('GPU')
+           |hvd.init()
+           |gpus = ${name}.config.experimental.list_physical_devices('GPU')
            |for gpu in gpus:
-           |  ${name}.config.expreimental.set_memory_growth(gpu, True)
+           |  ${name}.config.experimental.set_memory_growth(gpu, True)
            |if gpus:
            |  ${name}.config.experimental.\\
            |    set_visible_devices(gpus[hvd.local_rank()], 'GPU')""".stripMargin
