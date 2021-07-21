@@ -24,7 +24,7 @@ sealed trait Command {
   val help: String
   def apply(args: List[String]): Any
   implicit def parseArgs(args: List[String]): Map[String, String] =
-    args.map(parseArg).flatten.toMap
+    args.flatMap(parseArg).toMap
   private def parseArg(arg: String): Option[(String, String)] = ArgParser(arg)
 }
 
@@ -73,7 +73,7 @@ object ArgParser extends RegexParsers {
     }
   }
 
-  lazy val argParser = "-" ~> "[^:]*".r ~ opt(":" ~> ".*".r) ^^ {
+  lazy val argParser: Parser[(String, String)] = "-" ~> "[^:]*".r ~ opt(":" ~> ".*".r) ^^ {
     case a ~ b => (a, b.getOrElse(""))
   }
 }

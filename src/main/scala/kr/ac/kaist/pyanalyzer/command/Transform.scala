@@ -13,7 +13,7 @@ object Transform {
   def apply(optionMap: Map[String, String]): Unit = {
     val target = optionMap.get("target")
     val files = walkTree(HOROVOD_DIR)
-    try for {
+    for {
       file <- files
       orgPath = file.getPath()
       if (orgPath endsWith ".py") && (orgPath contains "/org/")
