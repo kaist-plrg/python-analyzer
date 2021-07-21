@@ -8,6 +8,7 @@ mainClass in (Compile, run) := Some("kr.ac.kaist.pyanalyzer.PyAnalyzer")
 
 lazy val prodTest = taskKey[Unit]("Launch production test")
 lazy val fileParseTest = taskKey[Unit]("Launch file test")
+lazy val fileTransformTest = taskKey[Unit]("Launch file transform test")
 
 lazy val root = (project in file("."))
   .settings(
@@ -22,6 +23,7 @@ lazy val root = (project in file("."))
     parallelExecution in Test := true,
     prodTest := (testOnly in Test).toTask(" *ProdTest").value,
     fileParseTest := (testOnly in Test).toTask(" *FileParseTest").value,
+    fileTransformTest := (testOnly in Test).toTask(" *FileTransformTest").value,
 )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.

@@ -9,9 +9,7 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 
 object Transformer {
   // transformed one AST into another AST
-  def apply(ast: List[Stmt]): List[Stmt] = transform(ast)(Env(Map()))._1
-
-  def transform(ast: Node): Node = ast match {
+  def apply(ast: Module): Module = ast match {
     case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
   }
 
@@ -422,7 +420,7 @@ object Transformer {
   // helper functions
   /////////////////////////////////////////
   def parseStmts(code: String): List[Stmt] = {
-    TokenListParser(tokenizeText(code))
+    TokenListParser(tokenizeText(code)).body
   }
 
   def parseExpr(str: String): Expr = {

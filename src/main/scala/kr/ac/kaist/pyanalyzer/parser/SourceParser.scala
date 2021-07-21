@@ -21,7 +21,7 @@ object SourceParser {
    }
   
    // parse the source code text into ast
-   def parseSource(source: String): Node = {
+   def parseSource(source: String): Module = {
      val tokens = Tokenizer.tokenizeText(source)  
 
      val reader = new PackratReader(TokenListParser.TokenReader(tokens))
@@ -36,5 +36,5 @@ object SourceParser {
 
    // given the file path, parse the source code text
    // and returns AST
-   def parseFile(filename: String): Node = parseSource(readSource(filename)) 
+   def parseFile(filename: String): Module = parseSource(readSource(filename))
 }

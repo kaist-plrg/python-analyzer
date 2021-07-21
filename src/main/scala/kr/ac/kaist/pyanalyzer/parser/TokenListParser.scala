@@ -5,7 +5,7 @@ import scala.util.parsing.input._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
 object TokenListParser extends TokenListParsers {
-  def apply(tokens: Seq[Token]): List[Stmt] = statements(
+  def apply(tokens: Seq[Token]): Module = module(
     new PackratReader(TokenListParser.TokenReader(tokens))
   ).get
 }
