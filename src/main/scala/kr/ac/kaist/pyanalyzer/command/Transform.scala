@@ -52,7 +52,11 @@ object Transform {
           dumpFile(transformedResult, BASE_DIR+"/trans")
           dumpFile(hvdResult, BASE_DIR+"/hvd")
           println(s"${CYAN}DIFF${RESET}")
-          executeCmd(s"colordiff -u hvd trans")
+          try executeCmd(s"colordiff -u hvd trans") catch {
+            case e: Throwable =>
+              executeCmd(s"diff -u hvd trans")
+              println(s"${RED}install colordiff${RESET}")
+          }
           executeCmd(s"rm hvd trans")
         }
       } catch {
