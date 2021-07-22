@@ -341,7 +341,7 @@ object Transformer {
       end.map(transform),
       step.map(transform)
     )
-    case GroupExpr(e) => GroupExpr(e)
+    case GroupExpr(e) => GroupExpr(transform(e))
   }
 
   /////////////////////////////////////////
@@ -414,7 +414,7 @@ object Transformer {
     case MatchAs(opt, x) => MatchAs(opt.map(transform), x)
     case MatchOr(lpat) => MatchOr(lpat.map(transform))
     case MatchWildcard => MatchWildcard
-    case MatchGroup(p) => MatchGroup(p)
+    case MatchGroup(p) => MatchGroup(transform(p))
   }
 
   /////////////////////////////////////////
