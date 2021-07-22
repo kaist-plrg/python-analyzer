@@ -71,4 +71,8 @@ object Useful {
     if (log) println(s"[SHELL] $given")
     given.!
   }
+
+  // execute shell command and get the stdout as string
+  def getCmdOut(cmd: String): String = cmd.!!
+
 }
