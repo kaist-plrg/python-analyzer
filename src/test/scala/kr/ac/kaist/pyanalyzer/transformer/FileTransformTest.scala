@@ -62,21 +62,6 @@ class FileTransformTest extends AnyFunSuite {
       }
     }
 
-  /*
-  def testFilePair(givenPath: String, ansPath: String): Unit = {
-    val givenAst = parseFile(givenPath)
-    if (givenAst.body.isEmpty) cancel
-    else {
-      val transformedAst = Transformer(givenAst)
-      val transformedCode = beautify(transformedAst)
-      val ansAst = parseFile(ansPath)
-      val ansCode = beautify(ansAst)
-      val success = ansCode == transformedCode
-      assert(success)
-    }
-  }
-  */
-
   def testFilePairs(set: FileTransformPairs): Unit = {
     for ((testname, transPair) <- set.transformPairs) 
       testFilePair(testname, transPair)
