@@ -86,7 +86,7 @@ object Transformer {
                   val newStmts = List(
                     AssignStmt(List(EName(idz)), expr2i),
                     AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-                  ) ++ parseStmts(stmtData("assign-optimizer-some")(idz.name))
+                  ) ++ parseStmts(stmtData("assign-optimizer-some")(List(idz.name)))
                   (newStmts, env) 
                 // such id_i doesn't exist
                 case None => 
@@ -94,7 +94,7 @@ object Transformer {
                   val newStmts = List(
                     AssignStmt(List(EName(idz)), exprs.head),
                     AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
-                  ) ++ parseStmts(stmtData("assign-optimizer-none")(idz.name))
+                  ) ++ parseStmts(stmtData("assign-optimizer-none")(List(idz.name)))
                   (newStmts, env)
               }
 
@@ -204,7 +204,7 @@ object Transformer {
         // corresponding id found
         case Some(id) if diffEnv.size == 1 => 
           val newStmts = List(ImportStmt(alias)) ++ 
-            parseStmts(stmtData("import-some")(id.name)) 
+            parseStmts(stmtData("import-some")(List(id.name))) 
           (newStmts, newEnv)
         // corresponding not found
         case _ => (ImportStmt(alias), newEnv)
@@ -233,7 +233,7 @@ object Transformer {
               val newStmts = List(
                 AssignStmt(List(EName(idz)), expr2i),
                 ExprStmt(Call(expr1, exprs, newkwds)),
-              ) ++ parseStmts(stmtData("expr-optimizer-some")(idz.name))
+              ) ++ parseStmts(stmtData("expr-optimizer-some")(List(idz.name, idt.name)))
 
               (newStmts, env)
             // not found
@@ -241,7 +241,7 @@ object Transformer {
               val newStmts = List(
                 AssignStmt(List(EName(idz)), exprs.head),
                 ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
-              ) ++ parseStmts(stmtData("expr-optimizer-none")(idz.name))
+              ) ++ parseStmts(stmtData("expr-optimizer-none")(List(idz.name, idt.name)))
               (newStmts, env)
           }
       // other expr stmts
@@ -453,9 +453,10 @@ object Transformer {
   // Data needed for transformation
   // TODO this is actually static thingy...
   /////////////////////////////////////////
-  val stmtData: Map[String, String => String] = Map(
+  val stmtData: Map[String, List[String] => String] = Map(
     // strict assign
-    "assign-optimizer-some" -> (name => 
+    "assign-optimizer-some" -> (names => {
+        val name = names(0)
         s"""global hvd_broadcast_done
            |if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
@@ -463,9 +464,10 @@ object Transformer {
            |    root_rank=0
            |  )
            |  hvd_broadcast_done = True""".stripMargin
-    ),
+    }),
     // strict assign
-    "assign-optimizer-none" -> (name => 
+    "assign-optimizer-none" -> (names => { 
+        val name = names(0)
         s"""global hvd_broadcast_done
            |if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
@@ -473,9 +475,10 @@ object Transformer {
            |    root_rank=0
            |  )
            |  hvd_broadcast_done = True""".stripMargin
-    ),
+    }),
     // import stmt
-    "import-some" -> (name => 
+    "import-some" -> (names => { 
+        val name = names(0)
         s"""import horovod.tensorflow as hvd
            |hvd_broadcast_done = False
            |hvd.init()
@@ -485,35 +488,39 @@ object Transformer {
            |if gpus:
            |  ${name}.config.experimental.\\
            |    set_visible_devices(gpus[hvd.local_rank()], 'GPU')""".stripMargin
-    ),
+    }),
     // expression stmt
-    "expr-optimizer-some" -> (name => 
+    "expr-optimizer-some" -> (names => {
+        val idz = names(0)
+        val idt = names(1)
         s"""global hvd_broadcast_done
            |if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
-           |    [x[1] for x in ${name}],
+           |    [x[1] for x in ${idz}],
            |    root_rank=0
            |  )
            |  hvd.broadcast_variables(
-           |    optimizer.variables(),
+           |    ${idt}.variables(),
            |    root_rank=0
            |  )
            |  hvd_broadcast_done = True""".stripMargin
-    ),
+    }),
     // expression stmt
-    "expr-optimizer-none" -> (name => 
+    "expr-optimizer-none" -> (names => { 
+        val idz = names(0)
+        val idt = names(1)
         s"""global hvd_broadcast_done
            |if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
-           |    [x[1] for x in ${name}],
+           |    [x[1] for x in ${idz}],
            |    root_rank=0
            |  )
            |  hvd.broadcast_variables(
-           |    optimizer.variables(),
+           |    ${idt}.variables(),
            |    root_rank=0
            |  )
            |  hvd_broadcast_done = True""".stripMargin
-    ),
+    }),
   )
 
   /////////////////////////////////////////
