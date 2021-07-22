@@ -244,6 +244,16 @@ object Transformer {
               ) ++ parseStmts(stmtData("expr-optimizer-none")(List(idz.name, idt.name)))
               (newStmts, env)
           }
+      // print stmt
+      case EName(Id("print")) => {
+        // hvd.rank()
+        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
+        // hvd.rank() == 0 
+        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
+        // if hvd.rank() == 0: ...
+        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
+        (List(ifStmt), env)
+      }
       // other expr stmts
       case _ => (ExprStmt(transform(Call(expr1, exprs, kwds))), env)
     }
