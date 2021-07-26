@@ -5,13 +5,12 @@
   \item[1.] All import statements must be placed at the top of a module.  
   \item[2.] The {\tt tensorflow} module must be assigned to a variable only
     using an import statement.
-  \item[3.] Members of the {\tt tensorflow} module must not be assigned to a
-    variable.
+  \item[3.] Members of the {\tt tensorflow} module must not be aliased.
   \item[4.] {\tt print} function call expressions must not introduce
     side-effects.
   \item[5.] A dataset and an optimizer object must only be created once via an
-    assignment statement with a function call expression and must not have any
-    aliases.
+    assignment statement with a function call expression and must not be
+    aliased.
   \item[6.] Variables storing a dataset or a optimizer object must not be
     reassigned to store another value that is not a dataset or an optimizer
     object.
@@ -22,6 +21,8 @@
   \item[9.] Global variables storing an {\tt optimizer} object and referred in
     functions must be defined before the functions' definitions and must not be
     changed after their initializations.
+  \item[10.] A checkpoint object must only be created once via an assignment
+    statement with a function call expression and must not be aliased. 
 \end{itemize}
 \subsection{Rules}
 \subsubsection{Types and Auxiliary Functions}
@@ -122,6 +123,9 @@
   \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.data.Dataset.\nexprsubs{3}} ~ \ktthen\\
   \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
   \inden\inden\inden\smodenv[\tdata $\mapsto$ \nidsubs{r}])\\
+  \inden \ktelif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.Checkpoint} ~ \ktthen\\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
+  \inden\inden\inden\smodenv[\checkpoint $\mapsto$ \nidsubs{r}])\\
   \inden \ktelif  ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.optimizers.Adam} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
@@ -146,6 +150,9 @@
   \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
+  \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
+  \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm]],\\
+  \inden\inden\inden\smodenv)\\
   \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
   \inden\inden\inden\smodenv)\\
 \end{tabular}\\\vpar
@@ -316,7 +323,8 @@
   \inden \ktelif ~ \nexprsubs{1} ~ \kteq ~ {\tt print} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:}, \\
   \inden\inden\inden [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv) \\
-  %\inden \ktelse ~ 
+  \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
+  \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv)\\
   \inden \ktelse \\
   \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
 \end{tabular}\\\vpar
@@ -481,6 +489,7 @@
   \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt // hvd.size()} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}\\
   \inden\inden \ktelse \\
   \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} {\tt // hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}\\
+  \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.keras.datasets.mnist.load\_data} ~ \ktthen\\
   \inden \ktelse \\
   \inden\inden \texpr{\nexprsubs{1}}{\smodenv} \sparen{\texpr{\nexprsubs{11}}{\smodenv}  ... \texpr{\nexprsubs{1n}}{\smodenv} \\
   \inden\inden\inden \op{(\nidsubs{1} \oassign)} \texpr{\nexprsubs{21}}{\smodenv} ... \op{(\nidsubs{k} \oassign)} \texpr{\nexprsubs{2k}}{\smodenv}}\\
