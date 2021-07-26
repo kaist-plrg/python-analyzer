@@ -145,7 +145,7 @@ object Transformer {
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
       val (newStmts, newEnv) = transform(doStmt)(tempEnv)
-      val diffEnv = env \ tempEnv
+      val diffEnv = tempEnv \ env
       // get "gradient_tape" id
       diffEnv.get("gradient_tape") match {
         // corresponding id found

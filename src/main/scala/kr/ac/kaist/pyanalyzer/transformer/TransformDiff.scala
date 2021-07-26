@@ -18,10 +18,11 @@ object TransformDiff {
     case _ => false
   }
 
+  def sortStmts(stmts: List[Stmt]): List[Stmt] = stmts.sortWith(stmtOrder)
   def sortStmts(mod: Module): Module = mod match {
     case Module(body, tyIg) => {
       val sortedBody = body.sortWith(stmtOrder) 
+      Module(sortedBody, tyIg)
     }
-    ???
   }
 }
