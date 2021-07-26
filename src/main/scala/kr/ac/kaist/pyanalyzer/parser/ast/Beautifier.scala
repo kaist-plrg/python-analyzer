@@ -88,14 +88,14 @@ object Beautifier {
     case AsyncFunDef(decos, name, args, retType, tyExpr, body) =>
       app ~ "async " ~ FunDef(decos, name, args, retType, tyExpr, body)
     case ClassDef(decos, name, exprs, kwds, body) =>
-      implicit val leApp = ListApp[Expr]("", ", ", ", ")
+      implicit val leApp = LEApp("", ", ", ", ")
       implicit val klApp = ListApp[Kwarg]("", ", ", ", ")
       decos.foldLeft(app)((app, e) => app ~ "@" ~ e ~ app.newLine) ~
         "class " ~ name ~ "(" ~ exprs ~ kwds ~ ")" ~ ":" ~
         wrap(body)
     case ReturnStmt(e) => app ~ "return " ~ ?(e) ~ app.newLine
     case DelStmt(le) =>
-      implicit val lApp = ListApp[Expr](sep = ", ")
+      implicit val lApp = LEApp(sep = ", ")
       app ~ "del " ~ le ~ app.newLine
     case AssignStmt(targets, e, ty) =>
       targets.foldLeft(app)((app, target) => app ~ target ~ " = ") ~
@@ -181,82 +181,139 @@ object Beautifier {
     case Ellipsis => app ~ "..."
   }
 
-  implicit lazy val exprApp: App[Expr] = (app, expr) => expr match {
-    case BoolExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
-    case NamedExpr(lhs, rhs) => app ~ lhs ~ " := " ~ rhs
-    case BinaryExpr(op, lhs, rhs) => app ~ lhs ~ " " ~ op ~ " " ~ rhs
-    case UnaryExpr(op, e) => app ~ op ~ " " ~ e
-    case LambdaExpr(args, e) => app ~ "lambda " ~ args ~ " : " ~ e
-    case IfExpr(e1, c, e2) => app ~ e1 ~ " if " ~ c ~ " else " ~ e2
-    case DictExpr(lp, dstar) =>
-      implicit val pApp: App[(Expr, Expr)] = {
-        case (app, (k, v)) => app ~ k ~ ": " ~ v
-      }
-      implicit val lpApp = ListApp[(Expr, Expr)]("", ", ", ", ")
-      implicit val lApp = ListApp[Expr]("", ", ", ", ")
-      app ~ "{" ~ lp ~ dstar ~ "}"
-    case SetExpr(set) =>
-      implicit val lApp = ListApp[Expr](sep = ", ")
-      app ~ "{" ~ set ~ "}"
-    case ListExpr(l) =>
-      implicit val lApp = ListApp[Expr](sep = ", ")
-      app ~ "[" ~ l ~ "]"
-    case TupleExpr(tup) =>
-      val notSlices = tup.forall(e => !e.isInstanceOf[Slice])
-      val open = if (notSlices) Some("(") else None
-      val close = if (notSlices) Some(")") else None
-      lazy val tupApp: Update = app => tup match {
-        case head :: Nil => app ~ head ~ ","
-        case tup =>
-          implicit val lApp = ListApp[Expr](sep = ", ")
-          app ~ tup
-      }
-      app ~ ?(open) ~ tupApp ~ ?(close)
-    case ListComp(target, comp) =>
-      implicit val lApp = ListApp[Comprehension](sep = " ")
-      app ~ "[" ~ target ~ " " ~ comp ~ "]"
-    case SetComp(target, comp) =>
-      implicit val lApp = ListApp[Comprehension](sep = " ")
-      app ~ "{" ~ target ~ " " ~ comp ~ "}"
-    case DictComp(p, comp) =>
-      implicit val pApp: App[(Expr, Expr)] = {
-        case (app, (k, v)) => app ~ k ~ ": " ~ v
-      }
-      implicit val lApp = ListApp[Comprehension](sep = " ")
-      app ~ "{" ~ p ~ " " ~ comp ~ "}"
-    case GenComp(target, comp) =>
-      implicit val lApp = ListApp[Comprehension](sep = " ")
-      app ~ "(" ~ target ~ " "  ~ comp ~ ")"
-    case AwaitExpr(e) => app ~ "await " ~ e
-    case YieldExpr(opt) => app ~ "yield " ~ ?(opt)
-    case YieldFromExpr(e) => app ~ "yield from " ~ e
-    case CompExpr(h, lp) =>
-      implicit val pApp: App[(CompOp, Expr)] = {
-        case (app, (op, e)) => app ~ op ~ " " ~ e
-      }
-      implicit val lApp = ListApp[(CompOp, Expr)](" ", " ")
-      app ~ h ~ lp
-    case Call(f, g :: Nil, Nil) if g.isInstanceOf[GenComp] => app ~ f ~ g
-    case Call(f, le, lk) =>
-      implicit val leApp = ListApp[Expr]("", ", ", ", ")
-      implicit val lkApp = ListApp[Kwarg]("", ", ", ", ")
-      app ~ f ~ "(" ~ le ~ lk ~ ")"
-    case FormattedValue(lhs, n, rhs) => ???
-    case JoinedStr(le) => ???
-    case EConst(c) => app ~ c
-    case Attribute(e, f) => app ~ e ~ "." ~ f
-    case Subscript(e, s) => app ~ e ~ "[" ~ s ~ "]"
-    case Starred(e) => app ~ "*" ~ e
-    case DoubleStarred(e) => app ~ "**" ~ e
-    case EName(x) => app ~ x
-    case Slice(lb, ub, step) => app ~ ?(lb) ~ ":" ~ ?(ub) ~ ?(step, ":")
-    case GroupExpr(e) => app ~ "(" ~ e ~ ")"
+  // you MUST see the precednece help in parser/ast/Expr
+  // before implement/understand exprApp
+  implicit lazy val exprApp: App[Expr] = (app, expr) => {
+    // default outer precedence
+    implicit val precedence: Int = expr.precedence
+    expr match {
+      case BoolExpr(op, lhs, rhs) =>
+        implicit val precedence = expr.precedence + 1
+        app ~ lhs ~ " " ~ op ~ " " ~ rhs
+      case NamedExpr(lhs, rhs) =>
+        implicit val precedence = 15
+        app ~ lhs ~ " := " ~ rhs
+      // Power operator is right-associative
+      case BinaryExpr(OPow, lhs, rhs) =>
+        app ~ #=(lhs, precedence + 1) ~ " ** " ~ rhs
+      case BinaryExpr(op, lhs, rhs) =>
+        app ~ lhs ~ " " ~ op ~ " " ~ #=(rhs, precedence + 1)
+      case UnaryExpr(UNot, e) => app ~ UNot ~ " " ~ e
+      case UnaryExpr(op, e) => app ~ op ~ e
+      case LambdaExpr(args, e) => app ~ "lambda " ~ args ~ " : " ~ e
+      case IfExpr(e1, c, e2) =>
+        app ~ e1 ~ " if " ~ c ~ " else " ~ e2
+      case DictExpr(lp, dstar) =>
+        implicit val precedence = 1
+        implicit val pApp: App[(Expr, Expr)] = {
+          case (app, (k, v)) =>
+            app ~ k ~ ": " ~ v
+        }
+        implicit val lpApp = ListApp[(Expr, Expr)]("", ", ", ", ")
+        implicit val lApp = LEApp("", ", ", ", ")
+        app ~ "{" ~ lp ~ dstar ~ "}"
+      case SetExpr(set) =>
+        implicit val precedence = 1
+        implicit val lApp = LEApp(sep = ", ")
+        app ~ "{" ~ set ~ "}"
+      case ListExpr(l) =>
+        implicit val precedence = 1
+        implicit val lApp = LEApp(sep = ", ")
+        app ~ "[" ~ l ~ "]"
+      case TupleExpr(tup) =>
+        implicit val precedence = 1
+        lazy val tupApp: Update = app => tup match {
+          case head :: Nil => app ~ head ~ ","
+          case tup =>
+            implicit val lApp = LEApp(sep = ", ")
+            app ~ tup
+        }
+        app ~ tupApp
+      case ListComp(target, comp) =>
+        implicit val precedence = 1
+        implicit val lApp = ListApp[Comprehension](sep = " ")
+        app ~ "[" ~ target ~ " " ~ comp ~ "]"
+      case SetComp(target, comp) =>
+        implicit val precedence = 1
+        implicit val lApp = ListApp[Comprehension](sep = " ")
+        app ~ "{" ~ target ~ " " ~ comp ~ "}"
+      case DictComp(p, comp) =>
+        implicit val precedence = 1
+        implicit val pApp: App[(Expr, Expr)] = {
+          case (app, (k, v)) => app ~ k ~ ": " ~ v
+        }
+        implicit val lApp = ListApp[Comprehension](sep = " ")
+        app ~ "{" ~ p ~ " " ~ comp ~ "}"
+      case GenComp(target, comp) =>
+        implicit val precedence = 1
+        implicit val lApp = ListApp[Comprehension](sep = " ")
+        app ~ "(" ~ target ~ " "  ~ comp ~ ")"
+      case AwaitExpr(e) =>
+        implicit val precedence = 15
+        app ~ "await " ~ e
+      // yield/yield from need default parenthesis
+      // TODO: Remove it in the statement
+      case YieldExpr(opt) =>
+        implicit val precedence = 1
+        app ~ "(yield" ~ ?(opt, " ") ~ ")"
+      case YieldFromExpr(e) =>
+        implicit val precedence = 1
+        app ~ "(yield from " ~ e ~ ")"
+      case CompExpr(h, lp) =>
+        implicit val precedence = expr.precedence + 1
+        implicit val pApp: App[(CompOp, Expr)] = {
+          case (app, (op, e)) => app ~ op ~ " " ~ e
+        }
+        implicit val lApp = ListApp[(CompOp, Expr)](" ", " ")
+        app ~ h ~ lp
+      case Call(f, g :: Nil, Nil) if g.isInstanceOf[GenComp] => app ~ f ~ g
+      case Call(f, le, lk) =>
+        implicit val precedence = 1
+        implicit val leApp = LEApp("", ", ", ", ")
+        implicit val lkApp = ListApp[Kwarg]("", ", ", ", ")
+        app ~ #=(f, 15) ~ "(" ~ le ~ lk ~ ")"
+      case FormattedValue(lhs, n, rhs) => ???
+      case JoinedStr(le) => ???
+      case EConst(c) => app ~ c
+      case Attribute(e, f) => app ~ e ~ "." ~ f
+      case Subscript(e, s) =>
+        // each slice(Expr) in slices needs parenthesis
+        // slices(TupleExpr) doesn't need parenthesis
+        implicit val precedence = s match {
+          // empty tuple edge case
+          case TupleExpr(tup) if tup.isEmpty => 1
+          case TupleExpr(tup) => if (tup.forall(e => e match {
+            case Starred(_) => false
+            case _ => true
+          })) 0 else 1
+          case _ => 0
+        }
+        app ~ #=(e, 15) ~ "[" ~ s ~ "]"
+      case Starred(e) =>
+        implicit val precedence = 6
+        app ~ "*" ~ e
+      case DoubleStarred(e) =>
+        implicit val precedence = 6
+        app ~ "**" ~ e
+      case EName(x) => app ~ x
+      case Slice(lb, ub, step) =>
+        implicit val precedence = 1
+        app ~ ?(lb) ~ ":" ~ ?(ub) ~ ?(step, ":")
+      case GroupExpr(e) => app ~ "(" ~ e ~ ")"
+    }
   }
 
   implicit lazy val comprehensionApp: App[Comprehension] = {
     case (app, Compre(target, inExpr, ifExpr)) =>
-      implicit val lApp = ListApp[Expr](" if ", " if ")
-      app ~ "for " ~ target ~ " in " ~ inExpr ~ ifExpr
+      implicit val precedence = 2
+      implicit val lApp = LEApp(" if ", " if ")
+      // empty tuple edge case
+      target match {
+        case TupleExpr(tup) if tup.isEmpty =>
+          app ~ "for " ~ #=(target, 1) ~ " in " ~ inExpr ~ ifExpr
+        case _ =>
+          app ~ "for " ~ #=(target, 0) ~ " in " ~ inExpr ~ ifExpr
+      }
     case (app, AsyncCompre(target, inExpr, ifExpr)) =>
       app ~ "async " ~ Compre(target, inExpr, ifExpr)
   }

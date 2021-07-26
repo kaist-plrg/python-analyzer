@@ -24,7 +24,7 @@ class ProdTest extends AnyFunSuite {
 
   println(help)
 
-  val times = 1
+  val times = 30
   val depth = 10
   val CHECK = false
 

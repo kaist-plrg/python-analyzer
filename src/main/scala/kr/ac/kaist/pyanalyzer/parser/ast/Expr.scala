@@ -3,13 +3,57 @@ package kr.ac.kaist.pyanalyzer.parser.ast
 ///////////////////////////////////
 // Expressions
 ///////////////////////////////////
-sealed trait Expr extends Node
+sealed trait Expr extends Node {
+  /*
+  ****** precedence help ******
+
+  precedence for each expression. compare it with inner expression
+  and conditionally add the parenthesis in Beautifier.
+
+  ex) case UnaryExpr(e) =>
+        if this.precedence > e.precedence then
+          add parenthesis to explicitly show the order
+  In this example, this.precedence is outer precedence,
+  and e.precedence is inner precedence.
+
+  Note that outer precedence can be changed frequently in each subexpr.
+
+  ex) case Subscript(prim, slice) =>
+        add_parenthesis_conditionally(this.precedence, prim)
+        add_parenthesis_conditionally(0 or 1, slice)
+          # 0 or 1 is also determined according to another condition
+
+  * default outer precedence is 1
+  * default inner(this) precedence is 15
+  * this default yeild no parenthesis
+  * precedence 0 is special case
+
+  more detail is in cpython/Python/ast_unparse.c
+
+  you can checkout to version without precedence
+    024494fce8ad8a57c580ddaeb84ee43ba5fbf311
+  which is more easy to understand and extend
+  */
+  val precedence = this match {
+    case e: NamedExpr => 0
+    case e: TupleExpr => 0
+    case e: IfExpr => 1
+    case e: LambdaExpr => 1
+    case e: BoolExpr => 2 + e.op.precedence
+    case e: CompExpr => 5
+    // PR_EXPR
+    case e: BinaryExpr => 6 + e.op.precedence
+    case e: UnaryExpr => 12 + e.op.precedence
+    case e: AwaitExpr => 14
+    case _ => 15
+  }
+}
 
 // Basic expressions
 case class BoolExpr(op: BoolOp, lhs: Expr, rhs: Expr) extends Expr
 case class NamedExpr(lhs: Expr, rhs: Expr) extends Expr
 case class BinaryExpr(op: BinOp, lhs: Expr, rhs: Expr) extends Expr
-case class UnaryExpr(op: UnOp, expr: Expr) extends Expr
+case class UnaryExpr(op: Op, expr: Expr) extends Expr
 
 // Simple compound expression
 case class LambdaExpr(args: Args, expr: Expr) extends Expr

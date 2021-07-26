@@ -2,12 +2,21 @@ package kr.ac.kaist.pyanalyzer.util
 
 import java.io._
 import kr.ac.kaist.pyanalyzer._
+import kr.ac.kaist.pyanalyzer.parser.ast._
 import scala.Console._
 import scala.sys.process._
 
 object Useful {
-  def beautify[T](t: T)(implicit app: Appender.App[T]): String =
-    app(new Appender, t).toString
+  def beautify[T](t: T)(implicit app: Appender.App[T]): String = {
+    val res = app(new Appender, t).toString
+    t match {
+      // default tuple doesn't have parenthesis, so need parenthesis
+      case tup: TupleExpr => "(" + res + ")"
+      // named expression need grouping parenthesis
+      case tup: NamedExpr => "(" + res + ")"
+      case _ => res
+    }
+  }
   
   def assert(f: => Boolean)(msg: String): Unit = {
     if (!f) { throw new RuntimeException(msg) }
@@ -71,8 +80,4 @@ object Useful {
     if (log) println(s"[SHELL] $given")
     given.!
   }
-
-  // execute shell command and get the stdout as string
-  def getCmdOut(cmd: String): String = cmd.!!
-
 }

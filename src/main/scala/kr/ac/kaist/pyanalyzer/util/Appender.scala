@@ -1,6 +1,9 @@
 package kr.ac.kaist.pyanalyzer.util
 
+import kr.ac.kaist.pyanalyzer.parser.ast._
+
 class Appender(tab: String = "  ") {
+  // TODO: Refactor
   import Appender._
 
   val sb: StringBuilder = new StringBuilder
@@ -16,13 +19,42 @@ class Appender(tab: String = "  ") {
   def dropIndent = { sb.delete(sb.length - 2*k, sb.length); this }
   def newLine = "\n" + tab * k
   override def toString: String = sb.toString
+
+  // main appender
   def ~(str: String): Appender = { sb ++= str; this }
   def ~[T](x: T)(implicit app: App[T]): Appender = app(this, x)
   def ~(f: Update): Appender = f(this)
   def ~(app: Appender) = app
+
+  // appender with precedence
+  // if outer precedence is larger than inner precedence, add parenthesis
+  def ~(e: Expr)(implicit app: App[Expr], precedence: Int = 1): Appender = {
+    if (precedence > e.precedence) sb += '('
+    app(this, e)
+    if (precedence > e.precedence) sb += ')'
+    this
+  }
+  // make a verbous call to avoid ambiguous method overloading
+  // TODO: Remove verbous call
+  def appendExpr(e: Expr)(implicit app: App[Expr], precedence: Int = 1): Appender = this ~ e
+  // append expression with given outer precedence
+  def ~(preOp: #=)(implicit app: App[Expr]): Appender = {
+    val #=(expr, outerPrecedence) = preOp
+    implicit val precedence = outerPrecedence
+    this ~ expr
+  }
+
+  // appender helper
+  // optionally append
   def ~[T](opt: ?[T])(implicit app: App[T]): Appender = opt match {
-    case ?(None, l, r) => this
-    case ?(Some(v), l, r) => this ~ l ~ v ~ r
+    case ?(Some(e: Expr), l, r, precedence) =>
+      this ~ l
+      implicit val pre = precedence
+      implicit val eApp = app.asInstanceOf[App[Expr]]
+      appendExpr(e)
+      this ~ r
+    case ?(None, l, r, _) => this
+    case ?(Some(v), l, r, _) => this ~ l ~ v ~ r
   }
   def ~[T](block: wrap[T])(implicit app: App[T]): Appender = block match {
     case wrap(Nil, l, r) => this
@@ -46,7 +78,7 @@ object Appender {
     case None => app
   }
 
-  // lists with separator
+  // list appender with separator
   // if it is Nil, left and right is not appended
   def ListApp[T](
     left: String = "",
@@ -59,9 +91,28 @@ object Appender {
       for (t <- tl) app ~ sep ~ t
       app ~ right
   }
+  // ListApp only for Expr
+  // make a verbous call to avoid ambiguous method overloading
+  // TODO: Remove verbous call
+  def LEApp(
+    left: String = "",
+    sep: String = "",
+    right: String = ""
+  )(implicit tApp: App[Expr], precedence: Int = 1): App[List[Expr]] = (app, list) => list match {
+    case Nil => app
+    case hd :: tl =>
+      app ~ left ~ hd
+      for (t <- tl) app ~ sep ~ t
+      app ~ right
+  }
 
-  case class ?[T](opt: Option[T], l: String = "", r: String = "")
+  // optionally append with left, right wrapper
+  // pre is used only for expr
+  // TODO: Remove pre and implicitly pass precedence
+  case class ?[T](opt: Option[T], l: String = "", r: String = "", pre: Int = 1)
   case class wrap[T](block: T, l: String = "", r: String = "")
+  // expression with outer precedence 'precedence'
+  case class #=(e: Expr, precedence: Int)
 
   implicit def toListOpt[T](l: List[T]): Option[List[T]] = l match {
     case Nil => None

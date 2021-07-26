@@ -424,7 +424,7 @@ trait TokenListParsers extends PackratParsers {
       val flattenOption = listOpt.map { case e ~ opt => e :: opt.getOrElse(Nil) }
       flattenOption.getOrElse(Nil)
     } ^^ TupleExpr
-  lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")" ^^ GroupExpr
+  lazy val group: PackratParser[Expr] = "(" ~> (yieldExpr | namedExpr) <~ ")"
   lazy val genexp: PackratParser[Expr] = "(" ~> ((assignExpr | expression <~ not(":=")) ~ forIfClauses) <~ ")" ^^ {
     case e ~ cel => GenComp(e, cel)
   }
@@ -1052,48 +1052,48 @@ trait TokenListParsers extends PackratParsers {
   // TODO seperate prodMap to other
   // TODO: Add more production
   val prodMap: Map[String, Parser[Node]] = Map(
-    "Group" -> group,
-    "List" -> list,
-    "Listcomp" -> listcomp,
-    "Tuple" -> tuple,
-    "Set" -> set,
-    "Setcomp" -> setcomp,
-    "Dict" -> dict,
-    "Dictcomp" -> dictcomp,
-    "ForIfClause" -> forIfClause,
-    "StarTargets" -> starTargets,
-    "StarTarget" -> starTarget,
-    "TargetWithStarAtom" -> targetWithStarAtom,
-    "StarAtom" -> starAtom,
-    // TODO: consider lookahead
-    // "TPrimary" -> tPrimary,
-    "Atom" -> atom,
-    "Slice" -> slice,
-    "Primary" -> primary,
-    "AwaitPrimary" -> awaitPrimary,
-    "Power" -> power,
-    "Factor" -> factor,
-    "Term" -> term,
-    "Sum" -> sum,
-    "ShiftExpr" -> shiftExpr,
-    "BitAnd" -> bitAnd,
-    "BitXor" -> bitXor,
-    "Comparison" -> comparison,
-    "Inversion" -> inversion,
-    "Conjunction" -> conjunction,
-    "Disjunction" -> disjunction,
-    // Param
-    // Lambda
-    "Lambdef" -> lambdef,
-    // Expression
-    "Expression" -> expression,
-    "Expressions" -> expressions,
-    "NamedExpr" -> namedExpr,
-    "AssignExpr" -> assignExpr,
-    "StarNamedExpr" -> starNamedExpr,
+//    "Group" -> group,
+//    "List" -> list,
+//    "Listcomp" -> listcomp,
+//    "Tuple" -> tuple,
+//    "Set" -> set,
+//    "Setcomp" -> setcomp,
+//    "Dict" -> dict,
+//    "Dictcomp" -> dictcomp,
+//    "ForIfClause" -> forIfClause,
+//    "StarTargets" -> starTargets,
+//    "StarTarget" -> starTarget,
+//    "TargetWithStarAtom" -> targetWithStarAtom,
+//    "StarAtom" -> starAtom,
+//    // TODO: consider lookahead
+//    // "TPrimary" -> tPrimary,
+//    "Atom" -> atom,
+//    "Slice" -> slice,
+//    "Primary" -> primary,
+//    "AwaitPrimary" -> awaitPrimary,
+//    "Power" -> power,
+//    "Factor" -> factor,
+//    "Term" -> term,
+//    "Sum" -> sum,
+//    "ShiftExpr" -> shiftExpr,
+//    "BitAnd" -> bitAnd,
+//    "BitXor" -> bitXor,
+//    "Comparison" -> comparison,
+//    "Inversion" -> inversion,
+//    "Conjunction" -> conjunction,
+//    "Disjunction" -> disjunction,
+//    // Param
+//    // Lambda
+//    "Lambdef" -> lambdef,
+//    // Expression
+//    "Expression" -> expression,
+//    "Expressions" -> expressions,
+//    "NamedExpr" -> namedExpr,
+//    "AssignExpr" -> assignExpr,
+//    "StarNamedExpr" -> starNamedExpr,
     "StarExpr" -> starExpr,
     "StarExprs" -> starExprs,
-    "YieldExpr" -> yieldExpr,
+//    "YieldExpr" -> yieldExpr,
 //    // Statement
 //    "PassStmt" -> passStmt,
 //    "BreakStmt" -> breakStmt,
