@@ -49,16 +49,20 @@ object Transform {
           println(s"${CYAN}HVD${RESET}")
           println(hvdResult)
           println("==================================================")
-          dumpFile(transformedResult, BASE_DIR+"/trans")
-          dumpFile(hvdResult, BASE_DIR+"/hvd")
+          val transLogPath = BASE_DIR + "/logs/transform"
+          mkdir(transLogPath)
+          dumpFile(transformedResult, transLogPath + "/trans")
+          dumpFile(hvdResult, transLogPath + "/hvd")
           println(s"${CYAN}DIFF${RESET}")
-          try executeCmd(s"colordiff -u hvd trans") catch {
+          try executeCmd(
+            s"colordiff -u ${transLogPath}/hvd ${transLogPath}/trans")
+          catch {
             case e: Throwable =>
-              executeCmd(s"diff -u hvd trans")
+              executeCmd(s"diff -u ${transLogPath}/hvd ${transLogPath}/trans")
               println
               println(s"${YELLOW}[Warning] install colordiff${RESET}")
           }
-          executeCmd(s"rm hvd trans")
+          executeCmd(s"rm ${transLogPath}/hvd ${transLogPath}/trans")
         }
       } catch {
         case e: Throwable => e.printStackTrace()
