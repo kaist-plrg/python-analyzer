@@ -52,7 +52,13 @@ object Transformer {
               (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
                 env.add("dataset", idr))
 
-          // case 2) "tensor_flow" -> optimizers.Adam 
+          // case 2) "tensor_flow" -> train.Checkpoint
+          case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
+            if env.get("tensor_flow") contains Id(idt.name) =>
+              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
+                env.add("checkpoint", idr))
+
+          // case 3) "tensor_flow" -> optimizers.Adam 
           case Attribute(Attribute(EName(idt), Id("optimizers")), Id("Adam"))
             if env.get("tensor_flow") contains Id(idt.name) =>
               // find id_i "learning_rate"
@@ -97,8 +103,18 @@ object Transformer {
                   ) ++ parseStmts(stmtData("assign-optimizer-none")(List(idz.name)))
                   (newStmts, env)
               }
+          // case 4) "chcekpoint" -> idt.save
+          case Attribute(EName(idt), Id("save"))
+            if env.get("checkpoint") contains idt =>
+              // hvd.rank()
+              val rankExpr = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
+              // hvd.rank() == 0
+              val condExpr = CompExpr(rankExpr, List((CEq,EConst(IntLiteral(0)))))
+              // if hvd.rank() == 0: ...
+              val newIfStmt = IfStmt(condExpr, List(stmt), Nil)
+              (newIfStmt, env)
 
-          // case 4) etc.
+          // case 5) etc.
           case _ =>
             (AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
         }
@@ -219,7 +235,7 @@ object Transformer {
     /////////////////////////////////////////////////////////////////
     // strict form of expr stmts
     case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
-      // func expr is "optimizer.apply_gradients"
+      // case 1) func expr is "optimizer.apply_gradients"
       case Attribute(EName(idt), Id("apply_gradients")) 
         if env.get("optimizer") contains idt =>
           val idz = newId
@@ -244,7 +260,7 @@ object Transformer {
               ) ++ parseStmts(stmtData("expr-optimizer-none")(List(idz.name, idt.name)))
               (newStmts, env)
           }
-      // print stmt
+      // case 2) print stmt
       case EName(Id("print")) => {
         // hvd.rank()
         val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
@@ -254,7 +270,17 @@ object Transformer {
         val ifStmt = IfStmt(condExpr, List(stmt), Nil)
         (List(ifStmt), env)
       }
-      // other expr stmts
+      // case 3) "checkpoint"
+      case Attribute(EName(idt), Id("save"))
+        if env.get("checkpoint") contains idt =>
+          // hvd.rank()
+          val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
+          // hvd.rank() == 0 
+          val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
+          // if hvd.rank() == 0: ...
+          val ifStmt = IfStmt(condExpr, List(stmt), Nil) 
+          (ifStmt, env)
+      // case _) other expr stmts
       case _ => (ExprStmt(transform(Call(expr1, exprs, kwds))), env)
     }
 
@@ -317,7 +343,7 @@ object Transformer {
       lp.map { case (op, e) => (op, transform(e)) }
     )
     case Call(expr1, le, lk) => expr1 match {
-      // σ("dataset") = id_t and expr_1 = id_t.take
+      // case 1) σ("dataset") = id_t and expr_1 = id_t.take
       case Attribute(EName(idt), Id("take")) 
         if env.get("dataset") contains idt =>
           findKwarg(lk, "count") match {
@@ -332,6 +358,12 @@ object Transformer {
               lk
             )
           }
+      // case 2) "tensor_flow" -> idt.keras.datasets.mnist.load_data
+      case Attribute(Attribute(Attribute(Attribute(EName(idt),
+        Id("keras")), Id("datasets")), Id("mnist")), Id("load_data"))
+        if env.get("tensor_flow") contains idt =>
+          ??? // TODO typo in trans rule      
+      // case _) else
       case _ => Call(
         transform(expr1),
         le.map(transform),

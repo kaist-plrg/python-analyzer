@@ -2,3 +2,6 @@ target/
 logs/
 
 .*
+
+trans/trans.aux
+trans/trans.log
