@@ -358,11 +358,7 @@ object Transformer {
               lk
             )
           }
-      // case 2) "tensor_flow" -> idt.keras.datasets.mnist.load_data
-      case Attribute(Attribute(Attribute(Attribute(EName(idt),
-        Id("keras")), Id("datasets")), Id("mnist")), Id("load_data"))
-        if env.get("tensor_flow") contains idt =>
-          ??? // TODO typo in trans rule      
+      
       // case _) else
       case _ => Call(
         transform(expr1),
