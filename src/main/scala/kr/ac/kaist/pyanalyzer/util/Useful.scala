@@ -54,6 +54,7 @@ object Useful {
     if (setPrompt) println(s)
     // s might contain color codes for console output 
     lw.write(withoutColorCodes(s) + "\n")
+    lw.flush()
   }
 
   def flushLog(endMsg: String = "\n")(implicit lw: PrintWriter): Unit = {
