@@ -50,7 +50,9 @@ case class Arg(
   ann: Option[Expr] = None,
   ty: Option[String] = None
 ) extends Argument
-case class Kwarg(id: Option[Id], expr: Expr) extends Argument
+trait Kwarg extends Argument
+case class NormalKwarg(id: Id, expr: Expr) extends Kwarg
+case class DoubleStarredKwarg(expr: Expr) extends Kwarg
 
 // Comprehension
 trait Comprehension extends Node

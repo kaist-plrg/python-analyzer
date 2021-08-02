@@ -312,10 +312,7 @@ object Transformer {
       LambdaExpr(args, transform(e))
     case IfExpr(e, cond, ee) => 
       IfExpr(transform(e),transform(cond),transform(ee))
-    case DictExpr(map, dstar) => DictExpr(
-      map.map { case (k, v) => (k, transform(v)) },
-      dstar
-    )
+    case DictExpr(map) => DictExpr(map.map(transform))
     case SetExpr(set) => SetExpr(set.map(transform))
     case ListExpr(list) => ListExpr(list.map(transform))
     case TupleExpr(tup) => TupleExpr(tup.map(transform))
@@ -336,7 +333,7 @@ object Transformer {
       comps.map(transform)
     )
     case AwaitExpr(e) => AwaitExpr(transform(e))
-    case YieldExpr(opt) => YieldExpr(opt.map(transform))
+  case YieldExpr(opt) => YieldExpr(opt.map(transform))
     case YieldFromExpr(e) => YieldFromExpr(transform(e))
     case CompExpr(head, lp) => CompExpr(
       transform(head),
@@ -363,7 +360,10 @@ object Transformer {
       case _ => Call(
         transform(expr1),
         le.map(transform),
-        lk.map { case Kwarg(opt, e) => Kwarg(opt, transform(e)) }
+        lk.map {
+          case NormalKwarg(id, e) => NormalKwarg(id, transform(e))
+          case DoubleStarredKwarg(e) => DoubleStarredKwarg(transform(e))
+        }
       )
     }
     case FormattedValue(lhs, n, rhs) => FormattedValue(lhs, n, rhs)
@@ -372,7 +372,6 @@ object Transformer {
     case Attribute(e, x) => Attribute(e, x)
     case Subscript(e, slice) => Subscript(transform(e), transform(slice))
     case Starred(e) => Starred(e)
-    case DoubleStarred(e) => DoubleStarred(e)
     case EName(x) => EName(x)
     case Slice(begin, end, step) => Slice(
       begin.map(transform),
@@ -430,6 +429,11 @@ object Transformer {
       case _ => (WithItem(transform(e), Some(asE)), env)
       }
   }
+  
+  def transform(item: DictItem)(implicit env: Env): DictItem = item match {
+    case KVPair(k, v) => KVPair(k, transform(v))
+    case DoubleStarred(e) => DoubleStarred(e)
+  }
 
   def transform(mc: MatchCase)(implicit env: Env): MatchCase = mc match {
     case MatchCase(pat, cond, body) =>
@@ -473,11 +477,11 @@ object Transformer {
   // TODO: need new id gen algorithm
   def newId: Id = Id("id_new")
 
-  def findKwarg(lk: List[Kwarg], str: String): Option[Kwarg] =
-    lk.find {
-      case Kwarg(Some(Id(x)), _) if x == str => true
+  def findKwarg(lk: List[Kwarg], str: String): Option[NormalKwarg] =
+    (lk.find {
+      case NormalKwarg(Id(x), _) if x == str => true
       case _ => false
-    }
+    }).asInstanceOf[Option[NormalKwarg]]
 
   def replaceElement[T](lk: List[T], from: T, to: T): List[T] = {
     lk.zipWithIndex.find(e => e._1 == from) match {

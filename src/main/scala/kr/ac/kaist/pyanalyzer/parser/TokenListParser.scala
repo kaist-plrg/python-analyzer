@@ -388,8 +388,6 @@ trait TokenListParsers extends PackratParsers {
       case p ~ s => Subscript(p, s)
     } |
     atom
-  // Note that spec returns tuple of Expr
-  // We change it to List of Epxr for the consistency of parsing beautified AST
   lazy val slices: PackratParser[Expr] = slice <~ not(",") |
     rep1sep(slice, ",") <~ opt(",") ^^ TupleExpr
   lazy val slice: PackratParser[Expr] =
@@ -433,26 +431,19 @@ trait TokenListParsers extends PackratParsers {
     case e ~ complist => SetComp(e, complist)
   } 
 
-  lazy val dict: PackratParser[Expr] = "{" ~> opt(doubleStarredKvPairs) <~ "}" ^^  {
-    case list =>
-      val (lp, le) = list.map(_.foldRight((List[(Expr, Expr)](), List[Expr]())){
-        case ((Some(p), None), (lp, le)) => (p :: lp, le)
-        case ((None, Some(e)), (lp, le)) => (lp, e :: le)
-        case _ => ???
-      }).getOrElse((Nil, Nil))
-      DictExpr(lp, le)
-   } // | "{" ~> invalidDoubleStarredKvPairs <~ "}"
+  lazy val dict: PackratParser[Expr] =
+    "{" ~> opt(doubleStarredKvPairs) <~ "}" ^^ {
+      case opt => DictExpr(opt.getOrElse(Nil))
+    }
   lazy val dictcomp: PackratParser[Expr] = "{" ~> (kvPair ~ forIfClauses) <~ "}" ^^ {
     case kv ~ lcomp => DictComp(kv, lcomp)
   }
-  lazy val doubleStarredKvPairs: PackratParser[List[(Option[(Expr, Expr)], Option[Expr])]] =
+  lazy val doubleStarredKvPairs: PackratParser[List[DictItem]] =
     rep1sep(doubleStarredKvPair, ",") <~ opt(",")
-  lazy val doubleStarredKvPair: PackratParser[(Option[(Expr, Expr)], Option[Expr])] =
-    "**" ~> bitOr ^^ (dstar => (None, Some(DoubleStarred(dstar)))) |
-    kvPair ^^ (kvpair => (Some(kvpair), None))
-  lazy val kvPair: PackratParser[(Expr, Expr)] = expression ~ (":" ~> expression) ^^ {
-    case e1 ~ e2 => (e1, e2)
-  }
+  lazy val doubleStarredKvPair: PackratParser[DictItem] =
+    "**" ~> bitOr ^^ DoubleStarred | kvPair ^^ { case (k, v) => KVPair(k, v) }
+  lazy val kvPair: PackratParser[(Expr, Expr)] =
+    expression ~ (":" ~> expression) ^^ { case e1 ~ e2 => (e1, e2) }
 
   // Comprehensions
   // Note. forIfClause same with comp_for
@@ -482,6 +473,11 @@ trait TokenListParsers extends PackratParsers {
     kwargs
   )
   // getting all Kwarg
+  // helper for kwarg
+  def Kwarg(opt: Option[Id], expr: Expr): Kwarg = opt match {
+    case None => DoubleStarredKwarg(expr)
+    case Some(id) => NormalKwarg(id, expr)
+  }
   lazy val kwargs: PackratParser[(List[Expr], List[Kwarg])] = (
     rep1sep(kwargOrStarred, ",") ~ rep("," ~> kwargOrDoubleStarred) ^^ { 
       case eitherList ~ kwargList => {
@@ -522,7 +518,7 @@ trait TokenListParsers extends PackratParsers {
   lazy val kwargOrDoubleStarred: PackratParser[Kwarg] = ( 
     id ~ ("=" ~> expression) ^^ { case i ~ e => Kwarg(Some(i), e) } | 
     ("**" ~> expression) ^^ { 
-      case e => Kwarg(None, DoubleStarred(e))
+      case e => Kwarg(None, e)
     }
   )
 

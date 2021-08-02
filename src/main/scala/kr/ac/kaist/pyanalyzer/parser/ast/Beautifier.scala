@@ -18,9 +18,15 @@ object Beautifier {
     case alias: Alias => aliasApp(app, alias)
     case withItem: WithItem => withItemApp(app, withItem)
     case handler: ExcHandler => excApp(app, handler)
+    case dictItem: DictItem => dictItemApp(app, dictItem)
     case node =>
       println(node)
       ???
+  }
+
+  implicit lazy val dictItemApp: App[DictItem] = (app, item) => item match {
+    case KVPair(k, v) => app ~ k ~ ": " ~ v
+    case DoubleStarred(e) => app ~ "**" ~ #=(e, 6)
   }
 
   implicit lazy val moduleApp: App[Module] = (app, node) => node match {
@@ -203,15 +209,10 @@ object Beautifier {
       case LambdaExpr(args, e) => app ~ "lambda " ~ args ~ " : " ~ e
       case IfExpr(e1, c, e2) =>
         app ~ e1 ~ " if " ~ c ~ " else " ~ e2
-      case DictExpr(lp, dstar) =>
+      case DictExpr(map) =>
         implicit val precedence = 1
-        implicit val pApp: App[(Expr, Expr)] = {
-          case (app, (k, v)) =>
-            app ~ k ~ ": " ~ v
-        }
-        implicit val lpApp = ListApp[(Expr, Expr)]("", ", ", ", ")
-        implicit val lApp = LEApp("", ", ", ", ")
-        app ~ "{" ~ lp ~ dstar ~ "}"
+        implicit lazy val lApp = ListApp[DictItem](sep = ", ")
+        app ~ "{" ~ map ~ "}"
       case SetExpr(set) =>
         implicit val precedence = 1
         implicit val lApp = LEApp(sep = ", ")
@@ -292,9 +293,6 @@ object Beautifier {
       case Starred(e) =>
         implicit val precedence = 6
         app ~ "*" ~ e
-      case DoubleStarred(e) =>
-        implicit val precedence = 6
-        app ~ "**" ~ e
       case EName(x) => app ~ x
       case Slice(lb, ub, step) =>
         implicit val precedence = 1
@@ -328,7 +326,8 @@ object Beautifier {
       app ~ ?(pos, "", "/, ") ~ norm ~ star ~ ?(varArg, "*", ", ") ~
         key ~ ?(kwarg, "**", ", ")
     case Arg(x, ann, ty) => app ~ x ~ ?(ann, ": ") // TODO Add type comment
-    case Kwarg(opt, e) => app ~ ?(opt, "", "=") ~ e
+    case NormalKwarg(id, e) => app ~ id ~ "=" ~ e
+    case DoubleStarredKwarg(e) => app ~ "**" ~ e
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {

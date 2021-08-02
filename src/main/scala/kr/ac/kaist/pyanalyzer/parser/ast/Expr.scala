@@ -59,8 +59,12 @@ case class UnaryExpr(op: Op, expr: Expr) extends Expr
 case class LambdaExpr(args: Args, expr: Expr) extends Expr
 case class IfExpr(expr: Expr, cond: Expr, elseExpr: Expr) extends Expr
 
+trait DictItem extends Node
+case class KVPair(key: Expr, value: Expr) extends DictItem
+case class DoubleStarred(expr: Expr) extends DictItem
+
 // Display expressions
-case class DictExpr(map: List[(Expr, Expr)], dstar: List[Expr]) extends Expr
+case class DictExpr(map: List[DictItem]) extends Expr
 case class SetExpr(set: List[Expr]) extends Expr
 case class ListExpr(ls: List[Expr]) extends Expr
 case class TupleExpr(tup: List[Expr]) extends Expr
@@ -93,7 +97,6 @@ case class EConst(c: Const) extends Expr
 case class Attribute(expr: Expr, field: Id) extends Expr
 case class Subscript(expr: Expr, slice: Expr) extends Expr
 case class Starred(expr: Expr) extends Expr
-case class DoubleStarred(expr: Expr) extends Expr
 case class EName(id: Id) extends Expr
 case class Slice(start: Option[Expr], end: Option[Expr], stride: Option[Expr]) extends Expr
 
