@@ -15,7 +15,7 @@ object Transform {
 
   def apply(optionMap: Map[String, String]): Unit = {
     // set target file
-    val target = optionMap.get("target")
+    val target = s".*${optionMap.getOrElse("target", "")}.*".r
     // set diff option
     val diffOption = if (optionMap contains "y") "y" else "u"
     // set diff stage
@@ -30,7 +30,7 @@ object Transform {
       if (orgPath endsWith ".py") && (orgPath contains "/org/") &&
         readSource(orgPath).nonEmpty
       relPath = orgPath.drop(HOROVOD_DIR.length + 1)
-      if target.map(relPath contains _).getOrElse(true)
+      if target.matches(relPath)
       hvdPath = s"$HOROVOD_DIR/${relPath.replace("/org/", "/hvd/")}"
     } {
 
