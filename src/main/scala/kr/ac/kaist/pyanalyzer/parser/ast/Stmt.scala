@@ -41,9 +41,9 @@ sealed trait Argument extends Node
 case class Args(
   posOnlys: List[(Arg, Option[Expr])] = Nil,
   normArgs: List[(Arg, Option[Expr])] = Nil,
-  varArg: Option[Arg] = None,
+  argSeq: Option[Arg] = None,
   keyOnlys: List[(Arg, Option[Expr])] = Nil,
-  kwArg: Option[Arg] = None
+  kwargMap: Option[Arg] = None
 ) extends Argument
 case class Arg(
   name: Id,

@@ -278,10 +278,10 @@ trait TokenListParsers extends PackratParsers {
   // vararg, keyword only arg, kwargs can appear
   lazy val lambdaStarEtc: PackratParser[Args] = ( 
     ("*" ~> lambdaParamNoDefault) ~ rep(lambdaParamMaybeDefault) ~ opt(lambdaKwds) ^^ {
-      case a ~ pwl ~ kopt => Args(varArg = Some(a), keyOnlys = pwl, kwArg = kopt)
+      case a ~ pwl ~ kopt => Args(argSeq = Some(a), keyOnlys = pwl, kwargMap = kopt)
     } | "*" ~ "," ~> rep1(lambdaParamMaybeDefault) ~ opt(lambdaKwds) ^^ {
-      case pml ~ kopt => Args(keyOnlys = pml, kwArg = kopt)
-    } | lambdaKwds ^^ { case a => Args(kwArg = Some(a)) }
+      case pml ~ kopt => Args(keyOnlys = pml, kwargMap = kopt)
+    } | lambdaKwds ^^ { case a => Args(kwargMap = Some(a)) }
   )
   lazy val lambdaKwds: PackratParser[Arg] = "**" ~> lambdaParamNoDefault
   lazy val lambdaParamNoDefault: PackratParser[Arg] =
@@ -914,7 +914,7 @@ trait TokenListParsers extends PackratParsers {
       case x ~ Some(ps) ~ tyopt ~ ftyopt ~ b => AsyncFunDef(Nil, x, ps, tyopt, ftyopt, b)  
       case (((x ~ None) ~ tyopt) ~ ftyopt) ~ b => AsyncFunDef(Nil, x, Args(), tyopt, ftyopt, b) // TODO empty Args?
     }
-  // case class Args(posOnlys: List[(Arg, Option[Expr])], normArgs: List[(Arg, Option[Expr])], varArg: Option[Arg], keyOnlys: List[(Arg, Option[Expr])], kwArg: Option[Arg]) 
+  // case class Args(posOnlys: List[(Arg, Option[Expr])], normArgs: List[(Arg, Option[Expr])], argSeq: Option[Arg], keyOnlys: List[(Arg, Option[Expr])], kwargMap: Option[Arg]) 
   lazy val params:  PackratParser[Args] = parameters
   lazy val parameters: PackratParser[Args] = (
     slashNoDefault ~ rep(paramNoDefault) ~ rep(paramWithDefault) ~ opt(starEtc) ^^ {
@@ -972,9 +972,9 @@ trait TokenListParsers extends PackratParsers {
       case a ~ pl ~ kopt => Args(Nil, Nil, Some(a), pl, kopt)
     } |
     ("*" ~ ",") ~> rep1(paramMaybeDefault) ~ opt(kwds) ^^ {
-      case pl ~ kopt => Args(keyOnlys = pl, kwArg = kopt) 
+      case pl ~ kopt => Args(keyOnlys = pl, kwargMap = kopt) 
     } |
-    kwds ^^ {a => Args(kwArg = Some(a))} 
+    kwds ^^ {a => Args(kwargMap = Some(a))} 
   )
   lazy val kwds: PackratParser[Arg] = "**" ~> paramNoDefault
   // Arg: id, annotation, typecomment / Expr: default value
