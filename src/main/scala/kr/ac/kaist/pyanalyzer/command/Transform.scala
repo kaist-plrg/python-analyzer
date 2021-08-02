@@ -15,7 +15,11 @@ object Transform {
 
   def apply(optionMap: Map[String, String]): Unit = {
     // set target file
-    val target = s".*${optionMap.getOrElse("target", "")}.*".r
+    val target = try {
+      s".*${optionMap.getOrElse("target", "")}.*".r
+    } catch {
+      case e: Throwable => ".*".r
+    }
     // set diff option
     val diffOption = if (optionMap contains "y") "y" else "u"
     // set diff stage
