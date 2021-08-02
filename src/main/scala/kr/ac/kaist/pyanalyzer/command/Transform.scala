@@ -35,7 +35,7 @@ object Transform {
     } {
 
       println
-      println(s"$CYAN$relPath$RESET")
+      println(s"$MAGENTA$relPath$RESET")
       try {
         // org
         val orgAst = parseFile(orgPath)
@@ -75,13 +75,13 @@ object Transform {
     hvdResult: String,
   ): Unit = {
     println
-    println(s"${CYAN}ORG${RESET}")
+    println(s"${MAGENTA}ORG${RESET}")
     println(orgResult)
     println("==================================================")
-    println(s"${CYAN}TRANS${RESET}")
+    println(s"${MAGENTA}TRANS${RESET}")
     println(transformedResult)
     println("==================================================")
-    println(s"${CYAN}HVD${RESET}")
+    println(s"${MAGENTA}HVD${RESET}")
     println(hvdResult)
   }
   def printDiff(
@@ -93,7 +93,7 @@ object Transform {
     val path2 = s"$logPath/$name2"
     dumpFile(content1, path1)
     dumpFile(content2, path2)
-    println(s"${CYAN}DIFF${RESET}")
+    println(s"${MAGENTA}DIFF${RESET}")
     try executeCmd(
       s"colordiff -$diffOption $path1 $path2"
     ) catch {
