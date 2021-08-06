@@ -18,6 +18,7 @@ lazy val root = (project in file("."))
       "org.jline" % "jline" % "3.20.0",
       "org.scala-lang.modules" %% "scala-parser-combinators" % "2.0.0",
       "org.scalatest" %% "scalatest-funsuite" % "3.2.9" % "test",
+      "io.spray" %%  "spray-json" % "1.3.6",
     ),
     testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
     parallelExecution in Test := true,
