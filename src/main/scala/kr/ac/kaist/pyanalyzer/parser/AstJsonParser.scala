@@ -25,6 +25,7 @@ object AstJsonParser {
   def sourceToAst(source: String): Node = {
     val astJson: JsObject = sourceToJson(source)
     val ast = parseJson(astJson)(AsModule)
+
     ast
   }
 
