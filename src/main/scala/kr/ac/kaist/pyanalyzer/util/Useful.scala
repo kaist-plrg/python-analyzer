@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import scala.Console._
 import scala.sys.process._
+import scala.io.Source
 
 object Useful {
   def beautify[T](t: T)(implicit app: Appender.App[T]): String = {
@@ -45,7 +46,7 @@ object Useful {
   def bolded(msg: String): String = s"${BOLD}${msg}${RESET}"
   final val GRAY: String = "\u001B[90m"
 
-// getting printwriter obj
+  // getting printwriter obj
   def getPrintWriter(filename: String): PrintWriter =
     new PrintWriter(new File(filename))
 
@@ -66,6 +67,20 @@ object Useful {
     val nf = getPrintWriter(filename)
     nf.print(data)
     nf.close()
+  }
+
+  // read string from file
+  def readFile(path: String): String = {
+    val source = Source.fromFile(path)
+    val lines = try source.getLines mkString "\n" finally source.close()
+    lines
+  }
+
+  // write string to file
+  def writeFile(path: String, data: String): Unit = {
+    val writer = new PrintWriter(new File(path))
+    writer.write(data)
+    writer.close()
   }
 
   // removes color codes
