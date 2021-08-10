@@ -51,6 +51,7 @@ sealed trait Expr extends Node {
 
 // Basic expressions
 case class BoolExpr(op: BoolOp, lhs: Expr, rhs: Expr) extends Expr
+case class BoolGroupExpr(op: BoolOp, group: List[Expr]) extends Expr
 case class NamedExpr(lhs: Expr, rhs: Expr) extends Expr
 case class BinaryExpr(op: BinOp, lhs: Expr, rhs: Expr) extends Expr
 case class UnaryExpr(op: Op, expr: Expr) extends Expr
@@ -73,7 +74,7 @@ case class TupleExpr(tup: List[Expr]) extends Expr
 case class ListComp(target: Expr, comp: List[Comprehension]) extends Expr
 case class SetComp(target: Expr, comp: List[Comprehension]) extends Expr
 case class DictComp(kvpair: (Expr, Expr), comp: List[Comprehension]) extends Expr
-case class GenComp(expr: Expr, comp:  List[Comprehension]) extends Expr
+case class GenComp(expr: Expr, comp: List[Comprehension]) extends Expr
 
 // Generator related
 case class AwaitExpr(expr: Expr) extends Expr
