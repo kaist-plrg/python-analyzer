@@ -567,7 +567,7 @@ object AstJsonParser {
       }
       Arg(name, ann, tyComment)
     case other => throw new RuntimeException(s"Arg obj expected, got _type: $other")
-  }
+  } 
 
   def parseKeywordJson(ast: JsObject): Keyword = 
     getJsObjectType(ast) match {
