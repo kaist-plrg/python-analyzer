@@ -248,21 +248,60 @@ object AstJsonParser {
         val gens: List[Comprehension] =
           applyToJsList(ast, "generators", parseJson(AsComprehension))
         GenComp(elt, gens) 
-      case "Await" => ???
-      case "Yield" => ???
-      case "YieldFrom" => ???
-      case "Compare" => ???
-      case "Call" => ???
-      case "FormattedValue" => ???
-      case "JoinedStr" => ???
-      case "Constant" => ???
-      case "Attribute" => ???
-      case "Subscript" => ???
-      case "Starred" => ???
-      case "Name" => ???
-      case "List" => ???
-      case "Tuple" => ???
-      case "Slice" => ???
+      case "Await" =>
+        val value: Expr = applyToJsField(ast, "elt", parseJson(AsExpr))
+        AwaitExpr(value)
+      case "Yield" =>
+        val value: Option[Expr] = ast.fields("value") match {
+          case JsNull => None
+          case x => Some(parseJson(x)(AsExpr))
+        }
+        YieldExpr(value)
+      case "YieldFrom" =>
+        val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
+        YieldFromExpr(value)
+      case "Compare" =>
+        val left: Expr = applyToJsField(ast, "left", parseJson(AsExpr))
+        val ops: List[CompOp] = applyToJsList(ast, "ops", parseJson(AsCompOp)) 
+        val rights: List[Expr] = applyToJsList(ast, "comparators", parseJson(AsExpr))
+        CompExpr(left, ops zip rights)
+      case "Call" =>
+        val func: Expr = applyToJsField(ast, "func", parseJson(AsExpr))
+        val args: List[Expr] = applyToJsList(ast, "args", parseJson(AsExpr))
+        val kwds: List[Keyword] = applyToJsList(ast, "keywords", parseJson(AsKeyword))
+        Call(func, args, kwds)
+      case "FormattedValue" => ??? // TODO impl
+      case "JoinedStr" =>
+        val vs: List[Expr] = applyToJsList(ast, "values", parseJson(AsExpr))
+        JoinedStr(vs)
+      case "Constant" =>
+        val const: Const = applyToJsField(ast, "value", parseJson(AsConst))
+        EConst(const) 
+      case "Attribute" =>
+        val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
+        val attr: Id = applyToJsField(ast, "attr", parseJson(AsId))
+        Attribute(value, attr)
+      case "Subscript" =>
+        val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
+        val slice: Expr = applyToJsField(ast, "slice", parseJson(AsExpr))
+        Subscript(value, slice) 
+      case "Starred" =>
+        val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
+        Starred(value)
+      case "Name" =>
+        val name: Id = applyToJsField(ast, "value", parseJson(AsId))
+        EName(name)
+      case "List" =>
+        val elts: List[Expr] = applyToJsList(ast, "elts", parseJson(AsExpr))
+        ListExpr(elts) 
+      case "Tuple" =>
+        val elts: List[Expr] = applyToJsList(ast, "elts", parseJson(AsExpr))
+        TupleExpr(elts)
+      case "Slice" =>
+        val lower: Option[Expr] = applyToJsOption(ast, "lower", parseJson(AsExpr)) 
+        val upper: Option[Expr] = applyToJsOption(ast, "upper", parseJson(AsExpr))
+        val step: Option[Expr] = applyToJsOption(ast, "step", parseJson(AsExpr))
+        Slice(lower, upper, step)
     }
 
   def parseComprehensionJson(ast: JsObject): Comprehension =
@@ -478,4 +517,9 @@ object AstJsonParser {
     }
   def applyToJsField[T](ast: JsObject, fieldname: String, f: JsObject => T): T =
     f(ast.fields(fieldname).asJsObject)
+  def applyToJsOption[T](ast: JsObject, fieldname: String, f: JsObject => T): Option[T] =
+    ast.fields(fieldname) match {
+      case JsNull => None
+      case x => Some(f(x.asJsObject))
+    }
 }

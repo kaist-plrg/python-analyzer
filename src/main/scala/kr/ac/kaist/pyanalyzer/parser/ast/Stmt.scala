@@ -53,7 +53,7 @@ case class Arg(
 sealed trait Kwarg extends Argument
 case class NormalKwarg(id: Id, expr: Expr) extends Kwarg
 case class DoubleStarredKwarg(expr: Expr) extends Kwarg
-case class Keyword(arg: Option[Id], value: Expr)
+case class Keyword(arg: Option[Id], value: Expr) extends Kwarg
 
 // Comprehension
 sealed trait Comprehension extends Node
