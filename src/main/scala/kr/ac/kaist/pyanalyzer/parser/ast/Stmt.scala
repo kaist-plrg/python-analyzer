@@ -50,12 +50,12 @@ case class Arg(
   ann: Option[Expr] = None,
   ty: Option[String] = None
 ) extends Argument
-trait Kwarg extends Argument
+sealed trait Kwarg extends Argument
 case class NormalKwarg(id: Id, expr: Expr) extends Kwarg
 case class DoubleStarredKwarg(expr: Expr) extends Kwarg
 
 // Comprehension
-trait Comprehension extends Node
+sealed trait Comprehension extends Node
 case class Compre(
   target: Expr,
   in: Expr,
@@ -116,3 +116,4 @@ case object ContinueStmt extends Stmt
 
 // container for stmt list
 case class OnelineStmt(stmts: List[Stmt]) extends Stmt
+case class Comment(c: String) extends Stmt

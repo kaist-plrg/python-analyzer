@@ -5,12 +5,15 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
 object Transformer {
   // transformed one AST into another AST
   def apply(ast: Module): Module = ast match {
-    case Module(body, tyIgnore) => Module(transform(body)(Env())._1, tyIgnore)
+    case m @ Module(body, tyIgnore) if containsTL(m) =>
+      Module(transform(body)(Env())._1, tyIgnore)
+    case m => m
   }
 
   /////////////////////////////////////////
@@ -294,6 +297,7 @@ object Transformer {
     case OnelineStmt(ls) =>
       val (newLs, newEnv) = transform(ls)
       (OnelineStmt(newLs), newEnv)
+    case Comment(c) => (Comment(c), env)
   }
 
   /////////////////////////////////////////
