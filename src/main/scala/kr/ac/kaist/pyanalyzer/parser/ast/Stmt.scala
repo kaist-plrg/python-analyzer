@@ -38,23 +38,12 @@ case class ExcHandler(
 
 // Args
 sealed trait Argument extends Node
-/*
 case class Args(
   posOnlys: List[(Arg, Option[Expr])] = Nil,
   normArgs: List[(Arg, Option[Expr])] = Nil,
   argSeq: Option[Arg] = None,
   keyOnlys: List[(Arg, Option[Expr])] = Nil,
   kwargMap: Option[Arg] = None
-) extends Argument
-*/
-case class Args(
-  posOnlys: List[Arg] = Nil, 
-  args: List[Arg] = Nil,
-  vararg: Option[Arg] = None,
-  kwOnlys: List[Arg] = Nil,
-  kwarg: Option[Arg] = None,
-  defaults: List[Expr] = Nil,
-  kwDefaults: List[Expr] = Nil, 
 ) extends Argument
 case class Arg(
   name: Id,
@@ -64,8 +53,7 @@ case class Arg(
 sealed trait Kwarg extends Argument
 case class NormalKwarg(id: Id, expr: Expr) extends Kwarg
 case class DoubleStarredKwarg(expr: Expr) extends Kwarg
-
-case class Keyword(id: Option[Id], value: Expr) extends Kwarg
+case class Keyword(arg: Option[Id], value: Expr)
 
 // Comprehension
 sealed trait Comprehension extends Node

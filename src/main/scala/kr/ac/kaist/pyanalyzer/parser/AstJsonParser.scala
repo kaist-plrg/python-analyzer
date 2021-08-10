@@ -9,6 +9,14 @@ import spray.json._
 object AstJsonParser {
   val exePath = PY_AST_DIR + "/ast-json-extractor.py" 
 
+  def fileToAst(path: String): Module = {
+    val source = readFile(path)
+    sourceToAst(source) match {
+      case x: Module => x
+      case _ => throw new RuntimeException("not a module")
+    }
+  }
+
   def sourceToAst(source: String): Node = {
     val astJson = sourceToJson(source)
     val ast = parseAstJson(astJson)
@@ -177,9 +185,21 @@ object AstJsonParser {
     }
 
   // Execption handler
-  def parseExcHandlerJson(ast: JsObject): Op =
+  def parseExcHandlerJson(ast: JsObject): ExcHandler =
     getJsObjectType(ast) match {
-      case "ExceptHandler" => ???
+      case "ExceptHandler" =>
+        val target: Option[Expr] = ast.fields("type") match {
+          case JsNull => None
+          case x => Some(parseExprJson(x.asJsObject))
+        }
+        val asname: Option[Id] = ast.fields("name") match {
+          case JsNull => None
+          case x => Some(parseIdJson(x.asJsObject))
+        }
+        val body: List[Stmt] = ast.fields("body") match {
+          case JsArray(l) => l.map(v => parseStmtJson(v.asJsObject)).toList
+        }
+        ExcHandler(target, asname, body)
     }
 
   // Call expression arguments
@@ -199,21 +219,35 @@ object AstJsonParser {
         val kwonlyargs: List[Arg] = ast.fields("kwonlyargs") match {
           case JsArray(l) => l.map(v => parseArgJson(v.asJsObject)).toList
         }
-        val kwDefaults: List[Expr] = ast.fields("kw_defaults") match {
-          case JsArray(l) => l.map(v => parseExprJson(v.asJsObject)).toList
+        val kwDefaults: List[Option[Expr]] = ast.fields("kw_defaults") match {
+          case JsArray(l) => l.map(v => v match {
+            case JsNull => None
+            case _ => Some(parseExprJson(v.asJsObject))
+          }).toList
         }
         val kwarg: Option[Arg] = ast.fields("kwarg") match {
           case JsNull => None
           case v => Some(parseArgJson(v.asJsObject))  
         }
-        val defaults: List[Expr] = ast.fields("defaults") match {
-          case JsArray(l) => l.map(v => parseExprJson(v.asJsObject)).toList
+        var defaults: List[Option[Expr]] = ast.fields("defaults") match {
+          case JsArray(l) => l.map(v => Some(parseExprJson(v.asJsObject))).toList
         }
+        val posonlys = posonlyArgs zip defaults.map(v => Some(v))
 
-      ???
+        // adjusting defaults list for length of args + posonlyArgs
+        val totalPosArgs = posonlyArgs.length + args.length
+        val givenPosDefaults = defaults.length
+        if (givenPosDefaults < totalPosArgs) {
+          defaults = List.fill(totalPosArgs - givenPosDefaults)(None) ++ defaults 
+        }
+        val (posonlyDefaults, normDefaults) = defaults.splitAt(posonlyArgs.length)
+        val posOnlys = posonlyArgs zip posonlyDefaults
+        val normArgs = args zip normDefaults
+        val keyOnlys = kwonlyargs zip kwDefaults 
+        Args(posOnlys, normArgs, vararg, keyOnlys, kwarg)
     }
 
-  def parseArgJson(ast: JsObject): Arg = ???
+  def parseArgJson(ast: JsObject): Arg = ??? 
 
   def parseKeywordJson(ast: JsObject): Keyword = 
     getJsObjectType(ast) match {
