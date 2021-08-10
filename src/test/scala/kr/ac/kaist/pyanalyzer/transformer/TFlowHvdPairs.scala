@@ -12,11 +12,11 @@ class TFlowHvdPairs extends FileTransformPairs {
     "Tensorflow2/DistributedGradientTape/Simple-CNN-MNIST-2/org/tensorflow2_mnist.py",
     "Tensorflow2/DistributedGradientTape/LSTM-MNIST/org/recurrent_network.py",
   )
-  val pyFiles = target.map(relPath => s"$HOROVOD_DIR/$relPath")
-    //walkTree(rootPath)
-    //  .toList.map(f => f.getPath())
-    //  .filter(s => s.endsWith(".py"))
-    //  .filter(s => s.contains("/org/"))
+  val pyFiles = //target.map(relPath => s"$HOROVOD_DIR/$relPath")
+    walkTree(rootPath)
+      .toList.map(f => f.getPath())
+      .filter(s => s.endsWith(".py"))
+      .filter(s => s.contains("/org/"))
 
   // test name
   def makeTestName(path: String): String = path.slice(path.lastIndexOf("tensorflow-to-horovod"), path.length)

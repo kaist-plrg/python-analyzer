@@ -169,6 +169,10 @@ object Beautifier {
       sl.foldLeft(app)((app, stmt) =>
         app ~ stmt ~ app.dropIndent ~ app.pop ~ "; "
       ) ~ app.pop.pop ~ app.newLine
+    case Comment(c) => c match {
+      case c if c startsWith "# type:" => app ~ c
+      case _ => app
+    }
   }
 
   implicit lazy val constApp: App[Const] = (app, c) => c match {

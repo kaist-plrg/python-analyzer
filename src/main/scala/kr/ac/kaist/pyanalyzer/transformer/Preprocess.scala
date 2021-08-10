@@ -3,13 +3,20 @@ package kr.ac.kaist.pyanalyzer.transformer
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util._
+import kr.ac.kaist.pyanalyzer.util.Walker._
 
 // excpetions
 case object ImportAtMiddle extends Exception
 
+object Preprocess extends Preprocess
 trait Preprocess {
   def apply(ast: Node): Node = ??? 
   
+  // check if module m contains training loop
+  def containsTL(m: Module): Boolean = m.body.exists {
+    case s => walkStmt[Boolean](_ == Comment("# training loop"), _ | _, false)(s)
+  }
+
   // checks if given Module node conforms to the transformation restriction
   // throws exception if violates restriction
   def checkRestriction(mod: Module): Unit = {
