@@ -969,19 +969,7 @@ trait TokenListParsers extends PackratParsers {
   // vararg, keyword only arg, keywords arg
   lazy val starEtc: PackratParser[Args] = (
     "*" ~> paramNoDefault ~ rep(paramMaybeDefault) ~ opt(kwds) ^^ { 
-      case a ~ pl ~ kopt => 
-        val kwonlys: List[Arg] = pl.map(_._1)
-        val kwdefaults: List[Expr] = pl.map(o => o._2 match {
-          case Some(e) => e
-          case None => EConst(NoneLiteral)
-        })
-        Args(
-          vararg=Some(a), 
-          kwOnlys=kwonlys, 
-          kopt, 
-          kwDefaults=kwdefaults,
-          kwarg=kopt
-        )
+      case a ~ pl ~ kopt => Args(Nil, Nil, Some(a), pl, kopt)
     } |
     ("*" ~ ",") ~> rep1(paramMaybeDefault) ~ opt(kwds) ^^ {
       case pl ~ kopt => Args(keyOnlys = pl, kwargMap = kopt) 
