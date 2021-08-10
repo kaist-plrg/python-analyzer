@@ -10,7 +10,7 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object Transform {
-  val logPath = BASE_DIR + "/logs/transform"
+  val logPath = s"$BASE_DIR/logs/transform"
   mkdir(logPath)
 
   def apply(optionMap: Map[String, String]): Unit = {
@@ -20,11 +20,11 @@ object Transform {
     } catch {
       case e: Throwable => ".*".r
     }
+    // diff files
+    val diff = optionMap.getOrElse("diff", "hvd-trans")
     // set diff option
     val diffOption = if (optionMap contains "y") "y" else "u"
-    // set diff stage
-    val stage = optionMap.getOrElse("stage", "hvd-trans")
-    // print all stage
+    // print all diff
     val all = if (optionMap contains "all") true else false
 
     val files = walkTree(HOROVOD_DIR)
@@ -44,6 +44,7 @@ object Transform {
         // org
         val orgAst = parseFile(orgPath)
         val orgResult = beautify(orgAst)
+
         // transformed
         val transformedAst = Transformer(orgAst)
         val transformedResult = beautify(transformedAst)
@@ -51,8 +52,8 @@ object Transform {
         val hvdAst = parseFile(hvdPath)
         val hvdResult = beautify(hvdAst)
 
-        // target stage
-        val comparePair = stage match {
+        // target diff
+        val comparePair = diff match {
           case "org-hvd" =>
             ("org", orgResult, "hvd", hvdResult)
           case "org-trans" =>
