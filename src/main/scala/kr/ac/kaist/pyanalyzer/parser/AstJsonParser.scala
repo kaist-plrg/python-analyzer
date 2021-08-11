@@ -9,6 +9,11 @@ import spray.json._
 object AstJsonParser {
   val exePath = PY_AST_DIR + "/ast-json-extractor.py" 
 
+  def readThenParseSource(filename: String): Module = fileToAst(filename) 
+  def parseSource(source: String): Module = sourceToAst(source) match {
+    case x: Module => x
+  }
+  
   def fileToAst(path: String): Module = {
     val source = readFile(path)
     sourceToAst(source) match {
@@ -115,11 +120,18 @@ object AstJsonParser {
     type Output = Const
     def apply(ast: JsObject): Output = parseConstJson(ast)
   }
-  def parseJson(ast: JsValue)(as: As): as.Output = ast match {
-    case x: JsObject => as(x)
+  def parseJson(ast: JsValue)(as: As): as.Output = { 
+    //println(s"Try parsing as $as")
+    //println(s"AST: $ast")
+    ast match {
+      case x: JsObject => as(x)
+    }
   }
   def parseJson(as: As): JsValue => as.Output = (x => x match {
-    case x: JsObject => as(x)
+    case x: JsObject =>
+      //println(s"Try parsing as $as")
+      //println(s"AST: ${x.prettyPrint}")
+      as(x)
   })
 
   //////////////////////////////////////////////////////////////////
@@ -130,13 +142,14 @@ object AstJsonParser {
       case "Module" =>
         val body = applyToJsList(ast, "body", parseJson(AsStmt))
         Module(body)
+      case other => throw new RuntimeException(s"Module obj expected, got _type: $other")
     }
 
   // parses stmt ast-json
   def parseStmtJson(ast: JsObject): Stmt = 
     getJsObjectType(ast) match {
       case "FunctionDef" =>
-        val name = applyToJsField(ast, "name", parseJson(AsId))
+        val name = Id(extractStrFromField(ast, "name"))
         val args = applyToJsField(ast, "args", parseJson(AsArgs))
         val body = applyToJsList(ast, "body", parseJson(AsStmt))
         val decos = applyToJsList(ast, "decorator_list", parseJson(AsExpr))
@@ -147,7 +160,7 @@ object AstJsonParser {
         }
         FunDef(decos, name, args, rets, tyComment, body) 
       case "AsyncFunctionDef" =>
-        val name = applyToJsField(ast, "name", parseJson(AsId))
+        val name = Id(extractStrFromField(ast, "name"))
         val args = applyToJsField(ast, "args", parseJson(AsArgs))
         val body = applyToJsList(ast, "body", parseJson(AsStmt))
         val decos = applyToJsList(ast, "decorator_list", parseJson(AsExpr))
@@ -158,7 +171,7 @@ object AstJsonParser {
         }
         AsyncFunDef(decos, name, args, rets, tyComment, body)
       case "ClassDef" =>
-        val name = applyToJsField(ast, "name", parseJson(AsId))
+        val name = Id(extractStrFromField(ast, "name"))
         val bases = applyToJsList(ast, "bases", parseJson(AsExpr))
         val kwds = applyToJsList(ast, "keywords", parseJson(AsKeyword))
         val body = applyToJsList(ast, "body", parseJson(AsStmt))
@@ -236,7 +249,7 @@ object AstJsonParser {
        AsyncWithStmt(tyComment, items, body)
       case "Raise" =>
         val exception = applyToJsOption(ast, "exc", parseJson(AsExpr))
-        val from = applyToJsOption(ast, "caese", parseJson(AsExpr))
+        val from = applyToJsOption(ast, "cause", parseJson(AsExpr))
         RaiseStmt(exception, from)
       case "Try" =>
         val body = applyToJsList(ast, "body", parseJson(AsStmt))
@@ -254,9 +267,7 @@ object AstJsonParser {
       case "ImportFrom" =>
         val mnames: List[Id] = ast.fields("module") match {
           case JsNull => Nil
-          case x => parseJson(x.asJsObject)(AsId) match {
-            case Id(s) => s.split(".").map(x => Id(x)).toList
-          }
+          case JsString(s) => s.split("\\.").map(x => Id(x)).toList
         }
         val anames = applyToJsList(ast, "names", parseJson(AsAlias))
         val level = ast.fields("level") match {
@@ -276,7 +287,7 @@ object AstJsonParser {
       case "Pass" => PassStmt 
       case "Break" => BreakStmt
       case "Continue" => ContinueStmt 
-      case _ => throw new RuntimeException("Invalid Stmt object")
+      case other => throw new RuntimeException(s"Stmt object expected, got _type: $other")
     }  
     
   // parseing expr ast-json
@@ -384,7 +395,7 @@ object AstJsonParser {
         EConst(const) 
       case "Attribute" =>
         val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
-        val attr: Id = applyToJsField(ast, "attr", parseJson(AsId))
+        val attr: Id = Id(extractStrFromField(ast, "attr"))
         Attribute(value, attr)
       case "Subscript" =>
         val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
@@ -409,6 +420,7 @@ object AstJsonParser {
         val upper: Option[Expr] = applyToJsOption(ast, "upper", parseJson(AsExpr))
         val step: Option[Expr] = applyToJsOption(ast, "step", parseJson(AsExpr))
         Slice(lower, upper, step)
+      case other => throw new RuntimeException(s"Expr obj expected, got _type: $other")
     }
 
   // comprehension
@@ -422,10 +434,11 @@ object AstJsonParser {
           case JsNumber(n) => if (n == 1) true else false
         }
         if (isAsync) {
-          Compre(target, iter, ifs)
-        } else {
           AsyncCompre(target, iter, ifs)
+        } else {
+          Compre(target, iter, ifs)
         }
+      case other => throw new RuntimeException(s"Comprehension obj expected, got _type: $other")
     }
 
   // parsing op
@@ -433,6 +446,7 @@ object AstJsonParser {
     getJsObjectType(ast) match {
       case "And" => OAnd
       case "Or" => OOr
+      case other => throw new RuntimeException(s"BoolOp obj expected, got _type: $other")
     }
 
   def parseBinOpJson(ast: JsObject): BinOp = 
@@ -450,6 +464,7 @@ object AstJsonParser {
       case "BitXor" => OBXor 
       case "BitAnd" => OBAnd
       case "FloorDiv" => OIDiv 
+      case other => throw new RuntimeException(s"BinOp obj expected, got _type: $other")
     }
 
   def parseUnaryOpJson(ast: JsObject): UnOp =
@@ -458,6 +473,7 @@ object AstJsonParser {
       case "Not" => UNot
       case "UAdd" => UPlus 
       case "USub" => UMinus
+      case other => throw new RuntimeException(s"UnaryOp obj expected, got _type: $other")
     }
 
   def parseCompOpJson(ast: JsObject): CompOp = 
@@ -472,6 +488,7 @@ object AstJsonParser {
       case "IsNot" => CIsNot 
       case "In" => CIn
       case "NotIn" => CNotIn  
+      case other => throw new RuntimeException(s"CompOp obj expected, got _type: $other")
     }
 
   // Execption handler
@@ -490,6 +507,7 @@ object AstJsonParser {
           case JsArray(l) => l.map(v => parseStmtJson(v.asJsObject)).toList
         }
         ExcHandler(target, asname, body)
+      case other => throw new RuntimeException(s"ExcHandler obj expected, got _type: $other")
     }
 
   // Call expression arguments
@@ -535,9 +553,20 @@ object AstJsonParser {
         val normArgs = args zip normDefaults
         val keyOnlys = kwonlyargs zip kwDefaults 
         Args(posOnlys, normArgs, vararg, keyOnlys, kwarg)
+      case other => throw new RuntimeException(s"Args obj expected, got _type: $other")
     }
 
-  def parseArgJson(ast: JsObject): Arg = ??? 
+  def parseArgJson(ast: JsObject): Arg = getJsObjectType(ast) match {
+    case "arg" =>
+      val name: Id = Id(extractStrFromField(ast, "arg")) 
+      val ann: Option[Expr] = applyToJsOption(ast, "annotation", parseJson(AsExpr))
+      val tyComment: Option[String] = ast.fields("type_comment") match {
+        case JsNull => None
+        case JsString(s) => Some(s)
+      }
+      Arg(name, ann, tyComment)
+    case other => throw new RuntimeException(s"Arg obj expected, got _type: $other")
+  }
 
   def parseKeywordJson(ast: JsObject): Keyword = 
     getJsObjectType(ast) match {
@@ -548,6 +577,7 @@ object AstJsonParser {
           case JsNull => Keyword(None, argExpr)
           case JsString(s) => Keyword(Some(Id(s)), argExpr) 
         }
+      case other => throw new RuntimeException(s"Keyword obj expected, got _type: $other")
     }
 
   // Alias
@@ -555,12 +585,13 @@ object AstJsonParser {
     getJsObjectType(ast) match {
       case "alias" =>
         val nameRaw: String = extractJsStr(ast.fields("name"))
-        val name: List[Id] = nameRaw.split(".").map(s => Id(s)).toList
+        val name: List[Id] = nameRaw.split("\\.").map(s => Id(s)).toList
         // case by value of asname
         ast.fields("asname") match {
           case JsNull => Alias(name, None)  
           case JsString(s) => Alias(name, Some(Id(s)))
         }
+      case other => throw new RuntimeException(s"Alias obj expected, got _type: $other")
     }
 
   // WithItem
@@ -575,6 +606,7 @@ object AstJsonParser {
             val asExpr: Expr = parseExprJson(ast.fields("optional_vars").asJsObject)
             WithItem(ctxExpr, Some(asExpr))
         }
+      case other => throw new RuntimeException(s"WithItem obj expected, got _type: $other")
     }
 
   // type ignore
@@ -586,9 +618,10 @@ object AstJsonParser {
       case "Name" =>
         val name = extractJsStr(ast.fields("name"))
         Id(name)
+      case other => throw new RuntimeException(s"Id obj expected, got _type: $other")
     }
 
-  // parser for constnat
+  // parser for constant
   def parseConstJson(ast: JsObject): Const = 
     getJsObjectType(ast) match {
       case "Constant" => 
@@ -600,6 +633,7 @@ object AstJsonParser {
           // TODO how to get int
           case JsNumber(n) => FloatLiteral(n.doubleValue)
         }
+      case other => throw new RuntimeException(s"Constant obj expected, got _type: $other")
     }
 
   // json helpers
@@ -609,6 +643,10 @@ object AstJsonParser {
   def extractJsStr(ast: JsValue): String = ast match {
     case JsString(s) => s
     case _ => throw new RuntimeException("Not JsString")
+  }
+
+  def extractStrFromField(ast: JsObject, field: String): String = ast.fields(field) match {
+    case JsString(s) => s
   }
 
   def extractJsInt(ast: JsValue): Int = ast match {

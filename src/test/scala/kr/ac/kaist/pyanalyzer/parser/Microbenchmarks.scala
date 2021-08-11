@@ -6,6 +6,15 @@ import kr.ac.kaist.pyanalyzer.parser._
 // Microbenchmark from PyCG
 // set of small Python source files
 object Microbenchmark extends Microbenchmarks
+object MicrobenchManual extends Microbenchmarks {
+  override val targets =
+    List(
+     ("classes", List(
+        "imported_call", 
+      )),
+   
+    )
+}
 class Microbenchmarks extends FileTestSet {
   def filePaths: Iterator[(String, String)] =
     for {
