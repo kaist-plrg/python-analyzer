@@ -332,6 +332,10 @@ object Beautifier {
     case Arg(x, ann, ty) => app ~ x ~ ?(ann, ": ") // TODO Add type comment
     case NormalKwarg(id, e) => app ~ id ~ "=" ~ e
     case DoubleStarredKwarg(e) => app ~ "**" ~ e
+    case Keyword(a, v) => a match {
+      case None => app ~ "**" ~ v 
+      case Some(x) => app ~ x ~ "=" ~ v
+    }
   }
 
   implicit lazy val opApp: App[Op] = (app, op) => op match {
