@@ -45,6 +45,7 @@ object AstJsonParser {
 
     astJson
   }
+
   // parse wrapper
   trait As {
     type Output
@@ -124,13 +125,11 @@ object AstJsonParser {
   //////////////////////////////////////////////////////////////////
 
   // parses top-level (Module) ast-json into Module case class
-  def parseModuleJson(ast: JsObject): Module = 
+  def parseModuleJson(ast: JsObject): Module =
     getJsObjectType(ast) match {
       case "Module" =>
-        val body: List[JsValue] = ast.fields.get("body") match {
-          case Some(JsArray(l)) => l.toList
-        }
-        Module(body.map(v => parseJson(v.asJsObject)(AsStmt)).toList)
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        Module(body)
     }
 
   // parses stmt ast-json
@@ -381,7 +380,7 @@ object AstJsonParser {
         val vs: List[Expr] = applyToJsList(ast, "values", parseJson(AsExpr))
         JoinedStr(vs)
       case "Constant" =>
-        val const: Const = applyToJsField(ast, "value", parseJson(AsConst))
+        val const: Const = parseJson(ast)(AsConst)
         EConst(const) 
       case "Attribute" =>
         val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
@@ -395,7 +394,9 @@ object AstJsonParser {
         val value: Expr = applyToJsField(ast, "value", parseJson(AsExpr))
         Starred(value)
       case "Name" =>
-        val name: Id = applyToJsField(ast, "value", parseJson(AsId))
+        val name: Id = ast.fields("id") match {
+          case JsString(s) => Id(s)
+        }
         EName(name)
       case "List" =>
         val elts: List[Expr] = applyToJsList(ast, "elts", parseJson(AsExpr))
@@ -622,6 +623,7 @@ object AstJsonParser {
     ast.fields(fieldname) match {
       case JsArray(l) => l.map(f(_)).toList
     }
+  // TODO this only applies to jsValue, extend for Jsvalue
   def applyToJsField[T](ast: JsObject, fieldname: String, f: JsObject => T): T =
     f(ast.fields(fieldname).asJsObject)
   def applyToJsOption[T](ast: JsObject, fieldname: String, f: JsObject => T): Option[T] =
