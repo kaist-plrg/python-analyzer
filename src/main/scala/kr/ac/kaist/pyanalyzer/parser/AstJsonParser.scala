@@ -137,33 +137,139 @@ object AstJsonParser {
   def parseStmtJson(ast: JsObject): Stmt = 
     getJsObjectType(ast) match {
       case "FunctionDef" =>
-        val funcName = ast.fields("name").toString
-        val argsObj = ast.fields("args").asJsObject
-        val args = parseArgsJson(argsObj)
-        val body = ast.fields("body") match {
-          case JsArray(l) => l.map(v => parseStmtJson(v.asJsObject)).toList
+        val name = applyToJsField(ast, "name", parseJson(AsId))
+        val args = applyToJsField(ast, "args", parseJson(AsArgs))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val decos = applyToJsList(ast, "decorator_list", parseJson(AsExpr))
+        val rets = applyToJsOption(ast, "returns", parseJson(AsExpr))
+        val tyComment: Option[String] = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
         }
-        FunDef(Nil, Id(funcName), args, None, None, body) 
-      case "AsyncFunctionDef" => ???  
-      case "ClassDef" => ???  
-      case "Return" => ???  
-      case "Delete" => ???  
-      case "Assign" => ???  
-      case "AugAssign" => ???  
-      case "AnnAssign" => ???  
-      case "For" => ???  
-      case "AsyncFor" => ???  
-      case "While" => ???  
-      case "If" => ???  
-      case "With" => ???  
-      case "AsyncWith" => ???  
-      case "Raise" => ???  
-      case "Try" => ???  
-      case "Assert" => ???  
-      case "Import" => ???  
-      case "ImportFrom" => ???  
-      case "Global" => ???  
-      case "Nonlocal" => ???  
+        FunDef(decos, name, args, rets, tyComment, body) 
+      case "AsyncFunctionDef" =>
+        val name = applyToJsField(ast, "name", parseJson(AsId))
+        val args = applyToJsField(ast, "args", parseJson(AsArgs))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val decos = applyToJsList(ast, "decorator_list", parseJson(AsExpr))
+        val rets = applyToJsOption(ast, "returns", parseJson(AsExpr))
+        val tyComment: Option[String] = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
+        }
+        AsyncFunDef(decos, name, args, rets, tyComment, body)
+      case "ClassDef" =>
+        val name = applyToJsField(ast, "name", parseJson(AsId))
+        val bases = applyToJsList(ast, "bases", parseJson(AsExpr))
+        val kwds = applyToJsList(ast, "keywords", parseJson(AsKeyword))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val decos = applyToJsList(ast, "decorator_list", parseJson(AsExpr))
+        ClassDef(decos, name, bases, kwds, body)
+      case "Return" =>
+        val value = applyToJsOption(ast, "value", parseJson(AsExpr))
+        ReturnStmt(value)
+      case "Delete" =>
+        val targets = applyToJsList(ast, "targets", parseJson(AsExpr))
+        DelStmt(targets)
+      case "Assign" =>
+        val targets = applyToJsList(ast, "targets", parseJson(AsExpr))
+        val value = applyToJsField(ast, "value", parseJson(AsExpr))
+        val tyComment = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
+        }
+        AssignStmt(targets, value, tyComment) 
+      case "AugAssign" =>
+        val target = applyToJsField(ast, "target", parseJson(AsExpr))
+        val op = applyToJsField(ast, "op", parseJson(AsBinOp))
+        val value = applyToJsField(ast, "value", parseJson(AsExpr))
+        AugAssign(target, op, value)
+      case "AnnAssign" =>
+        val target = applyToJsField(ast, "target", parseJson(AsExpr))
+        val ann = applyToJsField(ast, "annotation", parseJson(AsExpr))
+        val value = applyToJsOption(ast, "value", parseJson(AsExpr))
+        AnnAssign(target, ann, value)
+      case "For" =>
+        val target = applyToJsField(ast, "target", parseJson(AsExpr))
+        val iter = applyToJsField(ast, "iter", parseJson(AsExpr))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val orelse = applyToJsList(ast, "orelse", parseJson(AsStmt))
+        val tyComment = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
+        }
+        ForStmt(tyComment, target, iter, body, orelse)
+      case "AsyncFor" =>
+        val target = applyToJsField(ast, "target", parseJson(AsExpr))
+        val iter = applyToJsField(ast, "iter", parseJson(AsExpr))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val orelse = applyToJsList(ast, "orelse", parseJson(AsStmt))
+        val tyComment = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
+        }
+        AsyncForStmt(tyComment, target, iter, body, orelse)  
+      case "While" =>
+        val test = applyToJsField(ast, "test", parseJson(AsExpr))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val orelse = applyToJsList(ast, "orelse", parseJson(AsStmt))
+        WhileStmt(test, body, orelse)
+      case "If" =>
+        val test = applyToJsField(ast, "test", parseJson(AsExpr))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val orelse = applyToJsList(ast, "orelse", parseJson(AsStmt))
+        IfStmt(test, body, orelse)
+      case "With" =>
+        val items = applyToJsList(ast, "items", parseJson(AsWithItem))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val tyComment = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
+        }
+       WithStmt(tyComment, items, body) 
+      case "AsyncWith" =>
+        val items = applyToJsList(ast, "items", parseJson(AsWithItem))
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val tyComment = ast.fields("type_comment") match {
+          case JsString(s) => Some(s)
+          case JsNull => None
+        }
+       AsyncWithStmt(tyComment, items, body)
+      case "Raise" =>
+        val exception = applyToJsOption(ast, "exc", parseJson(AsExpr))
+        val from = applyToJsOption(ast, "caese", parseJson(AsExpr))
+        RaiseStmt(exception, from)
+      case "Try" =>
+        val body = applyToJsList(ast, "body", parseJson(AsStmt))
+        val handlers = applyToJsList(ast, "handlers", parseJson(AsExcHandler))
+        val orelse = applyToJsList(ast, "orelse", parseJson(AsStmt))
+        val fbody = applyToJsList(ast, "finalbody", parseJson(AsStmt))
+        TryStmt(body, handlers, orelse, fbody)
+      case "Assert" =>
+        val test = applyToJsField(ast, "test", parseJson(AsExpr))
+        val msg = applyToJsOption(ast, "msg", parseJson(AsExpr))
+        AssertStmt(test, msg)
+      case "Import" =>
+        val ns = applyToJsList(ast, "names", parseJson(AsAlias))
+        ImportStmt(ns)
+      case "ImportFrom" =>
+        val mnames: List[Id] = ast.fields("module") match {
+          case JsNull => Nil
+          case x => parseJson(x.asJsObject)(AsId) match {
+            case Id(s) => s.split(".").map(x => Id(x)).toList
+          }
+        }
+        val anames = applyToJsList(ast, "names", parseJson(AsAlias))
+        val level = ast.fields("level") match {
+          case JsNumber(n) if n.isValidInt => n.intValue
+        } 
+        ImportFromStmt(level, mnames, anames)
+      case "Global" =>
+        val ns = applyToJsList(ast, "names", parseJson(AsId))
+        GlobalStmt(ns)
+      case "Nonlocal" =>  
+        val ns = applyToJsList(ast, "names", parseJson(AsId))
+        NonlocalStmt(ns)
       case "Expr" =>
         val exprObj = ast.fields("value").asJsObject
         val expr = parseExprJson(exprObj)
@@ -304,6 +410,7 @@ object AstJsonParser {
         Slice(lower, upper, step)
     }
 
+  // comprehension
   def parseComprehensionJson(ast: JsObject): Comprehension =
     getJsObjectType(ast) match {
       case "comprehension" =>
