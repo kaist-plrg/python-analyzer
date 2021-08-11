@@ -75,6 +75,7 @@ class AstJsonParseTest extends AnyFunSuite {
   // run parsing test for each test sets
   val testSetList: List[FileTestSet] = List(
     Microbenchmark,
+    HorovodTests,
   )
 
   def init: Unit = {
