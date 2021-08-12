@@ -12,6 +12,7 @@ import kr.ac.kaist.pyanalyzer.parser.AstJsonParser
 import kr.ac.kaist.pyanalyzer.parser.SourceParser
 import scala.Console._ 
 import java.io._
+import spray.json.JsonParser
 
 // AstJsonParseTest: clone of FileParseTest, instead using AstJsonParser
 class AstJsonParseTest extends AnyFunSuite {
@@ -50,15 +51,13 @@ class AstJsonParseTest extends AnyFunSuite {
       assert(pretty01 == pretty02)
       prompt("================================")
     } catch { 
-      case EmptyFileException =>
-        prompt(s"${MAGENTA}Epoch $epoch: Empty File${RESET}\n\n")
-        cancel 
-      case e => 
-        val sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        val exceptionAsString = sw.toString();
-        println(exceptionAsString)
+      case e: JsonParser.ParsingException =>
+        prompt(s"${MAGENTA}Invalid JSON given from ast module${RESET}\n")
+        cancel
+        
+      case e =>  
         prompt(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
+        println(printStackTrace(e))
         fail
     }
     finally {

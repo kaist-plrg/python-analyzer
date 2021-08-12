@@ -80,7 +80,15 @@ object Useful {
   def writeFile(path: String, data: String): Unit = {
     val writer = new PrintWriter(new File(path))
     writer.write(data)
+    writer.flush()
     writer.close()
+  }
+
+  // print exception stack trace
+  def printStackTrace(e: Throwable): String = { 
+    val sw = new StringWriter();
+    e.printStackTrace(new PrintWriter(sw));
+    sw.toString();
   }
 
   // removes color codes

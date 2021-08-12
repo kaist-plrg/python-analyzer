@@ -8,7 +8,7 @@ object HorovodTests extends HorovodTests
 object HorovodManual extends HorovodTests {
   val manualList: List[String] =
     List(
-      "Tensorflow2/DistributedGradientTape/ResNet-ImageNet1K/hvd/train.py",
+      "Tensorflow1/Session/Simple-CNN-MNIST/org/convolutional.py",
     )
   override val targets = manualList.map(x => s"$HOROVOD_DIR/$x")  
 }

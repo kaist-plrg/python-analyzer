@@ -6,5 +6,3 @@ logs/
 trans/trans.aux
 trans/trans.log
 
-py-ast/temp.py
-py-ast/temp.json

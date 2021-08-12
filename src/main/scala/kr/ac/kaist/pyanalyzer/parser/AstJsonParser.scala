@@ -32,6 +32,10 @@ object AstJsonParser {
     val pyPath = PY_AST_DIR + "/temp.py" 
     val jsonPath = PY_AST_DIR + "/temp.json"
 
+    Seq("rm", s"$pyPath").!
+    Seq("rm", s"$jsonPath").!
+    Seq("touch", s"$pyPath").!
+    Seq("touch", s"$jsonPath").!
     // dump the source to temp.py
     writeFile(pyPath, source) 
 
