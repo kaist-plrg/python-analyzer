@@ -155,7 +155,7 @@ object Beautifier {
       }
       // TODO: consider ellipsis
       app ~ "from " ~ ("."*level) ~ from ~ " import " ~ aliasesApp ~ app.newLine
-    case GlobalStmt(xl) =>
+  case GlobalStmt(xl) =>
       implicit val lApp = ListApp[Id](sep = ", ")
       app ~ "global " ~ xl ~ app.newLine
     case NonlocalStmt(xl) =>
@@ -200,6 +200,15 @@ object Beautifier {
       case BoolExpr(op, lhs, rhs) =>
         implicit val precedence = expr.precedence + 1
         app ~ lhs ~ " " ~ op ~ " " ~ rhs
+      case BoolGroupExpr(op, group) =>
+        implicit val lApp: App[List[Expr]] = {
+          case (app, h :: t) =>
+            implicit val precedence = expr.precedence + 1
+            t.foldLeft(app ~ h) {
+              case (app, e) => app ~ op ~ e
+            }
+        }
+        app ~ group
       case NamedExpr(lhs, rhs) =>
         implicit val precedence = 15
         app ~ lhs ~ " := " ~ rhs
