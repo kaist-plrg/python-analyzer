@@ -5,6 +5,13 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import java.io._
 
 object HorovodTests extends HorovodTests
+object HorovodManual extends HorovodTests {
+  val manualList: List[String] =
+    List(
+      "Tensorflow2/DistributedGradientTape/ResNet-ImageNet1K/hvd/train.py",
+    )
+  override val targets = manualList.map(x => s"$HOROVOD_DIR/$x")  
+}
 class HorovodTests extends FileTestSet {
   val rootPath: String = s"$HOROVOD_DIR" 
 

@@ -275,10 +275,14 @@ object AstJsonParser {
         } 
         ImportFromStmt(level, mnames, anames)
       case "Global" =>
-        val ns = applyToJsList(ast, "names", parseJson(AsId))
+        val ns = ast.fields("names") match {
+          case JsArray(l) => l.map(v => Id(extractJsStr(v))).toList
+        }
         GlobalStmt(ns)
       case "Nonlocal" =>  
-        val ns = applyToJsList(ast, "names", parseJson(AsId))
+        val ns = ast.fields("names") match {
+          case JsArray(l) => l.map(v => Id(extractJsStr(v))).toList
+        }
         NonlocalStmt(ns)
       case "Expr" =>
         val exprObj = ast.fields("value").asJsObject
@@ -310,7 +314,7 @@ object AstJsonParser {
         val rhs: Expr = applyToJsField(ast, "right", parseJson(AsExpr)) 
         BinaryExpr(op, lhs, rhs) 
       case "UnaryOp" =>
-        val op: UnOp = applyToJsField(ast, "unaryop", parseJson(AsUnaryOp)) 
+        val op: UnOp = applyToJsField(ast, "op", parseJson(AsUnaryOp)) 
         val expr: Expr = applyToJsField(ast, "operand", parseJson(AsExpr))
         UnaryExpr(op, expr)
       case "Lambda" =>
@@ -501,11 +505,9 @@ object AstJsonParser {
         }
         val asname: Option[Id] = ast.fields("name") match {
           case JsNull => None
-          case x => Some(parseIdJson(x.asJsObject))
+          case JsString(s) => Some(Id(s))
         }
-        val body: List[Stmt] = ast.fields("body") match {
-          case JsArray(l) => l.map(v => parseStmtJson(v.asJsObject)).toList
-        }
+        val body: List[Stmt] = applyToJsList(ast, "body", parseJson(AsStmt)) 
         ExcHandler(target, asname, body)
       case other => throw new RuntimeException(s"ExcHandler obj expected, got _type: $other")
     }
