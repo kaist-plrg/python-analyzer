@@ -1,7 +1,7 @@
 import json
 import os
 from ast import parse
-from ast2json import str2json
+from ast2jsoncustom import str2json
 
 # path environment `PYANALYZER_HOME` must be set
 DIR_NAME = "py-ast"

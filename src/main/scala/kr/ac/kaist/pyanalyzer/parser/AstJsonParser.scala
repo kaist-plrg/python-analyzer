@@ -634,6 +634,9 @@ object AstJsonParser {
           case JsString(s) => StringLiteral(s)
           // TODO how to get int
           case JsNumber(n) => FloatLiteral(n.doubleValue)
+          case x: JsObject => getJsObjectType(x) match {
+            case "Ellipsis" => Ellipsis
+          }
         }
       case other => throw new RuntimeException(s"Constant obj expected, got _type: $other")
     }
