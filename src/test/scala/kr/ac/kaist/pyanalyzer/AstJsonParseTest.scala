@@ -49,18 +49,19 @@ class AstJsonParseTest extends AnyFunSuite {
       prompt(s"${CYAN}Beautified as:${RESET}\n$pretty02\n")
       
       assert(pretty01 == pretty02)
-      prompt("================================")
     } catch { 
       case e: JsonParser.ParsingException =>
         prompt(s"${MAGENTA}Invalid JSON given from ast module${RESET}\n")
-        cancel
-        
+        val jsonSource = readFile(PY_AST_DIR + "/temp.json")
+        prompt(s"Given JSON source:\n${jsonSource}") 
+        cancel        
       case e =>  
         prompt(s"${MAGENTA}Epoch $epoch failed:${RESET}\n$e\n")
-        println(printStackTrace(e))
+        prompt(s"${GRAY}${printStackTrace(e)}${RESET}")
         fail
     }
     finally {
+      prompt("================================")
       epoch += 1
     }
   }

@@ -43,14 +43,10 @@ object AstJsonParser {
     Seq("python3", s"$exePath").!
 
     // read in the temp.json
-    val astJson = try {
+    val astJson = {
       val res = readFile(jsonPath)
-      res.parseJson.asJsObject 
-    } catch {
-      // TODO better exception handling?
-      case e: DeserializationException => 
-        throw new RuntimeException("JsObject expected in top level")
-    }    
+      res.parseJson.asJsObject
+    }
 
     astJson
   }
