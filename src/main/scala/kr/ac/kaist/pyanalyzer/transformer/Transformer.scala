@@ -11,8 +11,13 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 object Transformer {
   // transformed one AST into another AST
   def apply(ast: Module): Module = ast match {
-    case m @ Module(body, tyIgnore) if containsTL(m) =>
-      Module(transform(body)(Env())._1, tyIgnore)
+    // rule for DistributedGradientTape
+    case m @ Module(body, tyIgnore)
+      if identifyTL(m) == GradientTape =>
+        Module(transform(body)(Env())._1, tyIgnore)
+    // rule for DistributedOptimizer
+    case m if identifyTL(m) == Optimizer => m
+    // not mainscript
     case m => m
   }
 
