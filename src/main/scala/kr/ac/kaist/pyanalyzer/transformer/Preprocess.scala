@@ -51,6 +51,16 @@ trait Preprocess {
     val topImportsRemoved = removeTopImports(mod.body)
     topImportsRemoved.foreach(s => Walker.walkStmtUnit(throwIfImport)(s))  
   } 
+
+  // 2. tensorflow module related restrictions
+  def checkTFImports(mod: Module): Unit = {
+    ??? 
+  }
+
+  def importContainsTF(s: Stmt): Boolean = s match {
+    case ImportStmt(as) => ???
+    case ImportFromStmt(lv, from, as) => ???
+  }
 }
 
 // training loop
