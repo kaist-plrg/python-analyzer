@@ -2,7 +2,7 @@ package kr.ac.kaist.pyanalyzer.util
 
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
-object UnitWalker {
+trait UnitWalker {
   def apply(m: Module): Unit = m.body.map(walk)
   def walk(str: String): Unit = ()
   def walk(id: Id): Unit = walk(id.name)
