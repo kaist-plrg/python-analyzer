@@ -6,12 +6,15 @@ import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
+import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
 object Transformer {
   // transformed one AST into another AST
   def apply(ast: Module): Module = ast match {
-    case m => m
+    case m => 
+      println(TrainingLoop(m))
+      m
   }
 
   /////////////////////////////////////////
