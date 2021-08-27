@@ -12,23 +12,6 @@ object Preprocess extends Preprocess
 trait Preprocess {
   def apply(ast: Node): Node = ??? 
   
-  // check if module m contains training loop
-  def containsTL(m: Module): Boolean = m.exists(_ == Comment("# training loop"))
-  def identifyTL(m: Module): TL = {
-    val existsOptim = m.exists(_ match {
-      case ExprStmt(Call(Attribute(_, Id("fit")), _, _)) => true
-      case _ => false
-    })
-    val existsTape = m.exists(_ match {
-      case ExprStmt(Call(Attribute(_, Id("apply_gradients")), _, _)) => true
-      case _ => false
-    })
-    if (!existsOptim && existsTape) GradientTape
-    else if (existsOptim && !existsTape) Optimizer
-    else if (!existsOptim && !existsTape) NoTL
-    else throw new RuntimeException()
-  }
-
   // checks if given Module node conforms to the transformation restriction
   // throws exception if violates restriction
   def checkRestriction(mod: Module): Unit = {
@@ -62,12 +45,3 @@ trait Preprocess {
     case ImportFromStmt(lv, from, as) => ???
   }
 }
-
-// training loop
-trait TL
-
-case object Optimizer extends TL
-
-case object GradientTape extends TL
-
-case object NoTL extends TL

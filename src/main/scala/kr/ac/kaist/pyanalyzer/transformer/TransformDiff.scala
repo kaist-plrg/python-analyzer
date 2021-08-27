@@ -20,7 +20,7 @@ object TransformDiff {
 
   def sortStmts(stmts: List[Stmt]): List[Stmt] = stmts.sortWith(stmtOrder)
   def sortStmts(mod: Module): Module = mod match {
-    case Module(body, tyIg) => {
+    case Module(body, tyIg, _) => {
       val sortedBody = body.sortWith(stmtOrder) 
       Module(sortedBody, tyIg)
     }
