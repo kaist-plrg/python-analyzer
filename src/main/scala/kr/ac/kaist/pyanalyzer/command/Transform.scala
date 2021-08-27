@@ -19,6 +19,12 @@ object Transform {
   mkdir(logPath)
 
   def apply(optionMap: Map[String, String]): Unit = {
+    // set target file
+    val target = try {
+      s".*${optionMap.getOrElse("target", "")}.*".r
+    } catch {
+      case e: Throwable => ".*".r
+    }
     // diff files
     val diff = optionMap.getOrElse("diff", "hvd-trans")
     // set diff option
@@ -29,6 +35,7 @@ object Transform {
       version <- hvd.listFiles
       module <- version.listFiles.filter(_.isDirectory)
       model <- module.listFiles if model.isDirectory
+      if target matches model.toString
     } try {
       println
       println(s"$MAGENTA$model$RESET")
@@ -61,88 +68,16 @@ object Transform {
         }
 
         // print result
-        printDiff(comparePair, diffOption)
+        printDiff(name, comparePair, diffOption)
       }
     } catch {
       case EmptyFileException =>
       case e: Throwable => e.printStackTrace()
     }
-//    // set target file
-//    val target = try {
-//      s".*${optionMap.getOrElse("target", "")}.*".r
-//    } catch {
-//      case e: Throwable => ".*".r
-//    }
-//    // diff files
-//    val diff = optionMap.getOrElse("diff", "hvd-trans")
-//    // set diff option
-//    val diffOption = if (optionMap contains "y") "y" else "u"
-//    // print all diff
-//    val all = if (optionMap contains "all") true else false
-//
-//    val files = walkTree(HOROVOD_DIR)
-//    for {
-//      file <- files
-//      orgPath = file.getPath()
-//      if (orgPath endsWith ".py") && (orgPath contains "/org/") &&
-//        readSource(orgPath).nonEmpty
-//      relPath = orgPath.drop(HOROVOD_DIR.length + 1)
-//      if target.matches(relPath)
-//      hvdPath = s"$HOROVOD_DIR/${relPath.replace("/org/", "/hvd/")}"
-//    } {
-//
-//      println
-//      println(s"$MAGENTA$relPath$RESET")
-//      try {
-//        // org
-//        val orgAst = parseFile(orgPath)
-//        val orgResult = beautify(orgAst)
-//
-//        // transformed
-//        val transformedAst = Transformer(orgAst)
-//        val transformedResult = beautify(transformedAst)
-//        // hvd
-//        val hvdAst = parseFile(hvdPath)
-//        val hvdResult = beautify(hvdAst)
-//
-//        // target diff
-//        val comparePair = diff match {
-//          case "org-hvd" =>
-//            ("org", orgResult, "hvd", hvdResult)
-//          case "org-trans" =>
-//            ("org", orgResult, "trans", hvdResult)
-//          case _ =>
-//            ("hvd", hvdResult, "trans", transformedResult)
-//        }
-//
-//        // print result
-//        if (all) {
-//          printResult(orgResult, transformedResult, hvdResult)
-//          println("==================================================")
-//        }
-//        printDiff(comparePair, diffOption)
-//      } catch {
-//        case e: Throwable => e.printStackTrace()
-//      }
-//    }
   }
 
-  def printResult(
-    orgResult: String,
-    transformedResult: String,
-    hvdResult: String,
-  ): Unit = {
-    println
-    println(s"${MAGENTA}ORG${RESET}")
-    println(orgResult)
-    println("==================================================")
-    println(s"${MAGENTA}TRANS${RESET}")
-    println(transformedResult)
-    println("==================================================")
-    println(s"${MAGENTA}HVD${RESET}")
-    println(hvdResult)
-  }
   def printDiff(
+    name: String,
     comparePair: (String, String, String, String),
     diffOption: String
   ): Unit = {
@@ -151,7 +86,7 @@ object Transform {
     val path2 = s"$logPath/$name2"
     dumpFile(content1, path1)
     dumpFile(content2, path2)
-    println(s"${MAGENTA}DIFF${RESET}")
+    println(s"$MAGENTA$name$RESET")
     try executeCmd(
       s"colordiff -$diffOption $path1 $path2"
     ) catch {
