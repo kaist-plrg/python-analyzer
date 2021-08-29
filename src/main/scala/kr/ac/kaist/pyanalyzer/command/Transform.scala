@@ -47,6 +47,7 @@ object Transform {
         if path startsWith "/org/"
         name = path.drop(5)
       } try {
+        println
         val orgAst = parseFile(s"$model$path").copy(name = Some(name))
         val orgResult = beautify(orgAst)
 
@@ -68,7 +69,7 @@ object Transform {
         }
 
         // print result
-        // printDiff(name, comparePair, diffOption)
+        printDiff(name, comparePair, diffOption)
       } catch {
         case EmptyFileException =>
         case e: Throwable => e.printStackTrace()
@@ -86,7 +87,7 @@ object Transform {
     val path2 = s"$logPath/$name2"
     dumpFile(content1, path1)
     dumpFile(content2, path2)
-    println(s"$MAGENTA$name$RESET")
+    println(s"$CYAN$name DIFF$RESET :")
     try executeCmd(
       s"colordiff -$diffOption $path1 $path2"
     ) catch {
