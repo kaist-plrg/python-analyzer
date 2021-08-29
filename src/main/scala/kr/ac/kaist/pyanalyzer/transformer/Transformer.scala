@@ -8,11 +8,13 @@ import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.util.Useful._
+import scala.Console._
 
 object Transformer {
   // transformed one AST into another AST
   def apply(ast: Module): Module = ast match {
     case m => 
+      print(s"$CYAN<${m.name.get}> : $RESET")
       println(TrainingLoop(m))
       m
   }

@@ -36,7 +36,7 @@ object Transform {
       module <- version.listFiles.filter(_.isDirectory)
       model <- module.listFiles if model.isDirectory
       if target matches model.toString
-    } try {
+    } {
       println
       println(s"$MAGENTA$model$RESET")
       val files = walkTree(model)
@@ -46,7 +46,7 @@ object Transform {
         if path endsWith ".py"
         if path startsWith "/org/"
         name = path.drop(5)
-      } {
+      } try {
         val orgAst = parseFile(s"$model$path").copy(name = Some(name))
         val orgResult = beautify(orgAst)
 
@@ -69,10 +69,10 @@ object Transform {
 
         // print result
         // printDiff(name, comparePair, diffOption)
+      } catch {
+        case EmptyFileException =>
+        case e: Throwable => e.printStackTrace()
       }
-    } catch {
-      case EmptyFileException =>
-      case e: Throwable => e.printStackTrace()
     }
   }
 
