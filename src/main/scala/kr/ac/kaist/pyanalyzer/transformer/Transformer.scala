@@ -17,7 +17,7 @@ object Transformer {
       // print summary
       val summary = TrainingLoop(m)
       println
-      print(s"$CYAN<${name.get}> $RESET: ")
+      println(s"$CYAN<$name>$RESET")
       println(summary)
       summary.tl match {
         case GradTape => Module(transform(body)(Env())._1, tyIg, name)

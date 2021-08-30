@@ -48,14 +48,14 @@ object Transform {
         name = path.drop(5)
       } try {
         println
-        val orgAst = parseFile(s"$model$path").copy(name = Some(name))
+        val orgAst = parseFile(s"$model$path").copy(name = name)
         val orgResult = beautify(orgAst)
 
         // transformed
-        val transformedAst = Transformer(orgAst).copy(name = Some(name))
+        val transformedAst = Transformer(orgAst).copy(name = name)
         val transformedResult = beautify(transformedAst)
         // hvd
-        val hvdAst = parseFile(s"$model/hvd/$name").copy(name = Some(name))
+        val hvdAst = parseFile(s"$model/hvd/$name").copy(name = name)
         val hvdResult = beautify(hvdAst)
 
         // target diff
@@ -69,7 +69,7 @@ object Transform {
         }
 
         // print result
-        printDiff(name, comparePair, diffOption)
+        // printDiff(name, comparePair, diffOption)
       } catch {
         case EmptyFileException =>
         case e: Throwable => e.printStackTrace()
