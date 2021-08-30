@@ -9,11 +9,12 @@ abstract class Summary {
   val sumMap: Map[String, Summary]
   val tl: TLType
   override def toString: String = toString(0)
-  def toString(depth: Int): String = {
+  def toString(outerDepth: Int): String = {
+    val depth = outerDepth + 1
     val indent = "  " * depth
-    sumMap.foldLeft(s"$name: $tl\n") {
+    sumMap.foldLeft(s"● $name: $tl\n") {
       case (str, (name, summary)) =>
-        s"$str$indent● ${summary.toString(depth + 1)}"
+        s"$str$indent${summary.toString(depth)}"
     }
   }
 }
@@ -55,11 +56,15 @@ object TrainingLoop {
 
     // UnitWalker for summary
     object SummaryWalker extends UnitWalker {
+
+      // update env
       override def walk(alias: Alias): Unit = alias match {
         case Alias(lx, opt) if lx.exists(x => x.name == "tensorflow") =>
           env += "tensor_flow" -> opt.getOrElse(Id("tensorflow"))
         case _ =>
       }
+
+      // update summary map
       override def walk(stmt: Stmt): Unit = stmt match {
         case FunDef(_, x, _, _, _, body) =>
           val (innerSumMap, innerTl) = getSummary(env, outerSumMap ++ sumMap, body)
@@ -69,8 +74,11 @@ object TrainingLoop {
         case AssignStmt(List(EName(x)), e, _)
           if isKerasModel(env, outerSumMap ++ sumMap, e) =>
             env += "tensor_flow_keras_model" -> x
+
         case _ => super.walk(stmt)
       }
+
+      // set tl
       override def walk(expr: Expr): Unit = expr match {
         // DistributedGradientTape training loop identifier
         case Call(Attribute(EName(x), Id("GradientTape")), Nil, Nil)
@@ -101,11 +109,20 @@ object TrainingLoop {
   }
 
   // TODO: interp
+  // TODO: add more cases
+  // identify tensorflow.keras.models
   private def isKerasModel(
     env: Map[String, Id],
     sumMap: Map[String, Summary],
     model: Expr
   ): Boolean = model match {
+    // Sequential API
+    // tf.keras.models.Sequential(_)
+    case Call(Attribute(Attribute(Attribute(
+      EName(tf), Id("keras")), Id("models")), Id("Sequential")), _, _)
+        if env.get("tensor_flow") contains tf => true
+
+    // Funtional API
     // tf.keras.Model(_)
     case Call(Attribute(Attribute(EName(tf), Id("keras")), Id("Model")), _, _)
       if env.get("tensor_flow") contains tf => true
@@ -113,10 +130,7 @@ object TrainingLoop {
     case Call(EName(model), _, _)
       if env.get("tensor_flow_keras_model_module") contains model => true
 
-    // tf.keras.models.Sequential(_)
-    case Call(Attribute(Attribute(Attribute(
-      EName(tf), Id("keras")), Id("models")), Id("Sequential")), _, _)
-        if env.get("tensor_flow") contains tf => true
+    // in environment
     case EName(x) if env.get("tensor_flow_keras_model") contains x => true
     case _ => false
   }

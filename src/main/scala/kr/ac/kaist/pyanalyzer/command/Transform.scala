@@ -69,7 +69,7 @@ object Transform {
         }
 
         // print result
-        // printDiff(name, comparePair, diffOption)
+        printDiff(name, comparePair, diffOption)
       } catch {
         case EmptyFileException =>
         case e: Throwable => e.printStackTrace()
