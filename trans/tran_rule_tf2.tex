@@ -153,6 +153,8 @@
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm]],\\
   \inden\inden\inden\smodenv)\\
+  \inden \ktelif ~ \smodenv(\tkeras) ~ \kteq ~ \nidsubs{k} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{k}.models.Sequential} ~ \ktthen  \\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{k}])\\ 
   \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
   \inden\inden\inden\smodenv)\\
 \end{tabular}\\\vpar
@@ -281,7 +283,16 @@
 % ImportFrom
 \noindent
 \begin{tabular}{l}
-  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} = ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}], \smodenv)\\
+  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} =\\ 
+  \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
+  \inden \ktif ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktand ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tkeras $\mapsto$ \nid] ~ \ktthen \\ 
+  \inden\hspace{1em} ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias},  \\
+  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow.keras} \kas ~ {\tt hvd}, \\
+  \inden\hspace{1em} {\tt hvd.init()}, \\
+  \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
+  \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
+  \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
+  \inden \ktelse ~ ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}], \smodenv)\\
 \end{tabular}\\\vpar
 
 % Global
@@ -325,6 +336,14 @@
   \inden\inden\inden [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv) \\
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv)\\
+  \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.fit} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
+  \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
+  \inden\inden\inden\inden \nidsubs{i} \oassign \nexprsubs{2i} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} \\
+  \inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\   
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden\inden {\tt callbacks} \oassign {\tt [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
   \inden \ktelse \\
   \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
 \end{tabular}\\\vpar
@@ -581,6 +600,7 @@
 \begin{tabular}{l}
   \talias{\nid}{\smodenv} = \\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
@@ -589,6 +609,7 @@
 \begin{tabular}{l}
   \talias{\nidsubs{1} \kas ~ \nidsubs{2}}{\smodenv} = \\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
+  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
