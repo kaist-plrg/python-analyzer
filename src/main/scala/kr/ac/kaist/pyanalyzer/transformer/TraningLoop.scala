@@ -33,9 +33,12 @@ case class FuncSummary(
 
 case class ClassSummary(
   name: String,
+  argSummary: ArgSummary,
   sumMap: Map[String, Summary],
   tl: TLType,
 ) extends Summary
+
+case class ArgSummary(parent: Boolean)
 
 
 object TrainingLoop {
@@ -55,7 +58,8 @@ object TrainingLoop {
     var tl: TLType = Bot
 
     // UnitWalker for summary
-    object SummaryWalker extends UnitWalker {
+    object SummaryWalker extends SummaryWalker
+    trait SummaryWalker extends UnitWalker {
 
       // update env
       override def walk(alias: Alias): Unit = alias match {
@@ -70,7 +74,30 @@ object TrainingLoop {
           val (innerSumMap, innerTl) = getSummary(env, outerSumMap ++ sumMap, body)
           sumMap += x.name -> FuncSummary(x.name, innerSumMap, innerTl)
 
-        // TODO: ClassDef
+        case AsyncFunDef(_, x, _, _, _, body) =>
+          val (innerSumMap, innerTl) = getSummary(env, outerSumMap ++ sumMap, body)
+          sumMap += x.name -> FuncSummary(x.name, innerSumMap, innerTl)
+
+        case ClassDef(_, x, le, lk, body) =>
+          val newSumMap = outerSumMap ++ sumMap
+
+          // arg summary
+          var subClassOfModel = false
+          object ArgWalker extends SummaryWalker {
+            override def walk(expr: Expr): Unit = expr match {
+              case e
+                if interp(env, newSumMap, e) contains "tensor_flow_keras_model" =>
+                  subClassOfModel = true
+              case _ => super.walk(expr)
+            }
+          }
+          le.map(ArgWalker.walk); lk.map(ArgWalker.walk)
+
+          // body summary
+          val (innerSumMap, innerTl) = getSummary(env, newSumMap, body)
+          sumMap += x.name ->
+            ClassSummary(x.name, ArgSummary(subClassOfModel), innerSumMap, innerTl)
+
         case AssignStmt(List(EName(x)), e, _)
           if isKerasModel(env, outerSumMap ++ sumMap, e) =>
             env += "tensor_flow_keras_model" -> x
@@ -108,6 +135,13 @@ object TrainingLoop {
     (sumMap, tl)
   }
 
+  def getArgInfo(
+    env: Map[String, Id],
+    sumMap: Map[String, Summary],
+    le: List[Expr],
+    lk: List[Kwarg]
+  ): ArgSummary = ???
+
   // TODO: interp
   // TODO: add more cases
   // identify tensorflow.keras.models
@@ -133,6 +167,14 @@ object TrainingLoop {
     // in environment
     case EName(x) if env.get("tensor_flow_keras_model") contains x => true
     case _ => false
+  }
+
+  private def interp(
+    env: Map[String, Id],
+    sumMap: Map[String, Summary],
+    e: Expr
+  ): Option[String] = e match {
+    case _ => None
   }
 }
 
