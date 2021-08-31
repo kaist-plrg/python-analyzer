@@ -5,14 +5,14 @@ import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Errors._
 
 abstract class Summary {
-  val name: String
   val sumMap: Map[String, Summary]
+  val info: String
   val tl: TLType
   override def toString: String = toString(0)
   def toString(outerDepth: Int): String = {
     val depth = outerDepth + 1
     val indent = "  " * depth
-    sumMap.foldLeft(s"● $name: $tl\n") {
+    sumMap.foldLeft(info) {
       case (str, (name, summary)) =>
         s"$str$indent${summary.toString(depth)}"
     }
@@ -23,22 +23,31 @@ case class ModuleSummary(
   name: String,
   sumMap: Map[String, Summary],
   tl: TLType,
-) extends Summary
+) extends Summary {
+  val info = s"● $name: $tl\n"
+}
 
 case class FuncSummary(
   name: String,
   sumMap: Map[String, Summary],
   tl: TLType,
-) extends Summary
+) extends Summary {
+  val info = s"● $name: $tl\n"
+}
 
 case class ClassSummary(
   name: String,
   argSummary: ArgSummary,
   sumMap: Map[String, Summary],
   tl: TLType,
-) extends Summary
+) extends Summary {
+  val info = s"● $name($argSummary): $tl\n"
+}
 
-case class ArgSummary(parent: Boolean)
+// TODO: more general arg summary
+case class ArgSummary(parent: Boolean) {
+  override def toString = if (parent) "Model" else ""
+}
 
 
 object TrainingLoop {
@@ -48,7 +57,7 @@ object TrainingLoop {
   }
 
   private def getSummary(
-    outerEnv: Map[String, Id] = Map(),
+    outerEnv: Map[Id, String] = Map(),
     outerSumMap: Map[String, Summary] = Map(),
     body: List[Stmt]
   ): (Map[String, Summary], TLType) = {
@@ -64,12 +73,16 @@ object TrainingLoop {
       // update env
       override def walk(alias: Alias): Unit = alias match {
         case Alias(lx, opt) if lx.exists(x => x.name == "tensorflow") =>
-          env += "tensor_flow" -> opt.getOrElse(Id("tensorflow"))
+          env += opt.getOrElse(Id("tensorflow")) -> "tensor_flow"
         case _ =>
       }
 
       // update summary map
       override def walk(stmt: Stmt): Unit = stmt match {
+        // TODO: more general imoprt walker
+        case ImportFromStmt(level, List(Id("tensorflow")), List(Alias(List(Id("keras")), None))) =>
+          env += Id("keras") -> "tensor_flow_keras"
+
         case FunDef(_, x, _, _, _, body) =>
           val (innerSumMap, innerTl) = getSummary(env, outerSumMap ++ sumMap, body)
           sumMap += x.name -> FuncSummary(x.name, innerSumMap, innerTl)
@@ -93,6 +106,7 @@ object TrainingLoop {
           }
           le.map(ArgWalker.walk); lk.map(ArgWalker.walk)
 
+          // TODO: consider init relation for tl
           // body summary
           val (innerSumMap, innerTl) = getSummary(env, newSumMap, body)
           sumMap += x.name ->
@@ -100,7 +114,7 @@ object TrainingLoop {
 
         case AssignStmt(List(EName(x)), e, _)
           if isKerasModel(env, outerSumMap ++ sumMap, e) =>
-            env += "tensor_flow_keras_model" -> x
+            env += x -> "model"
 
         case _ => super.walk(stmt)
       }
@@ -109,7 +123,7 @@ object TrainingLoop {
       override def walk(expr: Expr): Unit = expr match {
         // DistributedGradientTape training loop identifier
         case Call(Attribute(EName(x), Id("GradientTape")), Nil, Nil)
-          if env.get("tensor_flow") contains x =>
+          if env.get(x) contains "tensor_flow" =>
             // multiple training loops
             if (tl == Optimizer) throw TLException
             tl = GradTape
@@ -136,44 +150,54 @@ object TrainingLoop {
   }
 
   def getArgInfo(
-    env: Map[String, Id],
+    env: Map[Id, String],
     sumMap: Map[String, Summary],
     le: List[Expr],
     lk: List[Kwarg]
   ): ArgSummary = ???
 
-  // TODO: interp
-  // TODO: add more cases
+  // TODO: using interp
   // identify tensorflow.keras.models
   private def isKerasModel(
-    env: Map[String, Id],
+    env: Map[Id, String],
     sumMap: Map[String, Summary],
     model: Expr
   ): Boolean = model match {
     // Sequential API
-    // tf.keras.models.Sequential(_)
     case Call(Attribute(Attribute(Attribute(
       EName(tf), Id("keras")), Id("models")), Id("Sequential")), _, _)
-        if env.get("tensor_flow") contains tf => true
+        if env.get(tf) contains "tensor_flow" => true
 
     // Funtional API
-    // tf.keras.Model(_)
     case Call(Attribute(Attribute(EName(tf), Id("keras")), Id("Model")), _, _)
-      if env.get("tensor_flow") contains tf => true
-    // Model(_)
+      if env.get(tf) contains "tensor_flow" => true
     case Call(EName(model), _, _)
-      if env.get("tensor_flow_keras_model_module") contains model => true
+      if env.get(model) contains "tensor_flow_keras_model" => true
 
-    // in environment
-    case EName(x) if env.get("tensor_flow_keras_model") contains x => true
+    // Subclassing API
+    case Call(EName(subclass), _, _) => sumMap.get(subclass.name) match {
+      case Some(ClassSummary(_, argSummary, _, _)) => argSummary.parent
+      case _ => false
+    }
+
+    // already defined in environment
+    case EName(x) if env.get(x) contains "model" => true
     case _ => false
   }
 
+  // TODO: update import
   private def interp(
-    env: Map[String, Id],
+    env: Map[Id, String],
     sumMap: Map[String, Summary],
     e: Expr
   ): Option[String] = e match {
+    case EName(x) => env.get(x)
+    case Attribute(e, x) => interp(env, sumMap, e) match {
+      case Some("tensor_flow") if x == Id("keras") => Some("tensor_flow_keras")
+      case Some("tensor_flow_keras") if x == Id("Model") =>
+        Some("tensor_flow_keras_model")
+      case _ => None
+    }
     case _ => None
   }
 }
