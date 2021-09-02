@@ -32,40 +32,47 @@ object Transform {
 
     val hvd = new File(HOROVOD_DIR)
     for {
-      version <- hvd.listFiles
-      module <- version.listFiles.filter(_.isDirectory)
-      model <- module.listFiles if model.isDirectory
+      versionDir <- hvd.listFiles if versionDir.isDirectory
+      moduleDir <- versionDir.listFiles if moduleDir.isDirectory
+      modelDir <- moduleDir.listFiles if modelDir.isDirectory
+      modelPath = modelDir.toString
+      model = modelPath diff moduleDir.toString
       if target matches model.toString
     } {
       println
-      println(s"$MAGENTA$model$RESET")
+      println(s"$MAGENTA${modelPath diff HOROVOD_DIR}$RESET")
+      println
 
       // get modules in the model
-      val files = walkTree(model)
+      val files = walkTree(modelPath)
       val moduleOptions = for {
         file <- files
-        path = file.toString diff model.toString
+        path = file.toString diff modelPath
         if path endsWith ".py"
         if path startsWith "/org/"
-        name = path.drop(5)
-      } yield Try(parseFile(file.toString, name)).toOption
+      } yield Try(
+        parseFile(file.toString, path.drop(5))
+      ).toOption
       val modules = moduleOptions.flatten
+      val modelSummary = TrainingLoop(model, modules)
+      println(modelSummary)
 
       // transform each module
       for (orgAst <- modules) try {
+
+        val name = orgAst.name
+
         println
-        println(s"$CYAN<${orgAst.name}>$RESET")
+        println(s"$CYAN<$name>$RESET")
 
         val orgResult = beautify(orgAst)
-        
-        val summary = TrainingLoop(modules, orgAst)
-        println(summary)
+        val summary = modelSummary.sumMap(name)
 
         // transformed
         val transformedAst = Transformer(orgAst, summary.tl)
         val transformedResult = beautify(transformedAst)
         // hvd
-        val hvdAst = parseFile(s"$model/hvd/${orgAst.name}")
+        val hvdAst = parseFile(s"$modelPath/hvd/$name")
         val hvdResult = beautify(hvdAst)
 
         // target diff

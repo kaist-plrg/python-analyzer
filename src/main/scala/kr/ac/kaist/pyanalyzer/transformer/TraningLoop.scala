@@ -3,15 +3,40 @@ package kr.ac.kaist.pyanalyzer.transformer
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Errors._
+import scala.Console._
 
 
 object TrainingLoop {
-  def apply(modules: Iterable[Module], m: Module) = {
-    val (sumMap, tl) = getSummary(body = m.body)
-    ModuleSummary(m.name, sumMap, tl)
+  def apply(name: String, modules: Iterable[Module]): ModelSummary = {
+    val cache = modules.foldLeft(Map[String, ModuleSummary]())((cache, module) =>
+      if (cache contains module.name) cache
+      else getModuleSummary(cache, module)
+    )
+    // TODO: handle TL Error
+    val mainScriptSummary = cache find {
+      case (name, summary) => summary.tl != Bot
+    }
+    ModelSummary(name, cache, Bot)
   }
 
-  private def getSummary(
+  private def updateCache(
+    sumMap: Map[String, Summary],
+    cache: Map[String, ModuleSummary]
+  ): Map[String, ModuleSummary] = sumMap.foldLeft(cache){
+    case (newCache, (name, summary: ModuleSummary)) => newCache + (name -> summary)
+    case (newCache, _) => newCache
+  }
+
+  private def getModuleSummary(
+    cache: Map[String, ModuleSummary],
+    m: Module
+  ): Map[String, ModuleSummary] = {
+    val (sumMap, tl) = getBodySummary(cache, body = m.body)
+    updateCache(sumMap, cache) ++ Map(m.name -> ModuleSummary(m.name, sumMap, tl))
+  }
+
+  private def getBodySummary(
+    cache: Map[String, ModuleSummary],
     outerEnv: Map[Id, String] = Map(),
     outerSumMap: Map[String, Summary] = Map(),
     body: List[Stmt]
@@ -39,11 +64,11 @@ object TrainingLoop {
           env += Id("keras") -> "tensor_flow_keras"
 
         case FunDef(_, x, _, _, _, body) =>
-          val (innerSumMap, innerTl) = getSummary(env, outerSumMap ++ sumMap, body)
+          val (innerSumMap, innerTl) = getBodySummary(cache, env, outerSumMap ++ sumMap, body)
           sumMap += x.name -> FuncSummary(x.name, innerSumMap, innerTl)
 
         case AsyncFunDef(_, x, _, _, _, body) =>
-          val (innerSumMap, innerTl) = getSummary(env, outerSumMap ++ sumMap, body)
+          val (innerSumMap, innerTl) = getBodySummary(cache, env, outerSumMap ++ sumMap, body)
           sumMap += x.name -> FuncSummary(x.name, innerSumMap, innerTl)
 
         case ClassDef(_, x, le, lk, body) =>
@@ -63,7 +88,7 @@ object TrainingLoop {
 
           // TODO: consider init relation for tl
           // body summary
-          val (innerSumMap, innerTl) = getSummary(env, newSumMap, body)
+          val (innerSumMap, innerTl) = getBodySummary(cache, env, newSumMap, body)
           sumMap += x.name ->
             ClassSummary(x.name, ArgSummary(subClassOfModel), innerSumMap, innerTl)
 
@@ -167,17 +192,25 @@ abstract class Summary {
   private def toString(depth: Int): String = {
     val indent = "  " * depth
     val thisInfo = this match {
-      case ModuleSummary(name, sumMap, tl) => s"M-$name: $tl\n"
-      case FuncSummary(name, sumMap, tl) => s"F-$name: $tl\n"
+      case ModelSummary(name, sumMap, tl) => s"$CYAN<$name> @ $tl$RESET\n"
+      case ModuleSummary(name, sumMap, tl) if depth == 2 => s"└ M-$name: $tl\n"
+      case ModuleSummary(name, sumMap, tl) => s"• M-$name: $tl\n"
+      case FuncSummary(name, sumMap, tl) => s"• F-$name: $tl\n"
       case ClassSummary(name, argSummary, sumMap, tl) =>
-        s"C-$name($argSummary): $tl\n"
+        s"• C-$name($argSummary): $tl\n"
     }
-    sumMap.foldLeft(s"● $thisInfo") {
+    sumMap.foldLeft(s"$thisInfo") {
       case (str, (name, summary)) =>
         s"$str$indent${summary.toString(depth + 1)}"
     }
   }
 }
+
+case class ModelSummary(
+  name: String,
+  sumMap: Map[String, ModuleSummary],
+  tl: TLType
+) extends Summary
 
 case class ModuleSummary(
   name: String,
