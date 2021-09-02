@@ -12,14 +12,9 @@ import scala.Console._
 
 object Transformer {
   // transformed one AST into another AST
-  def apply(ast: Module): Module = ast match {
+  def apply(ast: Module, tl: TLType): Module = ast match {
     case m @ Module(body, tyIg, name) =>
-      // print summary
-      val summary = TrainingLoop(m)
-      println
-      println(s"$CYAN<$name>$RESET")
-      println(summary)
-      summary.tl match {
+      tl match {
         case GradTape => Module(transform(body)(Env())._1, tyIg, name)
         case _ => m
       }

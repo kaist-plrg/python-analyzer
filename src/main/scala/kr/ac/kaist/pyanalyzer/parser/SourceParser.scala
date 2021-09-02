@@ -22,7 +22,7 @@ object SourceParser {
    }
   
    // parse the source code text into ast
-   def parseSource(source: String): Module = {
+   def parseSource(source: String, name: String = ""): Module = {
      val tokens = Tokenizer.tokenizeText(source)  
      if (tokens ==  List(EndToken)) throw EmptyFileException
 
@@ -31,12 +31,13 @@ object SourceParser {
      val parseResult = parser(reader)
 
      parser(reader) match {
-       case Success(result, rest) => result
+       case Success(result, rest) => result.copy(name = name)
        case result => throw new RuntimeException(s"Parsing fail\n$result")
      }
    }
 
    // given the file path, parse the source code text
    // and returns AST
-   def parseFile(filename: String): Module = parseSource(readSource(filename))
+   def parseFile(filename: String, name: String = ""): Module =
+     parseSource(readSource(filename), name)
 }

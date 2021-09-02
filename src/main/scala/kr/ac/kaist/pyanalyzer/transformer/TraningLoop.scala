@@ -4,54 +4,9 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Errors._
 
-abstract class Summary {
-  val sumMap: Map[String, Summary]
-  val info: String
-  val tl: TLType
-  override def toString: String = toString(0)
-  def toString(outerDepth: Int): String = {
-    val depth = outerDepth + 1
-    val indent = "  " * depth
-    sumMap.foldLeft(info) {
-      case (str, (name, summary)) =>
-        s"$str$indent${summary.toString(depth)}"
-    }
-  }
-}
-
-case class ModuleSummary(
-  name: String,
-  sumMap: Map[String, Summary],
-  tl: TLType,
-) extends Summary {
-  val info = s"● $name: $tl\n"
-}
-
-case class FuncSummary(
-  name: String,
-  sumMap: Map[String, Summary],
-  tl: TLType,
-) extends Summary {
-  val info = s"● $name: $tl\n"
-}
-
-case class ClassSummary(
-  name: String,
-  argSummary: ArgSummary,
-  sumMap: Map[String, Summary],
-  tl: TLType,
-) extends Summary {
-  val info = s"● $name($argSummary): $tl\n"
-}
-
-// TODO: more general arg summary
-case class ArgSummary(parent: Boolean) {
-  override def toString = if (parent) "Model" else ""
-}
-
 
 object TrainingLoop {
-  def apply(m: Module) = {
+  def apply(modules: Iterable[Module], m: Module) = {
     val (sumMap, tl) = getSummary(body = m.body)
     ModuleSummary(m.name, sumMap, tl)
   }
@@ -138,7 +93,11 @@ object TrainingLoop {
         // Normal Call expression
         case Call(EName(Id(name)), _, _) =>
           (outerSumMap ++ sumMap).get(name) match {
-            case sopt: Some[Summary] if sopt.get.tl != Bot => tl = sopt.get.tl
+            case Some(FuncSummary(name, innerSumMap, innerTl)) if innerTl != Bot =>
+              tl = innerTl
+            case Some(ModuleSummary(name, innerSumMap, innerTl)) if innerTl != Bot =>
+              tl = innerTl
+            // TODO: Add ClassSummary case
             case _ => super.walk(expr)
           }
         case _ => super.walk(expr)
@@ -148,13 +107,6 @@ object TrainingLoop {
     body.map(SummaryWalker.walk)
     (sumMap, tl)
   }
-
-  def getArgInfo(
-    env: Map[Id, String],
-    sumMap: Map[String, Summary],
-    le: List[Expr],
-    lk: List[Kwarg]
-  ): ArgSummary = ???
 
   // TODO: using interp
   // identify tensorflow.keras.models
@@ -200,6 +152,55 @@ object TrainingLoop {
     }
     case _ => None
   }
+}
+
+// TODO: for more general import system
+// None for Top
+// TODO: make more intuitive map with Top
+case class NameSpace(private val opt: Option[Map[String, Summary]]) {
+  def +=(kvpair: (String, Summary)): NameSpace = NameSpace(opt.map(_ + kvpair))
+}
+
+abstract class Summary {
+  val sumMap: Map[String, Summary]
+  override def toString: String = toString(1)
+  private def toString(depth: Int): String = {
+    val indent = "  " * depth
+    val thisInfo = this match {
+      case ModuleSummary(name, sumMap, tl) => s"M-$name: $tl\n"
+      case FuncSummary(name, sumMap, tl) => s"F-$name: $tl\n"
+      case ClassSummary(name, argSummary, sumMap, tl) =>
+        s"C-$name($argSummary): $tl\n"
+    }
+    sumMap.foldLeft(s"● $thisInfo") {
+      case (str, (name, summary)) =>
+        s"$str$indent${summary.toString(depth + 1)}"
+    }
+  }
+}
+
+case class ModuleSummary(
+  name: String,
+  sumMap: Map[String, Summary],
+  tl: TLType,
+) extends Summary
+
+case class FuncSummary(
+  name: String,
+  sumMap: Map[String, Summary],
+  tl: TLType,
+) extends Summary
+
+case class ClassSummary(
+  name: String,
+  argSummary: ArgSummary,
+  sumMap: Map[String, Summary],
+  tl: TLType,
+) extends Summary
+
+// TODO: more general arg summary
+case class ArgSummary(parent: Boolean) {
+  override def toString = if (parent) "Model" else ""
 }
 
 trait TLType

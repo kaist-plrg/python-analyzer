@@ -7,12 +7,12 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast.Module
 import kr.ac.kaist.pyanalyzer.transformer.Transformer
+import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.util.Errors._
 import scala.Console._
+import scala.util.Try
 import java.io.File
-
-case class Model(modules: List[Module])
 
 object Transform {
   val logPath = s"$BASE_DIR/logs/transform"
@@ -39,23 +39,33 @@ object Transform {
     } {
       println
       println(s"$MAGENTA$model$RESET")
+
+      // get modules in the model
       val files = walkTree(model)
-      for {
+      val moduleOptions = for {
         file <- files
         path = file.toString diff model.toString
         if path endsWith ".py"
         if path startsWith "/org/"
         name = path.drop(5)
-      } try {
+      } yield Try(parseFile(file.toString, name)).toOption
+      val modules = moduleOptions.flatten
+
+      // transform each module
+      for (orgAst <- modules) try {
         println
-        val orgAst = parseFile(s"$model$path").copy(name = name)
+        println(s"$CYAN<${orgAst.name}>$RESET")
+
         val orgResult = beautify(orgAst)
+        
+        val summary = TrainingLoop(modules, orgAst)
+        println(summary)
 
         // transformed
-        val transformedAst = Transformer(orgAst).copy(name = name)
+        val transformedAst = Transformer(orgAst, summary.tl)
         val transformedResult = beautify(transformedAst)
         // hvd
-        val hvdAst = parseFile(s"$model/hvd/$name").copy(name = name)
+        val hvdAst = parseFile(s"$model/hvd/${orgAst.name}")
         val hvdResult = beautify(hvdAst)
 
         // target diff
@@ -69,7 +79,7 @@ object Transform {
         }
 
         // print result
-        printDiff(name, comparePair, diffOption)
+        printDiff(comparePair, diffOption)
       } catch {
         case EmptyFileException =>
         case e: Throwable => e.printStackTrace()
@@ -78,7 +88,6 @@ object Transform {
   }
 
   def printDiff(
-    name: String,
     comparePair: (String, String, String, String),
     diffOption: String
   ): Unit = {
@@ -87,7 +96,6 @@ object Transform {
     val path2 = s"$logPath/$name2"
     dumpFile(content1, path1)
     dumpFile(content2, path2)
-    println(s"$CYAN$name DIFF$RESET :")
     try executeCmd(
       s"colordiff -$diffOption $path1 $path2"
     ) catch {
