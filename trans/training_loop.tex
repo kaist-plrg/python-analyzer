@@ -1,0 +1,118 @@
+\newcommand{\nsummary}{\ensuremath{Summary}}
+\newcommand{\nsummarysubs}[1]{\ensuremath{summary_{#1}}}
+\newcommand{\nsummap}{\ensuremath{SumMap}}
+\newcommand{\nmodulesummary}{\ensuremath{ModuleSummary}}
+\newcommand{\ntl}{\ensuremath{tl}}
+\newcommand{\ntlsubs}[1]{\ensuremath{\ntl_{#1}}}
+\newcommand{\ngradtape}{\ensuremath{GradTape}}
+\newcommand{\noptimizer}{\ensuremath{Optimizer}}
+\newcommand{\nnotl}{\ensuremath{NoTl}}
+\newcommand{\nsummarylist}{\ensuremath{summary\_list}}
+
+\newcommand{\fsumsummary}{\ensuremath{summary}}
+\newcommand{\fsummodule}{\ensuremath{\fsumsummary_M}}
+\newcommand{\fsumsstmt}{\ensuremath{\fsumsummary_{\overline{S}}}}
+\newcommand{\fsumstmt}{\ensuremath{\fsumsummary_{S}}}
+\newcommand{\fsumexpr}{\ensuremath{\fsumsummary_{E}}}
+\newcommand{\fsumarg}{\ensuremath{\fsumsummary_{A}}}
+\newcommand{\fsumargs}{\ensuremath{\fsumsummary_{\overline{A}}}}
+
+\newcommand{\denv}{\ensuremath{Env}}
+\newcommand{\dsummary}{\ensuremath{Summary}}
+\newcommand{\dsummap}{\ensuremath{SumMap}}
+\newcommand{\dmodulesummary}{\ensuremath{ModuleSummary}}
+\newcommand{\dtl}{\ensuremath{tl}}
+
+\newcommand{\kmodulesummary}{{\tt ModuleSummary}}
+\newcommand{\kfuncsummary}{{\tt FuncSummary}}
+\newcommand{\kclasssummary}{{\tt ClassSummary}}
+
+\newcommand{\ssmodule}[1]{\subsfun{\fsummodule}{#1}}
+\newcommand{\sssstmt}[3]{\subsfun{\fsumsstmt}{#1}(#2)(#3)}
+\newcommand{\ssstmt}[3]{\subsfun{\fsumstmt}{#1}(#2)(#3)}
+\newcommand{\ssarg}[3]{\subsfun{\fsumarg}{#1}(#2)(#3)}
+\newcommand{\ssargs}[3]{\subsfun{\fsumargs}{#1}(#2)(#3)}
+
+\newcommand{\smodsummap}{\ensuremath{\gamma}}
+\newcommand{\smodsummapsubs}[1]{\ensuremath{\gamma_{#1}}}
+
+\newpage
+\section{Identifying trainig loop}
+\subsection{Restrictions}
+\begin{itemize}
+  \item[1.] Training loop must be defined in only one file.
+  \item[2.] Training loop type is either {\tt distributed gradient tape} or {\tt distributed optimizer}.
+  \item[3.] Each model must have only one type of training loop.
+  \item[4.] Function must not be assigned to the variables.
+  \item[5.] Training loop must not be defined conditionally.
+\end{itemize}
+\subsection{Rules}
+\subsubsection{Summary}
+% Summary
+\noindent
+\begin{tabular}{lcl>{\sc(}l<{\sc)}}
+  \nsummary & ::= & \kmodulesummary ~ \nstr ~ \mul{(\nsummap)} ~ \ntl & ModuleSummary\\
+  &&\kfuncsummary ~ \nstr ~ \mul{(\nsummap)} ~ \ntl & FuncSummary\\
+  &&\kclasssummary ~ \nstr ~ \narg ~ \mul{(\nsummap)} ~ \ntl & ClassSummary\\
+  \nsummap & ::= & \mul{(\nstr ~ \nsummary)} & SumMap \\
+  \narg & ::= & ??? & Arg \\
+  \ntl & ::= & \ngradtape \sep \noptimizer \sep \nnotl& TrainingLoop\\
+\end{tabular}\\\vpar
+
+\subsubsection{Training Loop}
+
+\noindent
+\typdesc{\fsummodule & : & \dmodule ~ $\rightarrow$ ~ \dmodulesummary}
+% ModuleDef
+\noindent
+\begin{tabular}{lll}
+  \ssmodule{\nstr ~ \mul{\nstmt} ~ \ntypignore} = \\
+  \inden \ktlet ~ \nsummarylist, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv}{\smodsummap} ~ \ktin \\
+  \inden \kmodulesummary ~ \nstr ~ \nsummarylist ~ \ntl
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fsumsstmt & : & \dstmt ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dsummap ~ $\rightarrow$ ~ (\dsummap ~ $\times$ ~ \dtl)}
+% Stmt list
+\noindent
+\begin{tabular}{lll}
+  \ssstmt{\nstmtsubs{1} ~ \nstmtsubs{2} ... \nstmtsubs{n}}{\smodenv}{\smodsummap} & = & \ktlet ~ \nsummarysubs{1}, \ntlsubs{1} ~ \kteq ~ \tstmt{\nstmtsubs{1}}{\smodenv} ~ \ktin \\
+  && \ktlet ~ \nsummarysubs{2}, \ntlsubs{2} ~ \kteq ~ \tstmt{\nstmtsubs{2}}{\smodenv} ~ \ktin \\
+  && {\tt ...} \\
+  && \ktlet ~ \nsummarysubs{n}, \ntlsubs{n} ~ \kteq ~ \tstmt{\nstmtsubs{n}}{\smodenv} ~ \ktin \\
+  && \ktlet ~ \smodsummap ~ = \nsummarysubs{1} \nsummarysubs{2} {\tt ...} \nsummarysubs{n} ~ \ktin \\
+  && \smodsummap, ???
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fsumstmt & : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dsummap ~ $\rightarrow$ ~ (\dsummary ~ $\times$ ~ \dmodenv ~ $\times$ ~ \dtl)}
+% Stmt
+
+% FunDef
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\decolistsubs{1} ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
+  \inden ~ \ktlet ~ \smodsummap$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
+  \inden ~ \kfuncsummary ~ \nid.name ~ \smodsummap$'$ ~ \ntl, ???, ???
+\end{tabular}\\\vpar
+
+% AsyncFunDef
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\decolistsubs{1} ~ \kasync ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
+  \inden ~ \ktlet ~ \smodsummap$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
+  \inden ~ \kfuncsummary ~ \nid.name ~ \smodsummap$'$ ~ \ntl, ???, ???
+\end{tabular}\\\vpar
+
+% ClassDef
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\decolistsubs{1} ~ \kclass ~ \nid ~ \sparen{\mul{\nexprsubs{2}} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
+  \inden ~ \ktlet ~ \narg ~  = \ssargs{\mul{\nexprsubs{2}} \mul{\nkeyword}}{\smodenv}{\smodsummap} ~ \ktin \\
+  \inden ~ \ktlet ~ \smodsummap$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
+  \inden ~ \kclasssummary ~ \narg ~ \nid.name ~ \smodsummap$'$ ~ \ntl, ???, ???
+\end{tabular}\\\vpar
+
+% Expr
+\noindent
+\typdesc{\fsumexpr & : & \dexpr ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dsummap ~ ~ $\rightarrow$ ~ \ntl}
