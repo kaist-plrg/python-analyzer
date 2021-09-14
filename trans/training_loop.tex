@@ -20,6 +20,7 @@
 \newcommand{\fsumargs}{\ensuremath{\fsummary_{\overline{A}}}}
 \newcommand{\fsumwithitem}{\ensuremath{\fsummary_{W}}}
 \newcommand{\fsumswithitem}{\ensuremath{\fsummary_{\overline{W}}}}
+\newcommand{\fsumsalias}{\ensuremath{\fsummary_{\overline{A}}}}
 
 \newcommand{\dsummary}{\ensuremath{Summary}}
 \newcommand{\dmodulesummary}{\ensuremath{ModuleSummary}}
@@ -38,6 +39,7 @@
 \newcommand{\ssargs}[2]{\subsfun{\fsumargs}{#1}(#2)}
 \newcommand{\sswithitem}[2]{\subsfun{\fsumwithitem}{#1}(#2)}
 \newcommand{\ssswithitem}[2]{\subsfun{\fsumswithitem}{#1}(#2)}
+\newcommand{\sssalias}[2]{\subsfun{\fsumsalias}{#1}(#2)}
 
 \newcommand{\ojoin}{\ensuremath{\sqcup}}
 
@@ -63,6 +65,11 @@
   &&\kvaluesummary ~ \nstr \\
   \narg & ::= & \nmodel \sep \nbot & Arg \\
   \ntl & ::= & \ngradtape \sep \noptimizer \sep \nbot& TrainingLoop\\
+\end{tabular}\\\vpar
+
+\noindent
+\begin{tabular}{l}
+  \smodenv ~ $\in$ \dmodenv ~ = \did $\finarrow$ \dsummary \qquad {\sc Environment storing mappings from ids to summaries}\\
 \end{tabular}\\\vpar
 
 \subsubsection{Training Loop}
@@ -170,6 +177,11 @@
 \begin{tabular}{l}
   \ssstmt{\ktry ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \mul{\nexchandler} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})} ~ \op{(\kfinally ~ \kcolon ~ \mul{\nstmtsubs{3}})}}{\smodenv} = \\
   \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
+\end{tabular}\\\vpar
+
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\kimport ~ \mul{\nalias}}{\smodenv} = (\sssalias{\mul{\nalias}}{\smodenv}, \nbot)
 \end{tabular}\\\vpar
 
 \noindent
