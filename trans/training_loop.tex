@@ -48,7 +48,7 @@
   \item[1.] Training loop must be defined in only one file.
   \item[2.] Training loop type is either {\tt distributed gradient tape} or {\tt distributed optimizer}.
   \item[3.] Each model must have only one type of training loop.
-  \item[4.] Function must not be assigned to the variables.
+  \item[4.] Function must not be assigned to the variables or passed as an argument.
   \item[5.] Training loop must not be defined conditionally.
 \end{itemize}
 \subsection{Rules}
@@ -119,6 +119,17 @@
   \inden ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \narg ~ \smodenv$'$], \nbot)
 \end{tabular}\\\vpar
 
+% Assign
+\noindent
+{\bf A strict form of assignment statements}
+
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\nidsubs{r} \oassign \nidsubs{c} \sparen{} \optypcomm}{\smodenv} = \\
+  \inden ~ \ktif ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kclasssummary ~ \nmodel ~ \smodenv$'$ ~ \ktthen ~ (\smodenv[\nidsubs{r} $\mapsto$ \kvaluesummary ~ {\bf "model\_instance"}], \nbot) \\
+  \inden ~ \ktelse ~ (\smodenv, \nbot)
+\end{tabular}\\\vpar
+
 % ForLoop
 \noindent
 \begin{tabular}{l}
@@ -161,13 +172,25 @@
   \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
 \end{tabular}\\\vpar
 
+\noindent
+{\bf A strict form of expr statements}
+
 % ExprStmt
 \noindent
 \begin{tabular}{l}
-  \ssstmt{\nexpr}{\smodenv} = (\smodenv, \ssexpr{\nexpr}{\smodenv}) \\
+  \ssstmt{\nexprsubs{1} \sparen{}}{\smodenv} = \\
+  \inden ~ \ktif ~ \smodenv(\nidsubs{i}) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{i}.fit} ~ \ktthen ~ (\smodenv, \noptimizer) \\
+  \inden ~ \ktelif ~ \smodenv(\nidsubs{i}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
+  \inden ~ \inden ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{i}.GradientTape} ~ \ktthen ~ (\smodenv, \ngradtape) \\
+  \inden ~ \ktelse ~ (\smodenv, \nbot)
+\end{tabular}\\\vpar
+
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\nstmt}{\smodenv} = (\smodenv, \nbot)
 \end{tabular}\\\vpar
 
 
 % Expr
-\noindent
-\typdesc{\fsumexpr & : & \dexpr ~ $\rightarrow$ ~ \dmodenv ~ ~ $\rightarrow$ ~ \ntl}
+% \noindent
+% \typdesc{\fsumexpr & : & \dexpr ~ $\rightarrow$ ~ \dmodenv ~ ~ $\rightarrow$ ~ \ntl}
