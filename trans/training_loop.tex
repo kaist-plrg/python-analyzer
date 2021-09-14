@@ -61,7 +61,7 @@
 \begin{tabular}{lcl>{\sc(}l<{\sc)}}
   \nsummary & ::= & \kmodulesummary ~ \nid ~ \nenv ~ \ntl & ModuleSummary\\
   &&\kfuncsummary ~ \ntl & FuncSummary\\
-  &&\kclasssummary ~ \narg ~ \nmethod ~ & ClassSummary\\
+  &&\kclasssummary ~ \narg ~ & ClassSummary\\
   &&\kvaluesummary ~ \nstr \\
   \narg & ::= & \nmodel \sep \nbot & Arg \\
   \ntl & ::= & \ngradtape \sep \noptimizer \sep \nbot& TrainingLoop\\
@@ -123,7 +123,7 @@
   \ssstmt{\decolistsubs{1} ~ \kclass ~ \nid ~ \sparen{\mul{\nexprsubs{2}} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
   \inden ~ \ktlet ~ \narg ~  = \ssargs{\mul{\nexprsubs{2}} \mul{\nkeyword}}{\smodenv} ~ \ktin \\
   \inden ~ \ktlet ~ \smodenv$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \narg ~ \smodenv$'$], \nbot)
+  \inden ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \smodenv$'$], \nbot)
 \end{tabular}\\\vpar
 
 % Assign
@@ -133,7 +133,7 @@
 \noindent
 \begin{tabular}{l}
   \ssstmt{\nidsubs{r} \oassign \nidsubs{c} \sparen{} \optypcomm}{\smodenv} = \\
-  \inden ~ \ktif ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kclasssummary ~ \nmodel ~ \smodenv$'$ ~ \ktthen ~ (\smodenv[\nidsubs{r} $\mapsto$ \kvaluesummary ~ {\bf "model\_instance"}], \nbot) \\
+  \inden ~ \ktif ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kclasssummary ~ \nmodel ~ \ktthen ~ (\smodenv[\nidsubs{r} $\mapsto$ \kvaluesummary ~ {\bf "model\_instance"}], \nbot) \\
   \inden ~ \ktelse ~ (\smodenv, \nbot)
 \end{tabular}\\\vpar
 
@@ -141,35 +141,40 @@
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
+  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
+  \inden ~ (\smodenv, \ntl)
 \end{tabular}\\\vpar
 
 % AsyncForLoop
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
+  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
+  \inden ~ (\smodenv, \ntl)
 \end{tabular}\\\vpar
 
 % WhileLoop
 \noindent
 \begin{tabular}{l}
   \ssstmt{\kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
+  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
+  \inden ~ (\smodenv, \ntl)
 \end{tabular}\\\vpar
 
 % With
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-    \inden ~ (\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} ~ \ojoin ~ \sssstmt{\mul{\nstmt}}{\smodenv})
+  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
+  \inden ~ (\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} \ojoin ~ \ntl)
 \end{tabular}\\\vpar
 
 % AsyncWith
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kasync~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-    \inden ~ (\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} ~ \ojoin ~ \sssstmt{\mul{\nstmt}}{\smodenv})
+  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
+  \inden ~ (\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} \ojoin ~ \ntl)
 \end{tabular}\\\vpar
 
 % Try
