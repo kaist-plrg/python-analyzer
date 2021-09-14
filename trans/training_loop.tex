@@ -16,11 +16,10 @@
 \newcommand{\fsumsstmt}{\ensuremath{\fsummary_{\overline{S}}}}
 \newcommand{\fsumstmt}{\ensuremath{\fsummary_{S}}}
 \newcommand{\fsumexpr}{\ensuremath{\fsummary_{E}}}
-\newcommand{\fsumarg}{\ensuremath{\fsummary_{A}}}
-\newcommand{\fsumargs}{\ensuremath{\fsummary_{\overline{A}}}}
+\newcommand{\fsumalias}{\ensuremath{\fsummary_{A}}}
+\newcommand{\fsumsalias}{\ensuremath{\fsummary_{\overline{A}}}}
 \newcommand{\fsumwithitem}{\ensuremath{\fsummary_{W}}}
 \newcommand{\fsumswithitem}{\ensuremath{\fsummary_{\overline{W}}}}
-\newcommand{\fsumsalias}{\ensuremath{\fsummary_{\overline{A}}}}
 
 \newcommand{\dsummary}{\ensuremath{Summary}}
 \newcommand{\dmodulesummary}{\ensuremath{ModuleSummary}}
@@ -35,11 +34,10 @@
 \newcommand{\sssstmt}[2]{\subsfun{\fsumsstmt}{#1}(#2)}
 \newcommand{\ssstmt}[2]{\subsfun{\fsumstmt}{#1}(#2)}
 \newcommand{\ssexpr}[2]{\subsfun{\fsumexpr}{#1}(#2)}
-\newcommand{\ssarg}[2]{\subsfun{\fsumarg}{#1}(#2)}
-\newcommand{\ssargs}[2]{\subsfun{\fsumargs}{#1}(#2)}
+\newcommand{\ssalias}[2]{\subsfun{\fsumalias}{#1}(#2)}
+\newcommand{\sssalias}[2]{\subsfun{\fsumsalias}{#1}(#2)}
 \newcommand{\sswithitem}[2]{\subsfun{\fsumwithitem}{#1}(#2)}
 \newcommand{\ssswithitem}[2]{\subsfun{\fsumswithitem}{#1}(#2)}
-\newcommand{\sssalias}[2]{\subsfun{\fsumsalias}{#1}(#2)}
 
 \newcommand{\ojoin}{\ensuremath{\sqcup}}
 
@@ -120,10 +118,12 @@
 % ClassDef
 \noindent
 \begin{tabular}{l}
-  \ssstmt{\decolistsubs{1} ~ \kclass ~ \nid ~ \sparen{\mul{\nexprsubs{2}} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \narg ~  = \ssargs{\mul{\nexprsubs{2}} \mul{\nkeyword}}{\smodenv} ~ \ktin \\
-  \inden ~ \ktlet ~ \smodenv$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \smodenv$'$], \nbot)
+  \ssstmt{\decolist ~ \kclass ~ \nid ~ \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden ~ \ktif ~ \nexprsubs{1i} ~ \kteq ~ {\tt \nidsubs{c}.keras.Model} ~ \ktwhen ~ 1 $\leq$ i $\leq$ n ~ \ktand \\
+  \inden\inden ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot ~ \ktthen ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nmodel], \nbot) \\
+  \inden ~ \ktelif ~ \nexprsubs{2i} ~ \kteq ~ {\tt \nidsubs{c}.keras.Model} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktand \\
+  \inden\inden ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot ~ \ktthen ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nmodel], \nbot) \\
+  \inden ~ \ktelse ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nbot], \nbot)
 \end{tabular}\\\vpar
 
 % Assign
@@ -184,6 +184,7 @@
   \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
 \end{tabular}\\\vpar
 
+% Import
 \noindent
 \begin{tabular}{l}
   \ssstmt{\kimport ~ \mul{\nalias}}{\smodenv} = (\sssalias{\mul{\nalias}}{\smodenv}, \nbot)
@@ -202,6 +203,25 @@
 \noindent
 \begin{tabular}{l}
   \ssstmt{\nstmt}{\smodenv} = (\smodenv, \nbot)
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fsumsalias& : & \dalias ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dmodenv}
+% Alias List
+\noindent
+\begin{tabular}{l}
+  \sssalias{\naliassubs{1} ... \naliassubs{n-1} \naliassubs{n}}{\smodenv} = \\
+  \inden ~ \ssalias{\naliassubs{n}}{\ssalias{\naliassubs{n-1}}{... \ssalias{\naliassubs{1}}{\smodenv} ...}}\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkalias& : & \dalias ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dmodenv}
+% Alias containing an id only
+\noindent
+\begin{tabular}{l}
+  \talias{\nid}{\smodenv} = \\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[Id("tensorflow") $\mapsto$ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot]\\
+  \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
 \noindent
