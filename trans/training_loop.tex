@@ -6,16 +6,19 @@
 \newcommand{\ntlsubs}[1]{\ensuremath{\ntl_{#1}}}
 \newcommand{\ngradtape}{\ensuremath{GradTape}}
 \newcommand{\noptimizer}{\ensuremath{Optimizer}}
-\newcommand{\nnotl}{\ensuremath{NoTl}}
 \newcommand{\nsummarylist}{\ensuremath{summary\_list}}
+\newcommand{\nbot}{\ensuremath{\bot}}
+\newcommand{\nmodel}{\ensuremath{Model}}
 
-\newcommand{\fsumsummary}{\ensuremath{summary}}
-\newcommand{\fsummodule}{\ensuremath{\fsumsummary_M}}
-\newcommand{\fsumsstmt}{\ensuremath{\fsumsummary_{\overline{S}}}}
-\newcommand{\fsumstmt}{\ensuremath{\fsumsummary_{S}}}
-\newcommand{\fsumexpr}{\ensuremath{\fsumsummary_{E}}}
-\newcommand{\fsumarg}{\ensuremath{\fsumsummary_{A}}}
-\newcommand{\fsumargs}{\ensuremath{\fsumsummary_{\overline{A}}}}
+\newcommand{\fsummary}{\ensuremath{summary}}
+\newcommand{\fsummodule}{\ensuremath{\fsummary_M}}
+\newcommand{\fsumsstmt}{\ensuremath{\fsummary_{\overline{S}}}}
+\newcommand{\fsumstmt}{\ensuremath{\fsummary_{S}}}
+\newcommand{\fsumexpr}{\ensuremath{\fsummary_{E}}}
+\newcommand{\fsumarg}{\ensuremath{\fsummary_{A}}}
+\newcommand{\fsumargs}{\ensuremath{\fsummary_{\overline{A}}}}
+\newcommand{\fsumwithitem}{\ensuremath{\fsummary_{W}}}
+\newcommand{\fsumswithitem}{\ensuremath{\fsummary_{\overline{W}}}}
 
 \newcommand{\denv}{\ensuremath{Env}}
 \newcommand{\dsummary}{\ensuremath{Summary}}
@@ -30,13 +33,18 @@
 \newcommand{\ssmodule}[1]{\subsfun{\fsummodule}{#1}}
 \newcommand{\sssstmt}[3]{\subsfun{\fsumsstmt}{#1}(#2)(#3)}
 \newcommand{\ssstmt}[3]{\subsfun{\fsumstmt}{#1}(#2)(#3)}
+\newcommand{\ssexpr}[3]{\subsfun{\fsumexpr}{#1}(#2)(#3)}
 \newcommand{\ssarg}[3]{\subsfun{\fsumarg}{#1}(#2)(#3)}
 \newcommand{\ssargs}[3]{\subsfun{\fsumargs}{#1}(#2)(#3)}
+\newcommand{\sswithitem}[3]{\subsfun{\fsumwithitem}{#1}(#2)(#3)}
+\newcommand{\ssswithitem}[3]{\subsfun{\fsumswithitem}{#1}(#2)(#3)}
 
 \newcommand{\smodsummap}{\ensuremath{\gamma}}
 \newcommand{\smodsummapsubs}[1]{\ensuremath{\gamma_{#1}}}
 
-\newpage
+\newcommand{\ojoin}{\ensuremath{\sqcup}}
+
+%\newpage
 \section{Identifying trainig loop}
 \subsection{Restrictions}
 \begin{itemize}
@@ -52,48 +60,41 @@
 \noindent
 \begin{tabular}{lcl>{\sc(}l<{\sc)}}
   \nsummary & ::= & \kmodulesummary ~ \nstr ~ \mul{(\nsummap)} ~ \ntl & ModuleSummary\\
-  &&\kfuncsummary ~ \nstr ~ \mul{(\nsummap)} ~ \ntl & FuncSummary\\
-  &&\kclasssummary ~ \nstr ~ \narg ~ \mul{(\nsummap)} ~ \ntl & ClassSummary\\
+  &&\kfuncsummary ~ \nstr ~ \ntl & FuncSummary\\
+  &&\kclasssummary ~ \nstr ~ \narg ~ & ClassSummary\\
   \nsummap & ::= & \mul{(\nstr ~ \nsummary)} & SumMap \\
-  \narg & ::= & ??? & Arg \\
-  \ntl & ::= & \ngradtape \sep \noptimizer \sep \nnotl& TrainingLoop\\
+  \narg & ::= & \nmodel \sep \nbot & Arg \\
+  \ntl & ::= & \ngradtape \sep \noptimizer \sep \nbot& TrainingLoop\\
 \end{tabular}\\\vpar
 
 \subsubsection{Training Loop}
 
 \noindent
-\typdesc{\fsummodule & : & \dmodule ~ $\rightarrow$ ~ \dmodulesummary}
+\typdesc{\fsummodule & : & \dmodule ~ $\rightarrow$ ~ \dsummap ~ $\rightarrow$ ~ \dmodulesummary}
 % ModuleDef
 \noindent
 \begin{tabular}{lll}
-  \ssmodule{\nstr ~ \mul{\nstmt} ~ \ntypignore} = \\
-  \inden \ktlet ~ \nsummarylist, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv}{\smodsummap} ~ \ktin \\
-  \inden \kmodulesummary ~ \nstr ~ \nsummarylist ~ \ntl
-\end{tabular}\\\vpar
-
-\noindent
-\typdesc{\fsumsstmt & : & \dstmt ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dsummap ~ $\rightarrow$ ~ (\dsummap ~ $\times$ ~ \dtl)}
-% Stmt list
-\noindent
-\begin{tabular}{lll}
-  \ssstmt{\nstmtsubs{1} ~ \nstmtsubs{2} ... \nstmtsubs{n}}{\smodenv}{\smodsummap} & = & \ktlet ~ \nsummarysubs{1}, \ntlsubs{1} ~ \kteq ~ \tstmt{\nstmtsubs{1}}{\smodenv} ~ \ktin \\
-  && \ktlet ~ \nsummarysubs{2}, \ntlsubs{2} ~ \kteq ~ \tstmt{\nstmtsubs{2}}{\smodenv} ~ \ktin \\
+  \ssmodule{\nstr ~ \mul{\nstmt} ~ \ntypignore}(\smodsummap) & = & \ktlet ~ \nsummarysubs{1}, \smodenvsubs{1}, \ntlsubs{1} ~ \kteq ~ \sssstmt{\nstmtsubs{1}}{\smodenv}{\smodsummap} ~ \ktin \\
+  && \ktlet ~ \smodsummapsubs{1} ~ \kteq ~ \smodsummap ~ \oadd ~ \nsummarysubs{1} \\
+  && \ktlet ~ \nsummarysubs{2}, \smodenvsubs{2}, \ntlsubs{2} ~ \kteq ~ \sssstmt{\nstmtsubs{2}}{\smodenvsubs{1}}{\smodsummapsubs{1}} ~ \ktin \\
+  && \ktlet ~ \smodsummapsubs{2} ~ \kteq ~ \smodsummapsubs{1} ~ \oadd ~ \nsummarysubs{2} \\
   && {\tt ...} \\
-  && \ktlet ~ \nsummarysubs{n}, \ntlsubs{n} ~ \kteq ~ \tstmt{\nstmtsubs{n}}{\smodenv} ~ \ktin \\
-  && \ktlet ~ \smodsummap ~ = \nsummarysubs{1} \nsummarysubs{2} {\tt ...} \nsummarysubs{n} ~ \ktin \\
-  && \smodsummap, ???
+  && \ktlet ~ \nsummarysubs{n}, \smodenvsubs{n}, \ntlsubs{n} ~ \kteq ~ \sssstmt{\nstmtsubs{n}}{\smodenvsubs{n-1}}{\smodsummapsubs{n-1}} ~ \ktin \\
+  && \ktlet ~ \smodsummapsubs{n} ~ \kteq ~ \smodsummapsubs{n-1} ~ \oadd ~ \nsummarysubs{n} \\
+  && \kmodulesummary ~ \nstr ~ \smodsummapsubs{n} ~ (\ntlsubs{1} ~ \ojoin ~ \ntlsubs{2} ~ \ojoin ~ {\tt ...} \ntlsubs{n})
 \end{tabular}\\\vpar
 
+% Stmt
 \noindent
 \typdesc{\fsumstmt & : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dsummap ~ $\rightarrow$ ~ (\dsummary ~ $\times$ ~ \dmodenv ~ $\times$ ~ \dtl)}
-% Stmt
+\newpage
 
 % FunDef
 \noindent
 \begin{tabular}{l}
   \ssstmt{\decolistsubs{1} ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
-  \inden ~ \ktlet ~ \smodsummap$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ \kfuncsummary ~ \nid.name ~ \smodsummap$'$ ~ \ntl, ???, ???
+  \inden ~ \ktlet ~ \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
+  \inden ~ (\kfuncsummary ~ \nid.name ~ \ntl, \smodsummap, \nbot)
 \end{tabular}\\\vpar
 
 % AsyncFunDef
@@ -101,7 +102,7 @@
 \begin{tabular}{l}
   \ssstmt{\decolistsubs{1} ~ \kasync ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
   \inden ~ \ktlet ~ \smodsummap$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ \kfuncsummary ~ \nid.name ~ \smodsummap$'$ ~ \ntl, ???, ???
+  \inden ~ (\kfuncsummary ~ \nid.name ~ \ntl, \smodsummap, \nbot)
 \end{tabular}\\\vpar
 
 % ClassDef
@@ -110,8 +111,70 @@
   \ssstmt{\decolistsubs{1} ~ \kclass ~ \nid ~ \sparen{\mul{\nexprsubs{2}} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
   \inden ~ \ktlet ~ \narg ~  = \ssargs{\mul{\nexprsubs{2}} \mul{\nkeyword}}{\smodenv}{\smodsummap} ~ \ktin \\
   \inden ~ \ktlet ~ \smodsummap$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ \kclasssummary ~ \narg ~ \nid.name ~ \smodsummap$'$ ~ \ntl, ???, ???
+  \inden ~ (\kclasssummary ~ \nid.name ~ \narg, \smodsummap, \nbot)
 \end{tabular}\\\vpar
+
+% ForLoop
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv}{\smodsummap} = \\
+  \inden ~ ( , , \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv}{\smodsummap})
+\end{tabular}\\\vpar
+
+% AsyncForLoop
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv}{\smodsummap} = \\
+  \inden ~ ( , , \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv}{\smodsummap})
+\end{tabular}\\\vpar
+
+% WhileLoop
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv}{\smodsummap} = \\
+  \inden ~ ( , , \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv}{\smodsummap})
+\end{tabular}\\\vpar
+
+% With
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
+    \inden ~ ( , , \ssswithitem{\mul{\nwithitem}}{\smodenv}{\smodsummap} ~ \ojoin ~ \sssstmt{\mul{\nstmt}}{\smodenv}{\smodsummap})
+\end{tabular}\\\vpar
+
+% AsyncWith
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\optypcomm ~ \kasync~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv}{\smodsummap} = \\
+    \inden ~ ( , , \ssswithitem{\mul{\nwithitem}}{\smodenv}{\smodsummap} ~ \ojoin ~ \sssstmt{\mul{\nstmt}}{\smodenv}{\smodsummap})
+\end{tabular}\\\vpar
+
+% Try
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\ktry ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \mul{\nexchandler} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})} ~ \op{(\kfinally ~ \kcolon ~ \mul{\nstmtsubs{3}})}}{\smodenv}{\smodsummap} = \\
+  \inden ~ ( , , \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv}{\smodsummap})
+\end{tabular}\\\vpar
+
+% ExprStmt
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\nexpr}{\smodenv}{\smodsummap} = ( , , \ssexpr{\nexpr}{\smodenv}{\smodsummap}) \\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fsumsstmt & : & \dstmt ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dsummap ~ $\rightarrow$ ~ \dtl}
+
+% Stmt list
+\noindent
+\begin{tabular}{lll}
+  \ssstmt{\nstmtsubs{1} ~ \nstmtsubs{2} ... \nstmtsubs{n}}{\smodenv}{\smodsummap} & = & \ktlet ~ \_, \ntlsubs{1} ~ \kteq ~ \tstmt{\nstmtsubs{1}}{\smodenv} ~ \ktin \\
+  && \ktlet ~ \_, \ntlsubs{2} ~ \kteq ~ \tstmt{\nstmtsubs{2}}{\smodenv} ~ \ktin \\
+  && {\tt ...} \\
+  && \ktlet ~ \_, \ntlsubs{n} ~ \kteq ~ \tstmt{\nstmtsubs{n}}{\smodenv} ~ \ktin \\
+  && \ntlsubs{1} ~ \ojoin ~ \ntlsubs{2} ~ \ojoin ~ {\tt ...} \ntlsubs{n}
+\end{tabular}\\\vpar
+
 
 % Expr
 \noindent
