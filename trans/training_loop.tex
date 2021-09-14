@@ -195,19 +195,45 @@
 % ExprStmt
 \noindent
 \begin{tabular}{l}
-  \ssstmt{\nexprsubs{1} \sparen{}}{\smodenv} = \\
-  \inden ~ \ktif ~ \smodenv(\nidsubs{i}) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{i}.fit} ~ \ktthen ~ (\smodenv, \noptimizer) \\
-  \inden ~ \ktelif ~ \smodenv(\nidsubs{i}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
-  \inden ~ \inden ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{i}.GradientTape} ~ \ktthen ~ (\smodenv, \ngradtape) \\
-  \inden ~ \ktelse ~ (\smodenv, \nbot)
+  \ssstmt{\nexpr}{\smodenv} = (\smodenv, \ssexpr{\nexpr}{\smodenv})
 \end{tabular}\\\vpar
 
+% Stmt
 \noindent
 \begin{tabular}{l}
   \ssstmt{\nstmt}{\smodenv} = (\smodenv, \nbot)
 \end{tabular}\\\vpar
 
+\noindent
+\typdesc{\fsumswithitem & : & \dwithitem ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dtl} 
+% Withitem list
+\begin{tabular}{l}
+  \ssswithitem{\nwithitemsubs{1} \nwithitemsubs{2} ... \nwithitemsubs{n}}{\smodenv} = \\
+  \inden ~ \sswithitem{\nwithitemsubs{1}}{\smodenv} \ojoin ~ \sswithitem{\nwithitemsubs{2}}{\smodenv} \ojoin ~ {\bf ...} ~ \sswithitem{\nwithitemsubs{n}}{\smodenv}
+\end{tabular}\\\vpar
 
+\noindent
+\typdesc{\fsumwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dtl} 
+% WithItem
+\noindent
+\begin{tabular}{l}
+  \sswithitem{\nexprsubs{1} \kas ~ \op{\nexprsubs{2}}}{\smodenv} = \ssexpr{\nexprsubs{1}}{\smodenv}
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fsumexpr & : & \dexpr ~ $\rightarrow$ ~ \dmodenv ~ ~ $\rightarrow$ ~ \ntl}
 % Expr
-% \noindent
-% \typdesc{\fsumexpr & : & \dexpr ~ $\rightarrow$ ~ \dmodenv ~ ~ $\rightarrow$ ~ \ntl}
+\noindent
+\begin{tabular}{l}
+  \ssexpr{\nexpr()}{\smodenv} = \\
+  \inden ~ \ktif ~ \smodenv(\nid) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand \\
+  \inden\inden ~ \nexpr ~ \kteq ~ {\tt \nid.fit} ~ \ktthen ~ \noptimizer \\
+  \inden ~ \ktelif ~ \smodenv(\nid) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
+  \inden\inden ~ \nexpr ~ \kteq ~ {\tt \nid.GradientTape} ~ \ktthen ~ \ngradtape \\
+  \inden ~ \ktelse ~ \nbot
+\end{tabular}\\\vpar
+
+\noindent
+\begin{tabular}{l}
+  \ssexpr{\nexpr}{\smodenv} = \nbot
+\end{tabular}\\\vpar
