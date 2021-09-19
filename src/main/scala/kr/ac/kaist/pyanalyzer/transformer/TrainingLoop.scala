@@ -1,5 +1,4 @@
 package kr.ac.kaist.pyanalyzer.transformer
-
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Errors._
@@ -8,7 +7,7 @@ import scala.Console._
 
 object TrainingLoop {
   def apply(name: String, modules: Iterable[Module]): ModelSummary = {
-    val cache = modules.foldLeft(Map[String, ModuleSummary]())((cache, module) =>
+    val cache = modules.foldLeft(TLEnv[ModuleSummary]())((cache, module) =>
       if (cache contains module.name) cache
       else getModuleSummary(cache, module)
     )
@@ -20,30 +19,30 @@ object TrainingLoop {
   }
 
   private def updateCache(
-    sumMap: Map[String, Summary],
-    cache: Map[String, ModuleSummary]
-  ): Map[String, ModuleSummary] = sumMap.foldLeft(cache){
+    sumMap: TLEnv[Summary],
+    cache: TLEnv[ModuleSummary]
+  ): TLEnv[ModuleSummary] = sumMap.foldLeft(cache) {
     case (newCache, (name, summary: ModuleSummary)) => newCache + (name -> summary)
     case (newCache, _) => newCache
   }
 
   private def getModuleSummary(
-    cache: Map[String, ModuleSummary],
+    cache: TLEnv[ModuleSummary],
     m: Module
-  ): Map[String, ModuleSummary] = {
+  ): TLEnv[ModuleSummary] = {
     val (sumMap, tl) = getBodySummary(cache, body = m.body)
-    updateCache(sumMap, cache) ++ Map(m.name -> ModuleSummary(m.name, sumMap, tl))
+    updateCache(sumMap, cache) + (m.name -> ModuleSummary(m.name, sumMap, tl))
   }
 
   private def getBodySummary(
-    cache: Map[String, ModuleSummary],
+    cache: TLEnv[ModuleSummary],
     outerEnv: Map[Id, String] = Map(),
-    outerSumMap: Map[String, Summary] = Map(),
+    outerSumMap: TLEnv[Summary] = TLEnv[Summary](),
     body: List[Stmt]
-  ): (Map[String, Summary], TLType) = {
+  ): (TLEnv[Summary], TLType) = {
     // variables for storing the side effect of UnitWalker
     var env = outerEnv
-    var sumMap = Map[String, Summary]()
+    var sumMap = TLEnv[Summary]()
     var tl: TLType = Bot
 
     // UnitWalker for summary
@@ -88,9 +87,9 @@ object TrainingLoop {
 
           // TODO: consider init relation for tl
           // body summary
-          val (innerSumMap, innerTl) = getBodySummary(cache, env, newSumMap, body)
+          val (innerSumMap, _) = getBodySummary(cache, env, newSumMap, body)
           sumMap += x.name ->
-            ClassSummary(x.name, ArgSummary(subClassOfModel), innerSumMap, innerTl)
+            ClassSummary(x.name, ArgSummary(subClassOfModel), innerSumMap)
 
         case AssignStmt(List(EName(x)), e, _)
           if isKerasModel(env, outerSumMap ++ sumMap, e) =>
@@ -137,7 +136,7 @@ object TrainingLoop {
   // identify tensorflow.keras.models
   private def isKerasModel(
     env: Map[Id, String],
-    sumMap: Map[String, Summary],
+    sumMap: TLEnv[Summary],
     model: Expr
   ): Boolean = model match {
     // Sequential API
@@ -153,7 +152,7 @@ object TrainingLoop {
 
     // Subclassing API
     case Call(EName(subclass), _, _) => sumMap.get(subclass.name) match {
-      case Some(ClassSummary(_, argSummary, _, _)) => argSummary.parent
+      case Some(ClassSummary(_, argSummary, _)) => argSummary.parent
       case _ => false
     }
 
@@ -165,7 +164,7 @@ object TrainingLoop {
   // TODO: update import
   private def interp(
     env: Map[Id, String],
-    sumMap: Map[String, Summary],
+    sumMap: TLEnv[Summary],
     e: Expr
   ): Option[String] = e match {
     case EName(x) => env.get(x)
@@ -179,56 +178,69 @@ object TrainingLoop {
   }
 }
 
-// TODO: for more general import system
-// None for Top
-// TODO: make more intuitive map with Top
-case class NameSpace(private val opt: Option[Map[String, Summary]]) {
-  def +=(kvpair: (String, Summary)): NameSpace = NameSpace(opt.map(_ + kvpair))
-}
-
-abstract class Summary {
-  val sumMap: Map[String, Summary]
-  override def toString: String = toString(1)
-  private def toString(depth: Int): String = {
+case class TLEnv[T <: Summary](sumMap: Map[String, T] = Map[String, T]()) {
+  override def toString: String = toString(0)
+  def toString(depth: Int): String = {
     val indent = "  " * depth
-    val thisInfo = this match {
-      case ModelSummary(name, sumMap, tl) => s"$CYAN<$name> @ $tl$RESET\n"
-      case ModuleSummary(name, sumMap, tl) if depth == 2 => s"└ M-$name: $tl\n"
-      case ModuleSummary(name, sumMap, tl) => s"• M-$name: $tl\n"
-      case FuncSummary(name, sumMap, tl) => s"• F-$name: $tl\n"
-      case ClassSummary(name, argSummary, sumMap, tl) =>
-        s"• C-$name($argSummary): $tl\n"
-    }
-    sumMap.foldLeft(s"$thisInfo") {
+    sumMap.foldLeft("") {
       case (str, (name, summary)) =>
         s"$str$indent${summary.toString(depth + 1)}"
     }
+  }
+  def apply(key: String): T = sumMap(key)
+  def +(p: (String, T)): TLEnv[T] = TLEnv[T](sumMap + p)
+  def ++(rhs: TLEnv[T]): TLEnv[T] = TLEnv[T](sumMap ++ rhs.sumMap)
+  def get(key: String): Option[T] = sumMap.get(key)
+  def foldLeft[B](z: B)(op: (B, (String, T)) => B): B = sumMap.foldLeft(z)(op)
+  def contains(key: String): Boolean = sumMap contains key
+  def find(p: ((String, T)) => Boolean): Option[(String, T)] = sumMap find p
+}
+
+abstract class Summary {
+  override def toString: String = toString(1)
+  def toString(depth: Int): String = this match {
+    case ModelSummary(name, sumMap, tl) =>
+       sumMap.foldLeft(s"$CYAN<$name> @ $tl$RESET\n") {
+         case (acc, (name, summary)) => s"$acc${summary.toString(depth + 1)}"
+       }
+    case ModuleSummary(name, sumMap, tl) if depth == 2 =>
+      s"└ M-$name: $tl\n${sumMap.toString(depth)}"
+    case ModuleSummary(name, sumMap, tl) =>
+      s"• M-$name: $tl\n${sumMap.toString(depth)}"
+    case FuncSummary(name, sumMap, tl) =>
+      s"• F-$name: $tl\n${sumMap.toString(depth)}"
+    case ClassSummary(name, argSummary, sumMap) =>
+      s"• C-$name($argSummary)\n${sumMap.toString(depth)}"
   }
 }
 
 case class ModelSummary(
   name: String,
-  sumMap: Map[String, ModuleSummary],
+  sumMap: TLEnv[ModuleSummary],
   tl: TLType
 ) extends Summary
 
 case class ModuleSummary(
   name: String,
-  sumMap: Map[String, Summary],
+  sumMap: TLEnv[Summary],
   tl: TLType,
 ) extends Summary
 
 case class FuncSummary(
   name: String,
-  sumMap: Map[String, Summary],
+  sumMap: TLEnv[Summary],
   tl: TLType,
 ) extends Summary
 
 case class ClassSummary(
   name: String,
   argSummary: ArgSummary,
-  sumMap: Map[String, Summary],
-  tl: TLType,
+  sumMap: TLEnv[Summary],
+) extends Summary
+
+case class ValueSummary(
+  name: String,
+  value: String
 ) extends Summary
 
 // TODO: more general arg summary
