@@ -66,7 +66,7 @@ object Transform {
         println(s"$CYAN<$name>$RESET")
 
         val orgResult = beautify(orgAst)
-        val summary = modelSummary.sumMap(name)
+        val summary = modelSummary.getModuleSummary(name)
 
         // transformed
         val transformedAst = Transformer(orgAst, summary.tl)
