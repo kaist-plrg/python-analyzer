@@ -6,10 +6,12 @@
 \newcommand{\ngradtape}{\ensuremath{GradTape}}
 \newcommand{\noptimizer}{\ensuremath{Optimizer}}
 \newcommand{\nsummarylist}{\ensuremath{summary\_list}}
+\newcommand{\ntop}{\ensuremath{\top}}
 \newcommand{\nbot}{\ensuremath{\bot}}
 \newcommand{\nmodel}{\ensuremath{Model}}
 \newcommand{\nmethod}{\ensuremath{method}}
 \newcommand{\nenv}{\ensuremath{\sigma}}
+\newcommand{\ntenv}{\ensuremath{\sigma_{\ntop}}}
 
 \newcommand{\fsummary}{\ensuremath{summary}}
 \newcommand{\fsummodule}{\ensuremath{\fsummary_M}}
@@ -57,12 +59,13 @@
 % Summary
 \noindent
 \begin{tabular}{lcl>{\sc(}l<{\sc)}}
-  \nsummary & ::= & \kmodulesummary ~ \nid ~ \nenv ~ \ntl & ModuleSummary\\
+  \nsummary & ::= & \kmodulesummary ~ \nid ~ \ntenv ~ \ntl & ModuleSummary\\
   &&\kfuncsummary ~ \ntl & FuncSummary\\
-  &&\kclasssummary ~ \narg ~ & ClassSummary\\
-  &&\kvaluesummary ~ \nstr \\
+  &&\kclasssummary ~ \narg & ClassSummary\\
+  &&\kvaluesummary ~ \nstr & ValueSummary\\
   \narg & ::= & \nmodel \sep \nbot & Arg \\
   \ntl & ::= & \ngradtape \sep \noptimizer \sep \nbot& TrainingLoop\\
+  \ntenv & ::= & \nenv ~ $\cup$ \ntop\\
 \end{tabular}\\\vpar
 
 \noindent
@@ -78,8 +81,8 @@
 \noindent
 \begin{tabular}{lll}
   \ssmodule{\nid ~ \mul{\nstmt} ~ \ntypignore} = \\
-  \inden ~ \ktlet ~ \smodenv, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
-  \inden ~ \kmodulesummary ~ \nid ~ \smodenv ~ \ntl
+  \inden\ktlet ~ \smodenv, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
+  \inden\kmodulesummary ~ \nid ~ \smodenv ~ \ntl
 \end{tabular}\\\vpar
 
 \noindent
@@ -103,27 +106,27 @@
 \noindent
 \begin{tabular}{l}
   \ssstmt{\decolistsubs{1} ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \smodenv$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ (\smodenv[\nid $\mapsto$ \kfuncsummary ~ \ntl], \nbot)
+  \inden\ktlet ~ \smodenv$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
+  \inden(\smodenv[\nid $\mapsto$ \kfuncsummary ~ \ntl], \nbot)
 \end{tabular}\\\vpar
 
 % AsyncFunDef
 \noindent
 \begin{tabular}{l}
   \ssstmt{\decolistsubs{1} ~ \kasync ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \smodenv$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
-  \inden ~ (\smodenv[\nid $\mapsto$ \kfuncsummary ~ \ntl], \nbot)
+  \inden\ktlet ~ \smodenv$'$, \ntl ~ = \fsumsstmt\semfun{\mul{\nstmt}} ~ \ktin \\
+  \inden(\smodenv[\nid $\mapsto$ \kfuncsummary ~ \ntl], \nbot)
 \end{tabular}\\\vpar
 
 % ClassDef
 \noindent
 \begin{tabular}{l}
   \ssstmt{\decolist ~ \kclass ~ \nid ~ \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden ~ \ktif ~ \nexprsubs{1i} ~ \kteq ~ {\tt \nidsubs{c}.keras.Model} ~ \ktwhen ~ 1 $\leq$ i $\leq$ n ~ \ktand \\
-  \inden\inden ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot ~ \ktthen ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nmodel], \nbot) \\
-  \inden ~ \ktelif ~ \nexprsubs{2i} ~ \kteq ~ {\tt \nidsubs{c}.keras.Model} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktand \\
-  \inden\inden ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot ~ \ktthen ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nmodel], \nbot) \\
-  \inden ~ \ktelse ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nbot], \nbot)
+  \inden\ktif ~ \nexprsubs{1i} ~ \kteq ~ {\tt \nidsubs{c}.keras.Model} ~ \ktwhen ~ 1 $\leq$ i $\leq$ n ~ \ktand \\
+  \inden\inden\smodenv(\nidsubs{c}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot ~ \ktthen ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nmodel], \nbot) \\
+  \inden\ktelif ~ \nexprsubs{2i} ~ \kteq ~ {\tt \nidsubs{c}.keras.Model} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktand \\
+  \inden\inden\smodenv(\nidsubs{c}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot ~ \ktthen ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nmodel], \nbot) \\
+  \inden\ktelse ~ (\smodenv[\nid $\mapsto$ \kclasssummary ~ \nbot], \nbot)
 \end{tabular}\\\vpar
 
 % Assign
@@ -133,61 +136,73 @@
 \noindent
 \begin{tabular}{l}
   \ssstmt{\nidsubs{r} \oassign \nidsubs{c} \sparen{} \optypcomm}{\smodenv} = \\
-  \inden ~ \ktif ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kclasssummary ~ \nmodel ~ \ktthen ~ (\smodenv[\nidsubs{r} $\mapsto$ \kvaluesummary ~ {\bf "model\_instance"}], \nbot) \\
-  \inden ~ \ktelse ~ (\smodenv, \nbot)
+  \inden\ktif ~ \smodenv(\nidsubs{c}) ~ \kteq ~ \kclasssummary ~ \nmodel ~ \ktthen ~ (\smodenv[\nidsubs{r} $\mapsto$ \kvaluesummary ~ {\bf "model\_instance"}], \nbot) \\
+  \inden\ktelse ~ (\smodenv, \nbot)
 \end{tabular}\\\vpar
 
 % ForLoop
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
-  \inden ~ (\smodenv, \ntl)
+  \inden\ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
+  \inden(\smodenv, \ntl)
 \end{tabular}\\\vpar
 
 % AsyncForLoop
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
-  \inden ~ (\smodenv, \ntl)
+  \inden\ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
+  \inden(\smodenv, \ntl)
 \end{tabular}\\\vpar
 
 % WhileLoop
 \noindent
 \begin{tabular}{l}
   \ssstmt{\kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
-  \inden ~ (\smodenv, \ntl)
+  \inden\ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv} ~ \ktin \\
+  \inden(\smodenv, \ntl)
 \end{tabular}\\\vpar
 
 % With
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
-  \inden ~ (\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} \ojoin ~ \ntl)
+  \inden\ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
+  \inden(\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} \ojoin ~ \ntl)
 \end{tabular}\\\vpar
 
 % AsyncWith
 \noindent
 \begin{tabular}{l}
   \ssstmt{\optypcomm ~ \kasync~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden ~ \ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
-  \inden ~ (\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} \ojoin ~ \ntl)
+  \inden\ktlet ~ \_\_, \ntl ~ \kteq ~ \sssstmt{\mul{\nstmt}}{\smodenv} ~ \ktin \\
+  \inden(\smodenv, \ssswithitem{\mul{\nwithitem}}{\smodenv} \ojoin ~ \ntl)
 \end{tabular}\\\vpar
 
 % Try
 \noindent
 \begin{tabular}{l}
   \ssstmt{\ktry ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \mul{\nexchandler} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})} ~ \op{(\kfinally ~ \kcolon ~ \mul{\nstmtsubs{3}})}}{\smodenv} = \\
-  \inden ~ (\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
+  \inden(\smodenv, \sssstmt{\mul{\nstmtsubs{1}}}{\smodenv})
 \end{tabular}\\\vpar
 
 % Import
 \noindent
 \begin{tabular}{l}
   \ssstmt{\kimport ~ \mul{\nalias}}{\smodenv} = (\sssalias{\mul{\nalias}}{\smodenv}, \nbot)
+\end{tabular}\\\vpar
+
+% ImportFrom
+\noindent
+\begin{tabular}{l}
+  \ssstmt{\kfrom ~ 0 ~ \mul{\nid} ~ \kimport ~ \mul{\nalias}}{\smodenv} = \\ 
+  \inden\ktlet ~ \smodenv$'$ ~ \kteq ~ \sssalias{\mul{\nalias}}{\smodenv} ~ \ktin \\
+  \inden\ktlet ~ [\nidsubs{2} $\mapsto$ \kmodulesummary ~ \nidsubs{2} \smodenvsubs{2} \nbot, ~ \nidsubs{2} $\mapsto$ \kmodulesummary ~\nidsubs{2} \smodenvsubs{2} \nbot,\\
+  \inden\inden{\bf...} \nidsubs{n} $\mapsto$ \kmodulesummary ~ \nidsubs{n} \smodenvsubs{n} \nbot] ~ \kteq ~ \smodenv$'$ ~ \envsub ~ \smodenv ~ \ktin \\
+  \inden\smodenv ~ ++ ~ [\nidsubs{2} $\mapsto$ \kmodulesummary ~ (\mul{\nid}$+$\nidsubs{2}) \smodenvsubs{2} \nbot, ~ \nidsubs{2} $\mapsto$ \kmodulesummary ~ (\mul{\nid}$+$\nidsubs{2}) \smodenvsubs{2} \nbot, \\
+  \inden\inden{\bf...} \nidsubs{n} $\mapsto$ \kmodulesummary ~ (\mul{\nid}$+$\nidsubs{n}) \smodenvsubs{n} \nbot]
+  
 \end{tabular}\\\vpar
 
 % ExprStmt
@@ -208,25 +223,30 @@
 \noindent
 \begin{tabular}{l}
   \sssalias{\naliassubs{1} ... \naliassubs{n-1} \naliassubs{n}}{\smodenv} = \\
-  \inden ~ \ssalias{\naliassubs{n}}{\ssalias{\naliassubs{n-1}}{... \ssalias{\naliassubs{1}}{\smodenv} ...}}\\
+  \inden\ssalias{\naliassubs{n}}{\ssalias{\naliassubs{n-1}}{... \ssalias{\naliassubs{1}}{\smodenv} ...}}\\
 \end{tabular}\\\vpar
 
 \noindent
 \typdesc{\fkalias& : & \dalias ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dmodenv}
-% Alias containing an id only
+% Alias
 \noindent
 \begin{tabular}{l}
-  \talias{\nid}{\smodenv} = \\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[Id("tensorflow") $\mapsto$ \kmodulesummary ~ Id("tensorflow") ~ [] ~ \nbot]\\
-  \inden \ktelse ~ \smodenv\\
+  \talias{\nidsubs{1} \nidsubs{2} ... \nidsubs{n}}{\smodenv} = \\
+  \inden\ktlet ~ \nsummarysubs{n} = \kmodulesummary ~ \nidsubs{n} ~ \ntop ~ \nbot \\
+  \inden\ktlet ~ \nsummarysubs{n-1} = \kmodulesummary ~ \nidsubs{n-1} ~ \nsummarysubs{n} ~ \nbot \\
+  \inden{\bf ...} \\
+  \inden\ktlet ~ \nsummarysubs{2} = \kmodulesummary ~ \nidsubs{2} ~ \nsummarysubs{3} ~ \nbot \\
+  \inden\ktlet ~ \nsummarysubs{1} = \kmodulesummary ~ \nidsubs{1} ~ \nsummarysubs{2} ~ \nbot \\
+  \inden\smodenv[\nidsubs{1} $\mapsto$ \nsummarysubs{1}]
 \end{tabular}\\\vpar
 
 \noindent
 \typdesc{\fsumswithitem & : & \dwithitem ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dtl} 
 % Withitem list
+\noindent
 \begin{tabular}{l}
   \ssswithitem{\nwithitemsubs{1} \nwithitemsubs{2} ... \nwithitemsubs{n}}{\smodenv} = \\
-  \inden ~ \sswithitem{\nwithitemsubs{1}}{\smodenv} \ojoin ~ \sswithitem{\nwithitemsubs{2}}{\smodenv} \ojoin ~ {\bf ...} ~ \sswithitem{\nwithitemsubs{n}}{\smodenv}
+  \inden\sswithitem{\nwithitemsubs{1}}{\smodenv} \ojoin ~ \sswithitem{\nwithitemsubs{2}}{\smodenv} \ojoin ~ {\bf ...} ~ \sswithitem{\nwithitemsubs{n}}{\smodenv}
 \end{tabular}\\\vpar
 
 \noindent
@@ -246,11 +266,11 @@
 \noindent
 \begin{tabular}{l}
   \ssexpr{\nexpr()}{\smodenv} = \\
-  \inden ~ \ktif ~ \smodenv(\nid) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand \\
-  \inden\inden ~ \nexpr ~ \kteq ~ {\tt \nid.fit} ~ \ktthen ~ \noptimizer \\
-  \inden ~ \ktelif ~ \smodenv(\nid) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
-  \inden\inden ~ \nexpr ~ \kteq ~ {\tt \nid.GradientTape} ~ \ktthen ~ \ngradtape \\
-  \inden ~ \ktelse ~ \nbot
+  \inden\ktif ~ \smodenv(\nid) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand \\
+  \inden\inden\nexpr ~ \kteq ~ {\tt \nid.fit} ~ \ktthen ~ \noptimizer \\
+  \inden\ktelif ~ \smodenv(\nid) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
+  \inden\inden\nexpr ~ \kteq ~ {\tt \nid.GradientTape} ~ \ktthen ~ \ngradtape \\
+  \inden\ktelse ~ \nbot
 \end{tabular}\\\vpar
 
 \noindent
