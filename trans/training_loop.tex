@@ -232,12 +232,12 @@
 \noindent
 \begin{tabular}{l}
   \talias{\nidsubs{1} \nidsubs{2} ... \nidsubs{n}}{\smodenv} = \\
-  \inden\ktlet ~ \nsummarysubs{n} = \kmodulesummary ~ \nidsubs{n} ~ \ntop ~ \nbot \\
-  \inden\ktlet ~ \nsummarysubs{n-1} = \kmodulesummary ~ \nidsubs{n-1} ~ \nsummarysubs{n} ~ \nbot \\
+  \inden\ktlet ~ \smodenvsubs{n} = [\nidsubs{n} $\mapsto$ \kmodulesummary ~ \nidsubs{n} ~ \ntop ~ \nbot] \\
+  \inden\ktlet ~ \smodenvsubs{n-1} = [\nidsubs{n-1} $\mapsto$ \kmodulesummary ~ \nidsubs{n-1} ~ \smodenvsubs{n} ~ \nbot] \\
   \inden{\bf ...} \\
-  \inden\ktlet ~ \nsummarysubs{2} = \kmodulesummary ~ \nidsubs{2} ~ \nsummarysubs{3} ~ \nbot \\
-  \inden\ktlet ~ \nsummarysubs{1} = \kmodulesummary ~ \nidsubs{1} ~ \nsummarysubs{2} ~ \nbot \\
-  \inden\smodenv[\nidsubs{1} $\mapsto$ \nsummarysubs{1}]
+  \inden\ktlet ~ \smodenvsubs{2} = [\nidsubs{2} $\mapsto$ \kmodulesummary ~ \nidsubs{2} ~ \smodenvsubs{3} ~ \nbot] \\
+  \inden\ktlet ~ \smodenvsubs{1} = [\nidsubs{1} $\mapsto$ \kmodulesummary ~ \nidsubs{1} ~ \smodenvsubs{2} ~ \nbot] \\
+  \inden\smodenv ~ $++$ ~ \smodenvsubs{1}
 \end{tabular}\\\vpar
 
 \noindent
