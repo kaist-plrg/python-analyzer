@@ -265,11 +265,13 @@
 
 \noindent
 \begin{tabular}{l}
-  \ssexpr{\nexpr()}{\smodenv} = \\
-  \inden\ktif ~ \smodenv(\nid) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand \\
-  \inden\inden\nexpr ~ \kteq ~ {\tt \nid.fit} ~ \ktthen ~ \noptimizer \\
-  \inden\ktelif ~ \smodenv(\nid) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
-  \inden\inden\nexpr ~ \kteq ~ {\tt \nid.GradientTape} ~ \ktthen ~ \ngradtape \\
+  \ssexpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden\ktif ~ \smodenv(\nidsubs{r}) ~ \kteq ~ \kvaluesummary ~ {\bf "model\_instance"} ~ \ktand \\
+  \inden\inden\nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{r}.fit} ~ \ktthen ~ \noptimizer \\
+  \inden\ktelif ~ \smodenv(\nidsubs{r}) ~ \kteq ~ \kmodulesummary ~ Id("tensorflow") ~ \smodenv$'$ ~ \ntl ~ \ktand \\
+  \inden\inden\nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{r}.GradientTape} ~ \ktthen ~ \ngradtape \\
+  \inden\ktelif ~ \smodenv(\nidsubs{r}) ~ \kteq ~ \kfuncsummary ~ \ntl ~ \ktand \\
+  \inden\inden\nexprsubs{1} ~ \kteq ~ {\tt idr} ~ \ktthen ~ \ntl \\
   \inden\ktelse ~ \nbot
 \end{tabular}\\\vpar
 
