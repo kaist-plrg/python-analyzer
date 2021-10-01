@@ -160,6 +160,13 @@
 \end{tabular}\\\vpar
 
 \noindent
+\begin{tabular}{l}
+  \tstmt{\nexprsubs{0} \oassign \nexprsubs{1} \optypcomm}{\smodenv} = \\ 
+  \indent \ktif ~ \smodenv(\os) ~ \kteq ~ \nidsubs{os} ~ \ktand ~ \nexprsubs{0} ~ \kteq ~ \nidsubs{os}{\tt.environ} \lparen{\tt `CUDA\_VISIBLE\_DEVICES'}\\
+  \indent \ktthen ~ ([], \smodenv) \\ 
+\end{tabular}\\\vpar
+
+\noindent
 {\bf A general form of assignment statements except for the strict form}
 
 \noindent
@@ -601,6 +608,7 @@
   \talias{\nid}{\smodenv} = \\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nid]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
@@ -610,6 +618,7 @@
   \talias{\nidsubs{1} \kas ~ \nidsubs{2}}{\smodenv} = \\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nidsubs{2}]\\
+  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nidsubs{2}]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
