@@ -125,6 +125,12 @@ object Transformer {
           case _ =>
             (AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
         }
+    // for `os.environ['CUDA_VISIBLE_DEVICES']` case
+    case AssignStmt(
+      List(Subscript(Attribute(idt, Id("environ")), 
+      EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty) 
+      if env.get("os") contains idt => 
+        (List(), env)
     /////////////////////////////////////////////////////////////////
     // general form of assignment
     /////////////////////////////////////////////////////////////////
@@ -414,6 +420,14 @@ object Transformer {
       env.add("tensor_flow", x)
     case Alias(List(x), Some(as)) if x.name == "tensorflow" =>
       env.add("tensor_flow", as)
+    case Alias(List(x), None) if x.name == "keras" =>
+      env.add("keras", x)
+    case Alias(List(x), Some(as)) if x.name == "keras" =>
+      env.add("keras", as)
+    case Alias(List(x), None) if x.name == "os" =>
+      env.add("os", x)
+    case Alias(List(x), Some(as)) if x.name == "os" =>
+      env.add("os", as)
     case _ => env
   }
 
