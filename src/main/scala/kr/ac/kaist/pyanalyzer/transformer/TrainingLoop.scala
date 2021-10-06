@@ -35,8 +35,9 @@ object TrainingLoop {
       // update summary map
       override def walk(stmt: Stmt): Unit = stmt match {
         // TODO: more general imoprt walker
-        case ImportFromStmt(level, List(Id("tensorflow")), List(Alias(List(Id("keras")), None))) =>
-          env += Id("keras") -> ValueSummary("keras", "tensor_flow_keras")
+        case ImportFromStmt(level, List(Id("tensorflow")),
+          List(Alias(List(Id("keras")), None))) =>
+            env += Id("keras") -> ValueSummary("keras", "tensor_flow_keras")
 
         case FunDef(_, x, _, _, _, body) =>
           val (innerEnv, innerTl) = getBodySummary(outerEnv ++ env, body)
@@ -46,24 +47,18 @@ object TrainingLoop {
           val (innerEnv, innerTl) = getBodySummary(outerEnv ++ env, body)
           env += x -> FuncSummary(x.name, innerEnv, innerTl)
 
-        case ClassDef(_, x, le, lk, body) =>
-          // arg summary
-          var subClassOfModel = false
-          object ArgWalker extends SummaryWalker {
-            override def walk(expr: Expr): Unit = expr match {
-              case e
-                if interp(outerEnv ++ env, e) contains "tensor_flow_keras_model" =>
-                  subClassOfModel = true
-              case _ => super.walk(expr)
-            }
-          }
-          le.map(ArgWalker.walk); lk.map(ArgWalker.walk)
-
-          // TODO: consider init relation for tl
+        case ClassDef(_, x, le, _, body) =>
           // body summary
           val (innerEnv, _) = getBodySummary(outerEnv ++ env, body)
+          // TODO: add more case for subclassing
+          val supers = le.map {
+            case Attribute(EName(Id("keras")), Id("Model")) =>
+              Some("tensor_flow_keras_model")
+            case _ => None
+          }
+
           env += x ->
-            ClassSummary(x.name, ArgSummary(subClassOfModel), innerEnv)
+            ClassSummary(x.name, supers.flatten, innerEnv)
 
         case AssignStmt(List(EName(x)), e, _)
           if isKerasModel(outerEnv ++ env, e) =>
@@ -104,7 +99,6 @@ object TrainingLoop {
     (env, tl)
   }
 
-  // TODO: using interp
   // identify tensorflow.keras.models
   private def isKerasModel(
     env: TLEnv[Summary],
@@ -123,31 +117,13 @@ object TrainingLoop {
 
     // Subclassing API
     case Call(EName(subclass), _, _) => env.get(subclass) match {
-      case Some(ClassSummary(_, argSummary, _)) => argSummary.parent
+      case Some(ClassSummary(_, supers, _)) => supers contains "model"
       case _ => false
     }
 
     // already defined in environment
     case EName(x) if env.get(x) contains ValueSummary(x.name, "model") => true
     case _ => false
-  }
-
-  // TODO: update import
-  private def interp(
-    env: TLEnv[Summary],
-    e: Expr
-  ): Option[String] = e match {
-    case EName(x) => env.get(x) match {
-      case Some(ValueSummary(_, str)) => Some(str)
-      case _ => None
-    }
-    case Attribute(e, x) => interp(env, e) match {
-      case Some("tensor_flow") if x == Id("keras") => Some("tensor_flow_keras")
-      case Some("tensor_flow_keras") if x == Id("Model") =>
-        Some("tensor_flow_keras_model")
-      case _ => None
-    }
-    case _ => None
   }
 }
 
@@ -172,28 +148,17 @@ case class TLEnv[T <: Summary](env: Map[Id, T] = Map[Id, T]()) {
 abstract class Summary {
   override def toString: String = toString(1)
   def toString(depth: Int): String = this match {
-    case ModelSummary(name, env, tl) =>
-       env.foldLeft(s"$CYAN<$name> @ $tl$RESET\n") {
-         case (acc, (name, summary)) => s"$acc${summary.toString(depth + 1)}"
-       }
-    case ModuleSummary(name, env, tl) if depth == 2 =>
+    case ModuleSummary(name, env, tl) if depth == 1 =>
       s"└ M-$name: $tl\n${env.toString(depth)}"
     case ModuleSummary(name, env, tl) =>
       s"• M-$name: $tl\n${env.toString(depth)}"
     case FuncSummary(name, env, tl) =>
       s"• F-$name: $tl\n${env.toString(depth)}"
-    case ClassSummary(name, argSummary, env) =>
-      s"• C-$name($argSummary)\n${env.toString(depth)}"
+    case ClassSummary(name, supers, env) =>
+      val args = supers.foldLeft("")((str, e) => s"$str$e, ")
+      s"• C-$name($args)\n${env.toString(depth)}"
     case ValueSummary(name, str) => s"• V-$name: $str\n"
   }
-}
-
-case class ModelSummary(
-  name: String,
-  env: TLEnv[ModuleSummary],
-  tl: TLType
-) extends Summary {
-  def getModuleSummary(name: String): ModuleSummary = env(Id(name))
 }
 
 case class ModuleSummary(
@@ -210,7 +175,7 @@ case class FuncSummary(
 
 case class ClassSummary(
   name: String,
-  argSummary: ArgSummary,
+  supers: List[String],
   env: TLEnv[Summary],
 ) extends Summary
 
