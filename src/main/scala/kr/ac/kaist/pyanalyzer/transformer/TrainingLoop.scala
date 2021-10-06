@@ -7,36 +7,12 @@ import kr.ac.kaist.pyanalyzer.util.Errors._
 import scala.Console._
 
 object TrainingLoop {
-  def apply(name: String, modules: Iterable[Module]): ModelSummary = {
-    val cache = modules.foldLeft(TLEnv[ModuleSummary]())((cache, module) =>
-      if (cache contains Id(module.name)) cache
-      else getModuleSummary(cache, module)
-    )
-    // TODO: handle TL Error
-    val mainScriptSummary = cache find {
-      case (name, summary) => summary.tl != Bot
-    }
-    ModelSummary(name, cache, Bot)
-  }
-
-  private def updateCache(
-    env: TLEnv[Summary],
-    cache: TLEnv[ModuleSummary]
-  ): TLEnv[ModuleSummary] = env.foldLeft(cache) {
-    case (newCache, (name, summary: ModuleSummary)) => newCache + (name -> summary)
-    case (newCache, _) => newCache
-  }
-
-  private def getModuleSummary(
-    cache: TLEnv[ModuleSummary],
-    m: Module
-  ): TLEnv[ModuleSummary] = {
-    val (env, tl) = getBodySummary(cache, body = m.body)
-    updateCache(env, cache) + (Id(m.name) -> ModuleSummary(m.name, env, tl))
+  def apply(module: Module): ModuleSummary = {
+    val (env, tl) = getBodySummary(body = module.body)
+    ModuleSummary(module.name, env, tl)
   }
 
   private def getBodySummary(
-    cache: TLEnv[ModuleSummary],
     outerEnv: TLEnv[Summary] = TLEnv[Summary](),
     body: List[Stmt]
   ): (TLEnv[Summary], TLType) = {
@@ -63,11 +39,11 @@ object TrainingLoop {
           env += Id("keras") -> ValueSummary("keras", "tensor_flow_keras")
 
         case FunDef(_, x, _, _, _, body) =>
-          val (innerEnv, innerTl) = getBodySummary(cache, outerEnv ++ env, body)
+          val (innerEnv, innerTl) = getBodySummary(outerEnv ++ env, body)
           env += x -> FuncSummary(x.name, innerEnv, innerTl)
 
         case AsyncFunDef(_, x, _, _, _, body) =>
-          val (innerEnv, innerTl) = getBodySummary(cache, outerEnv ++ env, body)
+          val (innerEnv, innerTl) = getBodySummary(outerEnv ++ env, body)
           env += x -> FuncSummary(x.name, innerEnv, innerTl)
 
         case ClassDef(_, x, le, lk, body) =>
@@ -85,7 +61,7 @@ object TrainingLoop {
 
           // TODO: consider init relation for tl
           // body summary
-          val (innerEnv, _) = getBodySummary(cache, outerEnv ++ env, body)
+          val (innerEnv, _) = getBodySummary(outerEnv ++ env, body)
           env += x ->
             ClassSummary(x.name, ArgSummary(subClassOfModel), innerEnv)
 
@@ -116,8 +92,6 @@ object TrainingLoop {
         case Call(EName(x), _, _) =>
           (outerEnv ++ env).get(x) match {
             case Some(FuncSummary(x.name, innerEnv, innerTl)) if innerTl != Bot =>
-              tl = innerTl
-            case Some(ModuleSummary(x.name, innerEnv, innerTl)) if innerTl != Bot =>
               tl = innerTl
             // TODO: Add ClassSummary case
             case _ => super.walk(expr)

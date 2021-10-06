@@ -36,8 +36,6 @@ object Transform {
       moduleDir <- versionDir.listFiles if moduleDir.isDirectory
       modelDir <- moduleDir.listFiles if modelDir.isDirectory
       modelPath = modelDir.toString
-      model = modelPath diff moduleDir.toString
-      if target matches model.toString
     } {
       println
       println(s"$MAGENTA${modelPath diff HOROVOD_DIR}$RESET")
@@ -47,26 +45,21 @@ object Transform {
       val files = walkTree(modelPath)
       val moduleOptions = for {
         file <- files
-        path = file.toString diff modelPath
+        fullPath = file.toString
+        path = fullPath diff modelPath
         if path endsWith ".py"
         if path startsWith "/org/"
-      } yield Try(
-        parseFile(file.toString, path.drop(5))
-      ).toOption
-      val modules = moduleOptions.flatten
-      val modelSummary = TrainingLoop(model, modules)
-      println(modelSummary)
-
-      // transform each module
-      for (orgAst <- modules) try {
-
-        val name = orgAst.name
-
+        if target matches fullPath
+      } try {
+        val name = path.drop(5)
         println
         println(s"$CYAN<$name>$RESET")
 
+        val orgAst = parseFile(file.toString, name)
         val orgResult = beautify(orgAst)
-        val summary = modelSummary.getModuleSummary(name)
+
+        val summary = TrainingLoop(orgAst)
+        println(summary)
 
         // transformed
         val transformedAst = Transformer(orgAst, summary.tl)
@@ -86,7 +79,7 @@ object Transform {
         }
 
         // print result
-        // printDiff(comparePair, diffOption)
+        printDiff(comparePair, diffOption)
       } catch {
         case EmptyFileException =>
         case e: Throwable => e.printStackTrace()
