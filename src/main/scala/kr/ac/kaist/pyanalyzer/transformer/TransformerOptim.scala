@@ -35,7 +35,7 @@ object TransformerOptim extends Transformer {
     case ImportStmt(alias) =>
       val newEnv = transform(alias)
       val diffEnv = newEnv \ env
-      // get "tensor_flow" id 
+      // get "tensor_flow" id
       diffEnv.get("tensor_flow") match {
         // corresponding id found
         case Some(id) if diffEnv.size == 1 => 
@@ -60,6 +60,23 @@ object TransformerOptim extends Transformer {
           case None =>
             (ExprStmt(Call(expr1, exprs, kwds :+ cbKwarg)), env)
         }
+      // TODO: Add rule
+      case Attribute(EName(idt), Id("compile"))
+      if env.get("model") contains idt =>
+        val optim = Id("optim")
+          findKwarg(kwds, "optimizer") match {
+            case Some(kwarg) =>
+              val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(optim)))
+              val newStmts =
+                parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
+                ExprStmt(Call(expr1, exprs, newkwds))
+              (newStmts, env)
+            case None =>
+              val newStmts =
+                parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
+                ExprStmt(Call(expr1, EName(optim) :: exprs.tail, kwds))
+              (newStmts, env)
+          }
       case _ => super.transform(stmt)
     }
     case _ => super.transform(stmt)
@@ -78,5 +95,10 @@ object TransformerOptim extends Transformer {
            |  ${name}.config.experimental.\\
            |    set_visible_devices(gpus[hvd.local_rank()], 'GPU')""".stripMargin
     }),
+    "assign-optimizer-default-adam" -> (names => {
+        val optim = names(0)
+        s"""$optim = tf.optimizers.Adam(learning_rate=0.001 * hvd.size())
+          |$optim = hvd.DistributedOptimizer($optim)""".stripMargin
+    })
   )
 }
