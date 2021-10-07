@@ -96,9 +96,9 @@ object TransformerTape extends Transformer {
       }
     // for `os.environ['CUDA_VISIBLE_DEVICES']` case
     case AssignStmt(
-      List(Subscript(Attribute(idt, Id("environ")), 
-      EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty) 
-      if env.get("os") contains idt => 
+      List(Subscript(Attribute(EName(idt), Id("environ")), 
+      EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty)
+      if env.get("os") contains idt =>
         (List(), env)
     // AnnAssign case: 
     case AnnAssign(e1, e2, e3) =>
@@ -245,22 +245,6 @@ object TransformerTape extends Transformer {
       case _ => super.transform(expr)
     }
     case _ => super.transform(expr)
-  }
-
-  override def transform(alias: Alias)(implicit env: Env): Env = alias match {
-    case Alias(List(x), None) if x.name == "tensorflow" =>
-      env.add("tensor_flow", x)
-    case Alias(List(x), Some(as)) if x.name == "tensorflow" =>
-      env.add("tensor_flow", as)
-    case Alias(List(x), None) if x.name == "keras" =>
-      env.add("keras", x)
-    case Alias(List(x), Some(as)) if x.name == "keras" =>
-      env.add("keras", as)
-    case Alias(List(x), None) if x.name == "os" =>
-      env.add("os", x)
-    case Alias(List(x), Some(as)) if x.name == "os" =>
-      env.add("os", as)
-    case _ => env
   }
 
   override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {

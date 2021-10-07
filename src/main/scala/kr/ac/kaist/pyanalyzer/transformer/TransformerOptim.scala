@@ -31,6 +31,7 @@ object TransformerOptim extends Transformer {
     /////////////////////////////////////////////////////////////////
     // importstmt
     /////////////////////////////////////////////////////////////////
+    //TODO: Add rule
     case ImportStmt(alias) =>
       val newEnv = transform(alias)
       val diffEnv = newEnv \ env

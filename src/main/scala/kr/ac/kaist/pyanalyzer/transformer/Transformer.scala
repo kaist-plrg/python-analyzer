@@ -55,7 +55,7 @@ trait Transformer {
     // TODO: it is not working well.
     // for `os.environ['CUDA_VISIBLE_DEVICES']` case
     case AssignStmt(
-      List(Subscript(Attribute(idt, Id("environ")), 
+      List(Subscript(Attribute(EName(idt), Id("environ")),
       EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty) 
       if env.get("os") contains idt => 
         (List(), env)
