@@ -258,27 +258,14 @@
   \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid] ~ \ktthen \\
   \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
   \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
-  \inden\hspace{1em} {\tt hvd\_broadcast\_done} \oassign {\tt False}, \\
   \inden\hspace{1em} {\tt hvd.init()}, \\ 
-  \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
-  \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
-  \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
   \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
 \end{tabular}\\\vpar
 
 % ImportFrom
 \noindent
 \begin{tabular}{l}
-  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} =\\ 
-  \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
-  \inden \ktif ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktand ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tkeras $\mapsto$ \nid] ~ \ktthen \\ 
-  \inden\hspace{1em} ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias},  \\
-  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow.keras} \kas ~ {\tt hvd}, \\
-  \inden\hspace{1em} {\tt hvd.init()}, \\
-  \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
-  \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
-  \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
-  \inden \ktelse ~ ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}], \smodenv)\\
+  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} = ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}], \smodenv)\\
 \end{tabular}\\\vpar
 
 % Global
