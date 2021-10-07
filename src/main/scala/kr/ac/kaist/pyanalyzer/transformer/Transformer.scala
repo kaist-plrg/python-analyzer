@@ -8,15 +8,18 @@ import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.transformer.TransformerTape
+import kr.ac.kaist.pyanalyzer.transformer.TransformerOptim
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object Transformer extends Transformer {
-  def apply(ast: Module): Module = {
-    val summary = TrainingLoop(ast)
+  // transformed one AST into another AST
+  def apply(module: Module): Module = {
+    val summary = TrainingLoop(module)
     summary.tl match {
-      case GradTape => TransformerTape(ast)
-      case _ => ast.copy(body=transform(ast.body)(Env())._1)
+      case GradTape => TransformerTape(module)
+      case Optimizer => TransformerOptim(module)
+      case Bot => module.copy(body=transform(module.body)(Env())._1)
     }
   }
 }
@@ -49,6 +52,7 @@ trait Transformer {
       (ReturnStmt(eopt.map(expr => transform(expr))), env)
     case DelStmt(tl) => (DelStmt(tl), env)
 
+    // TODO: it is not working well.
     // for `os.environ['CUDA_VISIBLE_DEVICES']` case
     case AssignStmt(
       List(Subscript(Attribute(idt, Id("environ")), 
@@ -179,6 +183,7 @@ trait Transformer {
       lk.map {
         case NormalKwarg(id, e) => NormalKwarg(id, transform(e))
         case DoubleStarredKwarg(e) => DoubleStarredKwarg(transform(e))
+        case Keyword(opt, e) => Keyword(opt, transform(e))
       }
     )
     case FormattedValue(lhs, n, rhs) => FormattedValue(lhs, n, rhs)
@@ -216,6 +221,7 @@ trait Transformer {
   def transform(al: List[Alias])(implicit env: Env): Env = 
     al.foldLeft(env)((e, a) => transform(a)(e))
 
+  // TODO
   def transform(alias: Alias)(implicit env: Env): Env = alias match {
     case Alias(List(x), None) if x.name == "tensorflow" =>
       env.add("tensor_flow", x)

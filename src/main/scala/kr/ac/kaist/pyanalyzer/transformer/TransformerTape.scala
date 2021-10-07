@@ -12,90 +12,88 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerTape extends Transformer {
-  // transformed one AST into another AST
-  def apply(ast: Module): Module = 
-    ast.copy(body=transform(ast.body)(Env())._1)
+  def apply(module: Module): Module = module.copy(body=transform(module.body)(Env())._1)
 
   override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
-    case AssignStmt(targets, Call(expr1, exprs, kwds), ty)
-      if (targets.size == 1 && targets.head.isInstanceOf[EName]) =>
-        val EName(idr) = targets.head
-        expr1 match {
-          // case 1) "tensor_flow" -> data.Dataset
-          case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
-            if env.get("tensor_flow") contains Id(idt.name) =>
-              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
-                env.add("dataset", idr))
+    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
+      val targets = List(EName(idr))
+      expr1 match {
+        // case 1) "tensor_flow" -> data.Dataset
+        case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
+          if env.get("tensor_flow") contains idt =>
+            (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
+              env.add("dataset", idr))
 
-          // case 2) "tensor_flow" -> train.Checkpoint
-          case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
-            if env.get("tensor_flow") contains Id(idt.name) =>
-              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
-                env.add("checkpoint", idr))
+        // case 2) "tensor_flow" -> train.Checkpoint
+        case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
+          if env.get("tensor_flow") contains idt =>
+            (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
+              env.add("checkpoint", idr))
 
-          // case 3) "tensor_flow" -> optimizers.Adam 
-          case Attribute(Attribute(EName(idt), Id("optimizers")), Id("Adam"))
-            if env.get("tensor_flow") contains Id(idt.name) =>
-              // find id_i "learning_rate"
-              findKwarg(kwds, "learning_rate") match {
-                case Some(kwarg) =>
-                  val expr2i = kwarg.expr
-                  val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                    expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-                  ))
-                  (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
-                    env.add("optimizer", idr))
-                // such id_i doesn't exist
-                case None =>
-                  val newexprs = 
-                    List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
-                    exprs.tail
-                  (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
-                    env.add("optimizer", idr))
-              }
+        // case 3) "tensor_flow" -> optimizers.Adam 
+        case Attribute(Attribute(EName(idt), Id("optimizers")), Id("Adam"))
+          if env.get("tensor_flow") contains idt =>
+            // find id_i "learning_rate"
+            findKwarg(kwds, "learning_rate") match {
+              case Some(kwarg) =>
+                val expr2i = kwarg.expr
+                val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
+                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
+                ))
+                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
+                  env.add("optimizer", idr))
+              // such id_i doesn't exist
+              case None =>
+                val newexprs = 
+                  List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
+                  exprs.tail
+                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
+                  env.add("optimizer", idr))
+            }
 
-          // case 3) "optimizer" -> apply_gradients
-          case Attribute(EName(idt), Id("apply_gradients"))
-            if env.get("optimizer") contains idt =>
-              val idz = newId
-              // find id_i "grads_and_vars"
-              findKwarg(kwds, "grads_and_vars") match {
-                case Some(kwarg) =>
-                  val expr2i = kwarg.expr
-                  val newkwds = replaceElement(kwds, kwarg,
-                    kwarg.copy(expr = EName(idz)))
-                  val newStmts = List(
-                    AssignStmt(List(EName(idz)), expr2i),
-                    AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-                  ) ++ parseStmts(stmtData("assign-optimizer-some")(List(idz.name)))
-                  (newStmts, env) 
-                // such id_i doesn't exist
-                case None => 
-                  // idz == expr_11
-                  val newStmts = List(
-                    AssignStmt(List(EName(idz)), exprs.head),
-                    AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
-                  ) ++ parseStmts(stmtData("assign-optimizer-none")(List(idz.name)))
-                  (newStmts, env)
-              }
-          // case 4) "chcekpoint" -> idt.save
-          case Attribute(EName(idt), Id("save"))
-            if env.get("checkpoint") contains idt =>
-              // hvd.rank()
-              val rankExpr = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-              // hvd.rank() == 0
-              val condExpr = CompExpr(rankExpr, List((CEq,EConst(IntLiteral(0)))))
-              // if hvd.rank() == 0: ...
-              val newIfStmt = IfStmt(condExpr, List(stmt), Nil)
-              (newIfStmt, env)
+        // case 3) "optimizer" -> apply_gradients
+        case Attribute(EName(idt), Id("apply_gradients"))
+          if env.get("optimizer") contains idt =>
+            val idz = newId
+            // find id_i "grads_and_vars"
+            findKwarg(kwds, "grads_and_vars") match {
+              case Some(kwarg) =>
+                val expr2i = kwarg.expr
+                val newkwds = replaceElement(kwds, kwarg,
+                  kwarg.copy(expr = EName(idz)))
+                val newStmts = List(
+                  AssignStmt(List(EName(idz)), expr2i),
+                  AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
+                ) ++ parseStmts(stmtData("assign-optimizer-some")(List(idz.name)))
+                (newStmts, env) 
+              // such id_i doesn't exist
+              case None => 
+                // idz == expr_11
+                val newStmts = List(
+                  AssignStmt(List(EName(idz)), exprs.head),
+                  AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
+                ) ++ parseStmts(stmtData("assign-optimizer-none")(List(idz.name)))
+                (newStmts, env)
+            }
+        // case 4) "chcekpoint" -> idt.save
+        case Attribute(EName(idt), Id("save"))
+          if env.get("checkpoint") contains idt =>
+            // hvd.rank()
+            val rankExpr = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
+            // hvd.rank() == 0
+            val condExpr = CompExpr(rankExpr, List((CEq,EConst(IntLiteral(0)))))
+            // if hvd.rank() == 0: ...
+            val newIfStmt = IfStmt(condExpr, List(stmt), Nil)
+            (newIfStmt, env)
 
-          // case 5) etc.
-          case _ =>
-            (AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
-        }
+        // case 5) etc.
+        case _ =>
+          super.transform(stmt)
+          //(AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
+      }
     // for `os.environ['CUDA_VISIBLE_DEVICES']` case
     case AssignStmt(
       List(Subscript(Attribute(idt, Id("environ")), 
@@ -113,7 +111,8 @@ object TransformerTape extends Transformer {
             env.add("dataset", id1)
           )
         // case 2) otherwise
-        case _ => (AnnAssign(e1, e2, e3.map(transform)), env)
+        case _ => super.transform(stmt)
+          //(AnnAssign(e1, e2, e3.map(transform)), env)
       }
     /////////////////////////////////////////////////////////////////
     // with statement
@@ -218,7 +217,7 @@ object TransformerTape extends Transformer {
       // case _) other expr stmts
       case _ => (ExprStmt(transform(Call(expr1, exprs, kwds))), env)
     }
-    case stmt => super.transform(stmt)
+    case _ => super.transform(stmt)
   }
 
   /////////////////////////////////////////
@@ -243,16 +242,9 @@ object TransformerTape extends Transformer {
           }
       
       // case _) else
-      case _ => Call(
-        transform(expr1),
-        le.map(transform),
-        lk.map {
-          case NormalKwarg(id, e) => NormalKwarg(id, transform(e))
-          case DoubleStarredKwarg(e) => DoubleStarredKwarg(transform(e))
-        }
-      )
+      case _ => super.transform(expr)
     }
-    case expr => super.transform(expr)
+    case _ => super.transform(expr)
   }
 
   override def transform(alias: Alias)(implicit env: Env): Env = alias match {
