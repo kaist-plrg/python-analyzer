@@ -7,18 +7,21 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
+import kr.ac.kaist.pyanalyzer.transformer.TransformerTape
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object Transformer {
-  // transformed one AST into another AST
-  def apply(ast: Module, tl: TLType): Module = ast match {
-    case m @ Module(body, tyIg, name) =>
-      tl match {
-        case GradTape => Module(transform(body)(Env())._1, tyIg, name)
-        case _ => m
-      }
+object Transformer extends Transformer {
+  def apply(ast: Module): Module = {
+    val summary = TrainingLoop(ast)
+    summary.tl match {
+      case GradTape => TransformerTape(ast)
+      case _ => ast.copy(body=transform(ast.body)(Env())._1)
+    }
   }
+}
+trait Transformer {
+  // transformed one AST into another AST
 
   /////////////////////////////////////////
   // transformer for statements
@@ -46,114 +49,18 @@ object Transformer {
       (ReturnStmt(eopt.map(expr => transform(expr))), env)
     case DelStmt(tl) => (DelStmt(tl), env)
 
-    /////////////////////////////////////////////////////////////////
-    //// strict form of assignment
-    /////////////////////////////////////////////////////////////////
-    case AssignStmt(targets, Call(expr1, exprs, kwds), ty)
-      if (targets.size == 1 && targets.head.isInstanceOf[EName]) =>
-        val EName(idr) = targets.head
-        expr1 match {
-          // case 1) "tensor_flow" -> data.Dataset
-          case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
-            if env.get("tensor_flow") contains Id(idt.name) =>
-              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
-                env.add("dataset", idr))
-
-          // case 2) "tensor_flow" -> train.Checkpoint
-          case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
-            if env.get("tensor_flow") contains Id(idt.name) =>
-              (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
-                env.add("checkpoint", idr))
-
-          // case 3) "tensor_flow" -> optimizers.Adam 
-          case Attribute(Attribute(EName(idt), Id("optimizers")), Id("Adam"))
-            if env.get("tensor_flow") contains Id(idt.name) =>
-              // find id_i "learning_rate"
-              findKwarg(kwds, "learning_rate") match {
-                case Some(kwarg) =>
-                  val expr2i = kwarg.expr
-                  val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                    expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-                  ))
-                  (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
-                    env.add("optimizer", idr))
-                // such id_i doesn't exist
-                case None =>
-                  val newexprs = 
-                    List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
-                    exprs.tail
-                  (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
-                    env.add("optimizer", idr))
-              }
-
-          // case 3) "optimizer" -> apply_gradients
-          case Attribute(EName(idt), Id("apply_gradients"))
-            if env.get("optimizer") contains idt =>
-              val idz = newId
-              // find id_i "grads_and_vars"
-              findKwarg(kwds, "grads_and_vars") match {
-                case Some(kwarg) =>
-                  val expr2i = kwarg.expr
-                  val newkwds = replaceElement(kwds, kwarg,
-                    kwarg.copy(expr = EName(idz)))
-                  val newStmts = List(
-                    AssignStmt(List(EName(idz)), expr2i),
-                    AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-                  ) ++ parseStmts(stmtData("assign-optimizer-some")(List(idz.name)))
-                  (newStmts, env) 
-                // such id_i doesn't exist
-                case None => 
-                  // idz == expr_11
-                  val newStmts = List(
-                    AssignStmt(List(EName(idz)), exprs.head),
-                    AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
-                  ) ++ parseStmts(stmtData("assign-optimizer-none")(List(idz.name)))
-                  (newStmts, env)
-              }
-          // case 4) "chcekpoint" -> idt.save
-          case Attribute(EName(idt), Id("save"))
-            if env.get("checkpoint") contains idt =>
-              // hvd.rank()
-              val rankExpr = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-              // hvd.rank() == 0
-              val condExpr = CompExpr(rankExpr, List((CEq,EConst(IntLiteral(0)))))
-              // if hvd.rank() == 0: ...
-              val newIfStmt = IfStmt(condExpr, List(stmt), Nil)
-              (newIfStmt, env)
-
-          // case 5) etc.
-          case _ =>
-            (AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
-        }
     // for `os.environ['CUDA_VISIBLE_DEVICES']` case
     case AssignStmt(
       List(Subscript(Attribute(idt, Id("environ")), 
       EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty) 
       if env.get("os") contains idt => 
         (List(), env)
-    /////////////////////////////////////////////////////////////////
-    // general form of assignment
-    /////////////////////////////////////////////////////////////////
-
     // AssignStmt that targets is non-singular or non-id
-    case AssignStmt(targets, e, ty) => 
-      (AssignStmt(targets, transform(e), ty), env)
+    case AssignStmt(targets, e, ty) => (AssignStmt(targets, transform(e), ty), env)
     // AugAssign case
     case AugAssign(lhs, bop, rhs) => (AugAssign(lhs, bop, transform(rhs)), env)
     // AnnAssign case: 
-    case AnnAssign(e1, e2, e3) =>
-      (e1, e3) match {
-        // case 1) "tensor_flow" -> Dataset case
-        case (EName(id1), 
-              Some(Call(Attribute(Attribute(Attribute(EName(id2), Id("data")), Id("Dataset")), _), le, lk)))
-          if env.get("tensor_flow") contains id2 => (
-            AnnAssign(e1, e2, e3),
-            env.add("dataset", id1)
-          )
-        // case 2) otherwise
-        case _ => (AnnAssign(e1, e2, e3.map(transform)), env)
-      }
-
+    case AnnAssign(e1, e2, e3) => (AnnAssign(e1, e2, e3.map(transform)), env)
 
     /////////////////////////////////////////////////////////////////
     // for statement
@@ -172,37 +79,13 @@ object Transformer {
     // with statement
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
-      val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(tempEnv)
-      val diffEnv = tempEnv \ env
-      // get "gradient_tape" id
-      diffEnv.get("gradient_tape") match {
-        // corresponding id found
-        case Some(id) if diffEnv.size == 1 => 
-          val newerStmts = 
-            List(WithStmt(ty, newItems, newStmts)) ++ 
-            parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
-          (newerStmts, newEnv)
-        // not found
-        case _ => (WithStmt(ty, newItems, newStmts), newEnv)
-      }
-    /////////////////////////////////////////////////////////////////
-    // Async with statement
-    /////////////////////////////////////////////////////////////////
+      val (newItems, interEnv) = transformWithList(items)
+      val (newStmts, newEnv) = transform(doStmt)(interEnv)
+      (WithStmt(ty, newItems, newStmts), newEnv)
     case AsyncWithStmt(ty, items, doStmt) =>
-      val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(tempEnv)
-      val diffEnv = tempEnv \ env
-      // get "gradient_tap" id
-      diffEnv.get("gradient_tape") match {
-        // corresponding id found
-        case Some(id) if diffEnv.size == 1 => 
-          val newerStmts =
-            List(AsyncWithStmt(ty, newItems, newStmts)) ++
-            parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
-          (newerStmts, newEnv)
-        case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv)
-      }
+      val (newItems, interEnv) = transformWithList(items)
+      val (newStmts, newEnv) = transform(doStmt)(interEnv)
+      (AsyncWithStmt(ty, newItems, newStmts), newEnv)
 
     /////////////////////////////////////////////////////////////////
     // match statement
@@ -225,19 +108,7 @@ object Transformer {
     /////////////////////////////////////////////////////////////////
     // importstmt
     /////////////////////////////////////////////////////////////////
-    case ImportStmt(alias) =>
-      val newEnv = transform(alias)
-      val diffEnv = newEnv \ env
-      // get "tensor_flow" id 
-      diffEnv.get("tensor_flow") match {
-        // corresponding id found
-        case Some(id) if diffEnv.size == 1 => 
-          val newStmts = List(ImportStmt(alias)) ++ 
-            parseStmts(stmtData("import-some")(List(id.name))) 
-          (newStmts, newEnv)
-        // corresponding not found
-        case _ => (ImportStmt(alias), newEnv)
-      }
+    case ImportStmt(alias) => (ImportStmt(alias), transform(alias))
 
     /////////////////////////////////////////////////////////////////
     // other scope-related
@@ -245,60 +116,9 @@ object Transformer {
     case GlobalStmt(il) => (GlobalStmt(il), env)
     case NonlocalStmt(il) => (NonlocalStmt(il), env)
 
-    /////////////////////////////////////////////////////////////////
-    // strict form of expr stmts
-    case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
-      // case 1) func expr is "optimizer.apply_gradients"
-      case Attribute(EName(idt), Id("apply_gradients")) 
-        if env.get("optimizer") contains idt =>
-          val idz = newId
-          // get "grads_and_vars" id
-          findKwarg(kwds, "grads_and_vars") match {
-            // found 
-            case Some(kwarg) =>
-              val expr2i = kwarg.expr
-              val newkwarg = kwarg.copy(expr = EName(idz))
-              val newkwds = replaceElement(kwds, kwarg, newkwarg)
-              val newStmts = List(
-                AssignStmt(List(EName(idz)), expr2i),
-                ExprStmt(Call(expr1, exprs, newkwds)),
-              ) ++ parseStmts(stmtData("expr-optimizer-some")(List(idz.name, idt.name)))
-
-              (newStmts, env)
-            // not found
-            case None => 
-              val newStmts = List(
-                AssignStmt(List(EName(idz)), exprs.head),
-                ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
-              ) ++ parseStmts(stmtData("expr-optimizer-none")(List(idz.name, idt.name)))
-              (newStmts, env)
-          }
-      // case 2) print stmt
-      case EName(Id("print")) => {
-        // hvd.rank()
-        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-        // hvd.rank() == 0 
-        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
-        // if hvd.rank() == 0: ...
-        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
-        (List(ifStmt), env)
-      }
-      // case 3) "checkpoint"
-      case Attribute(EName(idt), Id("save"))
-        if env.get("checkpoint") contains idt =>
-          // hvd.rank()
-          val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-          // hvd.rank() == 0 
-          val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
-          // if hvd.rank() == 0: ...
-          val ifStmt = IfStmt(condExpr, List(stmt), Nil) 
-          (ifStmt, env)
-      // case _) other expr stmts
-      case _ => (ExprStmt(transform(Call(expr1, exprs, kwds))), env)
-    }
 
     /////////////////////////////////////////////////////////////////
-    // general form of expr
+    // expr stmt
     case ExprStmt(e) => (ExprStmt(transform(e)), env)
     case PassStmt => (PassStmt, env)
     case BreakStmt => (BreakStmt, env)
@@ -353,33 +173,14 @@ object Transformer {
       transform(head),
       lp.map { case (op, e) => (op, transform(e)) }
     )
-    case Call(expr1, le, lk) => expr1 match {
-      // case 1) σ("dataset") = id_t and expr_1 = id_t.take
-      case Attribute(EName(idt), Id("take")) 
-        if env.get("dataset") contains idt =>
-          findKwarg(lk, "count") match {
-            case Some(kwarg) =>
-              val expr2i = kwarg.expr
-              val newLk = replaceElement(lk, kwarg,
-                kwarg.copy(expr = parseExpr(s"${beautify(expr2i)} // hvd.size()")))
-              Call(expr1, le, newLk)
-            case None => Call(
-              expr1,
-              parseExpr(s"${beautify(le.head)} // hvd.size()") :: le.tail,
-              lk
-            )
-          }
-      
-      // case _) else
-      case _ => Call(
-        transform(expr1),
-        le.map(transform),
-        lk.map {
-          case NormalKwarg(id, e) => NormalKwarg(id, transform(e))
-          case DoubleStarredKwarg(e) => DoubleStarredKwarg(transform(e))
-        }
-      )
-    }
+    case Call(expr1, le, lk) => Call(
+      transform(expr1),
+      le.map(transform),
+      lk.map {
+        case NormalKwarg(id, e) => NormalKwarg(id, transform(e))
+        case DoubleStarredKwarg(e) => DoubleStarredKwarg(transform(e))
+      }
+    )
     case FormattedValue(lhs, n, rhs) => FormattedValue(lhs, n, rhs)
     case JoinedStr(le) => JoinedStr(le)
     case EConst(e) => EConst(e)
@@ -440,16 +241,7 @@ object Transformer {
     }
 
   def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
-    case WithItem(e, None) => (WithItem(transform(e), None), env)
-    case WithItem(e, Some(asE)) => (env.get("tensor_flow"), e, asE) match {
-      case (
-        Some(x),
-        Call(Attribute(EName(f), Id("GradientTape")), Nil, Nil),
-        EName(asX)
-      ) if x == f =>
-          (WithItem(e, Some(asE)), env.add("gradient_tape", asX))
-      case _ => (WithItem(transform(e), Some(asE)), env)
-      }
+    case WithItem(e, opt) => (WithItem(transform(e), opt), env)
   }
   
   def transform(item: DictItem)(implicit env: Env): DictItem = item match {

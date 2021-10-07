@@ -58,11 +58,8 @@ object Transform {
         val orgAst = parseFile(file.toString, name)
         val orgResult = beautify(orgAst)
 
-        val summary = TrainingLoop(orgAst)
-        println(summary)
-
         // transformed
-        val transformedAst = Transformer(orgAst, summary.tl)
+        val transformedAst = Transformer(orgAst)
         val transformedResult = beautify(transformedAst)
         // hvd
         val hvdAst = parseFile(s"$modelPath/hvd/$name")
@@ -73,7 +70,7 @@ object Transform {
           case "org-hvd" =>
             ("org", orgResult, "hvd", hvdResult)
           case "org-trans" =>
-            ("org", orgResult, "trans", hvdResult)
+            ("org", orgResult, "trans", transformedResult)
           case _ =>
             ("hvd", hvdResult, "trans", transformedResult)
         }
