@@ -122,6 +122,15 @@
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\ 
   \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.estimator.Estimator} ~ \ktthen\\
   \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\classifier $\mapsto$ \nidsubs{r}])\\
+  \inden \ktelif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.MomentumOptimizer} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\  
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
+  \inden\inden\inden \nidsubs{r} \oassign {\tt hvd.DistributedOptimizer(\nidsubs{r}, backward\_passes\_per\_step=1)}], \\
+  \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}] )\\
+  \inden\inden \ktelse\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
+  \inden\inden\inden \nidsubs{r} \oassign {\tt hvd.DistributedOptimizer(\nidsubs{r}, backward\_passes\_per\_step=1)}], \\
+  \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}] )\\
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm]],\\
   \inden\inden\inden\smodenv)\\
