@@ -120,41 +120,11 @@
 \noindent
 \begin{tabular}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\ 
-  \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.data.Dataset.\nexprsubs{3}} ~ \ktthen\\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
-  \inden\inden\inden\smodenv[\tdata $\mapsto$ \nidsubs{r}])\\
-  \inden \ktelif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.Checkpoint} ~ \ktthen\\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
-  \inden\inden\inden\smodenv[\checkpoint $\mapsto$ \nidsubs{r}])\\
-  \inden \ktelif  ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.optimizers.Adam} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
-  \inden\inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-  \inden \ktelif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt grads\_and\_vars} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{2i},\\
-  \inden\inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
-  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
-  \inden\inden \ktelse \\
-  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
-  \inden\inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
-  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
+  \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.estimator.Estimator} ~ \ktthen\\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\classifier $\mapsto$ \nidsubs{r}])\\
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm]],\\
   \inden\inden\inden\smodenv)\\
-  \inden \ktelif ~ \smodenv(\tkeras) ~ \kteq ~ \nidsubs{k} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{k}.models.Sequential} ~ \ktthen  \\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{k}])\\ 
   \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
   \inden\inden\inden\smodenv)\\
 \end{tabular}\\\vpar
@@ -343,14 +313,15 @@
   \inden\inden\inden [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv) \\
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv)\\
-  \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.fit} ~ \ktthen \\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
+  % modifying hook for classifier.train
+  \inden \ktelif ~ \smodenv(\classifier) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
   \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
-  \inden\inden\inden\inden \nidsubs{i} \oassign \nexprsubs{2i} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} \\
+  \inden\inden\inden\inden \nidsubs{i} \oassign \nexprsubs{2i} {\tt + [hvd.BroadcastGlobalVariablesHook(0)]} \\
   \inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\   
   \inden\inden \ktelse \\
   \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
-  \inden\inden\inden\inden {\tt callbacks} \oassign {\tt [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
+  \inden\inden\inden\inden {\tt hooks} \oassign {\tt [hvd.BroadcastGlobalVariablesHook(0)]}}], \smodenv) \\
   \inden \ktelse \\
   \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
 \end{tabular}\\\vpar
@@ -606,7 +577,7 @@
 \noindent
 \begin{tabular}{l}
   \talias{\nid}{\smodenv} = \\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow.compat.v1} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nid]\\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
@@ -616,7 +587,7 @@
 \noindent
 \begin{tabular}{l}
   \talias{\nidsubs{1} \kas ~ \nidsubs{2}}{\smodenv} = \\
-  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
+  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.compat.v1} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nidsubs{2}]\\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nidsubs{2}]\\
   \inden \ktelse ~ \smodenv\\
