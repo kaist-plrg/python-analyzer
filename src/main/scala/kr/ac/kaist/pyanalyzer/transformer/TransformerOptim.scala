@@ -65,17 +65,18 @@ object TransformerOptim extends Transformer {
       if env.get("model") contains idt =>
         val optim = Id("optim")
           findKwarg(kwds, "optimizer") match {
-            case Some(kwarg) =>
+            case Some(kwarg) if kwarg.expr == EConst(StringLiteral("adam")) =>
               val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(optim)))
               val newStmts =
                 parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
                 ExprStmt(Call(expr1, exprs, newkwds))
               (newStmts, env)
-            case None =>
+            case None if exprs.headOption contains EConst(StringLiteral("adam")) =>
               val newStmts =
                 parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
                 ExprStmt(Call(expr1, EName(optim) :: exprs.tail, kwds))
               (newStmts, env)
+            case _ => super.transform(stmt)
           }
       case _ => super.transform(stmt)
     }
