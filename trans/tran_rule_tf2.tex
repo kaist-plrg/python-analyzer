@@ -119,7 +119,7 @@
 
 \noindent
 \begin{tabular}{l}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\ 
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
   \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.data.Dataset.\nexprsubs{3}} ~ \ktthen\\
   \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
   \inden\inden\inden\smodenv[\tdata $\mapsto$ \nidsubs{r}])\\
@@ -153,17 +153,18 @@
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm]],\\
   \inden\inden\inden\smodenv)\\
+  % Rule for GradientOptimizer
   \inden \ktelif ~ \smodenv(\tkeras) ~ \kteq ~ \nidsubs{k} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{k}.models.Sequential} ~ \ktthen  \\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{r}])\\ 
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{r}])\\
   \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
   \inden\inden\inden\smodenv)\\
 \end{tabular}\\\vpar
 
 \noindent
 \begin{tabular}{l}
-  \tstmt{\nexprsubs{0} \oassign \nexprsubs{1} \optypcomm}{\smodenv} = \\ 
+  \tstmt{\nexprsubs{0} \oassign \nexprsubs{1} \optypcomm}{\smodenv} = \\
   \indent \ktif ~ \smodenv(\os) ~ \kteq ~ \nidsubs{os} ~ \ktand ~ \nexprsubs{0} ~ \kteq ~ \nidsubs{os}{\tt.environ} \lparen{\tt `CUDA\_VISIBLE\_DEVICES'}\\
-  \indent \ktthen ~ ([], \smodenv) \\ 
+  \indent \ktthen ~ ([], \smodenv) \\
 \end{tabular}\\\vpar
 
 \noindent
@@ -280,7 +281,7 @@
   \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
   \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
   \inden\hspace{1em} {\tt hvd\_broadcast\_done} \oassign {\tt False}, \\
-  \inden\hspace{1em} {\tt hvd.init()}, \\ 
+  \inden\hspace{1em} {\tt hvd.init()}, \\
   \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
   \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
   \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
@@ -290,9 +291,10 @@
 % ImportFrom
 \noindent
 \begin{tabular}{l}
-  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} =\\ 
+  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} =\\
   \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
-  \inden \ktif ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktand ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tkeras $\mapsto$ \nid] ~ \ktthen \\ 
+  % Rule for GradientOptimizer
+  \inden \ktif ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktand ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tkeras $\mapsto$ \nid] ~ \ktthen \\
   \inden\hspace{1em} ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias},  \\
   \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow.keras} \kas ~ {\tt hvd}, \\
   \inden\hspace{1em} {\tt hvd.init()}, \\
@@ -343,14 +345,26 @@
   \inden\inden\inden [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv) \\
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv)\\
+  % Rule for GradientOptimizer
   \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.fit} ~ \ktthen \\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
   \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
   \inden\inden\inden\inden \nidsubs{i} \oassign \nexprsubs{2i} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} \\
-  \inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\   
+  \inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
   \inden\inden \ktelse \\
   \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
   \inden\inden\inden\inden {\tt callbacks} \oassign {\tt [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
+  \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.compile} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt optimizer} ~ \ktand ~ \nexprsubs{2i} ~ \kteq ~ {\tt "adam"} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
+  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ {\tt tf.optimizers.Adam(learning\_rate=0.001 * hvd.size())} \\
+  \inden\inden\inden\nidsubs{z} ~ \oassign ~ {\tt hvd.DistributedOptimizer(\nidsubs{z})} \\
+  \inden\inden\inden\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
+  \inden\inden\ktelif ~ \nexprsubs{11} ~ \kteq ~ {\tt "adam"} ~ \ktthen \\
+  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ {\tt tf.optimizers.Adam(learning\_rate=0.001 * hvd.size())} \\
+  \inden\inden\inden\nidsubs{z} ~ \oassign ~ {\tt hvd.DistributedOptimizer(\nidsubs{z})} \\
+  \inden\inden\inden\nexprsubs{1} \sparen{\nidsubs{z} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
+  \inden\inden \ktelse \\
+  \inden\inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
   \inden \ktelse \\
   \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
 \end{tabular}\\\vpar
