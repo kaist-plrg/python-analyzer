@@ -31,7 +31,6 @@ object TransformerOptim extends Transformer {
     /////////////////////////////////////////////////////////////////
     // importstmt
     /////////////////////////////////////////////////////////////////
-    //TODO: Add rule
     case ImportStmt(alias) =>
       val newEnv = transform(alias)
       val diffEnv = newEnv \ env
@@ -51,16 +50,19 @@ object TransformerOptim extends Transformer {
     case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(EName(idt), Id("fit"))
       if env.get("model") contains idt => 
+        val verbose = parseExpr("1 if hvd.rank() == 0 else 0")
         val callbacks = parseExpr("[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]")
-        val cbKwarg = NormalKwarg(Id("callbacks"), callbacks)
-        findKwarg(kwds, "callbacks") match {
-          case Some(kwarg) =>
-            val newkwds = replaceElement(kwds, kwarg, cbKwarg)
+        val newVbKwarg = NormalKwarg(Id("verbose"), verbose)
+        val newCbKwarg = NormalKwarg(Id("callbacks"), callbacks)
+        (findKwarg(kwds, "verbose"), findKwarg(kwds, "callbacks")) match {
+          case (Some(vbKwarg), Some(cbKwarg)) =>
+            val interkwds = replaceElement(kwds, vbKwarg, newVbKwarg)
+            val newkwds = replaceElement(interkwds, cbKwarg, newCbKwarg)
             (ExprStmt(Call(expr1, exprs, newkwds)), env)
-          case None =>
-            (ExprStmt(Call(expr1, exprs, kwds :+ cbKwarg)), env)
+            // TODO: consider the case verbose or callbacks is not given
+          case _ =>
+            (ExprStmt(Call(expr1, exprs, kwds :+ newVbKwarg :+ newCbKwarg)), env)
         }
-      // TODO: Add rule
       case Attribute(EName(idt), Id("compile"))
       if env.get("model") contains idt =>
         val optim = Id("optim")
