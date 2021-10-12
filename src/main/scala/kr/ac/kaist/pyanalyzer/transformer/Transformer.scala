@@ -116,7 +116,7 @@ trait Transformer {
 
     /////////////////////////////////////////////////////////////////
     // other scope-related
-    case ImportFromStmt(lv, fromId, al) => (ImportFromStmt(lv, fromId, al), env)
+    case ImportFromStmt(lv, fromId, al) => (ImportFromStmt(lv, fromId, al), transform(al))
     case GlobalStmt(il) => (GlobalStmt(il), env)
     case NonlocalStmt(il) => (NonlocalStmt(il), env)
 
