@@ -62,7 +62,7 @@ object TrainingLoop {
 
         case AssignStmt(List(EName(x)), e, _)
           if isKerasModel(outerEnv ++ env, e) =>
-            env += x -> ValueSummary(x.name, "model")
+            env += x -> ValueSummary(x.name, "tensor_flow_keras_model")
 
         case _ => super.walk(stmt)
       }
@@ -117,12 +117,12 @@ object TrainingLoop {
 
     // Subclassing API
     case Call(EName(subclass), _, _) => env.get(subclass) match {
-      case Some(ClassSummary(_, supers, _)) => supers contains "model"
+      case Some(ClassSummary(_, supers, _)) => supers contains "tensor_flow_keras_model"
       case _ => false
     }
 
     // already defined in environment
-    case EName(x) if env.get(x) contains ValueSummary(x.name, "model") => true
+    case EName(x) if env.get(x) contains ValueSummary(x.name, "tensor_flow_keras_model") => true
     case _ => false
   }
 }
