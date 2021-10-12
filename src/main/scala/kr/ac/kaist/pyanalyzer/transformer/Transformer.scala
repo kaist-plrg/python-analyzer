@@ -231,6 +231,10 @@ trait Transformer {
       env.add("keras", x)
     case Alias(List(x), Some(as)) if x.name == "keras" =>
       env.add("keras", as)
+    case Alias(List(x), None) if x.name == "optimizers" =>
+      env.add("optimizers", x)
+    case Alias(List(x), Some(as)) if x.name == "optimizers" =>
+      env.add("optimizers", as)
     case Alias(List(x), None) if x.name == "os" =>
       env.add("os", x)
     case Alias(List(x), Some(as)) if x.name == "os" =>

@@ -54,6 +54,27 @@ object TransformerTape extends Transformer {
                   env.add("optimizer", idr))
             }
 
+        // case 4) "optimizers" -> Adam
+        case Attribute(EName(idt), Id("Adam"))
+          if env.get("optimizers") contains idt =>
+            // find id_i "learning_rate"
+            findKwarg(kwds, "learning_rate") match {
+              case Some(kwarg) =>
+                val expr2i = kwarg.expr
+                val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
+                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
+                ))
+                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
+                  env.add("optimizer", idr))
+              // such id_i doesn't exist
+              case None =>
+                val newexprs = 
+                  List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
+                  exprs.tail
+                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
+                  env.add("optimizer", idr))
+            }
+
         // case 3) "optimizer" -> apply_gradients
         case Attribute(EName(idt), Id("apply_gradients"))
           if env.get("optimizer") contains idt =>

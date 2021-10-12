@@ -1,3 +1,4 @@
+
 \newpage
 \section{Transformation for TF2 Python Code}
 \subsection{Restrictions}
@@ -133,6 +134,15 @@
   \inden\inden \ktelse \\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
   \inden\inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+
+  \inden \ktelif  ~ \smodenv(\optimizers) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.Adam} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
+  \inden\inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+
   \inden \ktelif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt grads\_and\_vars} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
   \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
@@ -337,7 +347,7 @@
 
 % ExprStmt
 \noindent
-\begin{tabular}{l}
+\begin{longtable}{l}
   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
   \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt grads\_and\_vars} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
@@ -378,12 +388,10 @@
   \inden\inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
   \inden\inden\inden\inden\inden \nidsubs{j} \oassign \nexprsubs{2j} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
   \inden\inden\inden\inden\inden {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0}}], \smodenv) \\
-
   \inden\inden\inden\ktelse \\
   \inden\inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
   \inden\inden\inden\inden\inden {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0} \\
   \inden\inden\inden\inden\inden {\tt callbacks} \oassign \nexprsubs{2j} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
-
   \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.compile} ~ \ktthen \\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt optimizer} ~ \ktand ~ \nexprsubs{2i} ~ \kteq ~ {\tt "adam"} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
   \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ {\tt tf.optimizers.Adam(learning\_rate=0.001 * hvd.size())} \\
@@ -397,7 +405,7 @@
   \inden\inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
   \inden \ktelse \\
   \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
-\end{tabular}\\\vpar
+\end{longtable}
 
 \noindent
 {\bf A general form of expr statements except for the strict form}
@@ -653,6 +661,7 @@
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nid]\\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nid]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt optimizers} ~ \ktthen ~ \smodenv[\optimizers $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
@@ -663,6 +672,7 @@
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nidsubs{2}]\\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nidsubs{2}]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt optimizers} ~ \ktthen ~ \smodenv[\optimizers $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
