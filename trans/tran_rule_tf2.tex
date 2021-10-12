@@ -363,15 +363,27 @@
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv)\\
   % Rule for GradientOptimizer
   \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.fit} ~ \ktthen \\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt verbose} ~ \ktand ~ \nidsubs{j} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 1 $\leq$ i, j $\leq$ k ~ \ktthen \\
-  \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
-  \inden\inden\inden\inden \nidsubs{i} \oassign {\tt 1 if hvd.rank() == 0 else 0} \\
-  \inden\inden\inden\inden \nidsubs{j} \oassign \nexprsubs{2i} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} \\
-  \inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt verbose} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\ 
+  \inden\inden\inden\ktif ~ \nidsubs{j} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 1 $\leq$ j $\leq$ k ~ \ktthen \\
+  \inden\inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
+  \inden\inden\inden\inden\inden \nidsubs{i} \oassign {\tt 1 if hvd.rank() == 0 else 0} \\
+  \inden\inden\inden\inden\inden \nidsubs{j} \oassign \nexprsubs{2j} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} \\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
+  \inden\inden\inden\ktelse \\
+  \inden\inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
+  \inden\inden\inden\inden\inden \nidsubs{i} \oassign {\tt 1 if hvd.rank() == 0 else 0} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden\inden\inden {\tt callbacks} \oassign \nexprsubs{2j} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
   \inden\inden \ktelse \\
-  \inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
-  \inden\inden\inden\inden {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0} \\
-  \inden\inden\inden\inden {\tt callbacks} \oassign {\tt [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
+  \inden\inden\inden\ktif ~ \nidsubs{j} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 1 $\leq$ j $\leq$ k ~ \ktthen \\
+  \inden\inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
+  \inden\inden\inden\inden\inden \nidsubs{j} \oassign \nexprsubs{2j} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden\inden\inden {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0}}], \smodenv) \\
+
+  \inden\inden\inden\ktelse \\
+  \inden\inden\inden\inden ([\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden\inden\inden {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0} \\
+  \inden\inden\inden\inden\inden {\tt callbacks} \oassign \nexprsubs{2j} {\tt + [hvd.callbacks.BroadcastGlobalVariablesCallback(0)]}}], \smodenv) \\
+
   \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.compile} ~ \ktthen \\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt optimizer} ~ \ktand ~ \nexprsubs{2i} ~ \kteq ~ {\tt "adam"} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen \\
   \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ {\tt tf.optimizers.Adam(learning\_rate=0.001 * hvd.size())} \\
