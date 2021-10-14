@@ -57,31 +57,36 @@ object TransformerOptim extends Transformer {
     case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(EName(idt), Id("fit"))
       if env.get("model") contains idt => 
-        val verbose = "1 if hvd.rank() == 0 else 0"
-        val callbacks = "[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]"
+        val verboseArg = parseExpr("1 if hvd.rank() == 0 else 0")
+        val callbacksArg = parseExpr("[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]")
         (findKwarg(kwds, "verbose"), findKwarg(kwds, "callbacks")) match {
           case (Some(vbKwarg), Some(cbKwarg)) =>
-            val newVbKwarg = vbKwarg.copy(expr = parseExpr(verbose))
+            val newVbKwarg = vbKwarg.copy(expr = verboseArg)
             val newCbKwarg =
-              cbKwarg.copy(expr = parseExpr(s"${beautify(cbKwarg.expr)} + $callbacks"))
+              cbKwarg.copy(expr = EName(Id("callbacks")))
             val interkwds = replaceElement(kwds, vbKwarg, newVbKwarg)
             val newkwds = replaceElement(interkwds, cbKwarg, newCbKwarg)
-            (ExprStmt(Call(expr1, exprs, newkwds)), env)
+            val existing_callbacks = beautify(cbKwarg.expr)
+            val init_callbacks =
+              parseStmts(stmtData("init-callbacks")(List(existing_callbacks)))
+            (init_callbacks :+ ExprStmt(Call(expr1, exprs, newkwds)), env)
             // TODO: consider the case verbose or callbacks is not given
           case (Some(vbKwarg), None) =>
-            val newVbKwarg = vbKwarg.copy(expr = parseExpr(verbose))
-            val newCbKwarg = NormalKwarg(Id("callbacks"), parseExpr(callbacks))
+            val newVbKwarg = vbKwarg.copy(expr = verboseArg)
+            val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksArg)
             val newkwds = replaceElement(kwds, vbKwarg, newVbKwarg)
             (ExprStmt(Call(expr1, exprs, newkwds :+ newCbKwarg)), env)
           case (None, Some(cbKwarg)) =>
-            val newVbKwarg = NormalKwarg(Id("verbose"), parseExpr(verbose))
-            val newCbKwarg =
-              cbKwarg.copy(expr = parseExpr(s"${beautify(cbKwarg.expr)} + $callbacks"))
+            val newVbKwarg = NormalKwarg(Id("verbose"), verboseArg)
+            val newCbKwarg = cbKwarg.copy(expr = EName(Id("callbacks")))
             val newkwds = replaceElement(kwds, cbKwarg, newCbKwarg)
-            (ExprStmt(Call(expr1, exprs, newkwds :+ newVbKwarg)), env)
+            val existing_callbacks = beautify(cbKwarg.expr)
+            val init_callbacks =
+              parseStmts(stmtData("init-callbacks")(List(existing_callbacks)))
+            (init_callbacks :+ ExprStmt(Call(expr1, exprs, newkwds :+ newVbKwarg)), env)
           case (None, None) =>
-            val newVbKwarg = NormalKwarg(Id("verbose"), parseExpr(verbose))
-            val newCbKwarg = NormalKwarg(Id("callbacks"), parseExpr(callbacks))
+            val newVbKwarg = NormalKwarg(Id("verbose"), verboseArg)
+            val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksArg)
             (ExprStmt(Call(expr1, exprs, kwds :+ newVbKwarg :+ newCbKwarg)), env)
         }
       case Attribute(EName(idt), Id("compile"))
@@ -123,6 +128,12 @@ object TransformerOptim extends Transformer {
         val optim = names(0)
         s"""$optim = tf.optimizers.Adam(learning_rate=0.001 * hvd.size())
           |$optim = hvd.DistributedOptimizer($optim)""".stripMargin
-    })
+    }),
+    "init-callbacks" -> (names => {
+        val existing_callbacks = names(0)
+        s"""callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0)]
+          |if hvd.rank() == 0:
+          |  callbacks.append($existing_callbacks)""".stripMargin
+    }),
   )
 }
