@@ -104,4 +104,10 @@ object Useful {
     if (log) println(s"[SHELL] $given")
     given.!
   }
+
+  def accUntil[T](e: T)(next: T => Option[T]): List[T] =
+    next(e) match {
+      case None => List(e) 
+      case Some(n) => e +: accUntil(n)(next)
+    }
 }
