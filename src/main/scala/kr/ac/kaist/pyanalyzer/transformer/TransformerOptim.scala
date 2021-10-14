@@ -89,23 +89,33 @@ object TransformerOptim extends Transformer {
             val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksArg)
             (ExprStmt(Call(expr1, exprs, kwds :+ newVbKwarg :+ newCbKwarg)), env)
         }
-      case Attribute(EName(idt), Id("compile"))
-      if env.get("model") contains idt =>
+      case Attribute(EName(idt), Id("compile")) if env.get("model") contains idt =>
         val optim = Id("optim")
-          findKwarg(kwds, "optimizer") match {
-            case Some(kwarg) if kwarg.expr == EConst(StringLiteral("adam")) =>
-              val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(optim)))
-              val newStmts =
-                parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
-                ExprStmt(Call(expr1, exprs, newkwds))
-              (newStmts, env)
-            case None if exprs.headOption contains EConst(StringLiteral("adam")) =>
-              val newStmts =
-                parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
-                ExprStmt(Call(expr1, EName(optim) :: exprs.tail, kwds))
-              (newStmts, env)
-            case _ => super.transform(stmt)
-          }
+        findKwarg(kwds, "optimizer") match {
+          case Some(kwarg) if kwarg.expr == EConst(StringLiteral("adam")) =>
+            val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(optim)))
+            val newStmts =
+              parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
+              ExprStmt(Call(expr1, exprs, newkwds))
+            (newStmts, env)
+          case None if exprs.headOption contains EConst(StringLiteral("adam")) =>
+            val newStmts =
+              parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
+              ExprStmt(Call(expr1, EName(optim) :: exprs.tail, kwds))
+            (newStmts, env)
+          case _ => super.transform(stmt)
+        }
+      case EName(Id("print")) => {
+        // hvd.rank()
+        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
+        // hvd.rank() == 0 
+        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
+        // if hvd.rank() == 0: ...
+        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
+        (List(ifStmt), env)
+      }
+      case Attribute(EName(idt), Id("summary")) if env.get("model") contains idt =>
+        (parseStmts(stmtData("model-summary")(Nil)), env)
       case _ => super.transform(stmt)
     }
     case _ => super.transform(stmt)
@@ -135,5 +145,8 @@ object TransformerOptim extends Transformer {
           |if hvd.rank() == 0:
           |  callbacks.append($existing_callbacks)""".stripMargin
     }),
+    "model-summary" -> (names =>
+        s"""if hvd.rank() == 0: model.summary()"""
+    ),
   )
 }
