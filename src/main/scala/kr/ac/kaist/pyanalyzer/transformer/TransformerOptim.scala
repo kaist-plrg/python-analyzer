@@ -18,14 +18,21 @@ object TransformerOptim extends Transformer {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
-    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
-      case Attribute(Attribute(Attribute(
-        EName(idk), Id("keras")), Id("models")), Id("Sequential"))
-      if env.get("tensor_flow") contains idk => (
-        AssignStmt(List(EName(idr)), transform(Call(expr1, exprs, kwds)), ty),
-        env.add("model", idr)
-      )
-      case _ => super.transform(stmt)
+    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
+      val targets = List(EName(idr))
+      expr1 match {
+        case Attribute(Attribute(Attribute(
+          EName(idk), Id("keras")), Id("models")), Id("Sequential"))
+        if env.get("tensor_flow") contains idk => (
+          AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty),
+          env.add("model", idr)
+        )
+        case Attribute(Attribute(EName(idk), Id("optimizers")), Id("Adam"))
+        if env.get("keras") contains idk => (
+          parseStmts(stmtData("assign-optimizer-default-adam")(List(idr.name))),
+          env
+        )
+        case _ => super.transform(stmt)
     }
 
     /////////////////////////////////////////////////////////////////
