@@ -27,8 +27,7 @@ trait TransformerMainScript extends Transformer {
   val temp = List("write", "summary", "save_weights", "load_weights").map(Id(_))
   override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
-      case Attribute(_, id) if temp contains id=>
-        println(env)
+      case Attribute(_, id) if temp contains id =>
         (parseStmts(stmtData("std-out")(List(beautify(stmt)))), env)
       case EName(Id("print")) => {
         // hvd.rank()
