@@ -5,6 +5,9 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 // node representing module or class
 // edge : child -> parent
 // no multiple inheritance => only 1 parent per child
+
+case object NoPath extends Exception
+
 case class ClassNode(name: String, parent: Option[ClassNode]) 
 
 case class ClassGraph(nodes: List[ClassNode], vars: Map[String, ClassNode]) {
@@ -57,6 +60,6 @@ case class ClassGraph(nodes: List[ClassNode], vars: Map[String, ClassNode]) {
       }
     }
     // others: should not appear
-    case _ => ???
+    case _ => throw NoPath
   }
 } 
