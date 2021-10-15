@@ -11,7 +11,7 @@ import kr.ac.kaist.pyanalyzer.transformer.TransformerTape
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object TransformerOptim extends Transformer {
+object TransformerOptim extends TransformerMainScript {
   def apply(module: Module): Module = module.copy(body=transform(module.body)(Env())._1)
 
   override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
@@ -58,7 +58,8 @@ object TransformerOptim extends Transformer {
       case Attribute(EName(idt), Id("fit"))
       if env.get("model") contains idt => 
         val verboseArg = parseExpr("1 if hvd.rank() == 0 else 0")
-        val callbacksArg = parseExpr("[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]")
+        val callbacksArg =
+          parseExpr("[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]")
         (findKwarg(kwds, "verbose"), findKwarg(kwds, "callbacks")) match {
           case (Some(vbKwarg), Some(cbKwarg)) =>
             val newVbKwarg = vbKwarg.copy(expr = verboseArg)
@@ -105,15 +106,6 @@ object TransformerOptim extends Transformer {
             (newStmts, env)
           case _ => super.transform(stmt)
         }
-      case EName(Id("print")) => {
-        // hvd.rank()
-        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-        // hvd.rank() == 0 
-        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
-        // if hvd.rank() == 0: ...
-        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
-        (List(ifStmt), env)
-      }
       case Attribute(EName(idt), Id("summary")) if env.get("model") contains idt =>
         (parseStmts(stmtData("model-summary")(Nil)), env)
       case _ => super.transform(stmt)

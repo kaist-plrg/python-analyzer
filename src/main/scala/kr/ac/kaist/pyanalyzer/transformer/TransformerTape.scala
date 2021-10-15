@@ -11,7 +11,7 @@ import kr.ac.kaist.pyanalyzer.transformer.Transformer
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object TransformerTape extends Transformer {
+object TransformerTape extends TransformerMainScript {
   def apply(module: Module): Module = module.copy(body=transform(module.body)(Env())._1)
 
   override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
@@ -115,12 +115,6 @@ object TransformerTape extends Transformer {
           super.transform(stmt)
           //(AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
       }
-    // for `os.environ['CUDA_VISIBLE_DEVICES']` case
-    case AssignStmt(
-      List(Subscript(Attribute(EName(idt), Id("environ")), 
-      EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty)
-      if env.get("os") contains idt =>
-        (List(), env)
     // AnnAssign case: 
     case AnnAssign(e1, e2, e3) =>
       (e1, e3) match {
@@ -215,16 +209,6 @@ object TransformerTape extends Transformer {
               ) ++ parseStmts(stmtData("expr-optimizer-none")(List(idz.name, idt.name)))
               (newStmts, env)
           }
-      // case 2) print stmt
-      case EName(Id("print")) => {
-        // hvd.rank()
-        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-        // hvd.rank() == 0 
-        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
-        // if hvd.rank() == 0: ...
-        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
-        (List(ifStmt), env)
-      }
       // case 3) "checkpoint"
       case Attribute(EName(idt), Id("save"))
         if env.get("checkpoint") contains idt =>
@@ -236,7 +220,7 @@ object TransformerTape extends Transformer {
           val ifStmt = IfStmt(condExpr, List(stmt), Nil) 
           (ifStmt, env)
       // case _) other expr stmts
-      case _ => (ExprStmt(transform(Call(expr1, exprs, kwds))), env)
+      case _ => super.transform(stmt)
     }
     case _ => super.transform(stmt)
   }

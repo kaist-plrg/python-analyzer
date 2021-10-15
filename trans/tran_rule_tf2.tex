@@ -376,9 +376,11 @@
   \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
-  \inden \ktelif ~ \nexprsubs{1} ~ \kteq ~ {\tt print} ~ \ktthen\\
-  \inden\inden ([\kif ~ {\tt hvd.rank() == 0:}, \\
-  \inden\inden\inden [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv) \\
+
+  %% Rule for MainScript
+  \inden \ktelif ~ \nexprsubs{1} ~ \kteq ~ {\tt print} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.write} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.summary} ~ \ktor \\
+  \inden\inden\nexprsubs{1} ~ \kteq ~ {\tt \nexpr.save\_weights} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.load\_weights} ~ \ktthen\\
+  \inden\inden\inden ([\kif ~ {\tt hvd.rank() == 0:} \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
   \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
   \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}]], \smodenv)\\
   % Rule for GradientOptimizer

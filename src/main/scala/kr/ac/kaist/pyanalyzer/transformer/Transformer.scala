@@ -23,6 +23,34 @@ object Transformer extends Transformer {
     }
   }
 }
+trait TransformerMainScript extends Transformer {
+  val temp = List("write", "summary", "save_weights", "load_weights").map(Id(_))
+  override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
+    case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
+      case Attribute(_, id) if temp contains id=>
+        println(env)
+        (parseStmts(stmtData("std-out")(List(beautify(stmt)))), env)
+      case EName(Id("print")) => {
+        // hvd.rank()
+        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
+        // hvd.rank() == 0
+        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
+        // if hvd.rank() == 0: ...
+        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
+        (List(ifStmt), env)
+      }
+      case _ => (ExprStmt(super.transform(Call(expr1, exprs, kwds))), env)
+    }
+    case _ => super.transform(stmt)
+  }
+
+  private val stmtData: Map[String, List[String] => String] = Map(
+    "std-out" -> (codeSeg => {
+      val stmt = codeSeg(0)
+      s"""if hvd.rank() == 0: $stmt"""
+    }),
+  )
+}
 trait Transformer {
   // transformed one AST into another AST
 
@@ -52,7 +80,6 @@ trait Transformer {
       (ReturnStmt(eopt.map(expr => transform(expr))), env)
     case DelStmt(tl) => (DelStmt(tl), env)
 
-    // TODO: it is not working well.
     // for `os.environ['CUDA_VISIBLE_DEVICES']` case
     case AssignStmt(
       List(Subscript(Attribute(EName(idt), Id("environ")),
