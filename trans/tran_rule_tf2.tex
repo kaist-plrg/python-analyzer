@@ -46,6 +46,10 @@
 \noindent
 \begin{tabular}{l}
   \smodenv ~ $\in$ \dmodenv ~ = \dstr $\finarrow$ \did \qquad {\sc Environment storing mappings from strings to identifiers}\\
+  \dclassnode ~ = \dstr $\times$ \op{\dclassnode}\\ 
+  \snodes ~ $\in$ \dnodes ~ ::= \dclassnode ~ list\\
+  \svars ~ $\in$ \dvars ~ ::= \dstr ~ list $\finarrow$ \dclassnode\\
+  \scg ~ $\in$ \dcg ~ = $\dnodes \times \dvars$ \\ 
 \end{tabular}\\\vpar
 
 \noindent
@@ -53,6 +57,8 @@
   \fst & : & $\tau \times \tau \rightarrow \tau$ & Get the first element of the given pair\\
   \ktconl & : & $\tau$ list $\rightarrow \tau$ list $\rightarrow \tau$ list & Concatenate two lists\\
   \ktappl & : & $\tau$ $\rightarrow \tau$ list $\rightarrow \tau$ list & Append an element to a list (right-associative)\\
+  \nodes & : & \dclassnode $\rightarrow$ \dnodes ~ = ~ \fst & Get nodes of class graph\\
+  \vars & : & \dclassnode $\rightarrow$ \dvars ~ = ~ \snd & Get variables of class graph\\
 \end{tabular}\\\vpar
 
 \subsubsection{Transformation Rules}
