@@ -674,33 +674,24 @@
 \end{tabular}\\\vpar
 
 \noindent
-\typdesc{\fkalias& : & \dalias ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dmodenv}
+\typdesc{\fkalias& : & \dalias ~ $\rightarrow$ ~ \dcg ~ $\rightarrow$ ~ \dcg}
 % Alias containing an id only
 \noindent
 \begin{tabular}{l}
-  \talias{\nid}{\smodenv} = \\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nid]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nid]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt optimizers} ~ \ktthen ~ \smodenv[\optimizers $\mapsto$ \nid]\\
-  \inden \ktelse ~ \smodenv\\
+  \talias{\nidsubs{1} .\nidsubs{2} ... .\nidsubs{n}}{\scg} = \\ 
+  \ktlet ~ (\snodes, \svars) ~ \kteq ~ \dcg ~ \ktin \\ 
+  \inden \ktlet ~ \nnodesubs{1} = \{ \nidsubs{1}, $\cdot$ \}, \nnodesubs{i} = \{ \nidsubs{i}, \nnodesubs{i-1} \} \ktwhen ~ $2 \leq i \leq n$ \ktin\\
+  \inden \ktlet ~ \nvarsubs{k} = \nidsubs{1} ... \nidsubs{k} \ktwhen ~ $1 \leq k \leq n$ ~ \ktin \\ 
+  (\snodes \ktconl [\nnodesubs{1}, ..., \nnodesubs{n}], \svars \ktconl [\nvarsubs{1} $\mapsto$ \nnodesubs{1}, ..., \nvarsubs{n} $\mapsto$ \nnodesubs{n}]) \\
 \end{tabular}\\\vpar
 
 % Alias containing an id and an as phrase
 \noindent
 \begin{tabular}{l}
-  \talias{\nidsubs{1} \kas ~ \nidsubs{2}}{\smodenv} = \\
-  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
-  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nidsubs{2}]\\
-  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nidsubs{2}]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt optimizers} ~ \ktthen ~ \smodenv[\optimizers $\mapsto$ \nid]\\
-  \inden \ktelse ~ \smodenv\\
-\end{tabular}\\\vpar
-
-% Alias containing an attribute
-\noindent
-\begin{tabular}{l}
-  \talias{\nidsubs{1} .\nidsubs{2} \mul{(.\nidsubs{3})} \op{(\kas ~ \nidsubs{2})}}{\smodenv} = \smodenv\\
+  \talias{\nidsubs{1} .\nidsubs{2} ... .\nidsubs{n} \kas ~ \nidsubs{as}}{\scg} = \\
+  \ktlet ~ (\snodes, \svars) ~ \kteq ~ \dcg ~ \ktin \\ 
+  \inden \ktlet ~ \nnodesubs{1} = \{ \nidsubs{1}, $\cdot$ \}, \nnodesubs{i} = \{ \nidsubs{i}, \nnodesubs{i-1} \} \ktwhen ~ $2 \leq i \leq n$ \ktin\\
+  (\snodes \ktconl [\nnodesubs{1}, ..., \nnodesubs{n}], \svars \ktconl [\nidsubs{as} $\mapsto$ \nnodesubs{n}]) \\
 \end{tabular}\\\vpar
 
 \noindent
@@ -710,7 +701,7 @@
   \twwithitem{\nwithitemsubs{1} \nwithitemsubs{2} ... \nwithitemsubs{n}}{\smodenv} = \\
   \inden \ktlet ~ \nwithitemsubs{1}$'$, \smodenvsubs{1} ~ \kteq ~ \twithitem{\nwithitemsubs{1}}{\smodenv} ~ \ktin \\
   \inden \ktlet ~ \nwithitemsubs{2}$'$, \smodenvsubs{2} ~ \kteq ~ \twithitem{\nwithitemsubs{2}}{\smodenvsubs{1}} ~ \ktin \\
-  \inden {\tt ...} \\
+  \\inden {\tt ...} \\
   \inden \ktlet ~ \nwithitemsubs{n}$'$, \smodenvsubs{n} ~ \kteq ~ \twithitem{\nwithitemsubs{n}}{\smodenvsubs{n-1}} ~ \ktin \\
   \inden (\nwithitemsubs{1}$'$ \ktappl~\nwithitemsubs{2}$'$ \ktappl~... \ktappl~[\nwithitemsubs{n}$'$], \smodenvsubs{n})
 \end{tabular}\\\vpar
