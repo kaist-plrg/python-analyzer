@@ -61,17 +61,37 @@
   \vars & : & \dclassnode $\rightarrow$ \dvars ~ = ~ \snd & Get variables of class graph\\
 \end{tabular}\\\vpar
 
+\noindent
+\begin{tabular}{lll}
+  \typdesc{\getpath : \dexpr ~ $\rightarrow$ ~ \dcg ~ $\rightarrow$ ~ (\dstr ~ list ~ $\times$ ~ \dcg ~ $\times$ ~ \dclassnode)} \\
+  \tsgetpath{\nexpr . \nid}{\scg} = \ktlet ~ (\snodes, \svars) ~ \kteq ~ \scg ~ \ktin \\  
+  \inden \ktlet ~ (\nlist, \snodessubs{1}, \nnodesubs{1}) ~ \kteq ~ \tsgetpath{\nexpr}{\scg} \ktin \\
+  \inden\inden \ktif ~ \ischild(\scg)(\nnodesubs{1}, \nid) ~ \kteq ~ \nnodesubs{2} ~ \ktthen ~ (\nlist+str(\nid), \snodessubs{1}, \nnodesubs{2})\\  
+  \inden\inden \ktelse ~ \ktlet ~ \nnodesubs{2} ~ \kteq ~ \{ \nid, \nnodesubs{1} \} ~ \ktin ~ (\nlist+str(\nid), \snodessubs{1}, \nnodesubs{2})\\ 
+  
+  \tsgetpath{\nid}{\scg} = \ktlet ~ (\snodes, \svars) ~ \kteq ~ \scg ~ \ktin \\  
+  \inden \ktif ~ \nid ~ $\in$ Dom(\svars) ~ \ktthen \\
+  \inden\inden \ktlet ~ \nnodesubs{1} ~ \kteq ~ \svars(\nid) ~ \ktin ~ (str(\nid), \snodes, \nnodesubs{1}) \\
+  \inden \ktelse ~ \ktlet ~ \nnodesubs{1} ~ \kteq ~ \{ \nid, $\cdot$ \} ~ \ktin ~ (str(\nid), \snodes \ktconl [\nnodesubs{1}], \nnodesubs{1}) \\
+\end{tabular}\\\vpar
+
+\noindent
+\begin{tabular}{lll}
+  \typdesc{\ischild : \dcg ~ $\rightarrow$ ~ (\dclassnode ~ $\times$ ~ \did) ~ $\rightarrow$ ~ \op{\dclassnode}} \\
+  \ischild(\scg)(\nnodesubs{t}, \nidsubs{t}) ~ \kteq \\
+  \inden \scg\nodes{\tt .filter}(\nnodesubs{} $\Rightarrow$ \nnodesubs{}\fst ~ \kteq ~ \nidsubs{t} ~ $\wedge$ ~ \nnodesubs{}\snd ~ \kteq ~ \nnodesubs{t}){\tt .headOpt} \\ 
+\end{tabular}\\\vpar
+
 \subsubsection{Transformation Rules}
 \noindent
 \typdesc{\fkmodule & : & \dmodule ~ $\rightarrow$ ~ \dmodule}
+
 
 % ModuleDef
 \noindent
 \begin{tabular}{lll}
   \tmodule{\mul{\nstmt} ~ \ntypignore} & = & \tsstmt{\mul{\nstmt}}{\smodenv}\fst ~ \ntypignore \\
 \end{tabular}\\\vpar
-
-
 
 \noindent
 \typdesc{\fksstmt& : & \dstmt ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}
@@ -126,7 +146,16 @@
 
 \noindent
 \begin{longtable}{l}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\scg} = \\
+  \ktlet ~ (\snodes, \svars) ~ \kteq ~ \scg ~ \ktin \\
+  \inden ~ \ktlet ~ \getpath(\nexprsubs{1})(\scg) ~ \kteq ~ ({\tt tensorflow.optimizers.Adam}, \snodessubs{1}, \nnodesubs{1}) ~ \ktthen\\  
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], (\snodessubs{1}, \svars[\nidsubs{r} $\mapsto$ \nnodesubs{1}]) )\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \\
+  \inden\inden\inden\inden \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], (\snodessubs{1}, \svars[\nidsubs{r} $\mapsto$ \nnodesubs{1}]) )\\
+\\
   \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.data.Dataset.\nexprsubs{3}} ~ \ktthen\\
   \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
   \inden\inden\inden\smodenv[\tdata $\mapsto$ \nidsubs{r}])\\

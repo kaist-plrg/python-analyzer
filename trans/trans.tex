@@ -85,6 +85,7 @@
 \newcommand{\npatternsubs}[1]{\ensuremath{pattern_{#1}}}
 \newcommand{\nnodesubs}[1]{\ensuremath{node_{#1}}}
 \newcommand{\nvarsubs}[1]{\ensuremath{var_{#1}}}
+\newcommand{\nlist}{\ensuremath{l}}
 
 % operators
 \newcommand{\oassign}{{\tt = }}
@@ -167,6 +168,8 @@
 \newcommand{\talias}[2]{\subsfun{\fkalias}{#1}(#2)}
 \newcommand{\taalias}[2]{\subsfun{\fkaalias}{#1}(#2)}
 \newcommand{\tpattern}[2]{\subsfun{\fkpattern}{#1}(#2)}
+\newcommand{\tsgetpath}[2]{\subsfun{\getpath}{#1}(#2)}
+\newcommand{\tsischild}[2]{\subsfun{\ischild}(#1)(#2)}
 
 % domains
 \newcommand{\dmodenv}{\ensuremath{\Sigma}}
@@ -217,6 +220,8 @@
 \newcommand{\newid}{{\tt\bf NewID()}}
 \newcommand{\nodes}{{\tt\bf .nodes}}
 \newcommand{\vars}{{\tt\bf .vars}}
+\newcommand{\getpath}{{\tt\bf getPath}}
+\newcommand{\ischild}{{\tt \bf isChild}}
 
 % strings of Env domains
 \newcommand{\gtape}{{\tt\bf ``gradient\_tape"}}
