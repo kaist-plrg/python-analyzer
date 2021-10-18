@@ -11,6 +11,7 @@ package object pyanalyzer {
 
   val LOG_DIR = s"$BASE_DIR/logs"
   val TEST_LOG_DIR = s"$LOG_DIR/test"
+  val TRANS_LOG_DIR = s"$LOG_DIR/transform"
   
   val PY_AST_DIR = s"$BASE_DIR/py-ast"
 

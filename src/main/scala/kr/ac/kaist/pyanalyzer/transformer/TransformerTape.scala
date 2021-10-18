@@ -12,9 +12,12 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerTape extends TransformerMainScript {
-  def apply(module: Module): Module = module.copy(body=transform(module.body)(Env())._1)
+  def apply(module: Module, prompt: (String, String) => Unit): Module =
+    module.copy(body=transform(module.body)(Env(), prompt)._1)
 
-  override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
+  override def transform(stmt: Stmt)(
+    implicit env: Env, prompt: (String, String) => Unit
+  ): (List[Stmt], Env) = stmt match {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
@@ -134,7 +137,7 @@ object TransformerTape extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(tempEnv)
+      val (newStmts, newEnv) = transform(doStmt)(tempEnv, prompt)
       val diffEnv = tempEnv \ env
       // get "gradient_tape" id
       diffEnv.get("gradient_tape") match {
@@ -152,7 +155,7 @@ object TransformerTape extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(tempEnv)
+      val (newStmts, newEnv) = transform(doStmt)(tempEnv, prompt)
       val diffEnv = tempEnv \ env
       // get "gradient_tap" id
       diffEnv.get("gradient_tape") match {

@@ -15,9 +15,6 @@ import scala.util.Try
 import java.io.File
 
 object Transform {
-  val logPath = s"$BASE_DIR/logs/transform"
-  mkdir(logPath)
-
   def apply(optionMap: Map[String, String]): Unit = {
     // set target file
     val target = try {
@@ -31,6 +28,10 @@ object Transform {
     val diffOption = if (optionMap contains "y") "y" else "u"
 
     val hvd = new File(HOROVOD_DIR)
+
+    mkdir(TRANS_LOG_DIR)
+    val logWriter = getPrintWriter(s"$TRANS_LOG_DIR/Warnings")
+    val prompt = warning(true, logWriter)
     for {
       versionDir <- hvd.listFiles if versionDir.isDirectory
       moduleDir <- versionDir.listFiles if moduleDir.isDirectory
@@ -59,7 +60,7 @@ object Transform {
         val orgResult = beautify(orgAst)
 
         // transformed
-        val transformedAst = Transformer(orgAst)
+        val transformedAst = Transformer(orgAst, prompt(fullPath diff HOROVOD_DIR))
         val transformedResult = beautify(transformedAst)
         // hvd
         val hvdAst = parseFile(s"$modelPath/hvd/$name")
@@ -89,8 +90,8 @@ object Transform {
     diffOption: String
   ): Unit = {
     val (name1, content1, name2, content2) = comparePair
-    val path1 = s"$logPath/$name1"
-    val path2 = s"$logPath/$name2"
+    val path1 = s"$TRANS_LOG_DIR/$name1"
+    val path2 = s"$TRANS_LOG_DIR/$name2"
     dumpFile(content1, path1)
     dumpFile(content2, path2)
     try executeCmd(

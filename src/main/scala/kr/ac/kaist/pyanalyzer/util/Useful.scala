@@ -58,6 +58,16 @@ object Useful {
     lw.flush()
   }
 
+  // `setPrompt = true` to see message
+  def warning(setPrompt: Boolean, lw: PrintWriter) = (filename: String) =>
+    (warning: String, code: String) => {
+      val message = s"$YELLOW$warning\n$code\n$RESET"
+      if (setPrompt) println(message)
+      // s might contain color codes for console output 
+      lw.write(withoutColorCodes(s"<$filename> $message"))
+      lw.flush()
+  }
+
   def flushLog(endMsg: String = "\n")(implicit lw: PrintWriter): Unit = {
     lw.write(endMsg)
     lw.flush()

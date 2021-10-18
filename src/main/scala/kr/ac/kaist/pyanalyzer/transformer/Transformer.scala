@@ -1,5 +1,6 @@
 package kr.ac.kaist.pyanalyzer.transformer
 
+import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.parser._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
@@ -14,20 +15,23 @@ import scala.Console._
 
 object Transformer extends Transformer {
   // transformed one AST into another AST
-  def apply(module: Module): Module = {
+  def apply(module: Module, prompt: (String, String) => Unit): Module = {
     val summary = TrainingLoop(module)
     summary.tl match {
-      case GradTape => TransformerTape(module)
-      case Optimizer => TransformerOptim(module)
-      case Bot => module.copy(body=transform(module.body)(Env())._1)
+      case GradTape => TransformerTape(module, prompt)
+      case Optimizer => TransformerOptim(module, prompt)
+      case Bot => module.copy(body=transform(module.body)(Env(), prompt)._1)
     }
   }
 }
 trait TransformerMainScript extends Transformer {
-  val temp = List("write", "summary", "save_weights", "load_weights").map(Id(_))
-  override def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
+  val stdouts = List("write", "summary", "save_weights", "load_weights").map(Id(_))
+  override def transform(stmt: Stmt)(
+    implicit env: Env, prompt: (String, String) => Unit
+  ): (List[Stmt], Env) = stmt match {
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
-      case Attribute(_, id) if temp contains id =>
+      case Attribute(_, id) if stdouts contains id =>
+        prompt("Inaccurate transform", beautify(stmt))
         (parseStmts(stmtData("std-out")(List(beautify(stmt)))), env)
       case EName(Id("print")) => {
         // hvd.rank()
@@ -56,14 +60,18 @@ trait Transformer {
   /////////////////////////////////////////
   // transformer for statements
   /////////////////////////////////////////
-  def transform(stmts: List[Stmt])(implicit env: Env): (List[Stmt], Env) = 
+  def transform(stmts: List[Stmt])(
+    implicit env: Env, prompt: (String, String) => Unit
+  ): (List[Stmt], Env) = 
     stmts.foldLeft((List[Stmt](), env)) {
       case ((stmtList, e), stmt) =>
-        val (newStmtList, newEnv) = transform(stmt)(e)
+        val (newStmtList, newEnv) = transform(stmt)(e, prompt)
         (stmtList ++ newStmtList, newEnv)
     }
 
-  def transform(stmt: Stmt)(implicit env: Env): (List[Stmt], Env) = stmt match {
+  def transform(stmt: Stmt)(
+    implicit env: Env, prompt: (String, String) => Unit
+  ): (List[Stmt], Env) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
       (FunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
@@ -110,11 +118,11 @@ trait Transformer {
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, interEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(interEnv)
+      val (newStmts, newEnv) = transform(doStmt)(interEnv, prompt)
       (WithStmt(ty, newItems, newStmts), newEnv)
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, interEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(interEnv)
+      val (newStmts, newEnv) = transform(doStmt)(interEnv, prompt)
       (AsyncWithStmt(ty, newItems, newStmts), newEnv)
 
     /////////////////////////////////////////////////////////////////
@@ -238,7 +246,9 @@ trait Transformer {
         AsyncCompre(target, transform(in), conds.map(transform))
     }
 
-  def transform(handler: ExcHandler)(implicit env: Env): ExcHandler = 
+  def transform(handler: ExcHandler)(
+    implicit env: Env, prompt: (String, String) => Unit
+  ): ExcHandler = 
     handler match {
       case ExcHandler(except, idOpt, body) =>
         ExcHandler(except, idOpt, transform(body)._1)
@@ -285,7 +295,9 @@ trait Transformer {
     case DoubleStarred(e) => DoubleStarred(e)
   }
 
-  def transform(mc: MatchCase)(implicit env: Env): MatchCase = mc match {
+  def transform(mc: MatchCase)(
+    implicit env: Env, prompt: (String, String) => Unit
+  ): MatchCase = mc match {
     case MatchCase(pat, cond, body) =>
       MatchCase(transform(pat), cond.map(transform), transform(body)._1)
   }
