@@ -86,7 +86,7 @@
 \end{tabular}\\\vpar
 
 \noindent
-\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}
+\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dcg ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dcg)}
 % FunDef
 \noindent
 \begin{tabular}{l}
@@ -307,22 +307,6 @@
   \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
   \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
   \inden\hspace{1em} {\tt hvd\_broadcast\_done} \oassign {\tt False}, \\
-  \inden\hspace{1em} {\tt hvd.init()}, \\
-  \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
-  \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
-  \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
-  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
-\end{tabular}\\\vpar
-
-% rule for GradientOptimizer
-% Import
-\noindent
-\begin{tabular}{l}
-  \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
-  \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
-  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid] ~ \ktthen \\
-  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
-  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
   \inden\hspace{1em} {\tt hvd.init()}, \\
   \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
   \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
