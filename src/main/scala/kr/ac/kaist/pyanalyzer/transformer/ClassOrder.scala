@@ -8,6 +8,7 @@ case object MultiInheritance extends Exception
 
 case class Fullname(names: List[String]) {
   def add(s: String) = Fullname(names :+ s)
+  def append(f: Fullname) = Fullname(names ++ f.names)
   override def toString() = names.mkString(".")
 }
 case class Classnode(name: Fullname, parent: Option[Classnode])
@@ -16,9 +17,9 @@ case class ClassOrder (nodes: Map[Fullname, Classnode], aliases: Map[String, Ful
   def addNode(name: Fullname, node: Classnode) = this.copy(nodes = nodes + (name -> node))
   def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
 
-  def parseAccessPath(expr: Expr): Option[Fullname] = expr match {
+  def parseFullname(expr: Expr): Option[Fullname] = expr match {
     case EName(Id(name)) => aliases.get(name)
-    case Attribute(e, Id(field)) => parseAccessPath(e).map(_.add(field))
+    case Attribute(e, Id(field)) => parseFullname(e).map(_.add(field))
     case _ => None
   }
 
@@ -27,7 +28,7 @@ case class ClassOrder (nodes: Map[Fullname, Classnode], aliases: Map[String, Ful
 
   def addSubclass(clsname: Fullname, parent: Expr): ClassOrder = 
     // get full name of parent class
-    parseAccessPath(parent) match {
+    parseFullname(parent) match {
       case None => throw ParentNotFound 
       // get parent node and add child node with pointing the parent node
       case Some(fname) => nodes.get(fname) match {
@@ -61,11 +62,30 @@ object ClassOrder {
     }
   }
 
+  def transferAliasPrefixed(order: ClassOrder)(prefix: Fullname, a: Alias): ClassOrder =
+    a match {
+      case Alias(ns, None) => {
+        val fname = prefix.append(Fullname(ns.map(_.name))) 
+        val asName = ns.map(_.name).mkString(".")
+        order.addAlias(asName, fname)
+      }
+      case Alias(ns, Some(Id(asName))) => {
+        val fname = prefix.append(Fullname(ns.map(_.name)))
+        order.addAlias(asName, fname)
+      }
+    }
+
   def transferStmt(order: ClassOrder)(stmt: Stmt): ClassOrder =
     stmt match {
       // ImportStmt: add alias relation
       case ImportStmt(as) => as.foldLeft(order)((o: ClassOrder, x: Alias) =>
         transferAlias(o)(x)) 
+
+      // FromImport: add alias with prefix (ignores level)
+      case ImportFromStmt(_, fromId, as) => {
+        val prefix = Fullname(fromId.map(_.name)) 
+        as.foldLeft(order)((o: ClassOrder, x: Alias) => transferAliasPrefixed(o)(prefix, x))
+      }
 
       // ClassDef: adds corresponding class node to order
       case ClassDef(_, Id(name), pexprs, _, _) => pexprs match {

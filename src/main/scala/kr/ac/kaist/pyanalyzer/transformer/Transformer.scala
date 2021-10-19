@@ -10,6 +10,7 @@ import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.transformer.TransformerTape
 import kr.ac.kaist.pyanalyzer.transformer.TransformerOptim
+import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
