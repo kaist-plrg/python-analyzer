@@ -14,6 +14,14 @@ case class Fullname(names: List[String]) {
 case class Classnode(name: Fullname, parent: Option[Classnode])
 
 case class ClassOrder (nodes: Map[Fullname, Classnode], aliases: Map[String, Fullname]) {
+  override def toString() = {
+    val nodesStr = nodes.keys.foldLeft("")((s: String, k: Fullname) => nodes(k).parent match {  
+      case None => s ++ s"$k -> ()\n" 
+      case Some(node) => s ++ s"$k -> (${node.name})\n"
+    })
+    val aliasStr = aliases.toString
+    s"Nodes:\n$nodesStr\nAliases:\n$aliasStr\n"
+  }
   def addNode(name: Fullname, node: Classnode) = this.copy(nodes = nodes + (name -> node))
   def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
 
