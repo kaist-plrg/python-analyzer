@@ -16,7 +16,7 @@ class ClassOrderTest extends AnyFunSuite {
   def promptLine() = prompt("====================")
 
   def testImports(): Unit = test("ClassOrderTest:Imports"){
-    val initOrder = ClassOrder(Map(), Map()) 
+    val initOrder = ClassOrder(List(), Map()) 
     prompt(s"initOrder\n$initOrder")
 
     val tfAlias = Alias(List(Id("tensorflow")), Some(Id("tf")))
@@ -46,6 +46,7 @@ class ClassOrderTest extends AnyFunSuite {
     val resnet2Name = Fullname(List("Resnet2"))
     val modelName = Fullname(List("tensorflow", "keras", "Model"))
     assert(ord4.isSubclass(resnet2Name, modelName))
+    assert(ord4.isSubclass(modelName, modelName))
   }
  
   def init: Unit = {
