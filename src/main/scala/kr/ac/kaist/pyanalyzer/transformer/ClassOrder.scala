@@ -18,7 +18,10 @@ case class ClassOrder (nodes: Map[Fullname, Classnode], aliases: Map[String, Ful
   def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
 
   def parseFullname(expr: Expr): Option[Fullname] = expr match {
-    case EName(Id(name)) => aliases.get(name)
+    case EName(Id(name)) => aliases.get(name) match {
+      case Some(fname) => Some(fname)
+      case None => Some(Fullname(List(name)))
+    }
     case Attribute(e, Id(field)) => parseFullname(e).map(_.add(field))
     case _ => None
   }
