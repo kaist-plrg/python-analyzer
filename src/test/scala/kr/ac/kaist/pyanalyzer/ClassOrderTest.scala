@@ -3,6 +3,7 @@ package kr.ac.kaist.pyanalyzer.transformer
 import kr.ac.kaist.pyanalyzer._
 import org.scalatest.funsuite._
 import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
+import kr.ac.kaist.pyanalyzer.transformer.Transformer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
@@ -14,13 +15,14 @@ class ClassOrderTest extends AnyFunSuite {
   implicit val setPrompt = true
 
   def promptLine() = prompt("====================")
+  def promptline() = prompt("--------------------")
 
   def testImports(): Unit = test("ClassOrderTest:Imports"){
     val initOrder = ClassOrder(List(), Map()) 
     prompt(s"initOrder\n$initOrder")
 
     val tfAlias = Alias(List(Id("tensorflow")), Some(Id("tf")))
-    val tfImport = ImportStmt(List(tfAlias))
+    val tfImport = parseStmts("import tensorflow as tf")(0)
     val ord = transferStmt(initOrder)(tfImport)
     prompt(s"after tf import\n$ord")
     promptLine()
@@ -49,9 +51,29 @@ class ClassOrderTest extends AnyFunSuite {
     assert(ord4.isSubclass(modelName, modelName))
   }
  
+  def testabc() = test("ClassOrderTest:abc") {
+    val code = """import X as Y
+              |from A.B.C import D
+              |class E(D):
+              |  pass
+              |class F(Y.Z):
+              |  pass""".stripMargin
+    prompt(s"$code")
+    promptline()
+    val stmts = parseStmts(code)
+    val resOrder =
+      stmts.foldLeft(ClassOrder(List(), Map()))((o: ClassOrder, s: Stmt) => {
+        transferStmt(o)(s)
+      })
+    prompt(s"$resOrder")
+    promptLine()
+  }
+
+
   def init: Unit = {
     prompt(help)
     testImports()
+    testabc()
   }
 
   init
