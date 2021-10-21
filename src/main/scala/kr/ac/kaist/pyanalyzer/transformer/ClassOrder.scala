@@ -30,9 +30,13 @@ case class ClassOrder(
   def nodes: Set[Fullname] = edges.keys.toSet
 
   def addNode(node: Fullname): ClassOrder = this.copy(edges = edges.addKey(node))
+  def addNode(nodes: List[Fullname]): ClassOrder =
+    nodes.foldLeft(this)((o: ClassOrder, n: Fullname) => o.addNode(n))
 
   def addEdge(from: Fullname, to: Fullname): ClassOrder =
     this.copy(edges = edges.addOne(from, to))
+  def addEdge(ftl: List[(Fullname, Fullname)]): ClassOrder =
+    ftl.foldLeft(this)((o: ClassOrder, p: (Fullname, Fullname)) => o.addEdge(p._1, p._2))
 
   def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
  
@@ -122,6 +126,6 @@ object ClassOrder {
       case _ => order
     }
 
-  // prefixing class hierarchy with specific name
   
+  def parseStrFullname(s: String): Fullname = Fullname(s.split(".").toList)
 }
