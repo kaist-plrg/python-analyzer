@@ -1,9 +1,10 @@
 package kr.ac.kaist.pyanalyzer.transformer
 
 import kr.ac.kaist.pyanalyzer.parser.ast._
+import kr.ac.kaist.pyanalyzer.util.MultiMap._
 
-case object ParentNotFound extends Exception
-case object ClassNotFound extends Exception
+case object ParentNotParsed extends Exception
+case class ClassNotFound(s: String) extends Exception(s)
 case object MultiInheritance extends Exception
 
 case class Fullname(names: List[String]) {
@@ -13,20 +14,28 @@ case class Fullname(names: List[String]) {
   override def toString() = names.mkString(".")
 }
 
-case class Classnode(name: Fullname, parent: Option[Fullname] = None)
 
-case class ClassOrder (nodes: List[Classnode], aliases: Map[String, Fullname]) {
+case class ClassOrder(
+  edges: MultiMap[Fullname, Fullname] = Map(), 
+  aliases: Map[String, Fullname] = Map(),
+){
   override def toString() = {
-    val nodesStr = nodes.foldLeft("")((s: String, node: Classnode) => node.parent match {  
-      case None => s ++ s"${node.name}\n" 
-      case Some(pname) => s ++ s"${node.name} <: ${pname}\n"
-    })
+    val nodesStr = edges.keys.map(kname => {
+      s"$kname <: [${edges(kname).map(_.toString).mkString(", ")}]"
+    }).mkString("\n")
     val aliasStr = aliases.toString
     s"Nodes:\n$nodesStr\nAliases:\n$aliasStr\n"
   }
-  def addNode(node: Classnode) = this.copy(nodes = nodes :+ node)
-  def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
 
+  def nodes: Set[Fullname] = edges.keys.toSet
+
+  def addNode(node: Fullname): ClassOrder = this.copy(edges = edges.addKey(node))
+
+  def addEdge(from: Fullname, to: Fullname): ClassOrder =
+    this.copy(edges = edges.addOne(from, to))
+
+  def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
+ 
   def parseFullname(expr: Expr): Option[Fullname] = expr match {
     case EName(Id(name)) => aliases.get(name) match {
       case Some(fname) => Some(fname)
@@ -42,31 +51,20 @@ case class ClassOrder (nodes: List[Classnode], aliases: Map[String, Fullname]) {
   def addSubclass(clsname: Fullname, parent: Expr): ClassOrder = 
     // get full name of parent class
     parseFullname(parent) match {
-      case None => throw ParentNotFound 
+      case None => throw ParentNotParsed 
       // get parent node and add child node with pointing the parent node
-      case Some(pname) => nodes.find(_.name == pname) match {
-        case Some(pnode) => addNode(Classnode(clsname, Some(pnode.name)))
-        // if parent node not exist, add one before adding child node
-        case None => {
-          val parentNode = Classnode(pname, None)
-          val parentAdded = addNode(parentNode)
-          val childNode = Classnode(clsname, Some(parentNode.name))
-          parentAdded.addNode(childNode) 
-        }}}
+      case Some(pname) => this.addNode(pname).addEdge(clsname, pname)
+    }
 
-  def isSubclass(cname: Fullname, targetParentName: Fullname): Boolean = 
-    nodes.find(_.name == cname) match {
-      case None => throw ClassNotFound
-      case Some(cnode) => 
-        if (cnode.name == targetParentName) { true }
-        else {
-          cnode.parent match {
-          case None => false 
-          case Some(pname) =>
-            if (pname == targetParentName) true
-            else isSubclass(pname, targetParentName)
-          }
-        }
+  def isSubclass(cname: Fullname, targetParentName: Fullname): Boolean =
+    if (cname == targetParentName) true else {
+      edges.get(cname) match {
+        case None => throw ClassNotFound(cname.toString)
+        case Some(pset) =>
+          (pset.filter(_ == targetParentName).size >= 1 || 
+            pset.map(isSubclass(_, targetParentName))
+                .fold(false)((x: Boolean, y: Boolean) =>x || y) )
+      }
     }
 }
 
@@ -109,14 +107,15 @@ object ClassOrder {
       case ClassDef(_, Id(name), pexprs, _, _) => pexprs match {
         // no parent case
         case Nil => {
-          val fname = Fullname(List(name))
-          val newnode = Classnode(fname, None)
-          order.addNode(newnode)
+          val cname = Fullname(List(name))
+          order.addNode(cname)
         }
         // one parent case 
         case List(e) => order.addSubclass(name, e)
         // multiple parent case
-        case _ => throw MultiInheritance
+        case l => l.foldLeft(order)((o :ClassOrder, e: Expr) => {
+          order.addSubclass(name, e)
+        }) 
       }
 
       // others: nothing

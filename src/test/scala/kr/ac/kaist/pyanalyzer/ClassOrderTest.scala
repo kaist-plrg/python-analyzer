@@ -18,7 +18,7 @@ class ClassOrderTest extends AnyFunSuite {
   def promptline() = prompt("--------------------")
 
   def testImports(): Unit = test("ClassOrderTest:Imports"){
-    val initOrder = ClassOrder(List(), Map()) 
+    val initOrder = ClassOrder() 
     prompt(s"initOrder\n$initOrder")
 
     val tfAlias = Alias(List(Id("tensorflow")), Some(Id("tf")))
@@ -62,7 +62,7 @@ class ClassOrderTest extends AnyFunSuite {
     promptline()
     val stmts = parseStmts(code)
     val resOrder =
-      stmts.foldLeft(ClassOrder(List(), Map()))((o: ClassOrder, s: Stmt) => {
+      stmts.foldLeft(ClassOrder())((o: ClassOrder, s: Stmt) => {
         transferStmt(o)(s)
       })
     prompt(s"$resOrder")
