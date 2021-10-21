@@ -5,7 +5,6 @@ import kr.ac.kaist.pyanalyzer.util.MultiMap._
 
 case object ParentNotParsed extends Exception
 case class ClassNotFound(s: String) extends Exception(s)
-case object MultiInheritance extends Exception
 
 case class Fullname(names: List[String]) {
   def add(s: String) = Fullname(names :+ s)
@@ -13,7 +12,6 @@ case class Fullname(names: List[String]) {
   def prefixed(s: String) = Fullname(s +: names)
   override def toString() = names.mkString(".")
 }
-
 
 case class ClassOrder(
   edges: MultiMap[Fullname, Fullname] = Map(), 
@@ -29,6 +27,7 @@ case class ClassOrder(
 
   def nodes: Set[Fullname] = edges.keys.toSet
 
+  // adding nodes and edges
   def addNode(node: Fullname): ClassOrder = this.copy(edges = edges.addKey(node))
   def addNode(nodes: List[Fullname]): ClassOrder =
     nodes.foldLeft(this)((o: ClassOrder, n: Fullname) => o.addNode(n))
@@ -38,8 +37,10 @@ case class ClassOrder(
   def addEdge(ftl: List[(Fullname, Fullname)]): ClassOrder =
     ftl.foldLeft(this)((o: ClassOrder, p: (Fullname, Fullname)) => o.addEdge(p._1, p._2))
 
+  // adding alias
   def addAlias(a: String, fn: Fullname) = this.copy(aliases = aliases + (a -> fn))
  
+  // parse expr into fullname with alias
   def parseFullname(expr: Expr): Option[Fullname] = expr match {
     case EName(Id(name)) => aliases.get(name) match {
       case Some(fname) => Some(fname)
@@ -49,6 +50,7 @@ case class ClassOrder(
     case _ => None
   }
 
+  // Subclass Related
   def addSubclass(clsname: String, parent: Expr): ClassOrder = 
     addSubclass(Fullname(List(clsname)), parent)
 
@@ -117,8 +119,8 @@ object ClassOrder {
         // one parent case 
         case List(e) => order.addSubclass(name, e)
         // multiple parent case
-        case l => l.foldLeft(order)((o :ClassOrder, e: Expr) => {
-          order.addSubclass(name, e)
+        case l => l.foldLeft(order)((o: ClassOrder, e: Expr) => {
+          o.addSubclass(name, e)
         }) 
       }
 

@@ -2,6 +2,7 @@ package kr.ac.kaist.pyanalyzer.transformer
 
 import kr.ac.kaist.pyanalyzer._
 import org.scalatest.funsuite._
+import org.scalatest.Assertion
 import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.transformer.Transformer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
@@ -50,14 +51,12 @@ class ClassOrderTest extends AnyFunSuite {
     assert(ord4.isSubclass(resnet2Name, modelName))
     assert(ord4.isSubclass(modelName, modelName))
   }
- 
-  def testabc() = test("ClassOrderTest:abc") {
-    val code = """import X as Y
-              |from A.B.C import D
-              |class E(D):
-              |  pass
-              |class F(Y.Z):
-              |  pass""".stripMargin
+
+  def testcode(
+    testname: String, 
+    code: String, 
+    tester: ClassOrder => Unit,
+  ) = test(s"ClassOrderTest:$testname") {
     prompt(s"$code")
     promptline()
     val stmts = parseStmts(code)
@@ -66,14 +65,52 @@ class ClassOrderTest extends AnyFunSuite {
         transferStmt(o)(s)
       })
     prompt(s"$resOrder")
+    tester(resOrder)
     promptLine()
   }
 
+  ////////////////////////////////////////////////////
+
+  val basicCode = 
+    """import X as Y
+      |from A.B.C import D
+      |class E(D):
+      |  pass
+      |class F(Y.Z):
+      |  pass""".stripMargin
+
+  val basicTest: ClassOrder => Unit = (order: ClassOrder) => {
+    val Ename = parseStrFullname("E")
+    val ABCname = parseStrFullname("A.B.C")
+    assert(order.isSubclass(Ename, ABCname))
+  }
+
+  val multiCode =
+    """import X as Y
+      |import X.Z as zet
+      |class A(Y.Z): pass
+      |class B(A): pass
+      |class F(zet): pass
+      |class C(A, F): pass
+      |class D(B, C): pass
+      |class E(D): pass""".stripMargin
+
+  val multiTest: ClassOrder => Unit = (order: ClassOrder) => {
+    val Dname = parseStrFullname("D")
+    val Bname = parseStrFullname("B")
+    val Cname = parseStrFullname("C")
+    val XZname = parseStrFullname("X.Z")
+    assert(order.isSubclass(Dname, Bname) && order.isSubclass(Dname, Cname))
+    assert(order.isSubclass(Dname, XZname))
+  }
+
+////////////////////////////////////////////////////
 
   def init: Unit = {
     prompt(help)
     testImports()
-    testabc()
+    testcode("basic", basicCode, basicTest)
+    testcode("multi", multiCode, multiTest)
   }
 
   init
