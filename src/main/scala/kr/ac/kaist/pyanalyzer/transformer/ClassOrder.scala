@@ -13,7 +13,7 @@ case class Fullname(names: List[String]) {
   override def toString() = names.mkString(".")
 }
 
-case class Classnode(name: Fullname, parent: Option[Fullname])
+case class Classnode(name: Fullname, parent: Option[Fullname] = None)
 
 case class ClassOrder (nodes: List[Classnode], aliases: Map[String, Fullname]) {
   override def toString() = {
@@ -72,6 +72,7 @@ case class ClassOrder (nodes: List[Classnode], aliases: Map[String, Fullname]) {
 
 object ClassOrder {
   def transferAlias(order: ClassOrder)(a: Alias): ClassOrder = a match {
+    // TODO
     case Alias(ns, None) => order
     case Alias(ns, Some(Id(asName))) => {
       val fname = Fullname(ns.map(_.name)) 

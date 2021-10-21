@@ -45,7 +45,30 @@ trait TransformerMainScript extends Transformer {
       }
       case _ => (ExprStmt(super.transform(Call(expr1, exprs, kwds))), env)
     }
-    case _ => super.transform(stmt)
+    /////////////////////////////////////////////////////////////////
+    // importstmt
+    /////////////////////////////////////////////////////////////////
+    case ImportStmt(alias) =>
+      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
+      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
+      val diffEnv = newEnv \ env
+      // get "tensor_flow" id 
+      diffEnv.get("tensor_flow") match {
+        // corresponding id found
+        case Some(id) if diffEnv.size == 1 => 
+          val newStmts = List(ImportStmt(alias)) ++ 
+            parseStmts(stmtData("import-some")(List(id.name))) 
+          (newStmts, newEnv)
+        // corresponding not found
+        case _ => (ImportStmt(alias), newEnv)
+      }
+    case ImportFromStmt(lv, fromId, al) =>
+      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
+      val newEnv = transform(al)(env.copy(classOrder = classUpdatedEnv))
+      (ImportFromStmt(lv, fromId, al), newEnv)
+    case _ =>
+      val newEnv = env.copy(classOrder = transferStmt(env.getClassOrder)(stmt))
+      super.transform(stmt)(newEnv, prompt)
   }
 
   private val stmtData: Map[String, List[String] => String] = Map(

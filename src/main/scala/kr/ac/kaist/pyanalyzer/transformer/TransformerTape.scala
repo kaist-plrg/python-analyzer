@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.transformer.Transformer
@@ -12,8 +13,10 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerTape extends TransformerMainScript {
-  def apply(module: Module, prompt: (String, String) => Unit): Module =
-    module.copy(body=transform(module.body)(Env(), prompt)._1)
+  def apply(module: Module, prompt: (String, String) => Unit): Module = {
+    val (stmts, env) = transform(module.body)(Env(), prompt)
+    module.copy(body=stmts)
+  }
 
   override def transform(stmt: Stmt)(
     implicit env: Env, prompt: (String, String) => Unit
@@ -23,6 +26,7 @@ object TransformerTape extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
+      val fullnameOpt = env.getClassOrder.parseFullname(expr1)
       expr1 match {
         // case 1) "tensor_flow" -> data.Dataset
         case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
@@ -36,9 +40,9 @@ object TransformerTape extends TransformerMainScript {
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("checkpoint", idr))
 
-        // case 3) "tensor_flow" -> optimizers.Adam 
-        case Attribute(Attribute(EName(idt), Id("optimizers")), Id("Adam"))
-          if env.get("tensor_flow") contains idt =>
+        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
+          env.getClassOrder.isSubclass(fullnameOpt.get,
+          Fullname(List("tensorflow", "optimizers", "Adam"))) =>
             // find id_i "learning_rate"
             findKwarg(kwds, "learning_rate") match {
               case Some(kwarg) =>
@@ -57,9 +61,9 @@ object TransformerTape extends TransformerMainScript {
                   env.add("optimizer", idr))
             }
 
-        // case 4) "optimizers" -> Adam
-        case Attribute(EName(idt), Id("Adam"))
-          if env.get("optimizers") contains idt =>
+        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
+          env.getClassOrder.isSubclass(fullnameOpt.get,
+            Fullname(List("tensorflow", "keras", "optimizers", "Adam"))) =>
             // find id_i "learning_rate"
             findKwarg(kwds, "learning_rate") match {
               case Some(kwarg) =>
@@ -77,6 +81,7 @@ object TransformerTape extends TransformerMainScript {
                 (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
                   env.add("optimizer", idr))
             }
+
 
         // case 3) "optimizer" -> apply_gradients
         case Attribute(EName(idt), Id("apply_gradients"))
@@ -167,11 +172,13 @@ object TransformerTape extends TransformerMainScript {
           (newerStmts, newEnv)
         case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv)
       }
+
     /////////////////////////////////////////////////////////////////
     // importstmt
     /////////////////////////////////////////////////////////////////
     case ImportStmt(alias) =>
-      val newEnv = transform(alias)
+      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
+      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
       val diffEnv = newEnv \ env
       // get "tensor_flow" id 
       diffEnv.get("tensor_flow") match {
@@ -183,7 +190,6 @@ object TransformerTape extends TransformerMainScript {
         // corresponding not found
         case _ => (ImportStmt(alias), newEnv)
       }
-
     /////////////////////////////////////////////////////////////////
     // strict form of expr stmts
     case ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {

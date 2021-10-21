@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
+import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.transformer.TransformerTape
@@ -23,15 +24,27 @@ object TransformerOptim extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
+      val fullnameOpt = env.getClassOrder.parseFullname(expr1)
       expr1 match {
-        case Attribute(Attribute(Attribute(
-          EName(idk), Id("keras")), Id("models")), Id("Sequential"))
-        if env.get("tensor_flow") contains idk => (
+//        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
+//          env.getClassOrder.isSubclass(fullnameOpt.get,
+//          Fullname(List("tensorflow", "kears", "optimizers", "Adam"))) => (
+//          AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty),
+//          env.add("model", idr)
+//        )
+        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
+          env.getClassOrder.isSubclass(
+            fullnameOpt.get,
+            Fullname(List("tensorflow", "keras", "Model"))
+          ) => (
           AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty),
           env.add("model", idr)
         )
-        case Attribute(Attribute(EName(idk), Id("optimizers")), Id("Adam"))
-        if env.get("keras") contains idk => (
+        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
+          env.getClassOrder.isSubclass(
+            fullnameOpt.get,
+            Fullname(List("tensorflow", "keras", "optimizers", "Adam"))
+          ) => (
           parseStmts(stmtData("assign-optimizer-default-adam")(List(idr.name))),
           env
         )
@@ -42,7 +55,8 @@ object TransformerOptim extends TransformerMainScript {
     // importstmt
     /////////////////////////////////////////////////////////////////
     case ImportStmt(alias) =>
-      val newEnv = transform(alias)
+      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
+      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
       val diffEnv = newEnv \ env
       // get "tensor_flow" id
       diffEnv.get("tensor_flow") match {
