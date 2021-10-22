@@ -5,12 +5,11 @@ import kr.ac.kaist.pyanalyzer.parser.SourceParser._
 import kr.ac.kaist.pyanalyzer.util.DirWalker._
 import kr.ac.kaist.pyanalyzer.util.{ Info, DirInfo, FileInfo }
 import kr.ac.kaist.pyanalyzer.util.MultiMap._
+import kr.ac.kaist.pyanalyzer.util.Errors.EmptyFileException
 import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.transformer.Fullname
 import java.io.File
 import scala.io.Source._
-
-
 
 object ClassAnalysis {
   // implicit class for joining multimap with module name prefixed
@@ -41,7 +40,13 @@ object ClassAnalysis {
 
   /////////////////////////////////////////////////
 
-  def fileToModule(file: File): Module = parseFile(file)
+  def fileToModule(file: File): Module = 
+    try {
+      if (file.getName().endsWith(".py")) { parseFile(file) }
+      else { Module(List()) }
+    } catch {
+      case EmptyFileException => Module(List())
+    }
   def moduleToOrder(ast: Module): ClassOrder = transferModule(ClassOrder())(ast)
 
   def getDirClassInfo(file: File): Info[ClassOrder] =
@@ -53,10 +58,13 @@ object ClassAnalysis {
   def infoModularize(info: Info[ClassOrder]): ClassOrder = info match {
     case DirInfo(dname, ds, fs) => {
       val newDirOrders: List[ClassOrder] = ds.map((di: DirInfo[ClassOrder]) => 
-          infoModularize(di).addPrefix(dname, noChangeSet))
+          infoModularize(di)) //.addPrefix(dname, noChangeSet))
       val newFileOrders: List[ClassOrder] = fs.map(_.info)
       (newDirOrders ++ newFileOrders).reduce(_.merge(_)).addPrefix(dname, noChangeSet)
     }
     case FileInfo(fname, o) => o.addPrefix(fname, noChangeSet)
   }
+
+  def dirClassOrder(file: File): ClassOrder =
+    infoModularize(getDirClassInfo(file))
 }
