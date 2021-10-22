@@ -129,5 +129,5 @@ object ClassOrder {
     }
 
   
-  def parseStrFullname(s: String): Fullname = Fullname(s.split(".").toList)
+  def parseStrFullname(s: String): Fullname = Fullname(s.split('.').toList)
 }
