@@ -6,8 +6,7 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser._
 import kr.ac.kaist.pyanalyzer.util.Errors._
-import java.io._
-
+import java.io.File
 
 ////////////////////////////////
 // SourceParser
@@ -17,6 +16,12 @@ object SourceParser {
   // read the source code text, given the path to file
    def readSource(filename: String): String = {
      val source = Source.fromFile(filename)
+     val text = try source.mkString finally source.close()
+     text
+   }
+
+   def readSource(file: File): String = {
+     val source = Source.fromFile(file)
      val text = try source.mkString finally source.close()
      text
    }
@@ -40,4 +45,7 @@ object SourceParser {
    // and returns AST
    def parseFile(filename: String, name: String = ""): Module =
      parseSource(readSource(filename), name)
+
+   def parseFile(file: File): Module = 
+     parseSource(readSource(file), "")
 }

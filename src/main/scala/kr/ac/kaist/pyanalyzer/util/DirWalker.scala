@@ -10,6 +10,16 @@ sealed trait Info[T] {
     case DirInfo(dname, _, _) => dname
     case FileInfo(fname, _) => fname
   }
+  // the "map" function
+  def map[U](convert: T => U): Info[U] = this match {
+    case DirInfo(dname, ds, fs) =>
+      DirInfo[U](
+        dname, 
+        ds.map(adi => adi.map[U](convert)).map(DirWalker.onlyDir[U](_)),
+        fs.map(afi => afi.map[U](convert)).map(DirWalker.onlyFile[U](_))
+      )
+    case FileInfo(fname, i) => FileInfo[U](fname, convert(i))
+  }
 }
 
 // Wrapper for Directory
@@ -51,14 +61,5 @@ object DirWalker {
         DirInfo[T](file.getName(), dirInfos, fileInfos)
     }
   
-  // the "map" function
-  def map[A, B](info: Info[A])(convert: A => B): Info[B] = info match {
-    case DirInfo(dname, ds, fs) =>
-      DirInfo[B](
-        dname, 
-        ds.map(adi => map[A, B](adi)(convert)).map(onlyDir[B]),
-        fs.map(afi => map[A, B](afi)(convert)).map(onlyFile[B])
-      )
-    case FileInfo(fname, i) => FileInfo[B](fname, convert(i))
-  }
+
 }

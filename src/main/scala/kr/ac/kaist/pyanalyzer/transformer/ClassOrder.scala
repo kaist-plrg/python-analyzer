@@ -134,6 +134,8 @@ object ClassOrder {
       case _ => order
     }
 
+  def transferModule(order: ClassOrder)(mod: Module): ClassOrder =
+    mod.body.foldLeft(order)((o: ClassOrder, s: Stmt) => transferStmt(o)(s))
   
   def parseStrFullname(s: String): Fullname = Fullname(s.split('.').toList)
 }
