@@ -12,6 +12,11 @@ object MultiMap {
       case None => map + (k -> Set())
       case Some(_) => map
     }
+    def merge(map2: MultiMap[K, V]): MultiMap[K, V] ={
+      (map.keys ++ map2.keys).map(k => {
+        (k, map.getOrElse(k, Set[V]()) ++ map2.getOrElse(k, Set[V]()))
+      }).toMap
+    }
   }
   
   //implicit def i[K, V](map: MultiMap[K, V]): I[K, V] = I[K, V](map)
