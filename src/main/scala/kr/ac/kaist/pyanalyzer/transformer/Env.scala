@@ -12,7 +12,6 @@ case class Env(
         List(
           "tensorflow.optimizers.Adam",
           "tensorflow.keras.optimizers.Adam",
-          "tensorflow.keras.models.Sequential",
           "tensorflow.keras.Model",
           ).map(parseStrFullname(_)))
       .addEdge( // list of subclass pairs (child, parent)
@@ -30,4 +29,10 @@ case class Env(
   // class order
   def getClassOrder: ClassOrder = classOrder
   def contains(fname: Fullname): Boolean = classOrder.nodes contains fname
+  def isSubclass(expr: Expr, targetParentName: String): Boolean =
+    classOrder.parseFullname(expr) match {
+      case Some(fullname) =>
+        classOrder.safeIsSubclass(fullname, parseStrFullname(targetParentName))
+      case None => false
+    }
 }

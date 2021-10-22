@@ -23,31 +23,12 @@ object TransformerOptim extends TransformerMainScript {
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
-      val targets = List(EName(idr))
-      val fullnameOpt = env.getClassOrder.parseFullname(expr1)
       expr1 match {
-//        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
-//          env.getClassOrder.isSubclass(fullnameOpt.get,
-//          Fullname(List("tensorflow", "kears", "optimizers", "Adam"))) => (
-//          AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty),
-//          env.add("model", idr)
-//        )
-        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
-          env.getClassOrder.isSubclass(
-            fullnameOpt.get,
-            Fullname(List("tensorflow", "keras", "Model"))
-          ) => (
-          AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty),
-          env.add("model", idr)
-        )
-        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
-          env.getClassOrder.isSubclass(
-            fullnameOpt.get,
-            Fullname(List("tensorflow", "keras", "optimizers", "Adam"))
-          ) => (
-          parseStmts(stmtData("assign-optimizer-default-adam")(List(idr.name))),
-          env
-        )
+        case _ if env.isSubclass(expr1,"tensorflow.keras.Model") =>
+          (stmt, env.add("model", idr))
+        case _
+        if env.isSubclass(expr1, "tensorflow.keras.optimizers.Adam") =>
+          (getStmts("assign-optimizer-default-adam", idr), env)
         case _ => super.transform(stmt)
     }
 
@@ -61,10 +42,8 @@ object TransformerOptim extends TransformerMainScript {
       // get "tensor_flow" id
       diffEnv.get("tensor_flow") match {
         // corresponding id found
-        case Some(id) if diffEnv.size == 1 => 
-          val newStmts = List(ImportStmt(alias)) ++ 
-            parseStmts(stmtData("import-some")(List(id.name))) 
-          (newStmts, newEnv)
+        case Some(id) if diffEnv.size == 1 =>
+          (List(ImportStmt(alias)) ++ getStmts("import-some", id), newEnv)
         // corresponding not found
         case _ => (ImportStmt(alias), newEnv)
       }
@@ -84,9 +63,7 @@ object TransformerOptim extends TransformerMainScript {
               cbKwarg.copy(expr = EName(Id("callbacks")))
             val interkwds = replaceElement(kwds, vbKwarg, newVbKwarg)
             val newkwds = replaceElement(interkwds, cbKwarg, newCbKwarg)
-            val existing_callbacks = beautify(cbKwarg.expr)
-            val init_callbacks =
-              parseStmts(stmtData("init-callbacks")(List(existing_callbacks)))
+            val init_callbacks = getStmts("init-callbacks", cbKwarg.expr)
             (init_callbacks :+ ExprStmt(Call(expr1, exprs, newkwds)), env)
             // TODO: consider the case verbose or callbacks is not given
           case (Some(vbKwarg), None) =>
@@ -99,8 +76,7 @@ object TransformerOptim extends TransformerMainScript {
             val newCbKwarg = cbKwarg.copy(expr = EName(Id("callbacks")))
             val newkwds = replaceElement(kwds, cbKwarg, newCbKwarg)
             val existing_callbacks = beautify(cbKwarg.expr)
-            val init_callbacks =
-              parseStmts(stmtData("init-callbacks")(List(existing_callbacks)))
+            val init_callbacks = getStmts("init-callbacks", cbKwarg.expr)
             (init_callbacks :+ ExprStmt(Call(expr1, exprs, newkwds :+ newVbKwarg)), env)
           case (None, None) =>
             val newVbKwarg = NormalKwarg(Id("verbose"), verboseArg)
@@ -112,25 +88,29 @@ object TransformerOptim extends TransformerMainScript {
         findKwarg(kwds, "optimizer") match {
           case Some(kwarg) if kwarg.expr == EConst(StringLiteral("adam")) =>
             val newkwds = replaceElement(kwds, kwarg, kwarg.copy(expr = EName(optim)))
-            val newStmts =
-              parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
+            val newStmts =  getStmts("assign-optimizer-default-adam", optim) ++
               ExprStmt(Call(expr1, exprs, newkwds))
             (newStmts, env)
           case None if exprs.headOption contains EConst(StringLiteral("adam")) =>
-            val newStmts =
-              parseStmts(stmtData("assign-optimizer-default-adam")(List(optim.name))) ++
+            val newStmts = getStmts("assign-optimizer-default-adam", optim) ++
               ExprStmt(Call(expr1, EName(optim) :: exprs.tail, kwds))
             (newStmts, env)
           case _ => super.transform(stmt)
         }
       case Attribute(EName(idt), Id("summary")) if env.get("model") contains idt =>
-        (parseStmts(stmtData("model-summary")(Nil)), env)
+        (getStmts("std-out", stmt), env)
       case _ => super.transform(stmt)
     }
     case _ => super.transform(stmt)
   }
 
-  val stmtData: Map[String, List[String] => String] = Map(
+  override def getStmts(name:String, nodes: List[Node]): List[Stmt] =
+    codeData.get(name) match {
+      case Some(data) => parseStmts(data(nodes.map(beautify(_))))
+      case None => super.getStmts(name, nodes)
+    }
+
+  private val codeData: Map[String, List[String] => String] = Map(
     // import stmt
     "import-some" -> (names => { 
         val name = names(0)

@@ -72,6 +72,12 @@ case class ClassOrder(
                 .fold(false)((x: Boolean, y: Boolean) =>x || y) )
       }
     }
+
+  def safeIsSubclass(cname: Fullname, targetParentName: Fullname): Boolean =
+    edges.get(cname) match {
+      case None => false
+      case _ => isSubclass(cname, targetParentName)
+    }
 }
 
 object ClassOrder {

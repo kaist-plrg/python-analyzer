@@ -33,7 +33,7 @@ trait TransformerMainScript extends Transformer {
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(_, id) if stdouts contains id =>
         prompt("Inaccurate transform", beautify(stmt))
-        (parseStmts(stmtData("std-out")(List(beautify(stmt)))), env)
+        (getStmts("std-out", stmt), env)
       case EName(Id("print")) => {
         // hvd.rank()
         val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
@@ -56,8 +56,7 @@ trait TransformerMainScript extends Transformer {
       diffEnv.get("tensor_flow") match {
         // corresponding id found
         case Some(id) if diffEnv.size == 1 => 
-          val newStmts = List(ImportStmt(alias)) ++ 
-            parseStmts(stmtData("import-some")(List(id.name))) 
+          val newStmts = List(ImportStmt(alias)) ++ getStmts("import-some", id)
           (newStmts, newEnv)
         // corresponding not found
         case _ => (ImportStmt(alias), newEnv)
@@ -71,7 +70,13 @@ trait TransformerMainScript extends Transformer {
       super.transform(stmt)(newEnv, prompt)
   }
 
-  private val stmtData: Map[String, List[String] => String] = Map(
+  def getStmts(name: String, nodes: Node*): List[Stmt] = getStmts(name, nodes.toList)
+  def getStmts(name: String, nodes: List[Node]): List[Stmt] =
+    codeData.get(name) match {
+      case Some(data) => parseStmts(data(nodes.map(beautify(_))))
+      case None => Nil
+    }
+  private val codeData: Map[String, List[String] => String] = Map(
     "std-out" -> (codeSeg => {
       val stmt = codeSeg(0)
       s"""if hvd.rank() == 0: $stmt"""

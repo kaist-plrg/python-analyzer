@@ -40,30 +40,26 @@ object TransformerTape extends TransformerMainScript {
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("checkpoint", idr))
 
-        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
-          env.getClassOrder.isSubclass(fullnameOpt.get,
-          Fullname(List("tensorflow", "optimizers", "Adam"))) =>
-            // find id_i "learning_rate"
-            findKwarg(kwds, "learning_rate") match {
-              case Some(kwarg) =>
-                val expr2i = kwarg.expr
-                val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-                ))
-                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
-                  env.add("optimizer", idr))
-              // such id_i doesn't exist
-              case None =>
-                val newexprs = 
-                  List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
-                  exprs.tail
-                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
-                  env.add("optimizer", idr))
-            }
+        case _ if env.isSubclass(expr1, "tensorflow.optimizers.Adam") =>
+          // find id_i "learning_rate"
+          findKwarg(kwds, "learning_rate") match {
+            case Some(kwarg) =>
+              val expr2i = kwarg.expr
+              val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
+                expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
+              ))
+              (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
+                env.add("optimizer", idr))
+            // such id_i doesn't exist
+            case None =>
+              val newexprs = 
+                List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
+                exprs.tail
+              (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
+                env.add("optimizer", idr))
+          }
 
-        case _ if fullnameOpt != None && env.contains(fullnameOpt.get) &&
-          env.getClassOrder.isSubclass(fullnameOpt.get,
-            Fullname(List("tensorflow", "keras", "optimizers", "Adam"))) =>
+        case _ if env.isSubclass(expr1, "tensorflow.keras.optimizers.Adam") =>
             // find id_i "learning_rate"
             findKwarg(kwds, "learning_rate") match {
               case Some(kwarg) =>
@@ -96,7 +92,7 @@ object TransformerTape extends TransformerMainScript {
                 val newStmts = List(
                   AssignStmt(List(EName(idz)), expr2i),
                   AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-                ) ++ parseStmts(stmtData("assign-optimizer-some")(List(idz.name)))
+                ) ++ getStmts("assign-optimizer-some", idz)
                 (newStmts, env) 
               // such id_i doesn't exist
               case None => 
@@ -104,7 +100,7 @@ object TransformerTape extends TransformerMainScript {
                 val newStmts = List(
                   AssignStmt(List(EName(idz)), exprs.head),
                   AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
-                ) ++ parseStmts(stmtData("assign-optimizer-none")(List(idz.name)))
+                ) ++ getStmts("assign-optimizer-none", idz)
                 (newStmts, env)
             }
         // case 4) "chcekpoint" -> idt.save
@@ -184,8 +180,7 @@ object TransformerTape extends TransformerMainScript {
       diffEnv.get("tensor_flow") match {
         // corresponding id found
         case Some(id) if diffEnv.size == 1 => 
-          val newStmts = List(ImportStmt(alias)) ++ 
-            parseStmts(stmtData("import-some")(List(id.name))) 
+          val newStmts = List(ImportStmt(alias)) ++ getStmts("import-some", id) 
           (newStmts, newEnv)
         // corresponding not found
         case _ => (ImportStmt(alias), newEnv)
@@ -207,7 +202,7 @@ object TransformerTape extends TransformerMainScript {
               val newStmts = List(
                 AssignStmt(List(EName(idz)), expr2i),
                 ExprStmt(Call(expr1, exprs, newkwds)),
-              ) ++ parseStmts(stmtData("expr-optimizer-some")(List(idz.name, idt.name)))
+              ) ++ getStmts("expr-optimizer-some", idz, idt)
 
               (newStmts, env)
             // not found
@@ -215,7 +210,7 @@ object TransformerTape extends TransformerMainScript {
               val newStmts = List(
                 AssignStmt(List(EName(idz)), exprs.head),
                 ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
-              ) ++ parseStmts(stmtData("expr-optimizer-none")(List(idz.name, idt.name)))
+              ) ++ getStmts("expr-optimizer-none", idz, idt)
               (newStmts, env)
           }
       // case 3) "checkpoint"
@@ -278,7 +273,13 @@ object TransformerTape extends TransformerMainScript {
   // Data needed for transformation
   // TODO this is actually static thingy...
   /////////////////////////////////////////
-  val stmtData: Map[String, List[String] => String] = Map(
+  override def getStmts(name:String, nodes: List[Node]): List[Stmt] =
+    codeData.get(name) match {
+      case Some(data) => parseStmts(data(nodes.map(beautify(_))))
+      case None => super.getStmts(name, nodes)
+    }
+
+  private val codeData: Map[String, List[String] => String] = Map(
     // strict assign
     "assign-optimizer-some" -> (names => {
         val name = names(0)
