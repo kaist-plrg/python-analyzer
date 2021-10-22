@@ -106,13 +106,7 @@ object TransformerTape extends TransformerMainScript {
         // case 4) "chcekpoint" -> idt.save
         case Attribute(EName(idt), Id("save"))
           if env.get("checkpoint") contains idt =>
-            // hvd.rank()
-            val rankExpr = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-            // hvd.rank() == 0
-            val condExpr = CompExpr(rankExpr, List((CEq,EConst(IntLiteral(0)))))
-            // if hvd.rank() == 0: ...
-            val newIfStmt = IfStmt(condExpr, List(stmt), Nil)
-            (newIfStmt, env)
+            (getStmts("root-rank-wrapping", stmt), env)
 
         // case 5) etc.
         case _ =>
@@ -216,13 +210,10 @@ object TransformerTape extends TransformerMainScript {
       // case 3) "checkpoint"
       case Attribute(EName(idt), Id("save"))
         if env.get("checkpoint") contains idt =>
-          // hvd.rank()
-          val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-          // hvd.rank() == 0 
-          val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
-          // if hvd.rank() == 0: ...
-          val ifStmt = IfStmt(condExpr, List(stmt), Nil) 
-          (ifStmt, env)
+          (getStmts("root-rank-wrapping", stmt), env)
+      case Attribute(EName(idt), id)
+        if env.get("model").contains(idt) && writeMethods.contains(id) =>
+          (getStmts("root-rank-wrapping", stmt), env)
       // case _) other expr stmts
       case _ => super.transform(stmt)
     }

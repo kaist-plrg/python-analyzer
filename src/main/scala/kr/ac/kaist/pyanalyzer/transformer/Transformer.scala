@@ -26,23 +26,20 @@ object Transformer extends Transformer {
   }
 }
 trait TransformerMainScript extends Transformer {
-  val stdouts = List("write", "summary", "save_weights", "load_weights").map(Id(_))
+  val writeMethods = List(
+    "write", "summary", "save_weights", "load_weights", "save"
+  ).map(Id(_))
   override def transform(stmt: Stmt)(
     implicit env: Env, prompt: (String, String) => Unit
   ): (List[Stmt], Env) = stmt match {
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
-      case Attribute(_, id) if stdouts contains id =>
+      case Attribute(_, id) if writeMethods contains id =>
         prompt("Inaccurate transform", beautify(stmt))
-        (getStmts("std-out", stmt), env)
-      case EName(Id("print")) => {
-        // hvd.rank()
-        val rank = Call(Attribute(EName(Id("hvd")),Id("rank")), Nil, Nil)
-        // hvd.rank() == 0
-        val condExpr = CompExpr(rank, List((CEq,EConst(IntLiteral(0)))))
-        // if hvd.rank() == 0: ...
-        val ifStmt = IfStmt(condExpr, List(stmt), Nil)
-        (List(ifStmt), env)
-      }
+        (getStmts("root-rank-wrapping", stmt), env)
+      case EName(Id("print")) =>
+        (getStmts("root-rank-wrapping", stmt), env)
+      case Attribute(EName(idt), Id("print")) if env.get("tensor_flow") contains idt =>
+        (getStmts("root-rank-wrapping", stmt), env)
       case _ => (ExprStmt(super.transform(Call(expr1, exprs, kwds))), env)
     }
     /////////////////////////////////////////////////////////////////
@@ -77,7 +74,7 @@ trait TransformerMainScript extends Transformer {
       case None => Nil
     }
   private val codeData: Map[String, List[String] => String] = Map(
-    "std-out" -> (codeSeg => {
+    "root-rank-wrapping" -> (codeSeg => {
       val stmt = codeSeg(0)
       s"""if hvd.rank() == 0: $stmt"""
     }),
