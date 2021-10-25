@@ -12,7 +12,7 @@ class ClassAnalysisTest extends AnyFunSuite {
 
   val logPath = s"$TEST_LOG_DIR/ClassAnalysisTest"
   implicit val logWriter = getPrintWriter(logPath)
-  implicit val setPrompt = false
+  implicit val setPrompt = true
 
   def testDir(dir: String) = test(s"ClassAnalysisTest:$dir"){
     val file = new File(dir)   
