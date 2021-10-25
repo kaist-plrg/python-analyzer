@@ -13,8 +13,8 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerOptim extends TransformerMainScript {
-  def apply(module: Module, prompt: (String, String) => Unit): Module =
-    module.copy(body=transform(module.body)(Env(), prompt)._1)
+  def apply(module: Module, env: Env = Env(), prompt: (String, String) => Unit): Module =
+    module.copy(body=transform(module.body)(env, prompt)._1)
 
   override def transform(stmt: Stmt)(
     implicit env: Env, prompt: (String, String) => Unit

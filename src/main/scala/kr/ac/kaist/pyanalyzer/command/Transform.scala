@@ -60,7 +60,7 @@ object Transform {
         val orgResult = beautify(orgAst)
 
         // transformed
-        val transformedAst = Transformer(orgAst, prompt(fullPath diff HOROVOD_DIR))
+        val transformedAst = Transformer(orgAst, prompt = prompt(fullPath diff HOROVOD_DIR))
         val transformedResult = beautify(transformedAst)
         // hvd
         val hvdAst = parseFile(s"$modelPath/hvd/$name")

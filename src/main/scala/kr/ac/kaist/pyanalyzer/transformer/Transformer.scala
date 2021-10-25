@@ -16,12 +16,12 @@ import scala.Console._
 
 object Transformer extends Transformer {
   // transformed one AST into another AST
-  def apply(module: Module, prompt: (String, String) => Unit): Module = {
+  def apply(module: Module, env: Env = Env(), prompt: (String, String) => Unit): Module = {
     val summary = TrainingLoop(module)
     summary.tl match {
-      case GradTape => TransformerTape(module, prompt)
-      case Optimizer => TransformerOptim(module, prompt)
-      case Bot => module.copy(body=transform(module.body)(Env(), prompt)._1)
+      case GradTape => TransformerTape(module, env, prompt)
+      case Optimizer => TransformerOptim(module, env, prompt)
+      case Bot => module.copy(body=transform(module.body)(env, prompt)._1)
     }
   }
 }

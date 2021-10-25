@@ -13,8 +13,8 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerTape extends TransformerMainScript {
-  def apply(module: Module, prompt: (String, String) => Unit): Module = {
-    val (stmts, env) = transform(module.body)(Env(), prompt)
+  def apply(module: Module, env: Env = Env(), prompt: (String, String) => Unit): Module = {
+    val (stmts, _) = transform(module.body)(env, prompt)
     module.copy(body=stmts)
   }
 

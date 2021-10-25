@@ -8,5 +8,9 @@ import kr.ac.kaist.pyanalyzer.util.Info
 import java.io.File
 
 case object ClassPipe extends Pipeline[File, ClassOrder] {
- def execute(path: File): ClassOrder = dirClassOrder(path) 
+  def execute(path: File): ClassOrder = {
+    val res = dirClassOrder(path) 
+    println(res)
+    res
+  }
 }
