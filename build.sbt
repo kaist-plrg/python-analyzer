@@ -10,6 +10,7 @@ lazy val prodTest = taskKey[Unit]("Launch production test")
 lazy val fileParseTest = taskKey[Unit]("Launch file test")
 lazy val fileTransformTest = taskKey[Unit]("Launch file transform test")
 lazy val classOrderTest = taskKey[Unit]("Launch class order test")
+lazy val classAnalysisTest = taskKey[Unit]("Launch class analysis test")
 
 lazy val root = (project in file("."))
   .settings(
@@ -27,6 +28,7 @@ lazy val root = (project in file("."))
     fileParseTest := (testOnly in Test).toTask(" *FileParseTest").value,
     fileTransformTest := (testOnly in Test).toTask(" *FileTransformTest").value,
     classOrderTest := (testOnly in Test).toTask(" *ClassOrderTest").value,
+    classAnalysisTest := (testOnly in Test).toTask(" *ClassAnalysisTest").value,
 )
 
 // See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
