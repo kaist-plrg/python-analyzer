@@ -13,6 +13,7 @@ object Command {
     CmdParse,
     CmdParseREPL,
     CmdTransform,
+    CmdParsePath,
   )
   val cmdMap = commands.foldLeft(Map[String, Command]()) {
     case (map, command) => map + (command.name -> command)
@@ -63,6 +64,12 @@ case object CmdTransform extends Command {
   val name = "transform"
   val help = "transform signle gpu code to multi gpu code"
   def apply(args: List[String]): Unit = Transform(args)
+}
+
+case object CmdParsePath extends Command {
+  val name = "parse-path"
+  val help = "parse given filename with CHA result"
+  def apply(args: List[String]): Unit = ParsePath(args)
 }
 
 object ArgParser extends RegexParsers {

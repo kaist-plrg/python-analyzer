@@ -50,7 +50,11 @@ object ClassAnalysis {
   def moduleToOrder(ast: Module): ClassOrder = transferModule(ClassOrder())(ast)
 
   def getDirClassInfo(file: File): Info[ClassOrder] =
-    walkFile(file)(fileToModule(_)).map(moduleToOrder(_))
+    if (file.isDirectory()) {
+      walkFile(file)(fileToModule(_)).map(moduleToOrder(_))
+    } else {
+      walkFile(file.getParentFile())(fileToModule(_)).map(moduleToOrder(_))
+    }
 
   // global module top names to not change
   val noChangeSet: Set[String] = Set("tensorflow", "numpy")

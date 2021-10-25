@@ -48,7 +48,7 @@ object DirWalker {
   }
 
   // generates Info[T] with given f: file => T
-  def walkFile[T](file: File)(f: File => T): Info[T] = 
+  def walkFile[T](file: File)(f: File => T): Info[T] = {
     file.listFiles().toList.partition(_.isDirectory()) match {
       case (dirList, fileList) =>
         // make info for subdirectories
@@ -60,6 +60,7 @@ object DirWalker {
 
         DirInfo[T](file.getName(), dirInfos, fileInfos)
     }
+  }
   
 
 }
