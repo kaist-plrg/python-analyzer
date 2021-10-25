@@ -22,13 +22,10 @@ object TransformerOptim extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
-    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
-      expr1 match {
-        case _ if env.isSubclass(expr1, "tensorflow.keras.Model") =>
-          (stmt, env.add("model", idr))
-        case _ if env.isSubclass(expr1, "tensorflow.keras.optimizers.Adam") =>
-          (getStmts("assign-optimizer-default-adam", idr), env)
-        case _ => super.transform(stmt)
+    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
+      case _ if env.isSubclass(expr1, "tensorflow.keras.optimizers.Adam") =>
+        (getStmts("assign-optimizer-default-adam", idr), env)
+      case _ => super.transform(stmt)
     }
 
     /////////////////////////////////////////////////////////////////
@@ -97,9 +94,6 @@ object TransformerOptim extends TransformerMainScript {
             (newStmts, env)
           case _ => super.transform(stmt)
         }
-      case Attribute(EName(idt), id)
-        if env.get("model").contains(idt) && writeMethods.contains(id) =>
-          (getStmts("root-rank-wrapping", stmt), env)
       case _ => super.transform(stmt)
     }
     case _ => super.transform(stmt)

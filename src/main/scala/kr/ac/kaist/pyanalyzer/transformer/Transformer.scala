@@ -32,7 +32,15 @@ trait TransformerMainScript extends Transformer {
   override def transform(stmt: Stmt)(
     implicit env: Env, prompt: (String, String) => Unit
   ): (List[Stmt], Env) = stmt match {
+    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
+      case _ if env.isSubclass(expr1, "tensorflow.keras.Model") =>
+        (stmt, env.add("model", idr))
+      case _ => super.transform(stmt)
+    }
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
+      case Attribute(EName(idt), id)
+        if env.get("model").contains(idt) && writeMethods.contains(id) =>
+          (getStmts("root-rank-wrapping", stmt), env)
       case Attribute(_, id) if writeMethods contains id =>
         prompt("Inaccurate transform", beautify(stmt))
         (getStmts("root-rank-wrapping", stmt), env)
