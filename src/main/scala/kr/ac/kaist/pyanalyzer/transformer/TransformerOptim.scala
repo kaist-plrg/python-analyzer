@@ -55,33 +55,34 @@ object TransformerOptim extends TransformerMainScript {
         val verboseArg = parseExpr("1 if hvd.rank() == 0 else 0")
         val callbacksArg =
           parseExpr("[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]")
-        (findKwarg(kwds, "verbose"), findKwarg(kwds, "callbacks")) match {
-          case (Some(vbKwarg), Some(cbKwarg)) =>
+        val vbKwds = findKwarg(kwds, "verbose") match {
+          case Some(vbKwarg) =>
             val newVbKwarg = vbKwarg.copy(expr = verboseArg)
-            val newCbKwarg =
-              cbKwarg.copy(expr = EName(Id("callbacks")))
-            val interkwds = replaceElement(kwds, vbKwarg, newVbKwarg)
-            val newkwds = replaceElement(interkwds, cbKwarg, newCbKwarg)
-            val init_callbacks = getStmts("init-callbacks", cbKwarg.expr)
-            (init_callbacks :+ ExprStmt(Call(expr1, exprs, newkwds)), env)
-            // TODO: consider the case verbose or callbacks is not given
-          case (Some(vbKwarg), None) =>
-            val newVbKwarg = vbKwarg.copy(expr = verboseArg)
-            val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksArg)
-            val newkwds = replaceElement(kwds, vbKwarg, newVbKwarg)
-            (ExprStmt(Call(expr1, exprs, newkwds :+ newCbKwarg)), env)
-          case (None, Some(cbKwarg)) =>
-            val newVbKwarg = NormalKwarg(Id("verbose"), verboseArg)
-            val newCbKwarg = cbKwarg.copy(expr = EName(Id("callbacks")))
-            val newkwds = replaceElement(kwds, cbKwarg, newCbKwarg)
-            val existing_callbacks = beautify(cbKwarg.expr)
-            val init_callbacks = getStmts("init-callbacks", cbKwarg.expr)
-            (init_callbacks :+ ExprStmt(Call(expr1, exprs, newkwds :+ newVbKwarg)), env)
-          case (None, None) =>
-            val newVbKwarg = NormalKwarg(Id("verbose"), verboseArg)
-            val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksArg)
-            (ExprStmt(Call(expr1, exprs, kwds :+ newVbKwarg :+ newCbKwarg)), env)
+            replaceElement(kwds, vbKwarg, newVbKwarg)
+          case None => kwds :+ NormalKwarg(Id("verbose"), verboseArg)
         }
+        val speKwds = findKwarg(kwds, "steps_per_epoch") match {
+          case Some(speKwarg) =>
+            val newSpeKwarg =
+              speKwarg.copy(expr = parseExpr(s"${beautify(speKwarg.expr)} // hvd.size()"))
+            replaceElement(vbKwds, speKwarg, newSpeKwarg)
+          case None =>
+            // TODO
+            vbKwds
+        }
+        val newStmts = findKwarg(kwds, "callbacks") match {
+          case Some(cbKwarg) =>
+            val newCbKwarg = cbKwarg.copy(expr = EName(Id("callbacks")))
+            // TODO
+            val cbKwds = replaceElement(speKwds, cbKwarg, newCbKwarg)
+            val init_callbacks = getStmts("init-callbacks", cbKwarg.expr)
+            init_callbacks :+ ExprStmt(Call(expr1, exprs, cbKwds))
+          case None =>
+            val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksArg)
+            // TODO
+            ExprStmt(Call(expr1, exprs, speKwds :+ newCbKwarg)) :: Nil
+        }
+        (newStmts, env)
       case Attribute(EName(idt), Id("compile")) if env.get("model") contains idt =>
         val optim = Id("optim")
         findKwarg(kwds, "optimizer") match {
