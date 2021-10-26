@@ -26,24 +26,19 @@ object Transformer extends Transformer {
   }
 }
 trait TransformerMainScript extends Transformer {
-  val writeMethods = List(
-    "write", "summary", "save_weights", "load_weights", "save"
-  ).map(Id(_))
   override def transform(stmt: Stmt)(
     implicit env: Env, prompt: (String, String) => Unit
   ): (List[Stmt], Env) = stmt match {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
-      case _ if env.isSubclass(expr1, "tensorflow.keras.models.Model") =>
-        (stmt, env.add("model", idr))
-      case _ if env.isSubclass(expr1, "tensorflow.keras.Model") =>
+      case _ if env.isSubclass(expr1, MODEL) =>
         (stmt, env.add("model", idr))
       case _ => super.transform(stmt)
     }
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(EName(idt), id)
-        if env.get("model").contains(idt) && writeMethods.contains(id) =>
+        if env.get("model").contains(idt) && WRITE_METHOD.contains(id.name) =>
           (getStmts("root-rank-wrapping", stmt), env)
-      case Attribute(_, id) if writeMethods contains id =>
+      case Attribute(_, id) if WRITE_METHOD contains id.name =>
         prompt("Inaccurate transform", beautify(stmt))
         (getStmts("root-rank-wrapping", stmt), env)
       case EName(Id("print")) =>

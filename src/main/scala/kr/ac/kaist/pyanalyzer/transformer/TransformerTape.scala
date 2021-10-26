@@ -40,7 +40,7 @@ object TransformerTape extends TransformerMainScript {
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("checkpoint", idr))
 
-        case _ if env.isSubclass(expr1, "tensorflow.optimizers.Adam") =>
+        case _ if env.isSubclass(expr1, OPTIMIZER) =>
           // find id_i "learning_rate"
           findKwarg(kwds, "learning_rate") match {
             case Some(kwarg) =>
@@ -58,26 +58,6 @@ object TransformerTape extends TransformerMainScript {
               (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
                 env.add("optimizer", idr))
           }
-
-        case _ if env.isSubclass(expr1, "tensorflow.keras.optimizers.Adam") =>
-            // find id_i "learning_rate"
-            findKwarg(kwds, "learning_rate") match {
-              case Some(kwarg) =>
-                val expr2i = kwarg.expr
-                val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                  expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-                ))
-                (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
-                  env.add("optimizer", idr))
-              // such id_i doesn't exist
-              case None =>
-                val newexprs = 
-                  List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
-                  exprs.tail
-                (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
-                  env.add("optimizer", idr))
-            }
-
 
         // case 3) "optimizer" -> apply_gradients
         case Attribute(EName(idt), Id("apply_gradients"))
@@ -210,9 +190,6 @@ object TransformerTape extends TransformerMainScript {
       // case 3) "checkpoint"
       case Attribute(EName(idt), Id("save"))
         if env.get("checkpoint") contains idt =>
-          (getStmts("root-rank-wrapping", stmt), env)
-      case Attribute(EName(idt), id)
-        if env.get("model").contains(idt) && writeMethods.contains(id) =>
           (getStmts("root-rank-wrapping", stmt), env)
       // case _) other expr stmts
       case _ => super.transform(stmt)

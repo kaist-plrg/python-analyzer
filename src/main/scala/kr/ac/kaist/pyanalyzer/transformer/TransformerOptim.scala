@@ -23,6 +23,7 @@ object TransformerOptim extends TransformerMainScript {
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
+      // TODO
       case _ if env.isSubclass(expr1, "tensorflow.keras.optimizers.Adam") =>
         (getStmts("assign-optimizer-default-adam", idr), env)
       case _ => super.transform(stmt)
