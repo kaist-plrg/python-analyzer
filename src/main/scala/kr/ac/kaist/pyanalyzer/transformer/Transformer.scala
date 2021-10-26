@@ -33,6 +33,8 @@ trait TransformerMainScript extends Transformer {
     implicit env: Env, prompt: (String, String) => Unit
   ): (List[Stmt], Env) = stmt match {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
+      case _ if env.isSubclass(expr1, "tensorflow.keras.models.Model") =>
+        (stmt, env.add("model", idr))
       case _ if env.isSubclass(expr1, "tensorflow.keras.Model") =>
         (stmt, env.add("model", idr))
       case _ => super.transform(stmt)

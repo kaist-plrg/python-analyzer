@@ -33,7 +33,7 @@ class FileTransformTest extends AnyFunSuite {
         val ansAst = parseFile(ansPath)
 
         // transform the orgAst
-        val transAst = Transformer(orgAst, (_: String, _: String) => ())
+        val transAst = Transformer(orgAst, prompt = (_: String, _: String) => ())
 
         // compare by prettyprint
         val transCode = beautify(transAst)
