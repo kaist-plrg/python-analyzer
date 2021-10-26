@@ -40,9 +40,18 @@ object TransformerTape extends TransformerMainScript {
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("checkpoint", idr))
 
+        case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
+          (stmt, env.add("lr_scheduler", idr))
+
         case _ if env.isSubclass(expr1, OPTIMIZER) =>
           // find id_i "learning_rate"
           findKwarg(kwds, "learning_rate") match {
+            case Some(NormalKwarg(_, Call(expr2, _, _)))
+              if env.isSubclass(expr2, LEARNING_RATE_SCHEDULER) =>
+                (stmt, env.add("optimizer", idr))
+            case Some(NormalKwarg(_, EName(ids)))
+              if env.get("lr_scheduler") contains ids  =>
+                (stmt, env.add("optimizer", idr))
             case Some(kwarg) =>
               val expr2i = kwarg.expr
               val newkwds = replaceElement(kwds, kwarg, kwarg.copy(

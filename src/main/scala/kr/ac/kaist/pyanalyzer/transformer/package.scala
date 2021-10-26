@@ -32,6 +32,10 @@ package object transformer {
     ("tensorflow.keras.models.Functional", "tensorflow.keras.Model"),
     ("tensorflow.keras.models.Functional", "tensorflow.keras.models.Model"),
   )
+  // TODO: add more scheduler class
+  val LEARNING_RATE_SCHEDULER = List(
+    "tensorflow.keras.experimental.CosineDecay",
+  )
   val WRITE_METHOD = List(
     "write", "summary", "save_weights", "load_weights", "save"
   )
