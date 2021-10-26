@@ -32,9 +32,19 @@ package object transformer {
     ("tensorflow.keras.models.Functional", "tensorflow.keras.Model"),
     ("tensorflow.keras.models.Functional", "tensorflow.keras.models.Model"),
   )
-  // TODO: add more scheduler class
   val LEARNING_RATE_SCHEDULER = List(
+    "tensorflow.keras.optimizers.schedules.CosineDecay",
+    "tensorflow.keras.optimizers.schedules.CosineDecayRestarts",
+    "tensorflow.keras.optimizers.schedules.ExponentialDecay",
+    "tensorflow.keras.optimizers.schedules.InverseTimeDecay",
+    "tensorflow.keras.optimizers.schedules.PolynomialDecay",
+    "tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay",
     "tensorflow.keras.experimental.CosineDecay",
+    "tensorflow.keras.experimental.CosineDecayRestarts",
+  )
+  val CONST_LEARNING_RATE_SCHEDULER = List(
+    "tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay",
+    "tensorflow.keras.experimental.PiecewiseConstantDecay",
   )
   val WRITE_METHOD = List(
     "write", "summary", "save_weights", "load_weights", "save"

@@ -41,14 +41,36 @@ object TransformerTape extends TransformerMainScript {
               env.add("checkpoint", idr))
 
         case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
-          (stmt, env.add("lr_scheduler", idr))
+          findKwarg(kwds, "initial_learning_rate") match {
+            case Some(kwarg) =>
+              val newKwarg =
+                kwarg.copy(expr = parseExpr(s"${beautify(kwarg.expr)} * hvd.size()"))
+              val newKwds = replaceElement(kwds, kwarg, newKwarg)
+              (
+                AssignStmt(targets, Call(expr1, exprs, newKwds), ty),
+                env.add("lr_scheduler", idr)
+              )
+            case None if env.isSubclass(expr1,CONST_LEARNING_RATE_SCHEDULER) =>
+              (stmt, env.add("lr_scheduler", idr))
+            case None =>
+              exprs match {
+                // assume this h is for "initial_learning_rate"
+                case h :: t =>
+                  val newExprs = parseExpr(s"$h * hvd.size()") :: t
+                  (
+                    AssignStmt(targets, Call(expr1, newExprs, kwds), ty),
+                    env.add("lr_scheduler", idr)
+                  )
+                case Nil =>
+                  // inaccurate transform
+                  prompt("Inaccurate transform", "cannot find initial_learning_rate")
+                  (stmt, env.add("lr_scheduler", idr))
+              }
+          }
 
         case _ if env.isSubclass(expr1, OPTIMIZER) =>
           // find id_i "learning_rate"
           findKwarg(kwds, "learning_rate") match {
-            case Some(NormalKwarg(_, Call(expr2, _, _)))
-              if env.isSubclass(expr2, LEARNING_RATE_SCHEDULER) =>
-                (stmt, env.add("optimizer", idr))
             case Some(NormalKwarg(_, EName(ids)))
               if env.get("lr_scheduler") contains ids  =>
                 (stmt, env.add("optimizer", idr))
