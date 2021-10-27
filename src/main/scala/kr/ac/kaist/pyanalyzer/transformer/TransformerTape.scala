@@ -13,14 +13,14 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerTape extends TransformerMainScript {
-  def apply(module: Module, env: Env = Env(), prompt: (String, String) => Unit): Module = {
-    val (stmts, _) = transform(module.body)(env, prompt)
-    module.copy(body=stmts)
+  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
+    val (stmts, _, lw) = transform(module.body)
+    (module.copy(body=stmts), lw)
   }
 
   override def transform(stmt: Stmt)(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): (List[Stmt], Env) = stmt match {
+    implicit env: Env
+  ): (List[Stmt], Env, List[Warning]) = stmt match {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////
@@ -60,8 +60,11 @@ object TransformerTape extends TransformerMainScript {
                 val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
                 (newStmt, env.add("lr_scheduler", idr))
               case Nil =>
-                prompt("No initial_learning_rate", beautify(Call(expr1, exprs, kwds)))
-                (stmt, env.add("lr_scheduler", idr))
+                val warning =
+                  Warning(
+                    "No initial_learning_rate",
+                    ExprStmt(Call(expr1, exprs, kwds)))
+                (stmt, env.add("lr_scheduler", idr), warning)
             }
           }
 
@@ -90,8 +93,11 @@ object TransformerTape extends TransformerMainScript {
               val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
               (newStmt, env.add("optimizer", idr))
             case _ =>
-              prompt("No learning_rate", beautify(Call(expr1, exprs, kwds)))
-              (stmt, env.add("optimizer", idr))
+              val warning =
+                Warning(
+                  "No learning_rate",
+                  ExprStmt(Call(expr1, exprs, kwds)))
+              (stmt, env.add("optimizer", idr), warning)
           }
 
         // case 3) "optimizer" -> apply_gradients
@@ -147,7 +153,7 @@ object TransformerTape extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(tempEnv, prompt)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
       val diffEnv = tempEnv \ env
       // get "gradient_tape" id
       diffEnv.get("gradient_tape") match {
@@ -156,16 +162,16 @@ object TransformerTape extends TransformerMainScript {
           val newerStmts = 
             List(WithStmt(ty, newItems, newStmts)) ++ 
             parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
-          (newerStmts, newEnv)
+          (newerStmts, newEnv, lw)
         // not found
-        case _ => (WithStmt(ty, newItems, newStmts), newEnv)
+        case _ => (WithStmt(ty, newItems, newStmts), newEnv, lw)
       }
     /////////////////////////////////////////////////////////////////
     // Async with statement
     /////////////////////////////////////////////////////////////////
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(tempEnv, prompt)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
       val diffEnv = tempEnv \ env
       // get "gradient_tap" id
       diffEnv.get("gradient_tape") match {
@@ -174,8 +180,8 @@ object TransformerTape extends TransformerMainScript {
           val newerStmts =
             List(AsyncWithStmt(ty, newItems, newStmts)) ++
             parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
-          (newerStmts, newEnv)
-        case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv)
+          (newerStmts, newEnv, lw)
+        case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv, lw)
       }
 
     /////////////////////////////////////////////////////////////////

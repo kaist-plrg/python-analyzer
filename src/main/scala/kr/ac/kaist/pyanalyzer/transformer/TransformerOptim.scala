@@ -13,12 +13,14 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TransformerOptim extends TransformerMainScript {
-  def apply(module: Module, env: Env = Env(), prompt: (String, String) => Unit): Module =
-    module.copy(body=transform(module.body)(env, prompt)._1)
+  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
+    val (stmts, _, lw) = transform(module.body)
+    (module.copy(body=stmts), lw)
+  }
 
   override def transform(stmt: Stmt)(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): (List[Stmt], Env) = stmt match {
+    implicit env: Env
+  ): (List[Stmt], Env, List[Warning]) = stmt match {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
     /////////////////////////////////////////////////////////////////

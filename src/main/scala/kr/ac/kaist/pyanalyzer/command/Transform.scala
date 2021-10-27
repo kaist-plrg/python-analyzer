@@ -29,9 +29,6 @@ object Transform {
 
     val hvd = new File(HOROVOD_DIR)
 
-    mkdir(TRANS_LOG_DIR)
-    val logWriter = getPrintWriter(s"$TRANS_LOG_DIR/Warnings")
-    val prompt = warning(true, logWriter)
     for {
       versionDir <- hvd.listFiles if versionDir.isDirectory
       moduleDir <- versionDir.listFiles if moduleDir.isDirectory
@@ -59,11 +56,11 @@ object Transform {
         println
         println(s"$CYAN<$name>$RESET")
 
-        val orgAst = parseFile(file.toString, name)
+        val orgAst = parseFile(file.toString, fullPath diff HOROVOD_DIR)
         val orgResult = beautify(orgAst)
 
         // transformed
-        val transformedAst = Transformer(orgAst, prompt = prompt(fullPath diff HOROVOD_DIR))
+        val transformedAst = Transformer(orgAst)
         val transformedResult = beautify(transformedAst)
         // hvd
         val hvdAst = parseFile(s"$modelPath/hvd/$name")

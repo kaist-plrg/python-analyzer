@@ -1,6 +1,7 @@
 package kr.ac.kaist.pyanalyzer
 
 import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
+import kr.ac.kaist.pyanalyzer.util.Useful._
 
 package object transformer {
   val OPTIMIZER = List(
@@ -56,4 +57,5 @@ package object transformer {
     ).addEdge( // list of subclass pairs (child, parent)
       MODEL_SUBCLASS_RELATION.map(p => (parseStrFullname(p._1), parseStrFullname(p._2)))
     )
+  val TRANS_PRINT_WRITER = getPrintWriter(s"$TRANS_LOG_DIR/Warnings")
 }

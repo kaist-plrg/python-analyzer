@@ -14,21 +14,34 @@ import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
+case class Warning(message: String, code: Stmt) {
+  override def toString: String = s"$YELLOW• $message:\n  ${beautify(code)}$RESET"
+}
+
 object Transformer extends Transformer {
   // transformed one AST into another AST
-  def apply(module: Module, env: Env = Env(), prompt: (String, String) => Unit): Module = {
+  def apply(module: Module)(implicit env: Env = Env()): Module = {
     val summary = TrainingLoop(module)
-    summary.tl match {
-      case GradTape => TransformerTape(module, env, prompt)
-      case Optimizer => TransformerOptim(module, env, prompt)
-      case Bot => module.copy(body=transform(module.body)(env, prompt)._1)
+    val (newModule, lw) = summary.tl match {
+      case GradTape => TransformerTape(module)
+      case Optimizer => TransformerOptim(module)
+      case Bot =>
+        val (body, _, lw) = transform(module.body)
+        (module.copy(body=body), lw)
     }
+    lazy val promptModuleName =
+      prompt(s"<${module.name}>\n")(false, TRANS_PRINT_WRITER)
+    lw.map(warning => {
+        promptModuleName
+        prompt(s"$warning")(true, TRANS_PRINT_WRITER)
+    })
+    newModule
   }
 }
 trait TransformerMainScript extends Transformer {
   override def transform(stmt: Stmt)(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): (List[Stmt], Env) = stmt match {
+    implicit env: Env
+  ): (List[Stmt], Env, List[Warning]) = stmt match {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
       case _ if env.isSubclass(expr1, MODEL) =>
         (stmt, env.add("model", idr))
@@ -39,8 +52,8 @@ trait TransformerMainScript extends Transformer {
         if env.get("model").contains(idt) && WRITE_METHOD.contains(id.name) =>
           (getStmts("root-rank-wrapping", stmt), env)
       case Attribute(_, id) if WRITE_METHOD contains id.name =>
-        prompt("Inaccurate transform", beautify(stmt))
-        (getStmts("root-rank-wrapping", stmt), env)
+        val warning = Warning("Cannot identify method", stmt)
+        (getStmts("root-rank-wrapping", stmt), env, warning)
       case EName(Id("print")) =>
         (getStmts("root-rank-wrapping", stmt), env)
       case Attribute(EName(idt), Id("print")) if env.get("tensor_flow") contains idt =>
@@ -69,7 +82,7 @@ trait TransformerMainScript extends Transformer {
       (ImportFromStmt(lv, fromId, al), newEnv)
     case _ =>
       val newEnv = env.copy(classOrder = transferStmt(env.getClassOrder)(stmt))
-      super.transform(stmt)(newEnv, prompt)
+      super.transform(stmt)(newEnv)
   }
 
   def getStmts(name: String, nodes: Node*): List[Stmt] = getStmts(name, nodes.toList)
@@ -92,26 +105,29 @@ trait Transformer {
   // transformer for statements
   /////////////////////////////////////////
   def transform(stmts: List[Stmt])(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): (List[Stmt], Env) = 
-    stmts.foldLeft((List[Stmt](), env)) {
-      case ((stmtList, e), stmt) =>
-        val (newStmtList, newEnv) = transform(stmt)(e, prompt)
-        (stmtList ++ newStmtList, newEnv)
+    implicit env: Env
+  ): (List[Stmt], Env, List[Warning]) =
+    stmts.foldLeft((List[Stmt](), env, List[Warning]())) {
+      case ((stmtList, e, lw), stmt) =>
+        val (newStmtList, newEnv, newlw) = transform(stmt)(e)
+        (stmtList ++ newStmtList, newEnv, lw ++ newlw)
     }
 
   def transform(stmt: Stmt)(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): (List[Stmt], Env) = stmt match {
+    implicit env: Env
+  ): (List[Stmt], Env, List[Warning]) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
-      (FunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
+      val (newBody, _, lw) = transform(body)
+      (FunDef(decos, name, args, retTy, tyExpr, newBody), env, lw)
     case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
-      (AsyncFunDef(decos, name, args, retTy, tyExpr, transform(body)._1), env) 
+      val (newBody, _, lw) = transform(body)
+      (AsyncFunDef(decos, name, args, retTy, tyExpr, newBody), env, lw)
 
     // class def
     case ClassDef(decos, name, exprs, kwds, body) =>
-      (ClassDef(decos, name, exprs, kwds, transform(body)._1), env)
+      val (newBody, _, lw) = transform(body)
+      (ClassDef(decos, name, exprs, kwds, newBody), env, lw)
 
     // return, del
     case ReturnStmt(eopt) =>
@@ -134,43 +150,77 @@ trait Transformer {
     /////////////////////////////////////////////////////////////////
     // for statement
     case ForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (ForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1), env)
+      val (newDoStmt, _, dolw) = transform(doStmt)
+      val (newElseStmt, _, elselw) = transform(elseStmt)
+      val newStmt =
+        ForStmt(ty, forExpr, transform(inExpr), newDoStmt, newElseStmt)
+      (newStmt, env, dolw ++ elselw)
     case AsyncForStmt(ty, forExpr, inExpr, doStmt, elseStmt) =>
-      (AsyncForStmt(ty, forExpr, transform(inExpr), transform(doStmt)._1, transform(elseStmt)._1), env)
+      val (newDoStmt, _, dolw) = transform(doStmt)
+      val (newElseStmt, _, elselw) = transform(elseStmt)
+      val newStmt =
+        AsyncForStmt(ty, forExpr, transform(inExpr), newDoStmt, newElseStmt)
+      (newStmt, env, dolw ++ elselw)
     // while statement
     case WhileStmt(wExpr, doStmt, elseStmt) =>
-      (WhileStmt(transform(wExpr), transform(doStmt)._1, transform(elseStmt)._1), env) 
+      val (newDoStmt, _, dolw) = transform(doStmt)
+      val (newElseStmt, _, elselw) = transform(elseStmt)
+      val newStmt =
+        WhileStmt(transform(wExpr), newDoStmt, newElseStmt)
+      (newStmt, env, dolw ++ elselw) 
     // if statement
     case IfStmt(cond, thenStmt, elseStmt) =>
-      (IfStmt(transform(cond), transform(thenStmt)._1, transform(elseStmt)._1), env)
+      val (newThenStmt, _, thenlw) = transform(thenStmt)
+      val (newElseStmt, _, elselw) = transform(elseStmt)
+      val newStmt =
+        IfStmt(transform(cond), newThenStmt, newElseStmt)
+      (newStmt, env, thenlw ++ elselw)
 
     /////////////////////////////////////////////////////////////////
     // with statement
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, interEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(interEnv, prompt)
-      (WithStmt(ty, newItems, newStmts), newEnv)
+      val (newStmts, newEnv, newWarning) = transform(doStmt)(interEnv)
+      (WithStmt(ty, newItems, newStmts), newEnv, newWarning)
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, interEnv) = transformWithList(items)
-      val (newStmts, newEnv) = transform(doStmt)(interEnv, prompt)
-      (AsyncWithStmt(ty, newItems, newStmts), newEnv)
+      val (newStmts, newEnv, newWarning) = transform(doStmt)(interEnv)
+      (WithStmt(ty, newItems, newStmts), newEnv, newWarning)
 
     /////////////////////////////////////////////////////////////////
     // match statement
     /////////////////////////////////////////////////////////////////
     case MatchStmt(expr, cases) =>
-      (MatchStmt(transform(expr), cases.map(c => transform(c))), env)  
+      val (newCases, lw) =
+        cases.foldRight((List[MatchCase](), List[Warning]())) {
+          case (c, (lc, lw)) =>
+            val (newCase, newWarning) = transform(c)
+            (newCase :: lc, newWarning ++ lw)
+        }
+      (MatchStmt(transform(expr), newCases), env, lw)
 
     // exception-related statements
     case RaiseStmt(expr, from) =>
       (RaiseStmt(expr, from), env)
     case TryStmt(tryStmt, handlers, elseStmt, finallyStmt) =>
-      val newTryStmt =
+      val (newTryStmt, _, tryWarning) = transform(tryStmt)
+      val (newElseStmt, _, elseWarning) = transform(elseStmt)
+      val (newHandlers, handlerWarning) =
+        handlers.foldRight(List[ExcHandler](), List[Warning]()) {
+          case (handler, (lh, lw)) =>
+            val (newHandler, newlw) = transform(handler)
+            (newHandler :: lh, newlw ++ lw)
+        }
+      val (newFinallyStmt, _, finallyWarning) = transform(finallyStmt)
+      val newStmt =
         TryStmt(
-          transform(tryStmt)._1, handlers.map(transform),
-          transform(elseStmt)._1, transform(finallyStmt)._1)
-      (newTryStmt, env)
+          newTryStmt,
+          newHandlers,
+          newElseStmt,
+          newFinallyStmt)
+      (newStmt, env,
+        tryWarning ++ handlerWarning ++ elseWarning ++ finallyWarning)
     case AssertStmt(expr, toRaise) =>
       (AssertStmt(transform(expr), toRaise), env)
 
@@ -194,8 +244,8 @@ trait Transformer {
     case ContinueStmt => (ContinueStmt, env)
     // TODO: check transform from simple to compound exists
     case OnelineStmt(ls) =>
-      val (newLs, newEnv) = transform(ls)
-      (OnelineStmt(newLs), newEnv)
+      val (newLs, newEnv, lw) = transform(ls)
+      (OnelineStmt(newLs), newEnv, lw)
     case Comment(c) => (Comment(c), env)
   }
 
@@ -278,11 +328,12 @@ trait Transformer {
     }
 
   def transform(handler: ExcHandler)(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): ExcHandler = 
+    implicit env: Env
+  ): (ExcHandler, List[Warning]) =
     handler match {
       case ExcHandler(except, idOpt, body) =>
-        ExcHandler(except, idOpt, transform(body)._1)
+        val (newHandler, _, lw) = transform(body)
+        (ExcHandler(except, idOpt, newHandler), lw)
     }
 
   def transform(al: List[Alias])(implicit env: Env): Env = 
@@ -327,10 +378,11 @@ trait Transformer {
   }
 
   def transform(mc: MatchCase)(
-    implicit env: Env, prompt: (String, String) => Unit
-  ): MatchCase = mc match {
+    implicit env: Env
+  ): (MatchCase, List[Warning]) = mc match {
     case MatchCase(pat, cond, body) =>
-      MatchCase(transform(pat), cond.map(transform), transform(body)._1)
+      val (newBody, _, lw) = transform(body)
+      (MatchCase(transform(pat), cond.map(transform), newBody), lw)
   }
 
   def transform(pat: Pattern)(implicit env: Env): Pattern = pat match {
@@ -388,4 +440,12 @@ trait Transformer {
   // implicit conversion for Stmt
   /////////////////////////////////////////
   implicit def stmt2stmts(stmt: Stmt): List[Stmt] = List(stmt)
+  implicit def warning2Warnings(warning: Warning): List[Warning] =
+    List(warning)
+  implicit def addWarning[T](returnValue: T): (T, List[Warning]) =
+    (returnValue, Nil)
+  implicit def addWarning[T <% List[Stmt]](
+    returnValue: (T, Env)
+  ): (List[Stmt], Env, List[Warning]) =
+    (returnValue._1, returnValue._2, Nil)
 }
