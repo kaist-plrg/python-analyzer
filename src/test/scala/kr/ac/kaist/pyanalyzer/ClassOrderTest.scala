@@ -81,7 +81,7 @@ class ClassOrderTest extends AnyFunSuite {
 
   val basicTest: ClassOrder => Unit = (order: ClassOrder) => {
     val Ename = parseStrFullname("E")
-    val ABCname = parseStrFullname("A.B.C")
+    val ABCname = parseStrFullname("A.B.C.D")
     assert(order.isSubclass(Ename, ABCname))
   }
 

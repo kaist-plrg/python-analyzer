@@ -10,7 +10,9 @@ import java.io.File
 case object ClassPipe extends Pipeline[File, ClassOrder] {
   def execute(path: File): ClassOrder = {
     val res = dirClassOrder(path) 
+    println(s"-------CHA:$path------")
     println(res)
+    println("-----------------------")
     res
   }
 }

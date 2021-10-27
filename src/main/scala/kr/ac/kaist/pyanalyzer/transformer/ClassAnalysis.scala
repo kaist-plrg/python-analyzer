@@ -63,7 +63,8 @@ object ClassAnalysis {
     case DirInfo(dname, ds, fs) => {
       val newDirOrders: List[ClassOrder] = ds.map((di: DirInfo[ClassOrder]) => 
         infoModularize(di).addPrefix(di.name, noChangeSet))
-      val newFileOrders: List[ClassOrder] = fs.map(_.info)
+      val newFileOrders: List[ClassOrder] = 
+        fs.map(x => x.info.addPrefix(x.filename, noChangeSet))
       (newDirOrders ++ newFileOrders).reduce(_.merge(_)) //.addPrefix(dname, noChangeSet)
     }
     case FileInfo(fname, o) => o.addPrefix(fname, noChangeSet)

@@ -56,7 +56,8 @@ object DirWalker {
           dirList.map(walkFile[T](_)(f)).map(onlyDir[T])
         // make info for files directly inside
         val fileInfos: List[FileInfo[T]] =
-          fileList.map(file => FileInfo(file.getName(), f(file)))
+          fileList.map(file => 
+            FileInfo(file.getName().replaceFirst("[.][^.]+$", ""), f(file)))
 
         DirInfo[T](file.getName(), dirInfos, fileInfos)
     }
