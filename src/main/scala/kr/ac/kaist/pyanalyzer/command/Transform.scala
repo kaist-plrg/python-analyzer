@@ -38,9 +38,11 @@ object Transform {
       modelDir <- moduleDir.listFiles if modelDir.isDirectory
       modelPath = modelDir.toString
     } {
-      println
-      println(s"$MAGENTA${modelPath diff HOROVOD_DIR}$RESET")
-      println
+      lazy val printModelName = {
+        println
+        println(s"$MAGENTA${modelPath diff HOROVOD_DIR}$RESET")
+        println
+      }
 
       // get modules in the model
       val files = walkTree(modelPath)
@@ -52,6 +54,7 @@ object Transform {
         if path startsWith "/org/"
         if target matches fullPath
       } try {
+        printModelName
         val name = path.drop(5)
         println
         println(s"$CYAN<$name>$RESET")
