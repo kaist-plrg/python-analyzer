@@ -15,7 +15,8 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 case class Warning(message: String, code: Stmt) {
-  override def toString: String = s"$YELLOW• $message:\n  ${beautify(code)}$RESET"
+  override def toString: String =
+    s"$YELLOW• $message:\n  ${beautify(code)}$RESET"
 }
 
 object Transformer extends Transformer {
