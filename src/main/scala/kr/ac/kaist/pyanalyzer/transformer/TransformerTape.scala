@@ -42,52 +42,56 @@ object TransformerTape extends TransformerMainScript {
 
         case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
           findKwarg(kwds, "initial_learning_rate") match {
+            // keword initial learning rate
             case Some(kwarg) =>
-              val newKwarg =
-                kwarg.copy(expr = parseExpr(s"${beautify(kwarg.expr)} * hvd.size()"))
+              val newExpr = parseExpr(s"${beautify(kwarg.expr)} * hvd.size()")
+              val newKwarg = kwarg.copy(expr = newExpr)
               val newKwds = replaceElement(kwds, kwarg, newKwarg)
-              (
-                AssignStmt(targets, Call(expr1, exprs, newKwds), ty),
-                env.add("lr_scheduler", idr)
-              )
-            case None if env.isSubclass(expr1,CONST_LEARNING_RATE_SCHEDULER) =>
-              (stmt, env.add("lr_scheduler", idr))
-            case None =>
-              exprs match {
-                // assume this h is for "initial_learning_rate"
-                case h :: t =>
-                  val newExprs = parseExpr(s"$h * hvd.size()") :: t
-                  (
-                    AssignStmt(targets, Call(expr1, newExprs, kwds), ty),
-                    env.add("lr_scheduler", idr)
-                  )
-                case Nil =>
-                  // inaccurate transform
-                  prompt("Inaccurate transform", "cannot find initial_learning_rate")
-                  (stmt, env.add("lr_scheduler", idr))
-              }
+              val newStmt = AssignStmt(targets, Call(expr1, exprs, newKwds), ty)
+              (newStmt, env.add("lr_scheduler", idr))
+            // no initial learning rate
+            case None
+              if env.isSubclass(expr1,CONST_LEARNING_RATE_SCHEDULER) =>
+                (stmt, env.add("lr_scheduler", idr))
+            case None => exprs match {
+              // positional initial learning rate
+              case h :: t =>
+                val newExprs = parseExpr(s"$h * hvd.size()") :: t
+                val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
+                (newStmt, env.add("lr_scheduler", idr))
+              case Nil =>
+                prompt("No initial_learning_rate", beautify(Call(expr1, exprs, kwds)))
+                (stmt, env.add("lr_scheduler", idr))
+            }
           }
 
         case _ if env.isSubclass(expr1, OPTIMIZER) =>
-          // find id_i "learning_rate"
-          findKwarg(kwds, "learning_rate") match {
-            case Some(NormalKwarg(_, EName(ids)))
-              if env.get("lr_scheduler") contains ids  =>
+          // assume learning_rate is first positional argument
+          (exprs.headOption, findKwarg(kwds, "learning_rate")) match {
+            // keyword learning rate scheduler
+            case (None, Some(NormalKwarg(_, EName(ids))))
+              if env.get("lr_scheduler") contains ids =>
                 (stmt, env.add("optimizer", idr))
-            case Some(kwarg) =>
-              val expr2i = kwarg.expr
-              val newkwds = replaceElement(kwds, kwarg, kwarg.copy(
-                expr = parseExpr(s"(${beautify(expr2i)}) * hvd.size()")
-              ))
-              (AssignStmt(targets, Call(expr1, exprs, newkwds), ty), 
-                env.add("optimizer", idr))
-            // such id_i doesn't exist
-            case None =>
-              val newexprs = 
-                List(parseExpr(s"(${beautify(exprs.head)}) * hvd.size()")) ++
-                exprs.tail
-              (AssignStmt(targets, Call(expr1, newexprs, kwds), ty), 
-                env.add("optimizer", idr))
+            // keyword constant learning rate
+            case (None, Some(kwarg)) =>
+              val newExpr = parseExpr(s"(${beautify(kwarg.expr)}) * hvd.size()")
+              val newKwarg = kwarg.copy(expr = newExpr)
+              val newkwds = replaceElement(kwds, kwarg, newKwarg)
+              val newStmt = AssignStmt(targets, Call(expr1, exprs, newkwds), ty)
+              (newStmt, env.add("optimizer", idr))
+            // positional learning rate scheduler
+            case (Some(EName(ids)), None)
+              if env.get("lr_scheduler") contains ids =>
+                (stmt, env.add("optimizer", idr))
+            // positional constant learning rate
+            case (Some(h), None) =>
+              val newExpr = parseExpr(s"(${beautify(h)}) * hvd.size()")
+              val newExprs = newExpr :: exprs.tail
+              val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
+              (newStmt, env.add("optimizer", idr))
+            case _ =>
+              prompt("No learning_rate", beautify(Call(expr1, exprs, kwds)))
+              (stmt, env.add("optimizer", idr))
           }
 
         // case 3) "optimizer" -> apply_gradients
