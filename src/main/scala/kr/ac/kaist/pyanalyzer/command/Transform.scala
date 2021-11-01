@@ -6,6 +6,8 @@ import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast.Module
+import kr.ac.kaist.pyanalyzer.transformer._
+import kr.ac.kaist.pyanalyzer.transformer.ClassOrder
 import kr.ac.kaist.pyanalyzer.transformer.Transformer
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.util.Useful._
@@ -59,8 +61,13 @@ object Transform {
         val orgAst = parseFile(file.toString, fullPath diff HOROVOD_DIR)
         val orgResult = beautify(orgAst)
 
+        // no CHA
+        val order = GIVEN_CLASS_ORDER
+
+        val tl = TrainingLoop(orgAst, order).tl
+
         // transformed
-        val transformedAst = Transformer(orgAst)
+        val transformedAst = Transformer(orgAst, order, tl)
         val transformedResult = beautify(transformedAst)
         // hvd
         val hvdAst = parseFile(s"$modelPath/hvd/$name")

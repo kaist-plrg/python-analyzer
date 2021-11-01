@@ -21,9 +21,9 @@ case class Warning(message: String, code: Stmt) {
 
 object Transformer extends Transformer {
   // transformed one AST into another AST
-  def apply(module: Module)(implicit env: Env = Env()): Module = {
-    val summary = TrainingLoop(module)
-    val (newModule, lw) = summary.tl match {
+  def apply(module: Module, order: ClassOrder, tl: TLType): Module = {
+    implicit val env = Env(classOrder=order)
+    val (newModule, lw) = tl match {
       case GradTape => TransformerTape(module)
       case Optimizer => TransformerOptim(module)
       case Bot =>

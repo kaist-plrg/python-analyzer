@@ -47,7 +47,7 @@ object ClassAnalysis {
     } catch {
       case EmptyFileException => Module(List())
     }
-  def moduleToOrder(ast: Module): ClassOrder = transferModule(ClassOrder())(ast)
+  def moduleToOrder(ast: Module): ClassOrder = transferModule(GIVEN_CLASS_ORDER)(ast)
 
   def getDirClassInfo(file: File): Info[ClassOrder] =
     if (file.isDirectory()) {

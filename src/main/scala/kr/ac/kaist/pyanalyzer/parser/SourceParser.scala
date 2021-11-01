@@ -47,5 +47,5 @@ object SourceParser {
      parseSource(readSource(filename), name)
 
    def parseFile(file: File): Module = 
-     parseSource(readSource(file), "")
+     parseSource(readSource(file), file.toString)
 }

@@ -1,13 +1,15 @@
 package kr.ac.kaist.pyanalyzer.transformer
-import kr.ac.kaist.pyanalyzer.parser.ast._
+
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
-import kr.ac.kaist.pyanalyzer.util.Useful._
-import kr.ac.kaist.pyanalyzer.util.UnitWalker
+import kr.ac.kaist.pyanalyzer.parser.ast._
+import kr.ac.kaist.pyanalyzer.transformer.ClassOrder
 import kr.ac.kaist.pyanalyzer.util.Errors._
+import kr.ac.kaist.pyanalyzer.util.UnitWalker
+import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
 object TrainingLoop {
-  def apply(module: Module): ModuleSummary = {
+  def apply(module: Module, order: ClassOrder): ModuleSummary = {
     val (env, tl) = getBodySummary(body = module.body)
     ModuleSummary(module.name, env, tl)
   }

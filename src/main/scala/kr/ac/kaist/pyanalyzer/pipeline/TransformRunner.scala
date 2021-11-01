@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.pipeline._
 import kr.ac.kaist.pyanalyzer.pipeline.Pipeline.PipelineOps
 
 object TransformRunner {
-  val transformPipe = PathPipe >> (ParsePipe || ClassPipe) >> TransformPipe
+  val transformPipe =
+    PathPipe >> (ParsePipe || ClassPipe) >> TrainingLoopPipe >> TransformPipe
   def run(path: String): Module = transformPipe!!(path) 
 }
