@@ -1,4 +1,4 @@
-package kr.ac.kaist.pyanalyzer.transformer
+package kr.ac.kaist.pyanalyzer.hierarchy
 
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.MultiMap._

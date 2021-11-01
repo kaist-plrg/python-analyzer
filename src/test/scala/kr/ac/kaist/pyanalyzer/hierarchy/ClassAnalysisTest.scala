@@ -1,9 +1,9 @@
-package kr.ac.kaist.pyanalyzer.transformer
+package kr.ac.kaist.pyanalyzer.hierarchy
 
 import kr.ac.kaist.pyanalyzer._
 import org.scalatest.funsuite._
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
-import kr.ac.kaist.pyanalyzer.transformer.ClassAnalysis._
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassAnalysis._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import java.io.File
 

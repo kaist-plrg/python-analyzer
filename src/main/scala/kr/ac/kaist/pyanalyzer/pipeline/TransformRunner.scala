@@ -3,7 +3,8 @@ package kr.ac.kaist.pyanalyzer.pipeline
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.pipeline._
 import kr.ac.kaist.pyanalyzer.util.{ Info }
-import kr.ac.kaist.pyanalyzer.transformer.{ ClassOrder, ModuleSummary }
+import kr.ac.kaist.pyanalyzer.transformer.{ ModuleSummary }
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
 import kr.ac.kaist.pyanalyzer.pipeline.Pipeline._
 import kr.ac.kaist.pyanalyzer.pipeline.Pipeline.PipelineOps
 

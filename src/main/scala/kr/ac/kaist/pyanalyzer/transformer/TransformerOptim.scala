@@ -5,7 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
 import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.transformer.TransformerTape

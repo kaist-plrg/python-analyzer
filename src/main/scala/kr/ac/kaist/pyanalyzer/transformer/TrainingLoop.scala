@@ -3,8 +3,8 @@ package kr.ac.kaist.pyanalyzer.transformer
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.transformer._
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
 import kr.ac.kaist.pyanalyzer.util.Errors._
 import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Useful._

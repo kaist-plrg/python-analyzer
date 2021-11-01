@@ -2,8 +2,8 @@ package kr.ac.kaist.pyanalyzer.pipeline
 
 import kr.ac.kaist.pyanalyzer.pipeline.Pipeline
 import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder
-import kr.ac.kaist.pyanalyzer.transformer.ClassAnalysis._
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassAnalysis._
 import kr.ac.kaist.pyanalyzer.util.Info
 import java.io.File
 

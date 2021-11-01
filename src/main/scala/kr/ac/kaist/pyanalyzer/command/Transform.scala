@@ -7,7 +7,7 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast.Module
 import kr.ac.kaist.pyanalyzer.transformer._
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
 import kr.ac.kaist.pyanalyzer.transformer.Transformer
 import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
 import kr.ac.kaist.pyanalyzer.util.Useful._

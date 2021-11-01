@@ -1,6 +1,7 @@
 package kr.ac.kaist.pyanalyzer
 
-import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
+import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
 package object transformer {
