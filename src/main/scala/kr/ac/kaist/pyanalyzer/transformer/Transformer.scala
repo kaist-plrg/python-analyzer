@@ -16,7 +16,7 @@ import scala.Console._
 
 case class Warning(message: String, code: Stmt) {
   override def toString: String =
-    s"$YELLOW• $message:\n  ${beautify(code)}$RESET"
+    s"$YELLOW• ${beautify(code)}  - $message\n$RESET"
 }
 
 object Transformer extends Transformer {
@@ -54,17 +54,21 @@ trait TransformerMainScript extends Transformer {
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(EName(idt), id)
         if env.get("model").contains(idt) && WRITE_METHOD.contains(id.name) =>
-          (getStmts("root-rank-wrapping", stmt), env)
+          (getStmts("root-rank-blocking", stmt), env)
       case Attribute(EName(idt), Id("save"))
         if env.get("checkpoint") contains idt =>
-          (getStmts("root-rank-wrapping", stmt), env)
-      case Attribute(_, id) if WRITE_METHOD contains id.name =>
-        val warning = Warning("Cannot identify method", stmt)
-        (getStmts("root-rank-wrapping", stmt), env, warning)
+          (getStmts("root-rank-blocking", stmt), env)
+      case Attribute(receiver, id) if WRITE_METHOD contains id.name =>
+        val warningMessage =
+          s"""Cannot identify the receiver, `${beautify(receiver)}`
+          |    Root rank blocking to this statement can be inaccurate""".stripMargin
+        val warning =
+          Warning(warningMessage, stmt)
+        (getStmts("root-rank-blocking", stmt), env, warning)
       case EName(Id("print")) =>
-        (getStmts("root-rank-wrapping", stmt), env)
+        (getStmts("root-rank-blocking", stmt), env)
       case Attribute(EName(idt), Id("print")) if env.get("tensor_flow") contains idt =>
-        (getStmts("root-rank-wrapping", stmt), env)
+        (getStmts("root-rank-blocking", stmt), env)
       case _ => (ExprStmt(super.transform(Call(expr1, exprs, kwds))), env)
     }
     /////////////////////////////////////////////////////////////////
@@ -99,7 +103,7 @@ trait TransformerMainScript extends Transformer {
       case None => Nil
     }
   private val codeData: Map[String, List[String] => String] = Map(
-    "root-rank-wrapping" -> (codeSeg => {
+    "root-rank-blocking" -> (codeSeg => {
       val stmt = codeSeg(0)
       s"""if hvd.rank() == 0: $stmt"""
     }),

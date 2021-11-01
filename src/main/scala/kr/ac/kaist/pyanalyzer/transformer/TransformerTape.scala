@@ -54,9 +54,7 @@ object TransformerTape extends TransformerMainScript {
                 (newStmt, env.add("lr_scheduler", idr))
               case Nil =>
                 val warning =
-                  Warning(
-                    "No initial_learning_rate",
-                    ExprStmt(Call(expr1, exprs, kwds)))
+                  Warning("Cannot find initial_learning_rate", stmt)
                 (stmt, env.add("lr_scheduler", idr), warning)
             }
           }
@@ -87,9 +85,7 @@ object TransformerTape extends TransformerMainScript {
               (newStmt, env.add("optimizer", idr))
             case _ =>
               val warning =
-                Warning(
-                  "No learning_rate",
-                  ExprStmt(Call(expr1, exprs, kwds)))
+                Warning("Cannot find learning_rate", stmt)
               (stmt, env.add("optimizer", idr), warning)
           }
 

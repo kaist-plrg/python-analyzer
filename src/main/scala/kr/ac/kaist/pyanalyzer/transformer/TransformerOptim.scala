@@ -55,9 +55,7 @@ object TransformerOptim extends TransformerMainScript {
               (newStmt :: optimWrapping, env.add("optimizer", idr))
             case _ =>
               val warning =
-                Warning(
-                  "No learning_rate",
-                  ExprStmt(Call(expr1, exprs, kwds)))
+                Warning("Cannot find learning_rate", stmt)
               (stmt :: optimWrapping, env.add("optimizer", idr), warning)
           }
 
@@ -123,14 +121,15 @@ object TransformerOptim extends TransformerMainScript {
             replaceElement(kwds, vbKwarg, newVbKwarg)
           case None => kwds :+ NormalKwarg(Id("verbose"), verboseExpr)
         }
-        val speKwds = findKwarg(kwds, "steps_per_epoch") match {
+        val (speKwds, lw) = findKwarg(kwds, "steps_per_epoch") match {
           case Some(speKwarg) =>
             val newExpr = parseExpr(s"${beautify(speKwarg.expr)} // hvd.size()")
             val newSpeKwarg = speKwarg.copy(expr = newExpr)
-            replaceElement(vbKwds, speKwarg, newSpeKwarg)
+            (replaceElement(vbKwds, speKwarg, newSpeKwarg), Nil)
           case None =>
-            // TODO add warning
-            vbKwds
+            val warning =
+              Warning("Epochs can be divided by `hvd.size()`", stmt)
+            (vbKwds, List(warning))
         }
         val newStmts = findKwarg(kwds, "callbacks") match {
           case Some(cbKwarg) =>
@@ -142,7 +141,7 @@ object TransformerOptim extends TransformerMainScript {
             val newCbKwarg = NormalKwarg(Id("callbacks"), callbacksExpr)
             ExprStmt(Call(expr1, exprs, speKwds :+ newCbKwarg)) :: Nil
         }
-        (newStmts, env)
+        (newStmts, env, lw)
       case _ => super.transform(stmt)
     }
     case _ => super.transform(stmt)
