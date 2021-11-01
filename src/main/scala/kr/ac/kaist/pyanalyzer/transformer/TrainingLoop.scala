@@ -2,7 +2,9 @@ package kr.ac.kaist.pyanalyzer.transformer
 
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast._
+import kr.ac.kaist.pyanalyzer.transformer._
 import kr.ac.kaist.pyanalyzer.transformer.ClassOrder
+import kr.ac.kaist.pyanalyzer.transformer.ClassOrder._
 import kr.ac.kaist.pyanalyzer.util.Errors._
 import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Useful._
@@ -10,15 +12,17 @@ import scala.Console._
 
 object TrainingLoop {
   def apply(module: Module, order: ClassOrder): ModuleSummary = {
-    val (env, tl) = getBodySummary(body = module.body)
+    val (env, tl) = getBodySummary(order = order, body = module.body)
     ModuleSummary(module.name, env, tl)
   }
 
   private def getBodySummary(
     outerEnv: TLEnv[Summary] = TLEnv[Summary](),
+    order: ClassOrder,
     body: List[Stmt]
   ): (TLEnv[Summary], TLType) = {
     // variables for storing the side effect of UnitWalker
+    implicit var newOrder = order
     var env = TLEnv[Summary]()
     var tl: TLType = Bot
 
@@ -26,61 +30,40 @@ object TrainingLoop {
     object SummaryWalker extends SummaryWalker
     trait SummaryWalker extends UnitWalker {
 
-      // update env
-      override def walk(alias: Alias): Unit = alias match {
-        case Alias(lx, opt) if lx.exists(x => x.name == "tensorflow") =>
-          val id = opt.getOrElse(Id("tensorflow"))
-          env += id -> ValueSummary(id.name, "tensor_flow")
-        case _ =>
-      }
-
       // update summary map
       override def walk(stmt: Stmt): Unit = stmt match {
-        // TODO: more general imoprt walker
-        case ImportFromStmt(level, List(Id("tensorflow")),
-          List(Alias(List(Id("keras")), None))) =>
-            env += Id("keras") -> ValueSummary("keras", "tensor_flow_keras")
+        case ImportStmt(_) => newOrder = transferStmt(newOrder)(stmt)
+
+        case ImportFromStmt(_, _, _) => newOrder = transferStmt(newOrder)(stmt)
 
         case FunDef(_, x, _, _, _, body) =>
-          val (innerEnv, innerTl) = getBodySummary(outerEnv ++ env, body)
-          env += x -> FuncSummary(x.name, innerEnv, innerTl)
+          val (_, innerTl) = getBodySummary(outerEnv ++ env, newOrder, body)
+          env += x -> FuncSummary(x.name, innerTl)
 
         case AsyncFunDef(_, x, _, _, _, body) =>
-          val (innerEnv, innerTl) = getBodySummary(outerEnv ++ env, body)
-          env += x -> FuncSummary(x.name, innerEnv, innerTl)
+          val (_, innerTl) = getBodySummary(outerEnv ++ env, newOrder, body)
+          env += x -> FuncSummary(x.name, innerTl)
 
-        case ClassDef(_, x, le, _, body) =>
-          // body summary
-          val (innerEnv, _) = getBodySummary(outerEnv ++ env, body)
-          // TODO: add more case for subclassing
-          val supers = le.map {
-            case Attribute(EName(Id("keras")), Id("Model")) =>
-              Some("tensor_flow_keras_model")
-            case _ => None
-          }
+        case AssignStmt(List(EName(x)), Call(expr1, _, _), _)
+          if isSubclass(expr1, MODEL) =>
+            env += x -> ValueSummary(x.name, "model")
 
-          env += x ->
-            ClassSummary(x.name, supers.flatten, innerEnv)
-
-        case AssignStmt(List(EName(x)), e, _)
-          if isKerasModel(outerEnv ++ env, e) =>
-            env += x -> ValueSummary(x.name, "tensor_flow_keras_model")
-
-        case _ => super.walk(stmt)
+        case _ =>
+          newOrder = transferStmt(newOrder)(stmt)
+          super.walk(stmt)
       }
 
       // set tl
       override def walk(expr: Expr): Unit = expr match {
         // DistributedGradientTape training loop identifier
-        case Call(Attribute(EName(x), Id("GradientTape")), Nil, Nil)
-          if (outerEnv ++ env).get(x) contains ValueSummary(x.name, "tensor_flow") =>
+        case Call(expr1, _, _) if isSubclass(expr1, "tensorflow.GradientTape") =>
             // multiple training loops
             if (tl == Optimizer) throw TLException
             tl = GradTape
 
         // DistributedOptimizer training loop identifier
-        case Call(Attribute(model, Id("fit")), _, _)
-          if isKerasModel(outerEnv ++ env, model) =>
+        case Call(Attribute(EName(model), Id("fit")), _, _)
+          if (outerEnv ++ env).get(model) contains ValueSummary(model.name, "model") =>
             // multiple training loops
             if (tl == GradTape) throw TLException
             tl = Optimizer
@@ -88,7 +71,7 @@ object TrainingLoop {
         // Normal Call expression
         case Call(EName(x), _, _) =>
           (outerEnv ++ env).get(x) match {
-            case Some(FuncSummary(x.name, innerEnv, innerTl)) if innerTl != Bot =>
+            case Some(FuncSummary(x.name, innerTl)) if innerTl != Bot =>
               tl = innerTl
             // TODO: Add ClassSummary case
             case _ => super.walk(expr)
@@ -101,32 +84,22 @@ object TrainingLoop {
     (env, tl)
   }
 
-  // identify tensorflow.keras.models
-  private def isKerasModel(
-    env: TLEnv[Summary],
-    model: Expr
-  ): Boolean = model match {
-    // Sequential API
-    case Call(Attribute(Attribute(Attribute(
-      EName(tf), Id("keras")), Id("models")), Id("Sequential")), _, _)
-        if env.get(tf) contains ValueSummary(tf.name, "tensor_flow") => true
-
-    // Funtional API
-    case Call(Attribute(Attribute(EName(tf), Id("keras")), Id("Model")), _, _)
-      if env.get(tf) contains ValueSummary(tf.name, "tensor_flow") => true
-    case Call(EName(model), _, _)
-      if env.get(model) contains ValueSummary(model.name, "tensor_flow_keras_model") => true
-
-    // Subclassing API
-    case Call(EName(subclass), _, _) => env.get(subclass) match {
-      case Some(ClassSummary(_, supers, _)) => supers contains "tensor_flow_keras_model"
-      case _ => false
+  def isSubclass(
+    expr: Expr,
+    parentCandidates: List[String]
+  )(implicit order: ClassOrder): Boolean =
+    parentCandidates.exists(isSubclass(expr, _))
+  def isSubclass(
+    expr: Expr,
+    parentName: String
+  )(implicit order: ClassOrder): Boolean =
+    order.parseFullname(expr) match {
+      case Some(fullname) =>
+        val parentFullname = parseStrFullname(parentName)
+        if (fullname == parentFullname) true
+        else order.safeIsSubclass(fullname, parentFullname)
+      case None => false
     }
-
-    // already defined in environment
-    case EName(x) if env.get(x) contains ValueSummary(x.name, "tensor_flow_keras_model") => true
-    case _ => false
-  }
 }
 
 case class TLEnv[T <: Summary](env: Map[Id, T] = Map[Id, T]()) {
@@ -154,11 +127,8 @@ abstract class Summary {
       s"└ M-$name: $tl\n${env.toString(depth)}"
     case ModuleSummary(name, env, tl) =>
       s"• M-$name: $tl\n${env.toString(depth)}"
-    case FuncSummary(name, env, tl) =>
-      s"• F-$name: $tl\n${env.toString(depth)}"
-    case ClassSummary(name, supers, env) =>
-      val args = supers.foldLeft("")((str, e) => s"$str$e, ")
-      s"• C-$name($args)\n${env.toString(depth)}"
+    case FuncSummary(name, tl) =>
+      s"• F-$name: $tl\n"
     case ValueSummary(name, str) => s"• V-$name: $str\n"
   }
 }
@@ -171,25 +141,13 @@ case class ModuleSummary(
 
 case class FuncSummary(
   name: String,
-  env: TLEnv[Summary],
   tl: TLType,
-) extends Summary
-
-case class ClassSummary(
-  name: String,
-  supers: List[String],
-  env: TLEnv[Summary],
 ) extends Summary
 
 case class ValueSummary(
   name: String,
   value: String
 ) extends Summary
-
-// TODO: more general arg summary
-case class ArgSummary(parent: Boolean) {
-  override def toString = if (parent) "Model" else ""
-}
 
 trait TLType
 
