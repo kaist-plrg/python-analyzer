@@ -26,19 +26,12 @@ object TransformerTape extends TransformerMainScript {
     /////////////////////////////////////////////////////////////////
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
-      val fullnameOpt = env.getClassOrder.parseFullname(expr1)
       expr1 match {
         // case 1) "tensor_flow" -> data.Dataset
         case Attribute(Attribute(Attribute(EName(idt), Id("data")), Id("Dataset")), _)
           if env.get("tensor_flow") contains idt =>
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("dataset", idr))
-
-        // case 2) "tensor_flow" -> train.Checkpoint
-        case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
-          if env.get("tensor_flow") contains idt =>
-            (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
-              env.add("checkpoint", idr))
 
         case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
           findKwarg(kwds, "initial_learning_rate") match {
@@ -124,12 +117,7 @@ object TransformerTape extends TransformerMainScript {
                 ) ++ getStmts("assign-optimizer-none", idz)
                 (newStmts, env)
             }
-        // case 4) "chcekpoint" -> idt.save
-        case Attribute(EName(idt), Id("save"))
-          if env.get("checkpoint") contains idt =>
-            (getStmts("root-rank-wrapping", stmt), env)
 
-        // case 5) etc.
         case _ =>
           super.transform(stmt)
           //(AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
@@ -228,10 +216,6 @@ object TransformerTape extends TransformerMainScript {
               ) ++ getStmts("expr-optimizer-none", idz, idt)
               (newStmts, env)
           }
-      // case 3) "checkpoint"
-      case Attribute(EName(idt), Id("save"))
-        if env.get("checkpoint") contains idt =>
-          (getStmts("root-rank-wrapping", stmt), env)
       // case _) other expr stmts
       case _ => super.transform(stmt)
     }

@@ -46,11 +46,17 @@ trait TransformerMainScript extends Transformer {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
       case _ if env.isSubclass(expr1, MODEL) =>
         (stmt, env.add("model", idr))
+      case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
+        if env.get("tensor_flow") contains idt =>
+          (stmt, env.add("checkpoint", idr))
       case _ => super.transform(stmt)
     }
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(EName(idt), id)
         if env.get("model").contains(idt) && WRITE_METHOD.contains(id.name) =>
+          (getStmts("root-rank-wrapping", stmt), env)
+      case Attribute(EName(idt), Id("save"))
+        if env.get("checkpoint") contains idt =>
           (getStmts("root-rank-wrapping", stmt), env)
       case Attribute(_, id) if WRITE_METHOD contains id.name =>
         val warning = Warning("Cannot identify method", stmt)
