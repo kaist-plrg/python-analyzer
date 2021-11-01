@@ -32,8 +32,12 @@ class FileTransformTest extends AnyFunSuite {
         val orgAst = parseFile(orgPath)
         val ansAst = parseFile(ansPath)
 
+        val order = GIVEN_CLASS_ORDER
+
+        val tl = TrainingLoop(orgAst, order).tl
+
         // transform the orgAst
-        val transAst = Transformer(orgAst)
+        val transAst = Transformer(orgAst, order, tl)
 
         // compare by prettyprint
         val transCode = beautify(transAst)
