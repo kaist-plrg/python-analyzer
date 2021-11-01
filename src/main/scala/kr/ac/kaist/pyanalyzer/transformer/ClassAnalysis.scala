@@ -48,6 +48,12 @@ object ClassAnalysis {
       case EmptyFileException => Module(List())
     }
   def moduleToOrder(ast: Module): ClassOrder = transferModule(GIVEN_CLASS_ORDER)(ast)
+  
+  def infoModuleToOrder(i: Info[Module]): ClassOrder = {
+    val infoOrder = i.map(moduleToOrder(_))
+    infoModularize(infoOrder) 
+  }
+  
 
   def getDirClassInfo(file: File): Info[ClassOrder] =
     if (file.isDirectory()) {

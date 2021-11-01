@@ -7,6 +7,6 @@ import kr.ac.kaist.pyanalyzer.util.Info
 import kr.ac.kaist.pyanalyzer.util.DirWalker._
 import java.io.File
 
-case object ParsePipe extends Pipeline[File, Module] {
- def execute(path: File): Module = parseFile(path)
+case object ParsePipe extends Pipeline[File, Info[Module]] {
+ def execute(path: File): Info[Module] = walkFile(path)(parseFile(_))
 }
