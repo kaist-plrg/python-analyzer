@@ -1,23 +1,21 @@
 package kr.ac.kaist.pyanalyzer.transformer
 
-import kr.ac.kaist.pyanalyzer.parser._
-import kr.ac.kaist.pyanalyzer.parser.TokenListParser
-import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
-import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
-import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
-import kr.ac.kaist.pyanalyzer.transformer.Transformer
+import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object TransformerTape extends TransformerMainScript {
+object DistGradTapeRule extends DistGradTapeRule {
   def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
     val (stmts, _, lw) = transform(module.body)
     (module.copy(body=stmts), lw)
   }
+}
 
+// Transform rule for main module of DistributedGradientTape model
+trait DistGradTapeRule extends MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
@@ -258,10 +256,6 @@ object TransformerTape extends TransformerMainScript {
       }
   }
 
-  /////////////////////////////////////////
-  // Data needed for transformation
-  // TODO this is actually static thingy...
-  /////////////////////////////////////////
   override def getStmts(name:String, nodes: List[Node]): List[Stmt] =
     codeData.get(name) match {
       case Some(data) => parseStmts(data(nodes.map(beautify(_))))

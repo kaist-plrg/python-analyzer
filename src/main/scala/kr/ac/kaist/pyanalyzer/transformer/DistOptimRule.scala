@@ -1,23 +1,21 @@
 package kr.ac.kaist.pyanalyzer.transformer
 
-import kr.ac.kaist.pyanalyzer.parser._
-import kr.ac.kaist.pyanalyzer.parser.TokenListParser
-import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
-import kr.ac.kaist.pyanalyzer.transformer.Preprocess._
-import kr.ac.kaist.pyanalyzer.transformer.TrainingLoop
-import kr.ac.kaist.pyanalyzer.transformer.TransformerTape
+import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object TransformerOptim extends TransformerMainScript {
+object DistOptimRule extends DistOptimRule {
   def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
     val (stmts, _, lw) = transform(module.body)
     (module.copy(body=stmts), lw)
   }
+}
 
+// Transform rule for main module of DistributedOptimizer model
+trait DistOptimRule extends MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
@@ -27,7 +25,6 @@ object TransformerOptim extends TransformerMainScript {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
       expr1 match {
-        // TODO
         case _ if env.isSubclass(expr1, OPTIMIZER) =>
           val optimWrapping = getStmts("wrapping-optim", idr)
           // assume learning_rate is first positional argument
@@ -181,8 +178,5 @@ object TransformerOptim extends TransformerMainScript {
           |if hvd.rank() == 0:
           |  callbacks.append($existing_callbacks)""".stripMargin
     }),
-    "model-summary" -> (names =>
-        s"""if hvd.rank() == 0: model.summary()"""
-    ),
   )
 }

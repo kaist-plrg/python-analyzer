@@ -28,12 +28,15 @@ package object transformer {
     "tensorflow.keras.Model",
     "tensorflow.keras.models.Model",
   )
-  private val MODEL_SUBCLASS_RELATION = List(
-    ("tensorflow.keras.models.Sequential", "tensorflow.keras.Model"),
-    ("tensorflow.keras.models.Sequential", "tensorflow.keras.models.Model"),
-    ("tensorflow.keras.models.Functional", "tensorflow.keras.Model"),
-    ("tensorflow.keras.models.Functional", "tensorflow.keras.models.Model"),
+  val MODEL_SUBCLASS = List(
+    "tensorflow.keras.models.Sequential",
+    "tensorflow.keras.models.Functional",
   )
+  private val MODEL_SUBCLASS_RELATION =
+    for {
+      model <- MODEL
+      modelSubclass <- MODEL_SUBCLASS
+    } yield (modelSubclass, model)
   val LEARNING_RATE_SCHEDULER = List(
     "tensorflow.keras.optimizers.schedules.CosineDecay",
     "tensorflow.keras.optimizers.schedules.CosineDecayRestarts",

@@ -4,7 +4,6 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
 import kr.ac.kaist.pyanalyzer.hierarchy.Fullname
-import kr.ac.kaist.pyanalyzer.util.MultiMap._
 
 case class Env(
   private val map: Map[String, Id] = Map(),
