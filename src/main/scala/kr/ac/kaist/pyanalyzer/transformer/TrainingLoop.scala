@@ -55,25 +55,50 @@ object TrainingLoop {
 
       // set tl
       override def walk(expr: Expr): Unit = expr match {
-        // DistributedGradientTape training loop identifier
-        case Call(expr1, _, _) if isSubclass(expr1, "tensorflow.GradientTape") =>
-            // multiple training loops
-            if (tl == Optimizer) throw TLException
-            tl = GradTape
+        // Session training loop indicator
+        case Call(expr1, _, _)
+        if isSubclass(expr1, "tensorflow.compat.v1.Session") =>
+          if (!(tl ⊑ Sess)) throw TLException
+          tl = Sess
 
-        // DistributedOptimizer training loop identifier
+        // MonitoredSession training loop indicator
+        case Call(expr1, _, _)
+        if isSubclass(expr1, "tensorflow.compat.v1.train.MonitoredTrainingSession") =>
+          if (!(tl ⊑ MonSess)) throw TLException
+          tl = MonSess
+
+        // Estimator training loop indicator
+        case Call(expr1, _, _)
+        if isSubclass(expr1, "tensorflow.compat.v1.estimator.Estimator") =>
+          if (!(tl ⊑ Est)) throw TLException
+          tl = Est
+
+        // DistributedGradientTape training loop indicator
+        case Call(expr1, _, _) if isSubclass(expr1, "tensorflow.GradientTape") =>
+          if (!(tl ⊑ DistGradTape)) throw TLException
+          tl = DistGradTape
+
+        // DistributedOptimizer training loop indicator
         case Call(Attribute(EName(model), Id("fit")), _, _)
-          if (outerEnv ++ env).get(model) contains ValueSummary(model.name, "model") =>
-            // multiple training loops
-            if (tl == GradTape) throw TLException
-            tl = Optimizer
+        if (outerEnv ++ env).get(model) contains ValueSummary(model.name, "model") =>
+          if (!(tl ⊑ DistOptim)) throw TLException
+          tl = DistOptim
+
+        case Call(expr1, _, _)
+        if isSubclass(expr1, "tensorflow.compat.v1.app.run") =>
+          (outerEnv ++ env).get(Id("main")) match {
+            case Some(FuncSummary("main", innerTl)) =>
+              if (tl ⊔ innerTl == Top) throw TLException
+              tl = tl ⊔ innerTl
+            case _ => super.walk(expr)
+          }
 
         // Normal Call expression
         case Call(EName(x), _, _) =>
           (outerEnv ++ env).get(x) match {
-            case Some(FuncSummary(x.name, innerTl)) if innerTl != Bot =>
-              tl = innerTl
-            // TODO: Add ClassSummary case
+            case Some(FuncSummary(x.name, innerTl)) =>
+              if (tl ⊔ innerTl == Top) throw TLException
+              tl = tl ⊔ innerTl
             case _ => super.walk(expr)
           }
         case _ => super.walk(expr)
@@ -149,13 +174,35 @@ case class ValueSummary(
   value: String
 ) extends Summary
 
-trait TLType
+trait TLType {
+  def ⊔(rhs: TLType): TLType = (this, rhs) match {
+    case (lhs, rhs) if lhs == rhs => lhs
+    case (Bot, rhs) => rhs
+    case (lhs, Bot) => lhs
+    case _ => Top
+  }
 
-case object GradTape extends TLType
+  def ⊑(rhs: TLType): Boolean = (this, rhs) match {
+    case (lhs, rhs) if lhs == rhs => true
+    case (Bot, _) => true
+    case (_, Top) => true
+    case _ => false
+  }
+}
 
-case object Optimizer extends TLType
+case object Sess extends TLType
+
+case object MonSess extends TLType
+
+case object Est extends TLType
+
+case object DistGradTape extends TLType
+
+case object DistOptim extends TLType
 
 case object Bot extends TLType
+
+case object Top extends TLType
 
 trait SumType
 

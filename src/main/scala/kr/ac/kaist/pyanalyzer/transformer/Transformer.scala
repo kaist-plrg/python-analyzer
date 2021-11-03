@@ -5,8 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.transformer.DistGradTapeRule
-import kr.ac.kaist.pyanalyzer.transformer.DistOptimRule
+import kr.ac.kaist.pyanalyzer.transformer._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
@@ -21,8 +20,11 @@ object Transformer extends Transformer {
     // transform
     implicit val env = Env(classOrder=order)
     val (newModule, lw) = tl match {
-      case GradTape => DistGradTapeRule(module)
-      case Optimizer => DistOptimRule(module)
+      case Sess => SessRule(module)
+      case MonSess => MonSessRule(module)
+      case Est => EstRule(module)
+      case DistGradTape => DistGradTapeRule(module)
+      case DistOptim => DistOptimRule(module)
       case Bot =>
         val (body, _, lw) = transform(module.body)
         (module.copy(body=body), lw)
