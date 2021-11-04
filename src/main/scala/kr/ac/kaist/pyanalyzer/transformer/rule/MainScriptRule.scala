@@ -41,19 +41,6 @@ trait MainScriptRule extends Transformer {
     /////////////////////////////////////////////////////////////////
     // importstmt
     /////////////////////////////////////////////////////////////////
-    case ImportStmt(alias) =>
-      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
-      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
-      val diffEnv = newEnv \ env
-      // get "tensor_flow" id 
-      diffEnv.get("tensor_flow") match {
-        // corresponding id found
-        case Some(id) if diffEnv.size == 1 => 
-          val newStmts = List(ImportStmt(alias)) ++ getStmts("import-some", id)
-          (newStmts, newEnv)
-        // corresponding not found
-        case _ => (ImportStmt(alias), newEnv)
-      }
     case ImportFromStmt(lv, fromId, al) =>
       val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
       val newEnv = transform(al)(env.copy(classOrder = classUpdatedEnv))
@@ -64,6 +51,12 @@ trait MainScriptRule extends Transformer {
   }
 
   override def transform(alias: Alias)(implicit env: Env): Env = alias match {
+    case Alias(List(tf, compat, v1), None)
+    if tf.name == "tensorflow" && compat.name == "compat" && v1.name == "v1" =>
+      ???
+    case Alias(List(tf, compat, v1), Some(as))
+    if tf.name == "tensorflow" && compat.name == "compat" && v1.name == "v1" =>
+      env.add("tensor_flow_v1", as)
     case Alias(List(x), None) if x.name == "tensorflow" =>
       env.add("tensor_flow", x)
     case Alias(List(x), Some(as)) if x.name == "tensorflow" =>

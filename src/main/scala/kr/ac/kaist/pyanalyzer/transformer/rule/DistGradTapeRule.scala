@@ -116,6 +116,7 @@ trait DistGradTapeRule extends MainScriptRule {
           super.transform(stmt)
           //(AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
       }
+
     // AnnAssign case: 
     case AnnAssign(e1, e2, e3) =>
       (e1, e3) match {
