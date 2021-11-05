@@ -15,31 +15,22 @@ object EstRule extends EstRule {
 }
 
 // Transform rule for main module of Estimator model
-trait EstRule extends MainScriptRule {
+trait EstRule extends TFv1MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
       expr1 match {
-        case Attribute(EName(idt), Id("ConfigProto"))
-        if env.get("tensor_flow_v1") contains idt =>
-          (stmt :: getStmts("config-init", idt), env)
+        case Attribute(Attribute(EName(tf), Id("estimator")), Id("Estimator"))
+        if env.get("tensor_flow_v1").contains(tf) && !env.contains("config") =>
+          val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
+          val newStmt = AssignStmt(targets, Call(expr1, exprs, kwds :+ newKwarg), ty)
+          val newStmts = getStmts("config-none", tf) :+ newStmt
+          (newStmts, env)
         case _ => super.transform(stmt)
       }
 
-    case ImportStmt(alias) =>
-      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
-      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
-      val diffEnv = newEnv \ env
-      // get "tensor_flow" id
-      diffEnv.get("tensor_flow_v1") match {
-        // corresponding id found
-        case Some(id) if diffEnv.size == 1 =>
-          (List(ImportStmt(alias)) ++ getStmts("import-some", id), newEnv)
-        // corresponding not found
-        case _ => (ImportStmt(alias), newEnv)
-      }
     case _ => super.transform(stmt)
   }
 
@@ -50,14 +41,5 @@ trait EstRule extends MainScriptRule {
     }
 
   private val codeData: Map[String, List[String] => String] = Map(
-    "import-some" -> (codeSeg => {
-      val tf = codeSeg(0)
-      s"""import horovod.tensorflow as hvd
-          |hvd.init()""".stripMargin
-    }),
-    "config-init" -> (codeSeg => {
-      val config = codeSeg(0)
-      s"""config.gpu_options.visible_device_list = str(hvd.local_rank())""".stripMargin
-    }),
   )
 }

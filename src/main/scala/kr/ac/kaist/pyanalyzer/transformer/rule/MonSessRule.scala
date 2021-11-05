@@ -15,32 +15,42 @@ object MonSessRule extends MonSessRule {
 }
 
 // Transform rule for main module of MonitoredSession model
-trait MonSessRule extends MainScriptRule {
+trait MonSessRule extends TFv1MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
-    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
-      val targets = List(EName(idr))
-      expr1 match {
-        case Attribute(EName(idt), Id("ConfigProto"))
-        if env.get("tensor_flow_v1") contains idt =>
-          (stmt :: getStmts("config-init", idt), env)
-        case _ => super.transform(stmt)
-      }
-
-    case ImportStmt(alias) =>
-      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
-      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
-      val diffEnv = newEnv \ env
-      // get "tensor_flow" id
-      diffEnv.get("tensor_flow_v1") match {
-        // corresponding id found
+    case WithStmt(ty, items, doStmt) if !env.contains("config") =>
+      val (newItems, tempEnv) = transformWithList(items)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
+      val diffEnv = tempEnv \ env
+      diffEnv.get("monitored_session") match {
         case Some(id) if diffEnv.size == 1 =>
-          (List(ImportStmt(alias)) ++ getStmts("import-some", id), newEnv)
-        // corresponding not found
-        case _ => (ImportStmt(alias), newEnv)
+          val transStmts =
+            getStmts("config-none", id) :+ WithStmt(ty, newItems, newStmts)
+          (transStmts, newEnv, lw)
+        case _ => (WithStmt(ty, newItems, newStmts), newEnv, lw)
       }
     case _ => super.transform(stmt)
+  }
+
+  override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
+    case WithItem(e, Some(EName(as))) => e match {
+      case Call(Attribute(Attribute(
+        EName(tf), Id("train")), Id("MonitoredTrainingSession")), exprs, kwds)
+        if env.get("tensor_flow_v1").contains(tf) && !env.contains("config") =>
+          val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
+          val newExpr = Call(
+            Attribute(
+              Attribute(EName(tf), Id("train")),
+              Id("MonitoredTrainingSession")
+            ),
+            exprs, 
+            kwds :+ newKwarg
+          )
+          (WithItem(newExpr, Some(EName(as))), env.add("monitored_session", as))
+      case _ => (WithItem(transform(e), Some(EName(as))), env)
+    }
+    case WithItem(e, opt) => (WithItem(transform(e), opt), env)
   }
 
   override def getStmts(name:String, nodes: List[Node]): List[Stmt] =
@@ -50,14 +60,5 @@ trait MonSessRule extends MainScriptRule {
     }
 
   private val codeData: Map[String, List[String] => String] = Map(
-    "import-some" -> (codeSeg => {
-      val tf = codeSeg(0)
-      s"""import horovod.tensorflow as hvd
-          |hvd.init()""".stripMargin
-    }),
-    "config-init" -> (codeSeg => {
-      val config = codeSeg(0)
-      s"""config.gpu_options.visible_device_list = str(hvd.local_rank())""".stripMargin
-    }),
   )
 }

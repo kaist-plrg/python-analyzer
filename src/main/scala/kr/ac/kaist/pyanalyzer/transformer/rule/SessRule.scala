@@ -15,23 +15,35 @@ object SessRule extends SessRule {
 }
 
 // Transform rule for main module of Session model
-trait SessRule extends MainScriptRule {
+trait SessRule extends TFv1MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
-    case ImportStmt(alias) =>
-      val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
-      val newEnv = transform(alias)(env.copy(classOrder = classUpdatedEnv))
-      val diffEnv = newEnv \ env
-      // get "tensor_flow" id
-      diffEnv.get("tensor_flow_v1") match {
-        // corresponding id found
+    case WithStmt(ty, items, doStmt) if !env.contains("config") =>
+      val (newItems, tempEnv) = transformWithList(items)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
+      val diffEnv = tempEnv \ env
+      diffEnv.get("session") match {
         case Some(id) if diffEnv.size == 1 =>
-          (List(ImportStmt(alias)) ++ getStmts("import-some", id), newEnv)
-        // corresponding not found
-        case _ => (ImportStmt(alias), newEnv)
+          val transStmts =
+            getStmts("config-none", id) :+ WithStmt(ty, newItems, newStmts)
+          (transStmts, newEnv, lw)
+        case _ => (WithStmt(ty, newItems, newStmts), newEnv, lw)
       }
     case _ => super.transform(stmt)
+  }
+
+  override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
+    case WithItem(e, Some(EName(as))) => e match {
+      case Call(Attribute(EName(tf), Id("Session")), exprs, kwds)
+      if env.get("tensor_flow_v1").contains(tf) && !env.contains("config") =>
+        val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
+        val newExpr =
+          Call(Attribute(EName(tf), Id("Session")), exprs, kwds :+ newKwarg)
+        (WithItem(newExpr, Some(EName(as))), env.add("session", as))
+      case _ => (WithItem(transform(e), Some(EName(as))), env)
+    }
+    case WithItem(e, opt) => (WithItem(transform(e), opt), env)
   }
 
   override def getStmts(name:String, nodes: List[Node]): List[Stmt] =
@@ -41,13 +53,5 @@ trait SessRule extends MainScriptRule {
     }
 
   private val codeData: Map[String, List[String] => String] = Map(
-    "import-some" -> (codeSeg => {
-      val tf = codeSeg(0)
-      s"""import horovod.tensorflow as hvd
-          |hvd.init()
-          |config = $tf.ConfigProto()
-          |config.gpu_options.allow_growth = True
-          |config.gpu_options.visible_device_list = str(hvd.local_rank())""".stripMargin
-    }),
   )
 }

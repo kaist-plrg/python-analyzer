@@ -245,16 +245,13 @@ trait DistGradTapeRule extends MainScriptRule {
   }
 
   override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
-    case WithItem(e, None) => (WithItem(transform(e), None), env)
-    case WithItem(e, Some(asE)) => (env.get("tensor_flow"), e, asE) match {
-      case (
-        Some(x),
-        Call(Attribute(EName(f), Id("GradientTape")), Nil, Nil),
-        EName(asX)
-      ) if x == f =>
-          (WithItem(e, Some(asE)), env.add("gradient_tape", asX))
-      case _ => (WithItem(transform(e), Some(asE)), env)
-      }
+    case WithItem(e, Some(EName(as))) => e match {
+      case Call(Attribute(EName(tf), Id("GradientTape")), Nil, Nil)
+      if env.get("tensor_flow") contains tf =>
+          (WithItem(e, Some(EName(as))), env.add("gradient_tape", as))
+      case _ => (WithItem(transform(e), Some(EName(as))), env)
+    }
+    case WithItem(e, opt) => (WithItem(transform(e), opt), env)
   }
 
   override def getStmts(name:String, nodes: List[Node]): List[Stmt] =
