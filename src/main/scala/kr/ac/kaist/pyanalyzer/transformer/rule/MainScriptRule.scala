@@ -56,13 +56,15 @@ trait MainScriptRule extends Transformer {
       case Attribute(receiver, id) if WRITE_METHOD contains id.name =>
         val warningMessage =
           s"""Cannot identify the receiver, `${beautify(receiver)}`
-          |    Root rank blocking to this statement can be inaccurate""".stripMargin
+          |    Root rank blocking to this statement can be inaccurate"""
+          .stripMargin
         val warning =
           Warning(warningMessage, stmt)
         (getStmts("root-rank-blocking", stmt), env, warning)
       case EName(Id("print")) =>
         (getStmts("root-rank-blocking", stmt), env)
-      case Attribute(EName(idt), Id("print")) if env.get("tensor_flow") contains idt =>
+      case Attribute(EName(idt), Id("print"))
+      if env.get("tensor_flow") contains idt =>
         (getStmts("root-rank-blocking", stmt), env)
       case _ => (ExprStmt(super.transform(Call(expr1, exprs, kwds))), env)
     }
@@ -126,6 +128,101 @@ trait TFv1MainScriptRule extends MainScriptRule {
         case Attribute(EName(idt), Id("ConfigProto"))
         if env.get("tensor_flow_v1") contains idt =>
           (stmt :: getStmts("config-exist", idt), env.add("config", idr))
+        case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER_TF_V1) =>
+          findKwarg(kwds, "learning_rate") match {
+            // keword initial learning rate
+            case Some(kwarg) =>
+              val newExpr = parseExpr(s"${beautify(kwarg.expr)} * hvd.size()")
+              val newKwarg = kwarg.copy(expr = newExpr)
+              val newKwds = replaceElement(kwds, kwarg, newKwarg)
+              val newStmt = AssignStmt(targets, Call(expr1, exprs, newKwds), ty)
+              (newStmt, env.add("lr_scheduler", idr))
+            // no initial learning rate
+            case None
+              if env.isSubclass(expr1,CONST_LEARNING_RATE_SCHEDULER) =>
+                (stmt, env.add("lr_scheduler", idr))
+            case None => exprs match {
+              // positional initial learning rate
+              case h :: t =>
+                val newExprs = parseExpr(s"${beautify(h)} * hvd.size()") :: t
+                val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
+                (newStmt, env.add("lr_scheduler", idr))
+              case Nil =>
+                val warning =
+                  Warning("Cannot find learning_rate", stmt)
+                (stmt, env.add("lr_scheduler", idr), warning)
+            }
+          }
+        // TODO: consider optimizer wrapping argument
+        case _ if env.isSubclass(expr1, OPTIMIZER_TF_V1) =>
+          val optimWrapping = getStmts("wrapping-optim", idr)
+          // assume learning_rate is first positional argument
+          (exprs.headOption, findKwarg(kwds, "learning_rate")) match {
+            // keyword learning rate scheduler
+            case (None, Some(NormalKwarg(_, EName(ids))))
+              if env.get("lr_scheduler") contains ids =>
+                (stmt :: optimWrapping, env.add("optimizer", idr))
+            // keyword constant learning rate
+            case (None, Some(kwarg)) =>
+              val newExpr = parseExpr(s"(${beautify(kwarg.expr)}) * hvd.size()")
+              val newKwarg = kwarg.copy(expr = newExpr)
+              val newkwds = replaceElement(kwds, kwarg, newKwarg)
+              val newStmt = AssignStmt(targets, Call(expr1, exprs, newkwds), ty)
+              (newStmt :: optimWrapping, env.add("optimizer", idr))
+            // positional learning rate scheduler
+            case (Some(EName(ids)), None)
+              if env.get("lr_scheduler") contains ids =>
+                (stmt :: optimWrapping, env.add("optimizer", idr))
+            // positional constant learning rate
+            case (Some(h), None) =>
+              val newExpr = parseExpr(s"(${beautify(h)}) * hvd.size()")
+              val newExprs = newExpr :: exprs.tail
+              val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
+              (newStmt :: optimWrapping, env.add("optimizer", idr))
+            case _ =>
+              val warning =
+                Warning("Cannot find learning_rate", stmt)
+              (stmt :: optimWrapping, env.add("optimizer", idr), warning)
+          }
+        case Attribute(Call(expr2, innerExprs, innerKwds), Id("minimize"))
+        if env.isSubclass(expr2, OPTIMIZER_TF_V1) =>
+          val minimizeCall = Call(EName(Id("minimize")), exprs, kwds)
+          val optimWrapping =
+            getStmts("wrapping-optim-minimize", idr, minimizeCall)
+          // assume learning_rate is first positional argument
+          (innerExprs.headOption, findKwarg(innerKwds, "learning_rate")) match {
+            // keyword learning rate scheduler
+            case (None, Some(NormalKwarg(_, EName(ids))))
+              if env.get("lr_scheduler") contains ids =>
+                val newStmt =
+                  AssignStmt(targets, Call(expr2, innerExprs, innerKwds), ty)
+                (newStmt :: optimWrapping, env.add("optimizer", idr))
+            // keyword constant learning rate
+            case (None, Some(kwarg)) =>
+              val newExpr = parseExpr(s"(${beautify(kwarg.expr)}) * hvd.size()")
+              val newKwarg = kwarg.copy(expr = newExpr)
+              val newkwds = replaceElement(innerKwds, kwarg, newKwarg)
+              val newStmt = AssignStmt(targets, Call(expr2, innerExprs, newkwds), ty)
+              (newStmt :: optimWrapping, env.add("optimizer", idr))
+            // positional learning rate scheduler
+            case (Some(EName(ids)), None)
+              if env.get("lr_scheduler") contains ids =>
+                val newStmt =
+                  AssignStmt(targets, Call(expr2, innerExprs, innerKwds), ty)
+                (newStmt :: optimWrapping, env.add("optimizer", idr))
+            // positional constant learning rate
+            case (Some(h), None) =>
+              val newExpr = parseExpr(s"(${beautify(h)}) * hvd.size()")
+              val newExprs = newExpr :: innerExprs.tail
+              val newStmt = AssignStmt(targets, Call(expr2, newExprs, innerKwds), ty)
+              (newStmt :: optimWrapping, env.add("optimizer", idr))
+            case _ =>
+              val warning =
+                Warning("Cannot find learning_rate", stmt)
+              val newStmt =
+                AssignStmt(targets, Call(expr2, innerExprs, innerKwds), ty)
+              (newStmt :: optimWrapping, env.add("optimizer", idr), warning)
+          }
         case _ => super.transform(stmt)
       }
 
@@ -163,6 +260,15 @@ trait TFv1MainScriptRule extends MainScriptRule {
       s"""config = $tf.ConfigProto()
           |config.gpu_options.allow_growth = True
           |config.gpu_options.visible_device_list = str(hvd.local_rank())""".stripMargin
+    }),
+    "wrapping-optim" -> (codes => {
+        val optim = codes(0)
+        s"""$optim = hvd.DistributedOptimizer($optim)"""
+    }),
+    "wrapping-optim-minimize" -> (codes => {
+        val optim = codes(0)
+        val minimize = codes(1)
+        s"""$optim = hvd.DistributedOptimizer($optim).$minimize"""
     }),
   )
 }

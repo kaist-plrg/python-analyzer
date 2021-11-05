@@ -6,7 +6,6 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 
 package object transformer {
   val OPTIMIZER = List(
-    // tf2
     "tensorflow.optimizers.Adadelta",
     "tensorflow.optimizers.Adagrad",
     "tensorflow.optimizers.Adam",
@@ -24,6 +23,15 @@ package object transformer {
     "tensorflow.keras.optimizers.RMSprop",
     "tensorflow.keras.optimizers.SGD",
   )
+  val OPTIMIZER_TF_V1 = List(
+    "tensorflow.compat.v1.train.AdadeltaOptimizer",
+    "tensorflow.compat.v1.train.AdagradDAOptimizer",
+    "tensorflow.compat.v1.train.AdagradOptimizer",
+    "tensorflow.compat.v1.train.AdamOptimizer",
+    "tensorflow.compat.v1.train.GradientDescentOptimizer",
+    "tensorflow.compat.v1.train.MomentumOptimizer",
+    "tensorflow.compat.v1.train.RMSPropOptimizer",
+  )
   val MODEL = List(
     "tensorflow.keras.Model",
     "tensorflow.keras.models.Model",
@@ -32,13 +40,7 @@ package object transformer {
     "tensorflow.keras.models.Sequential",
     "tensorflow.keras.models.Functional",
   )
-  private val MODEL_SUBCLASS_RELATION =
-    for {
-      model <- MODEL
-      modelSubclass <- MODEL_SUBCLASS
-    } yield (modelSubclass, model)
   val LEARNING_RATE_SCHEDULER = List(
-    // TFv2
     "tensorflow.keras.optimizers.schedules.CosineDecay",
     "tensorflow.keras.optimizers.schedules.CosineDecayRestarts",
     "tensorflow.keras.optimizers.schedules.ExponentialDecay",
@@ -47,8 +49,8 @@ package object transformer {
     "tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay",
     "tensorflow.keras.experimental.CosineDecay",
     "tensorflow.keras.experimental.CosineDecayRestarts",
-
-    // TFv1
+  )
+  val LEARNING_RATE_SCHEDULER_TF_V1 = List(
     "tensorflow.compat.v1.train.exponential_decay"
   )
   val CONST_LEARNING_RATE_SCHEDULER = List(
@@ -59,11 +61,20 @@ package object transformer {
     "write", "summary", "save_weights", "load_weights", "save"
   )
 
+  private val NODES = OPTIMIZER ++ OPTIMIZER_TF_V1 ++ MODEL ++
+      LEARNING_RATE_SCHEDULER ++ LEARNING_RATE_SCHEDULER_TF_V1
+  private val MODEL_SUBCLASS_RELATION =
+    for {
+      model <- MODEL
+      modelSubclass <- MODEL_SUBCLASS
+    } yield (modelSubclass, model)
   val GIVEN_CLASS_ORDER = ClassOrder()
     .addNode( // list of nodes
-      (OPTIMIZER ++ MODEL ++ LEARNING_RATE_SCHEDULER).map(parseStrFullname(_))
+      NODES.map(parseStrFullname(_))
     ).addEdge( // list of subclass pairs (child, parent)
-      MODEL_SUBCLASS_RELATION.map(p => (parseStrFullname(p._1), parseStrFullname(p._2)))
+      MODEL_SUBCLASS_RELATION.map(
+        p => (parseStrFullname(p._1), parseStrFullname(p._2))
+      )
     )
   val TRANS_PRINT_WRITER = getPrintWriter(s"$TRANS_LOG_DIR/Warnings")
 }
