@@ -10,14 +10,42 @@ trait MainScriptRule extends Transformer {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
-    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) => expr1 match {
-      case _ if env.isSubclass(expr1, MODEL) =>
-        (stmt, env.add("model", idr))
-      case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
-        if env.get("tensor_flow") contains idt =>
-          (stmt, env.add("checkpoint", idr))
-      case _ => super.transform(stmt)
-    }
+    case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
+      val targets = List(EName(idr))
+      expr1 match {
+        case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
+          findKwarg(kwds, "initial_learning_rate") match {
+            // keword initial learning rate
+            case Some(kwarg) =>
+              val newExpr = parseExpr(s"${beautify(kwarg.expr)} * hvd.size()")
+              val newKwarg = kwarg.copy(expr = newExpr)
+              val newKwds = replaceElement(kwds, kwarg, newKwarg)
+              val newStmt = AssignStmt(targets, Call(expr1, exprs, newKwds), ty)
+              (newStmt, env.add("lr_scheduler", idr))
+            // no initial learning rate
+            case None
+              if env.isSubclass(expr1,CONST_LEARNING_RATE_SCHEDULER) =>
+                (stmt, env.add("lr_scheduler", idr))
+            case None => exprs match {
+              // positional initial learning rate
+              case h :: t =>
+                val newExprs = parseExpr(s"${beautify(h)} * hvd.size()") :: t
+                val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
+                (newStmt, env.add("lr_scheduler", idr))
+              case Nil =>
+                val warning =
+                  Warning("Cannot find initial_learning_rate", stmt)
+                (stmt, env.add("lr_scheduler", idr), warning)
+            }
+          }
+
+        case _ if env.isSubclass(expr1, MODEL) =>
+          (stmt, env.add("model", idr))
+        case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
+          if env.get("tensor_flow") contains idt =>
+            (stmt, env.add("checkpoint", idr))
+        case _ => super.transform(stmt)
+      }
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
       case Attribute(EName(idt), id)
         if env.get("model").contains(idt) && WRITE_METHOD.contains(id.name) =>

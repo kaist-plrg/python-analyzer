@@ -31,32 +31,6 @@ trait DistGradTapeRule extends MainScriptRule {
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("dataset", idr))
 
-        case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
-          findKwarg(kwds, "initial_learning_rate") match {
-            // keword initial learning rate
-            case Some(kwarg) =>
-              val newExpr = parseExpr(s"${beautify(kwarg.expr)} * hvd.size()")
-              val newKwarg = kwarg.copy(expr = newExpr)
-              val newKwds = replaceElement(kwds, kwarg, newKwarg)
-              val newStmt = AssignStmt(targets, Call(expr1, exprs, newKwds), ty)
-              (newStmt, env.add("lr_scheduler", idr))
-            // no initial learning rate
-            case None
-              if env.isSubclass(expr1,CONST_LEARNING_RATE_SCHEDULER) =>
-                (stmt, env.add("lr_scheduler", idr))
-            case None => exprs match {
-              // positional initial learning rate
-              case h :: t =>
-                val newExprs = parseExpr(s"$h * hvd.size()") :: t
-                val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
-                (newStmt, env.add("lr_scheduler", idr))
-              case Nil =>
-                val warning =
-                  Warning("Cannot find initial_learning_rate", stmt)
-                (stmt, env.add("lr_scheduler", idr), warning)
-            }
-          }
-
         case _ if env.isSubclass(expr1, OPTIMIZER) =>
           // assume learning_rate is first positional argument
           (exprs.headOption, findKwarg(kwds, "learning_rate")) match {

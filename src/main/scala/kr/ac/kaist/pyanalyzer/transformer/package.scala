@@ -38,6 +38,7 @@ package object transformer {
       modelSubclass <- MODEL_SUBCLASS
     } yield (modelSubclass, model)
   val LEARNING_RATE_SCHEDULER = List(
+    // TFv2
     "tensorflow.keras.optimizers.schedules.CosineDecay",
     "tensorflow.keras.optimizers.schedules.CosineDecayRestarts",
     "tensorflow.keras.optimizers.schedules.ExponentialDecay",
@@ -46,6 +47,9 @@ package object transformer {
     "tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay",
     "tensorflow.keras.experimental.CosineDecay",
     "tensorflow.keras.experimental.CosineDecayRestarts",
+
+    // TFv1
+    "tensorflow.compat.v1.train.exponential_decay"
   )
   val CONST_LEARNING_RATE_SCHEDULER = List(
     "tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay",
@@ -57,7 +61,7 @@ package object transformer {
 
   val GIVEN_CLASS_ORDER = ClassOrder()
     .addNode( // list of nodes
-      (OPTIMIZER ++ MODEL).map(parseStrFullname(_))
+      (OPTIMIZER ++ MODEL ++ LEARNING_RATE_SCHEDULER).map(parseStrFullname(_))
     ).addEdge( // list of subclass pairs (child, parent)
       MODEL_SUBCLASS_RELATION.map(p => (parseStrFullname(p._1), parseStrFullname(p._2)))
     )
