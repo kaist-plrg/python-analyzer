@@ -15,6 +15,8 @@ package object pyanalyzer {
   
   val PY_AST_DIR = s"$BASE_DIR/py-ast"
 
+  val OUTPUT_DIR = s"$BASE_DIR/output"
+
   // Others
   val LINE_SEP = System.getProperty("line.separator")
 }

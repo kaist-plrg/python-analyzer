@@ -3,6 +3,7 @@ package kr.ac.kaist.pyanalyzer.util
 import java.io._
 import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
+import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import scala.Console._
 import scala.sys.process._
 import scala.io.Source
@@ -92,6 +93,40 @@ object Useful {
     writer.write(data)
     writer.flush()
     writer.close()
+  }
+
+  def writeFile(path: File, data: String): Unit = {
+    val writer = new PrintWriter(path)
+    writer.write(data)
+    writer.flush()
+    writer.close()
+  }
+
+
+
+  // dump Info[Module] to files
+  def dumpModuleToPath(mod: Module, path: File, name: String): Unit = {
+    val prettyCode = beautify(mod)
+    val newFilePath = new File(path, name + ".py")
+    if (newFilePath.createNewFile()) {
+      writeFile(newFilePath, prettyCode)
+    } else {
+      throw new RuntimeException(s"unexpectedly existing ${newFilePath}")
+    }
+  }
+
+  def dumpInfoModule(info: Info[Module], dir: File): Unit = info match {
+    case DirInfo(name, ds, fs) => {
+      val newDirPath = new File(dir, name)
+      if (newDirPath.mkdirs()) {
+        val l: List[Info[Module]] = ds ++ fs
+        l.foreach(info => dumpInfoModule(info, newDirPath))
+      }
+      else {
+        throw new RuntimeException(s"unexpectedly existing ${newDirPath}")
+      }
+    }
+    case FileInfo(name, mod) => dumpModuleToPath(mod, dir, name)
   }
 
   // print exception stack trace
