@@ -1,6 +1,7 @@
 package kr.ac.kaist.pyanalyzer.util
 
 import java.io.File
+import kr.ac.kaist.pyanalyzer.util.Errors.EmptyFileException
 
 case class NotDirectory(s: String) extends Exception(s)
 case class NotFile(s: String) extends Exception(s)
@@ -56,8 +57,14 @@ object DirWalker {
           dirList.map(walkFile[T](_)(f)).map(onlyDir[T])
         // make info for files directly inside
         val fileInfos: List[FileInfo[T]] =
-          fileList.map(file => 
-            FileInfo(file.getName().replaceFirst("[.][^.]+$", ""), f(file)))
+          fileList.map(file => {
+            try {
+              Some(FileInfo(file.getName().replaceFirst("[.][^.]+$", ""), f(file)))
+            }
+            catch {
+              case EmptyFileException => None
+            }
+          }).filter(_.isDefined).map(_.get)
 
         DirInfo[T](file.getName(), dirInfos, fileInfos)
     }

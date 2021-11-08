@@ -7,9 +7,9 @@ import kr.ac.kaist.pyanalyzer.transformer.Env
 import kr.ac.kaist.pyanalyzer.util.{ Info }
 
 case object InfoTLPipe 
-extends Pipeline[(Info[Module], ClassOrder), Info[(Module, ModuleSummary)]] {
-  def execute(p: (Info[Module], ClassOrder)): Info[(Module, ModuleSummary)] = {
+extends Pipeline[(Info[Module], ClassOrder), Info[ModuleSummary]] {
+  def execute(p: (Info[Module], ClassOrder)): Info[ModuleSummary] = {
     val (modInfo, order) = p
-    modInfo.map(mod => (mod, TrainingLoop(mod, order)))
+    modInfo.map(mod => TrainingLoop(mod, order))
   }
 }

@@ -9,11 +9,11 @@ import kr.ac.kaist.pyanalyzer.pipeline.Pipeline._
 import kr.ac.kaist.pyanalyzer.pipeline.Pipeline.PipelineOps
 
 object TransformRunner {
-  val subPipe: 
+  /* val subPipe: 
   Pipeline[Info[Module], (Info[(Module, ModuleSummary)], ClassOrder)] = 
-    (idPipe ++ ClassPipe) >> (InfoTLPipe || idPipe[(Info[Module], ClassOrder)].snd)
+    (idPipe ++ ClassPipe) >> (InfoTLPipe || idPipe[(Info[Module], ClassOrder)].snd) */
 
-  val transformPipe = // String -> Info[Module], transform applied
+  /* val transformPipe = // String -> Info[Module], transform applied
     (PathPipe ++ CheckFilePipe) // String -> (File, Option[String])
       .fstMap(ParsePipe) 
         // (File, Option[String]) 
@@ -21,7 +21,17 @@ object TransformRunner {
       .fstMap(subPipe) >> TransformPipe
         // (Info[Module], Option[String]) 
         // -> ((Info[(Module, ModuleSummary)], ClassOrder), Option[String])
-        // -> Info[Module]
+        // -> Info[Module] */
  
-  def run(path: String): Info[Module] = transformPipe!!(path)
+  //def run(path: String): Info[Module] = transformPipe!!(path)
+
+  def runPipe(path: String): Info[Module] = {
+    val (file, targetOpt) = (PathPipe ++ CheckFilePipe)!!(path) 
+    val orgASTs: Info[Module] = ParsePipe!!(file) 
+    val classOrder: ClassOrder = ClassPipe!!(orgASTs)
+    val loopTypes: Info[ModuleSummary] = InfoTLPipe!!((orgASTs, classOrder)) 
+    val resASTs: Info[Module] = 
+      TransformPipe!!((orgASTs, loopTypes, classOrder, targetOpt))
+    resASTs
+  }
 }

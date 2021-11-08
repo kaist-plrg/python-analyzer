@@ -22,12 +22,20 @@ trait EstRule extends TFv1MainScriptRule {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
       expr1 match {
+        // config object changing
         case Attribute(Attribute(EName(tf), Id("estimator")), Id("Estimator"))
         if env.get("tensor_flow_v1").contains(tf) && !env.contains("config") =>
           val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
           val newStmt = AssignStmt(targets, Call(expr1, exprs, kwds :+ newKwarg), ty)
           val newStmts = getStmts("config-none", tf) :+ newStmt
           (newStmts, env)
+        // optimizer wrapping 
+        case _ if (env.isSubclass(expr1, OPTIMIZER)) => {
+          val wrapping = parseStmts(s"${idr} = hvd.DistributedOptimizer(${idr})")
+          // TODO should we change env?
+          (stmt +: wrapping, env, List()) 
+        }
+        // default
         case _ => super.transform(stmt)
       }
 

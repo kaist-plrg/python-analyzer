@@ -9,9 +9,10 @@ import kr.ac.kaist.pyanalyzer.util.{ Info, FileInfo, DirInfo }
 
 case class NotDir(name: String) extends Exception(name)
 case class NotFile(name: String) extends Exception(name)
+case class TargetNotFound(name: String) extends Exception(name)
 
 case object TransformPipe extends Pipeline[
-  ((Info[(Module, ModuleSummary)], ClassOrder), Option[String]), 
+  (Info[Module], Info[ModuleSummary], ClassOrder, Option[String]), 
   Info[Module]
 ] {
   // some helpers
@@ -26,33 +27,54 @@ case object TransformPipe extends Pipeline[
       case e: FileInfo[Module] => e
     }
 
+  def findTargetLoopType(summaries: Info[ModuleSummary], targetName: String): TLType  = {
+    // must be DirInfo
+    summaries match {
+      case DirInfo(name, dirs, fs) => {
+        // ASSUME: target file exist in fs
+        val targetFiles = fs.filter(fi => fi.name == targetName)
+        if (targetFiles.isEmpty) { throw TargetNotFound(targetName) }
+        // extract the file loop type
+        val targetLoopType = targetFiles.head.info.tl
+        // return the loop type
+        targetLoopType
+      }
+      case FileInfo(_, _) => throw NotDir(summaries.name) 
+    }
+  }
 
   def execute(
-    p: ((Info[(Module, ModuleSummary)], ClassOrder), Option[String])
+    p: (Info[Module], Info[ModuleSummary], ClassOrder, Option[String])
   ): Info[Module] = {
-    val ((info, order), opt) = p   
-    info match {
-      // should be DirInfo
-      case FileInfo(_, _) => throw NotDir(info.name)
-      case DirInfo(name, ds, fs) => opt match {
-        // target filename given
-        // assume: target file exist in fs (direct child)
-        case Some(fname) => 
-          DirInfo(
-            name, 
-            ds.map(di => removeDirSummary(di)), 
-            fs.map(fi => {
-            if (fi.name == fname) {
-              val (mod, summ) = fi.info
-              val transformedModule = Transformer(mod, order, summ.tl)
-              FileInfo[Module](fi.name, transformedModule)
-            } else {
-              removeFileSummary(fi)
-            }
-          }))
-        // should find target file by TLType
-        case None => ???
-      }   
+    // destructuring
+    val (orgASTs, loopTypes, classOrder, targetOpt) = p
+    // case by case
+    targetOpt match {
+      // target file name specified case
+      case Some(targetName) => {
+        // ast must be DirInfo
+        orgASTs match {
+          case DirInfo(name, dirs, fs) => {
+            // ASSUME: target file exist in fs
+            // find a file AST that has targetName, transform it
+            val targetTL = findTargetLoopType(loopTypes, targetName) 
+            val newFiles = fs.map(fi => {
+              if (fi.name == targetName) {
+                // transform the target file 
+                fi.copy(info=Transformer(fi.info, classOrder, targetTL)) 
+              } 
+              else { fi }
+            })
+            // return same DirInfo with newFiles
+            DirInfo(name, dirs, newFiles)
+          }
+          case FileInfo(_, _) => throw NotDir(orgASTs.name)
+        }  
+      }
+      // target file not specified case: should check loopTypes 
+      case None => {
+        ???
+      }
     }
   } 
 }

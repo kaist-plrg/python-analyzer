@@ -10,9 +10,9 @@ import java.io.File
 case object ClassPipe extends Pipeline[Info[Module], ClassOrder] {
   def execute(info: Info[Module]): ClassOrder = {
     val res = infoModuleToOrder(info)
-    println(s"-------CHA:------")
-    println(res)
-    println("-----------------------")
+    //println(s"-------CHA:------")
+    //println(res)
+    //println("-----------------------")
     res
   }
 }

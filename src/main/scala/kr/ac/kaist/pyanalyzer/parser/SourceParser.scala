@@ -29,7 +29,7 @@ object SourceParser {
    // parse the source code text into ast
    def parseSource(source: String, name: String = ""): Module = {
      val tokens = Tokenizer.tokenizeText(source)  
-     if (tokens ==  List(EndToken)) throw EmptyFileException
+     if (tokens == List(EndToken)) throw EmptyFileException
 
      val reader = new PackratReader(TokenListParser.TokenReader(tokens))
      val parser = TokenListParser.module
@@ -47,5 +47,9 @@ object SourceParser {
      parseSource(readSource(filename), name)
 
    def parseFile(file: File): Module = 
-     parseSource(readSource(file), file.toString)
+     if (!file.getName().endsWith(".py")) {
+       throw EmptyFileException
+     } else { 
+       parseSource(readSource(file), file.getName())
+     }
 }
