@@ -19,6 +19,25 @@ trait SessRule extends TFv1MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
+    case ExprStmt(
+      Call(
+        Attribute(EName(sess), Id("run")),
+        List(Call(Attribute(
+          EName(tf), Id("global_variables_initializer")
+        ), Nil, Nil)),
+        Nil
+      )) if env.get("session").contains(sess) &&
+        env.get("tensor_flow_v1").contains(tf) =>
+          (stmt :: getStmts("broadcast-in-sess"), env)
+    case ExprStmt(
+      Call(
+        Attribute(Call(Attribute(
+          EName(tf), Id("global_variables_initializer")
+        ), Nil, Nil),Id("run")),
+        Nil,
+        Nil
+      )) if env.get("tensor_flow_v1") contains tf =>
+          (stmt :: getStmts("broadcast-outside-sess"), env)
     case WithStmt(ty, items, doStmt) if !env.contains("config") =>
       val (newItems, tempEnv) = transformWithList(items)
       val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
@@ -53,5 +72,11 @@ trait SessRule extends TFv1MainScriptRule {
     }
 
   private val codeData: Map[String, List[String] => String] = Map(
+    "broadcast-in-sess" -> (codes => {
+      s"""sess.run(hvd.broadcast_global_variables(root_rank=0))"""
+    }),
+    "broadcast-outside-sess" -> (codes => {
+      s"""hvd.broadcast_global_variables(root_rank=0).run()"""
+    }),
   )
 }

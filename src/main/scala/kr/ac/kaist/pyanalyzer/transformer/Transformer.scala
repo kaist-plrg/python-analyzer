@@ -98,11 +98,12 @@ trait Transformer extends TransformerWalker {
   // Data needed for transformation
   // TODO this is actually static thingy...
   /////////////////////////////////////////
+  def getStmts(name: String): List[Stmt] = getStmts(name, Nil)
   def getStmts(name: String, nodes: Node*): List[Stmt] = getStmts(name, nodes.toList)
   def getStmts(name: String, nodes: List[Node]): List[Stmt] =
     codeData.get(name) match {
       case Some(data) => parseStmts(data(nodes.map(beautify(_))))
-      case None => Nil
+      case None => ???
     }
   private val codeData: Map[String, List[String] => String] = Map()
 }

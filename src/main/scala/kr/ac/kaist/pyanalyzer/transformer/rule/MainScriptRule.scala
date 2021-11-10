@@ -202,7 +202,8 @@ trait TFv1MainScriptRule extends MainScriptRule {
               val newExpr = parseExpr(s"(${beautify(kwarg.expr)}) * hvd.size()")
               val newKwarg = kwarg.copy(expr = newExpr)
               val newkwds = replaceElement(innerKwds, kwarg, newKwarg)
-              val newStmt = AssignStmt(targets, Call(expr2, innerExprs, newkwds), ty)
+              val newStmt =
+                AssignStmt(targets, Call(expr2, innerExprs, newkwds), ty)
               (newStmt :: optimWrapping, env.add("optimizer", idr))
             // positional learning rate scheduler
             case (Some(EName(ids)), None)
@@ -214,7 +215,8 @@ trait TFv1MainScriptRule extends MainScriptRule {
             case (Some(h), None) =>
               val newExpr = parseExpr(s"(${beautify(h)}) * hvd.size()")
               val newExprs = newExpr :: innerExprs.tail
-              val newStmt = AssignStmt(targets, Call(expr2, newExprs, innerKwds), ty)
+              val newStmt =
+                AssignStmt(targets, Call(expr2, newExprs, innerKwds), ty)
               (newStmt :: optimWrapping, env.add("optimizer", idr))
             case _ =>
               val warning =
