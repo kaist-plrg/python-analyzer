@@ -80,7 +80,17 @@ trait MainScriptRule extends Transformer {
       super.transform(stmt)(newEnv)
   }
 
+  override def transform(expr: Expr)(implicit env: Env): Expr = expr match {
+    case Call(EName(tqdm), List(e), Nil)
+      if env.get("tqdm") contains tqdm => e
+    case _ => super.transform(expr)
+  }
+
   override def transform(alias: Alias)(implicit env: Env): Env = alias match {
+    case Alias(List(x), None) if x.name == "tqdm" =>
+      env.add("tqdm", x)
+    case Alias(List(x), Some(as)) if x.name == "tqdm" =>
+      env.add("tqdm", as)
     case Alias(List(tf, compat, v1), None)
     if tf.name == "tensorflow" && compat.name == "compat" && v1.name == "v1" =>
       ???
@@ -127,7 +137,7 @@ trait TFv1MainScriptRule extends MainScriptRule {
       expr1 match {
         case Attribute(EName(idt), Id("ConfigProto"))
         if env.get("tensor_flow_v1") contains idt =>
-          (stmt :: getStmts("config-exist", idt), env.add("config", idr))
+          (stmt :: getStmts("config-exist", idt), env.add("config_proto", idr))
         case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER_TF_V1) =>
           findKwarg(kwds, "learning_rate") match {
             // keword initial learning rate

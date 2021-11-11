@@ -38,7 +38,7 @@ trait SessRule extends TFv1MainScriptRule {
         Nil
       )) if env.get("tensor_flow_v1") contains tf =>
           (stmt :: getStmts("broadcast-outside-sess"), env)
-    case WithStmt(ty, items, doStmt) if !env.contains("config") =>
+    case WithStmt(ty, items, doStmt) if !env.contains("config_proto") =>
       val (newItems, tempEnv) = transformWithList(items)
       val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
       val diffEnv = tempEnv \ env
@@ -55,7 +55,8 @@ trait SessRule extends TFv1MainScriptRule {
   override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
     case WithItem(e, Some(EName(as))) => e match {
       case Call(Attribute(EName(tf), Id("Session")), exprs, kwds)
-      if env.get("tensor_flow_v1").contains(tf) && !env.contains("config") =>
+      if env.get("tensor_flow_v1").contains(tf) &&
+      !env.contains("config_proto") =>
         val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
         val newExpr =
           Call(Attribute(EName(tf), Id("Session")), exprs, kwds :+ newKwarg)

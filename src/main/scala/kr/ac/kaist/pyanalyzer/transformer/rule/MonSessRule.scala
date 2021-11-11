@@ -19,7 +19,7 @@ trait MonSessRule extends TFv1MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
-    case WithStmt(ty, items, doStmt) if !env.contains("config") =>
+    case WithStmt(ty, items, doStmt) if !env.contains("config_proto") =>
       val (newItems, tempEnv) = transformWithList(items)
       val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
       val diffEnv = tempEnv \ env
@@ -37,7 +37,8 @@ trait MonSessRule extends TFv1MainScriptRule {
     case WithItem(e, Some(EName(as))) => e match {
       case Call(Attribute(Attribute(
         EName(tf), Id("train")), Id("MonitoredTrainingSession")), exprs, kwds)
-        if env.get("tensor_flow_v1").contains(tf) && !env.contains("config") =>
+        if env.get("tensor_flow_v1").contains(tf) &&
+        !env.contains("config_proto") =>
           val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
           val newExpr = Call(
             Attribute(

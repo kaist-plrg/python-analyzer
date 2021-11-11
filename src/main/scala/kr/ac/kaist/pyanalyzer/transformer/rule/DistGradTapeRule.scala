@@ -105,6 +105,35 @@ trait DistGradTapeRule extends MainScriptRule {
         case _ => super.transform(stmt)
           //(AnnAssign(e1, e2, e3.map(transform)), env)
       }
+
+      case stmt @ ForStmt(ty, forExpr,
+        Call(
+          EName(Id("range")),
+          List(Attribute(EName(config), Id("iterations_per_epoch"))),
+          Nil
+        ), doStmt, elseStmt) if env.get("config") contains config =>
+          val newCallExpr = parseExpr(
+            s"range(${config.name}.iterations_per_epoch // hvd.size()")
+          val (newDoStmt, _, dolw) = transform(doStmt)
+          val (newElseStmt, _, elselw) = transform(elseStmt)
+          val newForStmt =
+            ForStmt(ty, forExpr, newCallExpr, newDoStmt, newElseStmt)
+          (newForStmt, env, dolw ++ elselw)
+      case stmt @ ForStmt(ty, forExpr,
+        Call(EName(Id("tqdm")), List(
+          Call(
+            EName(Id("range")),
+            List(Attribute(EName(config), Id("iterations_per_epoch"))),
+            Nil
+          )
+        ), Nil), doStmt, elseStmt) if env.get("config") contains config =>
+          val newCallExpr = parseExpr(
+            s"range(${config.name}.iterations_per_epoch // hvd.size())")
+          val (newDoStmt, _, dolw) = transform(doStmt)
+          val (newElseStmt, _, elselw) = transform(elseStmt)
+          val newForStmt =
+            ForStmt(ty, forExpr, newCallExpr, newDoStmt, newElseStmt)
+          (newForStmt, env, dolw ++ elselw)
     /////////////////////////////////////////////////////////////////
     // with statement
     /////////////////////////////////////////////////////////////////
@@ -216,6 +245,14 @@ trait DistGradTapeRule extends MainScriptRule {
       case _ => super.transform(expr)
     }
     case _ => super.transform(expr)
+  }
+
+  override def transform(alias: Alias)(implicit env: Env): Env = alias match {
+    case Alias(List(x), None) if x.name == "config" =>
+      env.add("config", x)
+    case Alias(List(x), Some(as)) if x.name == "config" =>
+      env.add("config", as)
+    case _ => super.transform(alias)
   }
 
   override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
