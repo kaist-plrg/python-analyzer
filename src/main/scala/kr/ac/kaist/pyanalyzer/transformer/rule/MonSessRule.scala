@@ -35,20 +35,36 @@ trait MonSessRule extends TFv1MainScriptRule {
 
   override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {
     case WithItem(e, Some(EName(as))) => e match {
-      case Call(Attribute(Attribute(
-        EName(tf), Id("train")), Id("MonitoredTrainingSession")), exprs, kwds)
-        if env.get("tensor_flow_v1").contains(tf) &&
-        !env.contains("config_proto") =>
-          val newKwarg = NormalKwarg(Id("config"), EName(Id("config")))
-          val newExpr = Call(
+      case Call(
+        Attribute(
+          Attribute(EName(tf), Id("train")),
+          Id("MonitoredTrainingSession")
+        ), exprs, kwds)
+        if env.get("tensor_flow_v1").contains(tf) =>
+        //!env.contains("config_proto") =>
+          val hookKwds = findKwarg(kwds, "hooks") match {
+            case Some(kwarg) =>
+              val beautified = beautify(kwarg.expr)
+              val newExpr = parseExpr(
+                s"$beautified.append(hvd.BroadcastGlobalVariablesHook(0))")
+              replaceElement(kwds, kwarg, kwarg.copy(expr=newExpr))
+            case None =>
+              val newExpr =
+                parseExpr("[hvd.BroadcastGlobalVariablesHook(0)]")
+              val newKwarg = NormalKwarg(Id("hooks"), newExpr)
+              kwds :+ newKwarg
+          }
+          val configKwarg = NormalKwarg(Id("config"), EName(Id("config")))
+          val newKwds =
+            if (env contains "config_proto") hookKwds
+            else hookKwds :+ configKwarg
+          val newCallExpr = Call(
             Attribute(
               Attribute(EName(tf), Id("train")),
               Id("MonitoredTrainingSession")
-            ),
-            exprs, 
-            kwds :+ newKwarg
-          )
-          (WithItem(newExpr, Some(EName(as))), env.add("monitored_session", as))
+            ),exprs, newKwds)
+          val newWithStmt = WithItem(newCallExpr, Some(EName(as)))
+          (newWithStmt, env.add("monitored_session", as))
       case _ => (WithItem(transform(e), Some(EName(as))), env)
     }
     case WithItem(e, opt) => (WithItem(transform(e), opt), env)
