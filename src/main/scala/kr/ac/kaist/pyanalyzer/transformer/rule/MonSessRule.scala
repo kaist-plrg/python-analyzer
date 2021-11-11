@@ -41,7 +41,7 @@ trait MonSessRule extends TFv1MainScriptRule {
           Id("MonitoredTrainingSession")
         ), exprs, kwds)
         if env.get("tensor_flow_v1").contains(tf) =>
-        //!env.contains("config_proto") =>
+          // hook
           val hookKwds = findKwarg(kwds, "hooks") match {
             case Some(kwarg) =>
               val beautified = beautify(kwarg.expr)
@@ -54,10 +54,24 @@ trait MonSessRule extends TFv1MainScriptRule {
               val newKwarg = NormalKwarg(Id("hooks"), newExpr)
               kwds :+ newKwarg
           }
+
+          // checkpoint
+          val cpKwds = findKwarg(hookKwds, "checkpoint_dir") match {
+            case Some(kwarg) =>
+              val beautified = beautify(kwarg.expr)
+              val newExpr =
+                parseExpr(s"$beautified if hvd.rank() == 0 else None")
+              replaceElement(kwds, kwarg, kwarg.copy(expr=newExpr))
+            case None => hookKwds
+          }
+
+          // config
           val configKwarg = NormalKwarg(Id("config"), EName(Id("config")))
           val newKwds =
-            if (env contains "config_proto") hookKwds
-            else hookKwds :+ configKwarg
+            if (env contains "config_proto") cpKwds
+            else cpKwds :+ configKwarg
+
+          // transformed result
           val newCallExpr = Call(
             Attribute(
               Attribute(EName(tf), Id("train")),
