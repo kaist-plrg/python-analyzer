@@ -10,6 +10,7 @@ import kr.ac.kaist.pyanalyzer.util.{ Info, FileInfo, DirInfo }
 case class NotDir(name: String) extends Exception(name)
 case class NotFile(name: String) extends Exception(name)
 case class TargetNotFound(name: String) extends Exception(name)
+case class DuplicateTargetFound(name: String) extends Exception(name)
 
 case object TransformPipe extends Pipeline[
   (Info[Module], Info[ModuleSummary], ClassOrder, Option[String]), 
@@ -43,6 +44,21 @@ case object TransformPipe extends Pipeline[
     }
   }
 
+  def findTargetWithoutName (summaries: Info[ModuleSummary]): (String, TLType) = {
+    // must be dirinfo
+    summaries match {
+      case FileInfo(_, _) => throw NotDir(summaries.name)
+      case DirInfo(name, dirs, fs) => {
+        val targetFiles = fs.filter(fi => fi.info.tl != Bot)
+        if (targetFiles.isEmpty) { throw TargetNotFound("") }
+        if (targetFiles.length > 1) { throw DuplicateTargetFound("") }
+        // only one target file exists
+        val targetFile = targetFiles(0)
+        (targetFile.name, targetFile.info.tl) 
+      }
+    }
+  }
+
   def execute(
     p: (Info[Module], Info[ModuleSummary], ClassOrder, Option[String])
   ): Info[Module] = {
@@ -73,7 +89,24 @@ case object TransformPipe extends Pipeline[
       }
       // target file not specified case: should check loopTypes 
       case None => {
-        ???
+        // ast must be DirInfo
+        orgASTs match {
+          case DirInfo(name, dirs, fs) => {
+            // find a file AST that has targetName, transform it
+            val (targetName, targetTL) = findTargetWithoutName(loopTypes) 
+
+            val newFiles = fs.map(fi => {
+              if (fi.name == targetName) {
+                // transform the target file 
+                fi.copy(info=Transformer(fi.info, classOrder, targetTL)) 
+              } 
+              else { fi }
+            })
+            // return same DirInfo with newFiles
+            DirInfo(name, dirs, newFiles)
+          }
+          case FileInfo(_, _) => throw NotDir(orgASTs.name)
+        }  
       }
     }
   } 
