@@ -54,14 +54,13 @@ trait MonSessRule extends TFv1MainScriptRule {
               val newKwarg = NormalKwarg(Id("hooks"), newExpr)
               kwds :+ newKwarg
           }
-
           // checkpoint
           val cpKwds = findKwarg(hookKwds, "checkpoint_dir") match {
             case Some(kwarg) =>
               val beautified = beautify(kwarg.expr)
               val newExpr =
                 parseExpr(s"$beautified if hvd.rank() == 0 else None")
-              replaceElement(kwds, kwarg, kwarg.copy(expr=newExpr))
+              replaceElement(hookKwds, kwarg, kwarg.copy(expr=newExpr))
             case None => hookKwds
           }
 
