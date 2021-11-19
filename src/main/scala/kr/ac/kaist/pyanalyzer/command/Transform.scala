@@ -6,7 +6,7 @@ import kr.ac.kaist.pyanalyzer.parser.Tokenizer._
 import kr.ac.kaist.pyanalyzer.parser.TokenListParser
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast.Module
-import kr.ac.kaist.pyanalyzer.pipeline.TransformRunner._
+import kr.ac.kaist.pyanalyzer.pipeline._
 import kr.ac.kaist.pyanalyzer.transformer._
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassAnalysis._
@@ -42,28 +42,49 @@ object Transform {
       moduleDir <- versionDir.listFiles if moduleDir.isDirectory
       modelDir <- moduleDir.listFiles if modelDir.isDirectory
       modelPath = modelDir.toString
-      if target matches modelPath
+      val relPath = modelPath diff HOROVOD_DIR if target matches modelPath
     } try {
       println
-      println(s"$MAGENTA${modelPath diff HOROVOD_DIR}$RESET")
+      println(s"$MAGENTA$relPath$RESET")
       println
 
+      val orgFile = PathPipe!!(s"$modelDir/org/")
+      val orgInfo =
+        (ParsePipe!!(orgFile)).asInstanceOf[DirInfo[Module]]
+        .copy(dirname=s"$relPath/org")
+      val classInfo = ClassPipe!!(orgInfo)
+      val tlInfo = InfoTLPipe!!((orgInfo, classInfo))
       val transInfo =
-        runPipe(s"$modelPath/org").asInstanceOf[DirInfo[Module]]
-        .copy(dirname=s"${modelPath diff HOROVOD_DIR}/hvd-trans")
+        (TransformPipe!!((orgInfo, tlInfo, classInfo, None)))
+        .asInstanceOf[DirInfo[Module]]
+        .copy(dirname=s"$relPath/hvd-trans")
+      val hvdFile = PathPipe!!(s"$modelDir/hvd/")
+      val hvdInfo =
+        (ParsePipe!!(hvdFile))
+        .asInstanceOf[DirInfo[Module]]
+        .copy(dirname=s"$relPath/hvd")
 
       // dump
       if (dump) {
-        executeCmd(s"rm -rf /$modelPath/hvd-trans", modelPath)
+        executeCmd(s"rm -rf $modelPath/hvd-trans", modelPath)
         dumpInfoModule(transInfo, new File(HOROVOD_DIR))
       }
 
+      val diffDir = s"$TRANS_LOG_DIR/diff"
       // diff
+      dumpInfoModule(orgInfo, new File(diffDir))
+      dumpInfoModule(hvdInfo, new File(diffDir))
+      dumpInfoModule(transInfo, new File(diffDir))
+
       val (path1, path2) = diffTarget match {
-        case Success(a ~ b, _) => (s"$modelPath/$a", s"$modelPath/$b")
+        case Success(a ~ b, _) =>
+          (
+            s"$TRANS_LOG_DIR/diff/$relPath/$a",
+            s"$TRANS_LOG_DIR/diff/$relPath/$b"
+          )
         case _ => ???
       }
-      println(s"colordiff -$diffOption $path1 $path2")
+
       try executeCmd(s"colordiff -$diffOption $path1 $path2")
       catch {
         case e: Throwable =>
@@ -73,6 +94,7 @@ object Transform {
           println
           println(s"${YELLOW}[Warning] install colordiff${RESET}")
       }
+      executeCmd(s"rm -rf $TRANS_LOG_DIR/diff", modelPath)
     } catch {
       case e: Throwable => e.printStackTrace()
     }
