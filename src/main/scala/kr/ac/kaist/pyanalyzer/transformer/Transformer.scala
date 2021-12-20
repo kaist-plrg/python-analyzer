@@ -22,7 +22,7 @@ object Transformer extends Transformer {
     val (newModule, lw) = tl match {
       case Sess => SessRule(module)
       case MonSess => MonSessRule(module)
-      case Est => EstRule(module)
+      // case Est => EstRule(module)
       case DistGradTape => DistGradTapeRule(module)
       case DistOptim => DistOptimRule(module)
       case Bot =>

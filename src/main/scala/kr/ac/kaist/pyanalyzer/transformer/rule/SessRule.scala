@@ -45,7 +45,7 @@ trait SessRule extends TFv1MainScriptRule {
       diffEnv.get("session") match {
         case Some(id) if diffEnv.size == 1 =>
           val transStmts =
-            getStmts("config-none", id) :+ WithStmt(ty, newItems, newStmts)
+            getStmts("config-none", env("tensor_flow_v1")) :+ WithStmt(ty, newItems, newStmts)
           (transStmts, newEnv, lw)
         case _ => (WithStmt(ty, newItems, newStmts), newEnv, lw)
       }

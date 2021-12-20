@@ -12,6 +12,7 @@ case class Env(
   // map
   def getMap: Map[String, Id] = map
   def get(s: String): Option[Id] = map.get(s)
+  def apply(s: String): Id = map(s)
   def add(s: String, x: Id): Env = this.copy(map=map + (s -> x))
   def size: Int = map.size
   def \(env: Env): Env = this.copy(map=map -- env.getMap.keySet)

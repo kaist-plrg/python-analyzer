@@ -26,11 +26,33 @@ trait MonSessRule extends TFv1MainScriptRule {
       diffEnv.get("monitored_session") match {
         case Some(id) if diffEnv.size == 1 =>
           val transStmts =
-            getStmts("config-none", id) :+ WithStmt(ty, newItems, newStmts)
+            getStmts("config-none", env("tensor_flow_v1")) :+ WithStmt(ty, newItems, newStmts)
           (transStmts, newEnv, lw)
         case _ => (WithStmt(ty, newItems, newStmts), newEnv, lw)
       }
     case _ => super.transform(stmt)
+  }
+
+  override def transform(expr: Expr)(
+    implicit env: Env
+  ): Expr = expr match {
+    case expr @ Call(
+        Attribute(Attribute(EName(tf), Id("train")), Id("StopAtStepHook")),
+        exprs,
+        kwds
+      ) if env.get("tensor_flow_v1") contains tf =>
+        findKwarg(kwds, "last_step") match {
+          case Some(kwarg) =>
+            val newExpr =
+              parseExpr(s"${beautify(kwarg.expr)} // hvd.size()")
+            val newKwds = replaceElement(kwds, kwarg, kwarg.copy(expr = newExpr))
+            expr.copy(kwds=newKwds)
+          case None =>
+            val newExpr =
+              parseExpr(s"${beautify(exprs.tail.head)} // hvd.size()")
+            expr.copy(exprs=exprs.head :: newExpr :: Nil)
+        }
+    case _ => super.transform(expr)
   }
 
   override def transform(w: WithItem)(implicit env: Env): (WithItem, Env) = w match {

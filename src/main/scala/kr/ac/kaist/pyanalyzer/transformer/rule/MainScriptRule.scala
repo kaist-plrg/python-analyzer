@@ -47,6 +47,14 @@ trait MainScriptRule extends Transformer {
         case _ => super.transform(stmt)
       }
     case stmt @ ExprStmt(Call(expr1, exprs, kwds)) => expr1 match {
+      // removing gpu pinning code
+      // tf.config.experimental.set_visible_devices
+      case Attribute(Attribute(
+        Attribute(EName(tf), Id("config")),
+        Id("experimental")
+      ), Id("set_visible_devices"))
+        if env.get("tensor_flow") contains tf =>
+          (Nil, env)
       case Attribute(EName(idt), id)
         if env.get("model").contains(idt) && WRITE_METHOD.contains(id.name) =>
           (getStmts("root-rank-blocking", stmt), env)
