@@ -15,23 +15,21 @@
 
 Recent advancements in machine learning(ML) opened wide possibility of
 applying artificial intelligence in various fields.
+(list of area where ML is used. ex. image recognition, autonomous driving)
 
 While the performance of ML models continue to improve,
 their growing training time is bottleneck in the development process.
-This is due to the increase of the size of the model parameters 
-and training datasets.
+This is due to the increase of the size of the training datasets.
 
 Distributed training can reduce the training time 
-by parallelizing computation workloads among a number of processors. 
-
-For easier use, distributed training libraries are commonly used.
-As an example, Horovod is a Python library for distributed training that
-supports various DL frameworks such as PyTorch, TensorFlow, and Keras. 
+by parallelizing computation workloads among a number of processors.
+(Summarize the distributed training method and its advantage)
 
 Transforming DL model for distributed training involves
-manual code transformation. This requires intensive labor and time costs.
+manual code rewriting. This requires intensive labor and time costs.
 
 To solve this problem, we utilize code transformation to automate the process.
+(define the "code transformation" and how it can "automate" rewriting)
 
 In this paper, we propose an automated Python code transformation that enables
 TensorFlow ML models to perform distributed training.
