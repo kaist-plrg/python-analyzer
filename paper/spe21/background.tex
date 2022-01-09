@@ -4,3 +4,11 @@ Describe the structure of TensorFlow ML Models.
 
 \subsection{Horovod Distributed Training Framework}
 Describe the Horovod framework.
+
+Horovod \cite{sergeev2018horovod} is a distributed deep learning framework
+that supports multiple DL frameworks. It provides high-level, easy-to-use API
+code for migrating a single-GPU DL model into multi-GPU model.
+It is based on data-parallel approach, which multiple instances of
+model are placed in number of nodes and parallelly trainied with
+splitted sets of the training data.
+
