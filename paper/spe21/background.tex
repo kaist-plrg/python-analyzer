@@ -8,7 +8,16 @@ Describe the Horovod framework.
 Horovod \cite{sergeev2018horovod} is a distributed deep learning framework
 that supports multiple DL frameworks. It provides high-level, easy-to-use API
 code for migrating a single-GPU DL model into multi-GPU model.
-It is based on data-parallel approach, which multiple instances of
-model are placed in number of nodes and parallelly trainied with
-splitted sets of the training data.
 
+It is inspired by Facebook's data-parallel approach\cite{facebook2018},
+which provides empricial evidence of performance advantage of distributing
+large minibatch over multiple GPUs.
+
+It is based on the data-parallel approach on distributed DL training.
+In data-parallel approach, each accelerator node is equipped with independent
+instances of the same DL model. The whole training dataset is then divided by
+the number of the nodes, so that minibatches with the equal size is assigned
+to each node. The training proceeds by parallely executing the forward
+propagation and computing gradients. Then the gradients averaged all together
+and used to update each model instances. This way, the data-parallel approach
+improves efficiency by taking advantage of data parallelism.
