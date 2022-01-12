@@ -2,24 +2,57 @@
 \subsection{TensorFlow ML Models}
 Describe the structure of TensorFlow ML Models.
 
-\subsection{Horovod Distributed Training Framework}
+\subsection{Distributed DL Training and Horovod Framework}
 Describe the Horovod framework.
 
-Horovod \cite{sergeev2018horovod} is a distributed deep learning framework
-that supports multiple DL frameworks. It is developed by Uber engineering in
-2017 as a part of DL toolkit for Michelangelo, a ML-as-a-service platfom. 
+(introduce general concept of distributed training)
 
-Horovod provides high-level, easy-to-use API code for distributed training.
+Distributed training is a technique to boast efficiency in ML training
+by parallelizing computation workloads in time.
+Training an ML model is an expensive process that involves repetitive
+arithmetic computation over multiple tensors,
+which can be accelerated by multicore devices such as GPU or TPU. 
+Distribtue training takes advantage of multiple accelerator devices to
+The total training workload is divided into smaller, independent workloads
+so they can be assigned into multiple accelerator devices and
+processed simultaneously. 
 
-It is inspired by Facebook's data-parallel approach\cite{facebook2018},
-which provides empricial evidence of performance advantage of distributing
-large minibatch over multiple GPUs.
+(introduce model-parallel and data-parallel approach\cite{approaches2019Mao})
 
-It is based on the data-parallel approach on distributed DL training.
-In data-parallel approach, each accelerator node is equipped with independent
-instances of the same DL model. The whole training dataset is then divided by
-the number of the nodes, so that minibatches with the equal size is assigned
-to each node. The training proceeds by parallely executing the forward
-propagation and computing gradients. Then the gradients averaged all together
-and used to update each model instances. This way, the data-parallel approach
-improves efficiency by taking advantage of data parallelism.
+There are two approaches in distributed ML training implementation
+In model-parallel approach, a large ML model is divided into separate unit
+of computation pipes and assigned to different accelerators. The whole model
+is pipelined over series of accelerators and so the forward-propagation and
+back-propagation can be done in the distributed system.
+In data-parallel apporach, however, multiple instances of same ML model
+is assigned to each accelerators. The total training dataset is instead
+divided into a number of smaller datasets which then assigned to different
+accelerators. The training proceeds by simultaneously calculating gradients
+in each accelerators. Then the gradients are averaged before being 
+back-propagated into the model parameters.
+
+(introduce facebook's data-parallel approach and improvements)
+
+Facebook's experiment \cite{facebook2018} provides empirical evidence of
+scalability of data-parallel distributed training. In the paper, 
+halving/doubling-based allreduce algorithm is used to reduce communication cost 
+of averaging gradients between the GPUs. 
+Allreduce algorithm eliminates performance bottleneck of traditional
+averaging algorithm by aggregating the average value through series of
+point-to-point communication between GPUs. 
+Experimental results of the paper show that the performance linearly
+scales from 8-GPUs to 352 GPUs, while achieving over 90\% of ideal performance.
+
+(introduce horovod)
+
+Inspired by Facebook's results, Uber Engineering developed a distributed DL
+training framework namely Horovod \cite{sergeev2018horovod}. It is published in
+2017 as a part of DL toolkit for Michelangelo, a ML-as-a-service platform.
+The main motivation of Horovod is to scale single-GPU DL model training
+into distributed model training. Similar to the Facebook's approach,
+Horovod implements allreduce algorithm in NCCL. NCCL is collective communication
+library from NVIDIA, which provides various performant algorithms including
+allreduce. In addition, Horovod introduces high-level API that enables
+convenient use of the distributed training.  
+
+(introduce what horovod provides)
