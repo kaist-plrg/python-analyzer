@@ -17,13 +17,23 @@ Recent advancements in machine learning(ML) have open wide possibility of
 applying artificial intelligence in various fields.
 (list of area where ML is used. ex. image recognition, autonomous driving)
 
-While the performance of ML models continue to improve,
-their growing training time is a major bottleneck in the development process.
-This is due to the increase of the size of the training datasets.
+One major factor in the ML development process is long training time.
+Training is a process of updating ML model parameters in a way
+that it becomes closer to the optimization point.
+This process is inevitably computationally heavy process.
+For instance, in deep learning(DL), a ML technique using
+neural network-based models, the training process involves
+feeding a training data vector into model, forward propagating 
 
-Distributed training can reduce the training time 
-by parallelizing computation workloads among a number of processors.
-(Summarize the distributed training method and its advantage)
+The ML model should be trained against a large amount of training dataset
+before it can be accurate and be deployed for real use.
+
+As training time is becoming a major factor in ML development process,
+researchers utilize distributed training to reduce the training time.
+Distributed training is a technique to parallelize the training computation
+workload over multiple processors or accelerators in a distributed system.
+As ML technology and its application advance, the number and size of
+the training dataset has grown enormously large.
 
 Transforming DL model for distributed training involves
 manual code rewriting. This requires intensive labor and time costs.
