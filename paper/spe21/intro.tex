@@ -17,30 +17,41 @@ Recent advancements in machine learning(ML) have open wide possibility of
 applying artificial intelligence in various fields.
 (list of area where ML is used. ex. image recognition, autonomous driving)
 
-One major factor in the ML development process is long training time.
-Training is a process of updating ML model parameters in a way
-that it becomes closer to the optimization point.
-This process is inevitably computationally heavy process.
-For instance, in deep learning(DL), a ML technique using
-neural network-based models, the training process involves
-feeding a training data vector into model, forward propagating 
+One major factor to consider in ML development is training time.
+While training is an essential part of the ML development,
+the process requires heavy computational workloads.
+According to the analysis by S. Bianco et al. \cite{bianco2018benchmark},
+majority of the image recognition models including ResNet, VGG, SENet, etc.
+require over 5 GFLOPs for a single forward propagation.
+The training process is repeatition of training steps until convergence,
+which each of them is composed of a forward and a backward propagation.
+Considering that thousands of training data is feed into the model
+for the convergence, the training process takes the longest time
+in the whole development process.
 
-The ML model should be trained against a large amount of training dataset
-before it can be accurate and be deployed for real use.
-
-As training time is becoming a major factor in ML development process,
-researchers utilize distributed training to reduce the training time.
+In one of the efforts to reduce training time, 
+researchers utilize distributed ML training.
 Distributed training is a technique to parallelize the training computation
-workload over multiple processors or accelerators in a distributed system.
-As ML technology and its application advance, the number and size of
-the training dataset has grown enormously large.
+workload over multiple GPUs in a system or multiple distributed systems
+equipped with one or more GPUs.
+By taking advantage of parallelism, distributed training enables researchers
+to spend less time in training while preserving accuracy.
+Using multiple GPUs or TPUs to train the model is already adopted
+in various works \cite{brown2020gpt-3} \cite{silver2017alphazero}
+\cite{zhang2019distrspeech} \cite{tian2020distrwebattack}.
+As ML models are becoming more complex and training dataset are growing,
+the need for distributing the training process in ML research is inevitable.
 
-Transforming DL model for distributed training involves
-manual code rewriting. This requires intensive labor and time costs.
-
-To solve this problem, we utilize code transformation to automate the process.
-(define the "code transformation" and how it can "automate" rewriting)
+Transforming DL model for distributed training involves manual code rewriting.
+Considering the amount of the code difference,  
 
 In this paper, we propose an automated Python code transformation that enables
 TensorFlow ML models to perform distributed training.
-
+We first formally define the code transformation of rewriting of
+single-GPU based DL model for distributed training.
+Then the transformation is implemented in actual algorithm together with
+adequate pre-analysis that provides information used in the transformation.
+The transformer software is evaluated by comparing against 
+examples of distributed training model codes, 
+each including an original single-GPU based model code 
+and a manually transformed distributed model code.
