@@ -1,17 +1,4 @@
 \section{Introduction}\label{sec:intro}
-\begin{itemize}
-  \item ML is widely used in various domains these days.
-  \item Distributed Training can reduce the training time.
-  \item To train ML model on multi-GPUs, code transformation is required but it
-    also requires human efforts. The code transformation is simple but only
-    some examples describe the transformation.
-  \item In this paper, we propose an automated Python code transformation that
-    enables TensorFlow ML models to run on multi-GPUs (formal rule of the code
-    transformation \& automated code transformation tool).
-  \item Describe contributions of this paper.
-\end{itemize}
-
-(Main topic sentences for each paragraphs)
 
 Recent advancements in machine learning(ML) have open wide possibility of
 applying artificial intelligence in various fields.
@@ -27,7 +14,9 @@ The training process is repeatition of training steps until convergence,
 which each of them is composed of a forward and a backward propagation.
 Considering that thousands of training data is feed into the model
 for the convergence, the training process takes the longest time
-in the whole development process.
+in the whole development process. This leads to the conclusion that
+reducing training time is the most efficient optimization according to
+the Amdahl's law.
 
 In one of the efforts to reduce training time, 
 researchers utilize distributed ML training.
@@ -43,15 +32,21 @@ As ML models are becoming more complex and training dataset are growing,
 the need for distributing the training process in ML research is inevitable.
 
 Transforming DL model for distributed training involves manual code rewriting.
-Considering the amount of the code difference,  
 
 In this paper, we propose an automated Python code transformation that enables
 TensorFlow ML models to perform distributed training.
-We first formally define the code transformation of rewriting of
-single-GPU based DL model for distributed training.
+We first formally define the code transformation of rewriting from
+single-GPU based DL model code to distributed training model code.
 Then the transformation is implemented in actual algorithm together with
 adequate pre-analysis that provides information used in the transformation.
 The transformer software is evaluated by comparing against 
 examples of distributed training model codes, 
 each including an original single-GPU based model code 
 and a manually transformed distributed model code.
+
+The contributions of this paper are as follows:
+
+\begin{itemize}
+  \item TODO 0
+  \item TODO 1
+\end{itemize}
