@@ -1,17 +1,24 @@
 \section{Implementation}\label{sec:impl}
 Describe the structure of our code transformation tool.
-
-We implemented the transformation tool in Scala.  
+We implemented the code transformation rule for distributed training in Scala,
+and our work is available at https://github.com/kaist-plrg/python-analyzer.
+The implementation is divided into 4 parts:
+Parser, Class Hierachy Analysis,
+Training API Pattern Analysis, and Transformer.
 (...TODO:system architecture diagram...)
 
-\subsection{Class Hierarchy Anlayzer}
+\subsection{Parser}
+Describe detailed explanation of Parser.
+Parser convert the code in string format into AST.
+Rather than using Python AST module, we implemented parser for our tool.
+We use scala packrat parser to follow the Python Language Reference
+where full grammar specification is written in the form of mixture of EBNF and PEG.
 
-The class hierarchy analyzer
+\subsection{Class Hierarchy Analyzer}
+Describe detailed explanation of CHA.
 
 \subsection{Training API Pattern Analyzer}
-
-The training API Pattern Analyzer
+Describe detailed explanation of TAPA.
 
 \subsection{AST Transformer}
-
-The AST transformer
+Describe detailed explanation of AST Transformer.
