@@ -1,43 +1,79 @@
 \section{Code Transformation for Distributed Training}\label{sec:trans}
 \subsection{Python Abstract Syntax}\label{sec:pysyn}
-Describe the simplified Python abstract syntax here. 
+
+(Describe the simplified Python abstract syntax here. 
 The abstract syntax should be sufficient to describe our code transformation. 
-We can attach the full Python abstract syntax as supplementary material.
+We can attach the full Python abstract syntax as supplementary material.)
 
 We first define the abstract syntax for Python programming language.
 The syntax of Python is described in the Python Language Reference \cite{pythonref}.
 The reference provides a full grammar specification based on the extended PEG,
 and detailed explanation of syntatic components in each section.
-By examining  
+We manually examined the grammar and the details
+to define the Python abstract sytax.
 The syntax is composed of three syntactic components: expressions, statements,
 and top-level components.
 
 Expressions are parts of the code that evaluates to a value.
 Python has 5 kinds of primitive values, 
-which are numbers, strings, booleans, the value 'None' and 'Ellipsis.
-and has composite types of tuple, list, set, map, and object.
+which are numbers, strings, booleans, the value 'None' and 'Ellipsis'.
+The value 'None' is used to denote a undefined value,
+similar to the value `null` in Java.
+The value 'Ellipsis' corresponds to the notation "...",
+which can be used as an special placeholder meaning expansion of the sequence. 
+Python has composite types of tuple, list, set, map, and custom classes.
 The expression syntax defines ways to build up values
 and complex expressions such as operators, comprehension, and function calls. 
 
-Statements are parts of the code that is composed of expressions or other
-statements so that they change the program state.
-Python statements are categorized into simple statements or compound statements.
-Simple statements include assignment statements and import statements.
-Note that procedure call is also categorized into simple statements,
-as a special case of expression statements.
+Statements are parts of the code that changes the program state,
+such as variable binding or control flow. 
+Python statements are categorized into 
+simple statements which denote a single state changing step, 
+or compound statements which are composed of multiple statements.
 
-Compound statements included loops like for and while statements,
+Simple statements include assignment statements and import statements.
+Assignment statements are used to declare a new variable and its value
+or update a variable value.
+Import statements are used to specify a module, load it
+and get definitions of the module into current namespace.
+In import statements, each target module and its aliased name is represented
+as alias. (...TODO:insert alias abstract syntax...)  
+Note that procedure call is a special case of expression statements,
+where the expression is a function call.
+
+Compound statements include conditional statements, loop statements,
 and definitions for functions and classes.
-Additionally, the with statement is identical to the assignment statement 
+Additionally, the with statement is an special kind of compound statement.
+With statement is identical to the assignment statement 
 in a way that it binds an expression to a name, 
 but the statement additionally adds implicit calls
 to the object's methods related to initialization and destruction.
+Similar to the alias in import statement,
+with statements use WithItem to represent then ame and expression.
+(...TODO:insert WithItem abstract syntax...) 
 
 Top-level components are representation of the program
-in different executionp environment of the interpreter.
-For example, module represents a Python code file, composed of
-series of statements. 
+in different execution environment of the Python interpreter.
+For example, a module represents a Python code file, composed of
+multiple definitions speicified of statements. 
 The full Python abstract syntax is attched in the supplementary material.
+
+\subsection{Transformation Rule for Distributed TensorFlow ML model}
+
+In this section, we describe the transformation rule that
+transforms single-GPU based TensorFlow model codes into
+multi-GPU based TensorFlow model codes.
+The transformation is formally defined as functions from AST to AST.
+Additionally, we use environments to store arbitrary syntactic information over
+series of function calls. 
+Environments are finite mappings from strings to identifiers.
+Transformation functions get an input environment, update the mapping if needed,
+and return an output environment which will be passed as an argument for 
+the next statement call.
+For example, (...TODO:example for environment usage...)
+
+
+
 
 \subsection{...}
 Describe how to transform TensorFlow ML models to training them on distributed
