@@ -4,8 +4,13 @@ Describe the structure of TensorFlow ML Models.
 
 (add more introduction on TF)
 
-TensorFlow is one of the famous deep learning software libraries.
-It has APIs that can be used in many languages such as Python.
+Nowadays, there are lots of deep learning software libraries
+such as Pytorch and Caffe.
+Among them, TensorFlow is one of the famous deep learning software libraries.
+It not only has many APIs that can be used in many languages,
+but also operates on heterogenuous environment\cite{199317}.
+Not only that, it has powerful visualization tool TensorBoard
+that makes TensorFlow program easy to understand and debug.
 
 (how TF work\cite{doi:10.3102/1076998619872761})
 
@@ -14,15 +19,15 @@ user should construct a graph of the network.
 In this graph construction, edges represent the flows of data in the form of tensor,
 which is related to its name, TensorFlow,
 and nodes represent computations on the tensor.
-TensorFlow provides APIs of these basic building blocks
+TensorFlow provides APIs to construct these basic building blocks
 such as activation function and convolutional layer.
 Using these basic blocks in TensorFlow libraries, user can define a neural network
-that takes input tensor and returns the results.
+that takes input tensor and returns some results.
 Also, it provides APIs for calculating the loss from the output of the network.
-This sequence of getting loss from the input is called forward pass.
+The sequence of getting loss from the input is called forward pass.
 With the loss of the network, parameters in the networks should be updated,
 which is called backward pass.
-TensorFlow also provides APIs that automatically computes gradient from the loss,
+TensorFlow also provides APIs that automatically computes gradient from the loss
 and updates parameters.
 In this process, TensorFlow provides many optimization APIs
 such as SGD and Adam.
@@ -30,12 +35,13 @@ such as SGD and Adam.
 (kinds of APIs in TF\cite{doi:10.3102/1076998619872761})
 
 Using low-level APIs, user should specify the sequence of processes mentioned above.
-It requires some understandings of these processes and TensorFlow,
+It requires some understandings of these processes and internal of TensorFlow,
 but gives much flexibility.
 In contrast, using high-level APIs such as Keras and Estimator,
-user just builds a network, and calls `compile` and `fit` methods of the model.
-Many processes are implicitly done internally in the compile and fit methods.
-Therefore, user can omit the process, so it is easy to build the model.
+what user has to do is just building a network,
+and calling `compile` and `fit` methods of the model.
+Many processes are implicitly done internally in the high-level APIs.
+Therefore, user can omit some processes, so it makes building the model easy.
 
 
 \subsection{Distributed DL Training and Horovod Framework}
