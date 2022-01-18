@@ -54,5 +54,49 @@ to that of Y in the graph.
 \subsection{Training API Pattern Analyzer}
 Describe detailed explanation of TAPA.
 
+(necessity of TAPA)
+
+As mentioned in Section 2.1, user can choose which APIs to use
+when building model using TensorFlow library.
+However, different transformation rule should be applied
+to different usage pattern of training API.
+To apply appropriate rule to each model, we analyze the training API pattern.
+
+(categories of TAP)
+
+First, we categorized the training API pattern into 4 categories:
+low-level API pattern and high-level API pattern using TensorFlow version 1, and
+low-level API pattern and high-level API pattern using TensorFlow version 2.
+Session/MonitoredSession is low-level API using TensorFlow version 1,
+Estimator is high-level API using TensorFlow version 1,
+DistributedGradientTape is low-level API using TensorFlow version 2,
+and Keras is high-level API using TensorFlow version 2.
+
+(how TAPA work)
+
+Each category has unique pattern of using training API.
+For example, Keras pattern is 1) making instance of model and
+2) call compile and fit method of that model.
+Conversly, if call expressions of the method model.compile and model.fit are detected
+where model is an instance of subclass of Model class in TensorFlow library,
+we categorize it as Keras pattern.
+
+(result of TAPA)
+
+By using training API pattern analyzer, we can figure out the API pattern.
+However, it is possible that model uses more than one categories of API pattern
+such as using both low-level and high-level APIs.
+In this case, we reject to transform because transformation rule assumes
+that each model uses only one training API pattern.
+
 \subsection{AST Transformer}
 Describe detailed explanation of AST Transformer.
+
+In transformation, it takes results of class hierarchy analysis
+and training API pattern analysis, and it transforms the code
+according to the rule mentioned in Section 3.2.
+Because of dynamic behaviors of Python, we give up soundness
+to get more complete result.
+We leaves warning log with some suggestions
+when transformation rule is potentially inaccurate.
+
