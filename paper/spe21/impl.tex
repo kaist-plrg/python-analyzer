@@ -1,5 +1,6 @@
 \section{Implementation}\label{sec:impl}
 Describe the structure of our code transformation tool.
+
 We implemented the code transformation rule for distributed training in Scala,
 and our work is available at https://github.com/kaist-plrg/python-analyzer.
 The implementation is divided into 4 parts:
@@ -9,6 +10,9 @@ Training API Pattern Analysis, and Transformer.
 
 \subsection{Parser}
 Describe detailed explanation of Parser.
+
+(brief introduction to the parser)
+
 Parser convert the code in string format into AST.
 Rather than using Python AST module, we implemented parser for our tool.
 We use scala packrat parser to follow the Python Language Reference
@@ -16,6 +20,36 @@ where full grammar specification is written in the form of mixture of EBNF and P
 
 \subsection{Class Hierarchy Analyzer}
 Describe detailed explanation of CHA.
+
+(necessity of CHA)
+
+When building a TensorFlow model, there can be user defined classes
+that extend some classes in the TensorFlow library.
+To transform the TensorFlow model correctly,
+we need to analyze the subclass relations of user defined classes.
+Therefore, we analyze the class hierarchy before transforming the model.
+
+(explanation of full name)
+(TODO: need to check)
+
+In class hierarchy analysis, each class name is expressed as fully qualified name.
+Here, fully qualified name of a class means qualified name\cite{???}
+on the basis of top of the package.
+That is, the path to the module where the class is defined
+is used to express the fully qualified name of the class.
+By using the fully qualified name, the same class name in different module
+can be discriminated.
+
+(how CHA work)
+
+When class is declared, subclass relation is explicitly specified.
+We collect all of this information in the class definition,
+and we build a directed graph of subclass relation
+where the node is fully qualified name and the directed edge exists
+from the fully qualified name of child class to that of parent class.
+Accordingly, to figure out whether some class X is subclass of some class Y,
+we check whether there exists some path from the fully qualified name of X
+to that of Y in the graph.
 
 \subsection{Training API Pattern Analyzer}
 Describe detailed explanation of TAPA.
