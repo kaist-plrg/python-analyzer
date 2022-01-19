@@ -4,8 +4,7 @@ Describe the structure of our code transformation tool.
 We implemented the code transformation rule for distributed training in Scala,
 and our work is available at https://github.com/kaist-plrg/python-analyzer.
 The implementation is divided into 4 parts:
-Parser, Class Hierachy Analysis,
-Training API Pattern Analysis, and Transformer.
+Parser, Class Hierachy Analyzer, Training API Pattern Analyzer, and API Transformer.
 (...TODO:system architecture diagram...)
 
 \subsection{Parser}
@@ -13,9 +12,9 @@ Describe detailed explanation of Parser.
 
 (brief introduction to the parser)
 
-Parser convert the code in string format into AST.
+Parser converts the code in string format into AST mentioned in Section 3.1.
 Rather than using Python AST module, we implemented parser for our tool.
-We use scala packrat parser to follow the Python Language Reference
+We used scala packrat parser to follow the Python Language Reference
 where full grammar specification is written in the form of mixture of EBNF and PEG.
 
 \subsection{Class Hierarchy Analyzer}
@@ -26,8 +25,9 @@ Describe detailed explanation of CHA.
 When building a TensorFlow model, there can be user defined classes
 that extend some classes in the TensorFlow library.
 To transform the TensorFlow model correctly,
-we need to analyze the subclass relations of user defined classes.
-Therefore, we analyze the class hierarchy before transforming the model.
+we need to analyze the subclass relations of the user defined classes.
+Therefore, there is a class hierarchy analysis part
+before transforming the model.
 
 (explanation of full name)
 (TODO: need to check)
@@ -43,7 +43,7 @@ can be discriminated.
 (how CHA work)
 
 When class is declared, subclass relation is explicitly specified.
-We collect all of this information in the class definition,
+We collected all of this information in the class definition,
 and we build a directed graph of subclass relation
 where the node is fully qualified name and the directed edge exists
 from the fully qualified name of child class to that of parent class.
@@ -60,17 +60,17 @@ As mentioned in Section 2.1, user can choose which APIs to use
 when building model using TensorFlow library.
 However, different transformation rule should be applied
 to different usage pattern of training API.
-To apply appropriate rule to each model, we analyze the training API pattern.
+To apply appropriate rule to each model,
+the training API pattern is analyzed before the transformation.
 
 (categories of TAP)
 
 First, we categorized the training API pattern into 4 categories:
-low-level API pattern and high-level API pattern using TensorFlow version 1, and
-low-level API pattern and high-level API pattern using TensorFlow version 2.
-Session/MonitoredSession is low-level API using TensorFlow version 1,
-Estimator is high-level API using TensorFlow version 1,
-DistributedGradientTape is low-level API using TensorFlow version 2,
-and Keras is high-level API using TensorFlow version 2.
+Session/MonitoredSession, low-level API using TensorFlow1;
+Estimator, high-level API using TensorFlow1;
+DistributedGradientTape, low-level API using TensorFlow2;
+and Keras, high-level API using TensorFlow2.
+(TODO: show the category into a table)
 
 (how TAPA work)
 
@@ -86,8 +86,8 @@ we categorize it as Keras pattern.
 By using training API pattern analyzer, we can figure out the API pattern.
 However, it is possible that model uses more than one categories of API pattern
 such as using both low-level and high-level APIs.
-In this case, we reject to transform because transformation rule assumes
-that each model uses only one training API pattern.
+In this case, we reject to transform because we assumes
+that each model uses only one training API pattern in the transformation rule.
 
 \subsection{AST Transformer}
 Describe detailed explanation of AST Transformer.
