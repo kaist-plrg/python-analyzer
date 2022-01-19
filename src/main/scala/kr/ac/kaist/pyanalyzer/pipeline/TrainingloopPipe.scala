@@ -6,10 +6,10 @@ import kr.ac.kaist.pyanalyzer.transformer._
 import kr.ac.kaist.pyanalyzer.transformer.Env
 
 case object TrainingLoopPipe
-  extends Pipeline[(Module, ClassOrder), (Module, ClassOrder, TLType)] {
+  extends Pipeline[(Module, ClassOrder), (Module, ClassOrder, APIType)] {
 
-  def execute(p: (Module, ClassOrder)): (Module, ClassOrder, TLType) = {
+  def execute(p: (Module, ClassOrder)): (Module, ClassOrder, APIType) = {
     val (mod, order) = p
-    (mod, order, TrainingLoop(mod, order).tl)
+    (mod, order, APIAnalyzer(mod, order).api)
   }
 }

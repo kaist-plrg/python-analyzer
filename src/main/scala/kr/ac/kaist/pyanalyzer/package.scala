@@ -17,6 +17,8 @@ package object pyanalyzer {
 
   val OUTPUT_DIR = s"$BASE_DIR/output"
 
+  val TEST_DIR = s"$BASE_DIR/test"
+
   // Others
   val LINE_SEP = System.getProperty("line.separator")
 }

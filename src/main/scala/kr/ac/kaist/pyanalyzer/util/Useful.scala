@@ -5,8 +5,8 @@ import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import scala.Console._
-import scala.sys.process._
 import scala.io.Source
+import scala.sys.process._
 
 object Useful {
   def beautify[T](t: T)(implicit app: Appender.App[T]): String = {
@@ -95,6 +95,7 @@ object Useful {
     writer.close()
   }
 
+  // should overwrite the file
   def writeFile(path: File, data: String): Unit = {
     val writer = new PrintWriter(path)
     writer.write(data)
@@ -111,7 +112,8 @@ object Useful {
     if (newFilePath.createNewFile()) {
       writeFile(newFilePath, prettyCode)
     } else {
-      throw new RuntimeException(s"unexpectedly existing ${newFilePath}")
+      //throw new RuntimeException(s"unexpectedly existing ${newFilePath}")
+      writeFile(newFilePath, prettyCode)
     }
   }
 
@@ -123,7 +125,9 @@ object Useful {
         l.foreach(info => dumpInfoModule(info, newDirPath))
       }
       else {
-        throw new RuntimeException(s"unexpectedly existing ${newDirPath}")
+        //throw new RuntimeException(s"unexpectedly existing ${newDirPath}")
+        val l: List[Info[Module]] = ds ++ fs
+        l.foreach(info => dumpInfoModule(info, newDirPath))
       }
     }
     case FileInfo(name, mod) => dumpModuleToPath(mod, dir, name)
@@ -145,7 +149,11 @@ object Useful {
   ////////////////////////////////////////////
 
   // execute shell command with given dir, default to CUR_DIR
-  def executeCmd(given: String, dir: String = BASE_DIR, log: Boolean = false): Int = {
+  def executeCmd(
+    given: ProcessBuilder,
+    dir: String = BASE_DIR,
+    log: Boolean = false
+  ): Int = {
     if (log) println(s"[SHELL] $given")
     given.!
   }
@@ -155,4 +163,13 @@ object Useful {
       case None => List(e) 
       case Some(n) => e +: accUntil(n)(next)
     }
+
+  // Adding comments
+  implicit class StmtsWrapper(stmts: List[Stmt]) {
+    def addComment(c: String): List[Stmt] = Comment(c) +: stmts
+  }
+
+  implicit class StmtWrapper(stmt: Stmt) {
+    def addComment(c: String): List[Stmt] = List(Comment(c), stmt)
+  }
 }

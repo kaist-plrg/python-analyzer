@@ -16,7 +16,7 @@ case class Warning(message: String, code: Stmt) {
 
 object Transformer extends Transformer {
   // transformed one AST into another AST
-  def apply(module: Module, order: ClassOrder, tl: TLType): Module = {
+  def apply(module: Module, order: ClassOrder, tl: APIType): Module = {
     // transform
     implicit val env = Env(classOrder=order)
     val (newModule, lw) = tl match {
@@ -92,6 +92,11 @@ trait Transformer extends TransformerWalker {
         lk.slice(0, index) ++ (to :: lk.slice(index + 1, lk.length))
       case None => lk
     }
+  }
+
+  def removeElement[T](lk: List[T], from: T): List[T] = lk match {
+    case h :: t => if (h == from) removeElement(t, from) else h :: removeElement(t, from)
+    case Nil => Nil
   }
 
   /////////////////////////////////////////

@@ -5,7 +5,7 @@ import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
 package object transformer {
-  val OPTIMIZER = List(
+  val OPTIMIZER_TF_V2 = List(
     "tensorflow.optimizers.Adadelta",
     "tensorflow.optimizers.Adagrad",
     "tensorflow.optimizers.Adam",
@@ -32,6 +32,7 @@ package object transformer {
     "tensorflow.compat.v1.train.MomentumOptimizer",
     "tensorflow.compat.v1.train.RMSPropOptimizer",
   )
+  val OPTIMIZER = OPTIMIZER_TF_V1 ++ OPTIMIZER_TF_V2
   val MODEL = List(
     "tensorflow.keras.Model",
     "tensorflow.keras.models.Model",

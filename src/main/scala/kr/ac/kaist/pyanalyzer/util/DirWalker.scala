@@ -2,6 +2,7 @@ package kr.ac.kaist.pyanalyzer.util
 
 import java.io.File
 import kr.ac.kaist.pyanalyzer.util.Errors.EmptyFileException
+import scala.util.Try
 
 case class NotDirectory(s: String) extends Exception(s)
 case class NotFile(s: String) extends Exception(s)
@@ -20,6 +21,25 @@ sealed trait Info[T] {
         fs.map(afi => afi.map[U](convert)).map(DirWalker.onlyFile[U](_))
       )
     case FileInfo(fname, i) => FileInfo[U](fname, convert(i))
+  }
+  def flatMap[U](f: T => Option[U]): Info[U] = this match {
+    case DirInfo(dname, ds, fs) =>
+      DirInfo[U](
+        dname, 
+        ds.map(_.flatMap[U](f)),
+        fs.flatMap(finfo => Try(finfo.copy(info=f(finfo.info).get)).toOption)
+      )
+    // flatMap should not be directly called on FileInfo
+    case FileInfo(fname, i) => ???
+  }
+
+  implicit def info2dinfo[T](info: Info[T]): DirInfo[T] = info match {
+    case dinfo: DirInfo[T] => dinfo
+    case _ => ???
+  }
+  implicit def info2finfo[T](info: Info[T]): FileInfo[T] = info match {
+    case finfo: FileInfo[T] => finfo
+    case _ => ???
   }
 }
 
@@ -57,18 +77,33 @@ object DirWalker {
           dirList.map(walkFile[T](_)(f)).map(onlyDir[T])
         // make info for files directly inside
         val fileInfos: List[FileInfo[T]] =
-          fileList.map(file => {
-            try {
-              Some(FileInfo(file.getName().replaceFirst("[.][^.]+$", ""), f(file)))
-            }
-            catch {
-              case EmptyFileException => None
-            }
-          }).filter(_.isDefined).map(_.get)
+          fileList.map(file => FileInfo(file.getName(), f(file)))
 
         DirInfo[T](file.getName(), dirInfos, fileInfos)
     }
   }
   
+  def flatWalkFile[T](file: File)(f: File => Option[T]): DirInfo[T] = {
+    file.listFiles().toList.partition(_.isDirectory()) match {
+      case (dirList, fileList) =>
+        // make info for subdirectories
+        val dirInfos: List[DirInfo[T]] =
+          dirList.map(flatWalkFile[T](_)(f))
+        // make info for files directly inside
+        val fileInfos: List[FileInfo[T]] = fileList.flatMap (file =>
+          Try(FileInfo(file.getName(), f(file).get)).toOption
+        )
 
+        DirInfo[T](file.getName(), dirInfos, fileInfos)
+    }
+  }
+
+  implicit def info2dinfo[T](info: Info[T]): DirInfo[T] = info match {
+    case dinfo: DirInfo[T] => dinfo
+    case _ => ???
+  }
+  implicit def info2finfo[T](info: Info[T]): FileInfo[T] = info match {
+    case finfo: FileInfo[T] => finfo
+    case _ => ???
+  }
 }

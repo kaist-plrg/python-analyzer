@@ -1,12 +1,15 @@
 package kr.ac.kaist.pyanalyzer.pipeline
 
-import kr.ac.kaist.pyanalyzer.parser.ast._
-import kr.ac.kaist.pyanalyzer.pipeline._
-import kr.ac.kaist.pyanalyzer.util.{ Info }
-import kr.ac.kaist.pyanalyzer.transformer.{ ModuleSummary }
+import java.io.File
+import kr.ac.kaist.pyanalyzer._
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder
-import kr.ac.kaist.pyanalyzer.pipeline.Pipeline._
+import kr.ac.kaist.pyanalyzer.parser.ast.Module
 import kr.ac.kaist.pyanalyzer.pipeline.Pipeline.PipelineOps
+import kr.ac.kaist.pyanalyzer.pipeline.Pipeline._
+import kr.ac.kaist.pyanalyzer.pipeline._
+import kr.ac.kaist.pyanalyzer.transformer.{ ModuleSummary }
+import kr.ac.kaist.pyanalyzer.util.Useful._
+import kr.ac.kaist.pyanalyzer.util.{ Info }
 
 object TransformRunner {
   /* val subPipe: 
@@ -25,13 +28,26 @@ object TransformRunner {
  
   //def run(path: String): Info[Module] = transformPipe!!(path)
 
-  def runPipe(path: String): Info[Module] = {
-    val (file, targetOpt) = (PathPipe ++ CheckFilePipe)!!(path) 
-    val orgASTs: Info[Module] = ParsePipe!!(file) 
+  def runPipe(
+    inPath: String,
+    outPath: String = TRANS_LOG_DIR,
+    diff: Boolean = false
+  ): Unit = {
+    val targetOpt = CheckFilePipe!!(inPath)
+    val fs: Info[File] = PathPipe!!(inPath) 
+    val orgASTs: Info[Module] = ParsePipe!!(fs) 
     val classOrder: ClassOrder = ClassPipe!!(orgASTs)
     val loopTypes: Info[ModuleSummary] = InfoTLPipe!!((orgASTs, classOrder)) 
-    val resASTs: Info[Module] = 
-      TransformPipe!!((orgASTs, loopTypes, classOrder, targetOpt))
-    resASTs
+    val (mainScriptAST, api) = MainScriptPipe!!((orgASTs, loopTypes, targetOpt))
+    val transformAST: Module = TransformPipe!!((mainScriptAST, classOrder, api))
+    mkdir(outPath)
+    DiffPipe!!((outPath, mainScriptAST, transformAST))
+    if (diff) {
+      mkdir(s"$outPath/org/")
+      mkdir(s"$outPath/trans/")
+      DumpPipe!!((fs, inPath, s"$outPath/org/", Module(Nil, Nil, "")))
+      DumpPipe!!((fs, inPath, s"$outPath/trans/", transformAST))
+    }
+    else DumpPipe!!((fs, inPath, outPath, transformAST))
   }
 }

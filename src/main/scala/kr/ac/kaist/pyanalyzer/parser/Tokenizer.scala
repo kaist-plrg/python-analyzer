@@ -15,6 +15,7 @@ object Tokenizer extends Tokenizers {
 trait Tokenizers extends RegexParsers {
   val setlog = false
   def logg[T](p: Parser[T])(s: String) = if (setlog){ log(p)(s)} else { p }
+  //override def skipWhitespace = false 
   // line, comments, indents, whitespaces
   lazy val comment = "#[^\n]*".r
   // TODO implicit line joining
@@ -33,8 +34,8 @@ trait Tokenizers extends RegexParsers {
   lazy val keyword = keywords.mkString("|").r ^^ KeywordToken
 
   // literals
-  lazy val shortSingleQuote = "'".r ~> "([^\n\\\\']|\\\\.)*".r <~ "'".r
-  lazy val shortDoubleQuote = "\"".r ~> "([^\n\\\\\"]|\\\\.)*".r <~ "\"".r
+  lazy val shortSingleQuote = "'([^\n\\\\']|\\\\.)*'".r ^^ { _.drop(1).dropRight(1) }
+  lazy val shortDoubleQuote = "\"([^\n\\\\\"]|\\\\.)*\"".r ^^ { _.drop(1).dropRight(1) }
   lazy val shortQuote = not("'''|\"\"\"".r) ~> (shortSingleQuote | shortDoubleQuote)
   lazy val longSingleQuote = "'''".r ~> "([^\\\\]|\\\\.)*(?=''')".r <~ "'''".r
   lazy val longDoubleQuote = "\"\"\"".r ~> "([^\\\\]|\\\\.)*(?=\"\"\")".r <~ "\"\"\"".r

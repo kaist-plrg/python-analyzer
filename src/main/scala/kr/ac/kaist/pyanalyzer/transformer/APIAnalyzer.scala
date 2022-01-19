@@ -10,21 +10,22 @@ import kr.ac.kaist.pyanalyzer.util.UnitWalker
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object TrainingLoop {
+object APIAnalyzer {
   def apply(module: Module, order: ClassOrder): ModuleSummary = {
-    val (env, tl) = getBodySummary(order = order, body = module.body)
-    ModuleSummary(module.name, env, tl)
+    val (env, api, _) = getBodySummary(order = order, body = module.body)
+    ModuleSummary(module.name, env, api)
   }
 
   private def getBodySummary(
-    outerEnv: TLEnv[Summary] = TLEnv[Summary](),
+    outerEnv: SummaryEnv[Summary] = SummaryEnv[Summary](),
     order: ClassOrder,
     body: List[Stmt]
-  ): (TLEnv[Summary], TLType) = {
+  ): (SummaryEnv[Summary], APIType, Option[ValueSummary]) = {
     // variables for storing the side effect of UnitWalker
     implicit var newOrder = order
-    var env = TLEnv[Summary]()
-    var tl: TLType = Bot
+    var env = SummaryEnv[Summary]()
+    var api: APIType = Bot
+    var retSummary: Option[ValueSummary] = None
 
     // UnitWalker for summary
     object SummaryWalker extends SummaryWalker
@@ -37,68 +38,85 @@ object TrainingLoop {
         case ImportFromStmt(_, _, _) => newOrder = transferStmt(newOrder)(stmt)
 
         case FunDef(_, x, _, _, _, body) =>
-          val (_, innerTl) = getBodySummary(outerEnv ++ env, newOrder, body)
-          env += x -> FuncSummary(x.name, innerTl)
+          val (_, innerAPI, innerRet) = getBodySummary(outerEnv ++ env, newOrder, body)
+          env += x -> FuncSummary(x.name, innerAPI, innerRet)
 
         case AsyncFunDef(_, x, _, _, _, body) =>
-          val (_, innerTl) = getBodySummary(outerEnv ++ env, newOrder, body)
-          env += x -> FuncSummary(x.name, innerTl)
+          val (_, innerAPI, innerRet) = getBodySummary(outerEnv ++ env, newOrder, body)
+          env += x -> FuncSummary(x.name, innerAPI, innerRet)
 
         case AssignStmt(List(EName(x)), Call(expr1, _, _), _)
           if isSubclass(expr1, MODEL) =>
             env += x -> ValueSummary(x.name, "model")
+
+        case AssignStmt(List(EName(x)), Call(EName(f), _, _), _)
+          if (env ++ outerEnv) contains f => (env ++ outerEnv)(f) match {
+            case FuncSummary(_, innerAPI, opt) =>
+              api = api ⊔ innerAPI
+              opt.map(env += x -> _.copy(name=x.name))
+            case _ => ???
+          }
+
+        case ReturnStmt(Some(Call(e, _, _))) if isSubclass(e, MODEL) =>
+          retSummary = Some(ValueSummary("", "model"))
+
+        // TODO
+        case ReturnStmt(Some(Call(Call(e, _, _), _, _))) if isSubclass(e, MODEL) =>
+          retSummary = Some(ValueSummary("", "model"))
 
         case _ =>
           newOrder = transferStmt(newOrder)(stmt)
           super.walk(stmt)
       }
 
-      // set tl
+      // set api
       override def walk(expr: Expr): Unit = expr match {
-        // Session training loop indicator
+        // Session API indicator
         case Call(expr1, _, _)
         if isSubclass(expr1, "tensorflow.compat.v1.Session") =>
-          if (!(tl ⊑ Sess)) throw TLException
-          tl = Sess
+          if (!(api ⊑ Sess)) throw APIException
+          api = Sess
 
-        // MonitoredSession training loop indicator
+        // MonitoredSession API indicator
         case Call(expr1, _, _)
         if isSubclass(expr1, "tensorflow.compat.v1.train.MonitoredTrainingSession") =>
-          if (!(tl ⊑ MonSess)) throw TLException
-          tl = MonSess
+          if (!(api ⊑ MonSess)) throw APIException
+          api = MonSess
 
-        // Estimator training loop indicator
-        case Call(expr1, _, _)
-        if isSubclass(expr1, "tensorflow.compat.v1.estimator.Estimator") =>
-          if (!(tl ⊑ Est)) throw TLException
-          tl = Est
+        // // Estimator API indicator
+        // case Call(expr1, _, _)
+        // if isSubclass(expr1, "tensorflow.compat.v1.estimator.Estimator") =>
+        //   if (!(api ⊑ Est)) throw APIException
+        //   api = Est
 
-        // DistributedGradientTape training loop indicator
+        // TODO: Simple-CNN-MNIST-2 not detected!
+        // DistributedGradientTape API indicator
         case Call(expr1, _, _) if isSubclass(expr1, "tensorflow.GradientTape") =>
-          if (!(tl ⊑ DistGradTape)) throw TLException
-          tl = DistGradTape
+          if (!(api ⊑ DistGradTape)) throw APIException
+          api = DistGradTape
 
-        // DistributedOptimizer training loop indicator
+        // DistributedOptimizer API indicator
         case Call(Attribute(EName(model), Id("fit")), _, _)
         if (outerEnv ++ env).get(model) contains ValueSummary(model.name, "model") =>
-          if (!(tl ⊑ DistOptim)) throw TLException
-          tl = DistOptim
+          if (!(api ⊑ DistOptim)) throw APIException
+          api = DistOptim
 
         case Call(expr1, _, _)
-        if isSubclass(expr1, "tensorflow.compat.v1.app.run") =>
-          (outerEnv ++ env).get(Id("main")) match {
-            case Some(FuncSummary("main", innerTl)) =>
-              if (tl ⊔ innerTl == Top) throw TLException
-              tl = tl ⊔ innerTl
-            case _ => super.walk(expr)
-          }
+        if isSubclass(expr1, "tensorflow.compat.v1.app.run") ||
+          isSubclass(expr1, "absl.app.run")=>
+            (outerEnv ++ env).get(Id("main")) match {
+              case Some(FuncSummary("main", innerAPI, innerRet)) =>
+                if (api ⊔ innerAPI == Top) throw APIException
+                api = api ⊔ innerAPI
+              case _ => super.walk(expr)
+            }
 
         // Normal Call expression
         case Call(EName(x), _, _) =>
           (outerEnv ++ env).get(x) match {
-            case Some(FuncSummary(x.name, innerTl)) =>
-              if (tl ⊔ innerTl == Top) throw TLException
-              tl = tl ⊔ innerTl
+            case Some(FuncSummary(x.name, innerAPI, innerRet)) =>
+              if (api ⊔ innerAPI == Top) throw APIException
+              api = api ⊔ innerAPI
             case _ => super.walk(expr)
           }
         case _ => super.walk(expr)
@@ -106,7 +124,7 @@ object TrainingLoop {
     }
 
     body.map(SummaryWalker.walk)
-    (env, tl)
+    (env, api, retSummary)
   }
 
   def isSubclass(
@@ -127,7 +145,7 @@ object TrainingLoop {
     }
 }
 
-case class TLEnv[T <: Summary](env: Map[Id, T] = Map[Id, T]()) {
+case class SummaryEnv[T <: Summary](env: Map[Id, T] = Map[Id, T]()) {
   override def toString: String = toString(0)
   def toString(depth: Int): String = {
     val indent = "  " * depth
@@ -137,8 +155,8 @@ case class TLEnv[T <: Summary](env: Map[Id, T] = Map[Id, T]()) {
     }
   }
   def apply(key: Id): T = env(key)
-  def +(p: (Id, T)): TLEnv[T] = TLEnv[T](env + p)
-  def ++(rhs: TLEnv[T]): TLEnv[T] = TLEnv[T](env ++ rhs.env)
+  def +(p: (Id, T)): SummaryEnv[T] = SummaryEnv[T](env + p)
+  def ++(rhs: SummaryEnv[T]): SummaryEnv[T] = SummaryEnv[T](env ++ rhs.env)
   def get(key: Id): Option[T] = env.get(key)
   def foldLeft[B](z: B)(op: (B, (Id, T)) => B): B = env.foldLeft(z)(op)
   def contains(key: Id): Boolean = env contains key
@@ -148,25 +166,26 @@ case class TLEnv[T <: Summary](env: Map[Id, T] = Map[Id, T]()) {
 abstract class Summary {
   override def toString: String = toString(1)
   def toString(depth: Int): String = this match {
-    case ModuleSummary(name, env, tl) if depth == 1 =>
-      s"└ M-$name: $tl\n${env.toString(depth)}"
-    case ModuleSummary(name, env, tl) =>
-      s"• M-$name: $tl\n${env.toString(depth)}"
-    case FuncSummary(name, tl) =>
-      s"• F-$name: $tl\n"
+    case ModuleSummary(name, env, api) if depth == 1 =>
+      s"└ M-$name: $api\n${env.toString(depth)}"
+    case ModuleSummary(name, env, api) =>
+      s"• M-$name: $api\n${env.toString(depth)}"
+    case FuncSummary(name, api, retSummary) =>
+      s"• F-$name -> $retSummary: $api\n"
     case ValueSummary(name, str) => s"• V-$name: $str\n"
   }
 }
 
 case class ModuleSummary(
   name: String,
-  env: TLEnv[Summary],
-  tl: TLType,
+  env: SummaryEnv[Summary],
+  api: APIType,
 ) extends Summary
 
 case class FuncSummary(
   name: String,
-  tl: TLType,
+  api: APIType,
+  retSummary: Option[ValueSummary]
 ) extends Summary
 
 case class ValueSummary(
@@ -174,15 +193,15 @@ case class ValueSummary(
   value: String
 ) extends Summary
 
-trait TLType {
-  def ⊔(rhs: TLType): TLType = (this, rhs) match {
+trait APIType {
+  def ⊔(rhs: APIType): APIType = (this, rhs) match {
     case (lhs, rhs) if lhs == rhs => lhs
     case (Bot, rhs) => rhs
     case (lhs, Bot) => lhs
     case _ => Top
   }
 
-  def ⊑(rhs: TLType): Boolean = (this, rhs) match {
+  def ⊑(rhs: APIType): Boolean = (this, rhs) match {
     case (lhs, rhs) if lhs == rhs => true
     case (Bot, _) => true
     case (_, Top) => true
@@ -190,24 +209,16 @@ trait TLType {
   }
 }
 
-case object Sess extends TLType
+case object Sess extends APIType
 
-case object MonSess extends TLType
+case object MonSess extends APIType
 
-case object Est extends TLType
+// case object Est extends APIType
 
-case object DistGradTape extends TLType
+case object DistGradTape extends APIType
 
-case object DistOptim extends TLType
+case object DistOptim extends APIType
 
-case object Bot extends TLType
+case object Bot extends APIType
 
-case object Top extends TLType
-
-trait SumType
-
-case object TLModule extends SumType
-
-case object TLFunc extends SumType
-
-case object TLClass extends SumType
+case object Top extends APIType

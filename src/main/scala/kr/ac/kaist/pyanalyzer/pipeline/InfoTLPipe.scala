@@ -10,6 +10,6 @@ case object InfoTLPipe
 extends Pipeline[(Info[Module], ClassOrder), Info[ModuleSummary]] {
   def execute(p: (Info[Module], ClassOrder)): Info[ModuleSummary] = {
     val (modInfo, order) = p
-    modInfo.map(mod => TrainingLoop(mod, order))
+    modInfo.map(mod => APIAnalyzer(mod, order))
   }
 }

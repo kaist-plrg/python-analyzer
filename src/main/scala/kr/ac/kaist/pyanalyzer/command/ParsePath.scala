@@ -14,12 +14,7 @@ object ParsePath {
     optionMap.get("path") match {
       case Some(path) =>
         println(path)
-        val resultAst: Info[Module] = TransformRunner.runPipe(path)
-        //println(resultAst)
-        val pretty: Info[String] = resultAst.map(mod => beautify(mod)) 
-        print(pretty)
-        val outputPath = new File(OUTPUT_DIR)
-        dumpInfoModule(resultAst, outputPath)
+        TransformRunner.runPipe(path)
       case None => println(s"${YELLOW}[Warning] no path is given$RESET")
     }
   }
