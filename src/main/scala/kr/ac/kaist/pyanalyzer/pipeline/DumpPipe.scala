@@ -8,7 +8,7 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.util.{ Info, DirInfo, FileInfo }
 import scala.io.Source
 
-case object DumpPipe extends Pipeline[(Info[File], String, String, Module), Unit] {
+case object DumpPipe extends Pipeline[(Info[File], String, String, Module, Boolean), Unit] {
   def dumpInfo(
     info: Info[File],
     m: Module,
@@ -22,9 +22,10 @@ case object DumpPipe extends Pipeline[(Info[File], String, String, Module), Unit
       val file = new File(s"$base/$path", name)
       if (m.name == name) writeFile(file, beautify(m))
   }
-  def execute(p: (Info[File], String, String, Module)): Unit = {
-    val (fs, inPath, outPath, m) = p
-    executeCmd(s"""bash -c "cp -r $inPath/* $outPath"""")
+  def execute(p: (Info[File], String, String, Module, Boolean)): Unit = {
+    val (fs, inPath, outPath, m, cp) = p
+    mkdir(outPath)
+    if (cp) executeCmd(s"""bash -c "cp -r $inPath/* $outPath"""")
     fs match {
       case DirInfo(name, subdirs, files) =>
         subdirs.map(dumpInfo(_, m, outPath))

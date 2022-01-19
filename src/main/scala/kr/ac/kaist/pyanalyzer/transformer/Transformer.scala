@@ -35,7 +35,7 @@ object Transformer extends Transformer {
       prompt(s"<${module.name}>\n")(false, TRANS_PRINT_WRITER)
     lw.map(warning => {
         promptModuleName
-        prompt(s"$warning")(true, TRANS_PRINT_WRITER)
+        prompt(s"$warning")(false, TRANS_PRINT_WRITER)
     })
     newModule
   }

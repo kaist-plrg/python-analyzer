@@ -31,7 +31,8 @@ object TransformRunner {
   def runPipe(
     inPath: String,
     outPath: String = TRANS_LOG_DIR,
-    diff: Boolean = false
+    diff: Boolean = false,
+    cp: Boolean = false
   ): Unit = {
     val targetOpt = CheckFilePipe!!(inPath)
     val fs: Info[File] = PathPipe!!(inPath) 
@@ -40,14 +41,7 @@ object TransformRunner {
     val loopTypes: Info[ModuleSummary] = InfoTLPipe!!((orgASTs, classOrder)) 
     val (mainScriptAST, api) = MainScriptPipe!!((orgASTs, loopTypes, targetOpt))
     val transformAST: Module = TransformPipe!!((mainScriptAST, classOrder, api))
-    mkdir(outPath)
-    DiffPipe!!((outPath, mainScriptAST, transformAST))
-    if (diff) {
-      mkdir(s"$outPath/org/")
-      mkdir(s"$outPath/trans/")
-      DumpPipe!!((fs, inPath, s"$outPath/org/", Module(Nil, Nil, "")))
-      DumpPipe!!((fs, inPath, s"$outPath/trans/", transformAST))
-    }
-    else DumpPipe!!((fs, inPath, outPath, transformAST))
+    DumpPipe!!((fs, inPath, outPath, transformAST, cp))
+    if (diff) DiffPipe!!((outPath, mainScriptAST, transformAST))
   }
 }
