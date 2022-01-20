@@ -8,7 +8,6 @@ import scala.Console._
 
 object Regress {
   def apply(optionMap: Map[String, String]): Unit = {
-    println(BASE_DIR)
     val hvdDir = new File(HOROVOD_DIR) // TODO: add test cases
     for {
       version <- hvdDir.listFiles if version.isDirectory
@@ -21,6 +20,7 @@ object Regress {
       val targetDirName =
         if (model.listFiles.exists(_.getName == "org_mod")) "org_mod" else "org"
       val testName = s"$versionName-$apiName-$modelName"
+      executeCmd(s"""bash -c "rm $TEST_DIR/regress/$testName/*"""")
       try runPipe(s"$model/$targetDirName", s"$TEST_DIR/regress/$testName")
       catch {
         case e: Throwable =>
