@@ -8,6 +8,7 @@ import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.transformer._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
+import scala.util.Try
 
 case class Warning(message: String, code: Stmt) {
   override def toString: String =
@@ -86,13 +87,52 @@ trait Transformer extends TransformerWalker {
       case _ => false
     }).asInstanceOf[Option[NormalKwarg]]
 
-  def replaceElement[T](lk: List[T], from: T, to: T): List[T] = {
-    lk.zipWithIndex.find(e => e._1 == from) match {
-      case Some((e, index)) =>
-        lk.slice(0, index) ++ (to :: lk.slice(index + 1, lk.length))
-      case None => lk
+  def replaceElement[T](lk: List[T], from: T, to: T): List[T] = lk match {
+    case Nil => lk
+    case h :: t =>
+      if (h == from) to :: t
+      else h :: replaceElement(t, from, to)
+  }
+
+  // default is change head of le
+  def changeArg(
+    call: Call,
+    name: String,
+    changeFunc: Expr => Expr,
+    position: Int = 0
+  ): Call = {
+    val Call(f, le, lk) = call
+    findKwarg(lk, name) match {
+      case Some(kwarg) =>
+        val newKwarg = kwarg.copy(expr=changeFunc(kwarg.expr))
+        Call(f, le, replaceElement(lk, kwarg, newKwarg))
+      case None => Try(le(position)).toOption match {
+        case Some(e) =>
+          Call(f, replaceElement(le, e, changeFunc(e)), lk)
+        case None =>
+          println(s"""$YELLOW[Warning] No argument given: $name
+                      |${beautify(call)}""".stripMargin)
+          call
+      }
     }
   }
+
+  // default is add
+  def changeOrAddArg(
+    call: Call,
+    name: String,
+    e: Expr,
+    position: Int = -1
+  ): Call = {
+    val Call(f, le, lk) = call
+    findKwarg(lk, name) match {
+      case None if le.length < position || position < 0 =>
+        Call(f, le, lk :+ NormalKwarg(Id(name), e))
+      case _ =>
+        changeArg(call, name, _ => e, position)
+    }
+  }
+
 
   def removeElement[T](lk: List[T], from: T): List[T] = lk match {
     case h :: t => if (h == from) removeElement(t, from) else h :: removeElement(t, from)
@@ -111,4 +151,8 @@ trait Transformer extends TransformerWalker {
       case None => ???
     }
   private val codeData: Map[String, List[String] => String] = Map()
+
+  // changeFuncs
+  val lrScaling: Expr => Expr =
+    e => parseExpr(s"${beautify(e)} * hvd.size()")
 }

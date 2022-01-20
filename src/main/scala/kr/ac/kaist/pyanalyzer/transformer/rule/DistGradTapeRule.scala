@@ -31,36 +31,6 @@ trait DistGradTapeRule extends MainScriptRule {
             (AssignStmt(targets, Call(expr1, exprs, kwds), ty), 
               env.add("dataset", idr))
 
-        case _ if env.isSubclass(expr1, OPTIMIZER) =>
-          // assume learning_rate is first positional argument
-          (exprs.headOption, findKwarg(kwds, "learning_rate")) match {
-            // keyword learning rate scheduler
-            case (None, Some(NormalKwarg(_, EName(ids))))
-              if env.get("lr_scheduler") contains ids =>
-                (stmt, env.add("optimizer", idr))
-            // keyword constant learning rate
-            case (None, Some(kwarg)) =>
-              val newExpr = parseExpr(s"(${beautify(kwarg.expr)}) * hvd.size()")
-              val newKwarg = kwarg.copy(expr = newExpr)
-              val newkwds = replaceElement(kwds, kwarg, newKwarg)
-              val newStmt = AssignStmt(targets, Call(expr1, exprs, newkwds), ty)
-              (newStmt, env.add("optimizer", idr))
-            // positional learning rate scheduler
-            case (Some(EName(ids)), None)
-              if env.get("lr_scheduler") contains ids =>
-                (stmt, env.add("optimizer", idr))
-            // positional constant learning rate
-            case (Some(h), None) =>
-              val newExpr = parseExpr(s"(${beautify(h)}) * hvd.size()")
-              val newExprs = newExpr :: exprs.tail
-              val newStmt = AssignStmt(targets, Call(expr1, newExprs, kwds), ty)
-              (newStmt, env.add("optimizer", idr))
-            case _ =>
-              val warning =
-                Warning("Cannot find learning_rate", stmt)
-              (stmt, env.add("optimizer", idr), warning)
-          }
-
         // case 3) "optimizer" -> apply_gradients
         case Attribute(EName(idt), Id("apply_gradients"))
           if env.get("optimizer") contains idt =>
@@ -272,6 +242,10 @@ trait DistGradTapeRule extends MainScriptRule {
     }
 
   private val codeData: Map[String, List[String] => String] = Map(
+    // no optim wrapping in DistGradTape
+    "wrapping-optim" -> (codes => {
+      ""
+    }),
     // strict assign
     "assign-optimizer-some" -> (names => {
         val name = names(0)
