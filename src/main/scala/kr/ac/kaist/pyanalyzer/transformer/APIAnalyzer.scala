@@ -54,6 +54,7 @@ object APIAnalyzer {
             case FuncSummary(_, innerAPI, opt) =>
               api = api ⊔ innerAPI
               opt.map(env += x -> _.copy(name=x.name))
+            case ValueSummary(name, v) =>
             case _ => ???
           }
 

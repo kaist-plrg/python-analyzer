@@ -29,12 +29,6 @@ trait EstRule extends TFv1MainScriptRule {
           val newStmt = AssignStmt(targets, Call(expr1, exprs, kwds :+ newKwarg), ty)
           val newStmts = getStmts("config-none", tf) :+ newStmt
           (newStmts, env)
-        // optimizer wrapping 
-        case _ if (env.isSubclass(expr1, OPTIMIZER)) => {
-          val wrapping = parseStmts(s"${idr} = hvd.DistributedOptimizer(${idr})")
-          // TODO should we change env?
-          (stmt +: wrapping, env, List()) 
-        }
         // default
         case _ => super.transform(stmt)
       }

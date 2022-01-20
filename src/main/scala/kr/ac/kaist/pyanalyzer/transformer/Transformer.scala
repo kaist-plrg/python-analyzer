@@ -111,7 +111,7 @@ trait Transformer extends TransformerWalker {
           Call(f, replaceElement(le, e, changeFunc(e)), lk)
         case None =>
           println(s"""$YELLOW[Warning] No argument given: $name
-                      |${beautify(call)}""".stripMargin)
+                      |${beautify(call)}$RESET""".stripMargin)
           call
       }
     }
