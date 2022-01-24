@@ -6,6 +6,9 @@ Describe the structure of TensorFlow ML Models.
 
 TensorFlow\cite{tensorflow} is a machine learning platform library
 developed in 2016 by Google Brains.
+
+(explain how TF was designed: limitation of previous frameworks)
+
 The develoepers were inspired by
 limitations of previous machine learning architectures.
 DistBelief, the direct predecessor of TensorFlow,
@@ -16,79 +19,41 @@ the model parameters, and separate 'worker processes'
 process the training workloads upon receiving required parameters
 from the parameter server.
 DistBelief provides pre-defined layer abstractions
-for users to define and traing neural network models.
+for users to define and training neural network models.
 However, in order to define new layers and training algorithms,
 the user should implement the corresponding lower-level programs
 for the layer and algorithm.
+This involves developing both worker process programs
+for defining low-level computations and
+and parameter sever program for managing and updating model parameters.
 This hinders researchers to quickly develop new models
 and experiment with them.
 
+(how TF design solves the limitations)
+
 TensorFlow solves this problem by providing more flexible abstractions.
-TensorFlow is designed based on the computation graph,
-a directed graph that nodes represent operations and
-edges represent flow of values between the operations.
+In TensorFlow program, a dataflow graph defines the model.
+The dataflow graph is a directed graph representation of computation,
+where the nodes represent the operation and
+the edges represent flow of values between the operations.
+One crucial innovation of TensorFlow is that the mutable state
+is also represented as operation within the dataflow graph.
+A variable node maintains a mutable buffer that can be read or modified.
+This approach allows TensorFlow to define the model parameters
+and updating mechanism at the same time.
 
+TensorFlow also allows users to easily distribute model computation
+over low-level devices.
+Each operation on the dataflow graph defines kernel,
+a low-level implementation for devices such as CPU or GPU.
+This provides users to flexibly assign kernels of the dataflow graph
+according to the devices reside on the system.
 
+(how TF defins DL model and training: by example codes)
 
-(explain how ML model is implemented in TF)
+(how TF version 2 differs : by example codes)
 
-(explain how traininig process is executed with TF models)
-
-(explain different APIs, classes in TF)
-
-(explain TF API for distributed training)
-
-
-
-
----------------------------------------------
-
-
-
-(add more introduction on TF)
-
-Nowadays, there are lots of deep learning software libraries
-such as Pytorch and Caffe.
-Among them, TensorFlow is one of the famous deep learning software libraries.
-It not only has many APIs that can be used in many languages,
-but also operates on heterogenuous environment\cite{tensorflow}.
-Not only that, it has powerful visualization tool TensorBoard
-that makes TensorFlow program easy to understand and debug.
-
-(how TF work\cite{doi:10.3102/1076998619872761})
-
-To build deep learning model using TensorFlow,
-user should construct a graph of the network.
-In this graph construction, edges represent the flows of data in the form of tensor,
-which is related to its name, TensorFlow,
-and nodes represent computations on the tensor.
-TensorFlow provides APIs to construct these basic building blocks
-such as activation function and convolutional layer.
-Using these basic blocks in TensorFlow libraries, user can define a neural network
-that takes input tensor and returns some results.
-Also, it provides APIs for calculating the loss from the output of the network.
-The sequence of getting loss from the input is called forward pass.
-With the loss of the network, parameters in the networks should be updated,
-which is called backward pass.
-TensorFlow also provides APIs that automatically computes gradient from the loss
-and updates parameters.
-In this process, TensorFlow provides many optimization APIs
-such as SGD and Adam.
-
-(kinds of APIs in TF\cite{doi:10.3102/1076998619872761})
-
-Using low-level APIs, user should specify the sequence of processes mentioned above.
-It requires some understandings of these processes and internal of TensorFlow,
-but gives much flexibility.
-In contrast, using high-level APIs such as Keras and Estimator,
-what user has to do is just building a network,
-and calling `compile` and `fit` methods of the model.
-Many processes are implicitly done internally in the high-level APIs.
-Therefore, user can omit some processes, so it makes building the model easy.
-
-
-\subsection{Distributed DL Training and Horovod Framework}
-Describe the Horovod framework.
+\subsection{Distributed Training and Horovod Framework}
 
 (introduce general concept of distributed training)
 
@@ -106,7 +71,7 @@ deep learning in various fields.
 
 (introduce model-parallel and data-parallel approach\cite{approaches2019Mao})
 
-There are two approaches in distributed ML training implementation
+There are two approaches in distributed ML training.
 In model-parallel approach, a large ML model is divided into separate unit
 of computation pipes and assigned to different accelerators. The whole model
 is pipelined over series of accelerators and so the forward-propagation and
@@ -142,4 +107,6 @@ library from NVIDIA, which provides various performant algorithms including
 allreduce. In addition, Horovod introduces high-level API that enables
 convenient use of the distributed training.  
 
-(introduce what horovod provides)
+(horovod provides convenient API to change existing model into distributed one)
+
+(example of using horovod to distribute model
