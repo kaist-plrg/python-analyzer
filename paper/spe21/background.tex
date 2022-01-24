@@ -4,11 +4,45 @@ Describe the structure of TensorFlow ML Models.
 
 (briefly introduce TF library concepts)
 
+TensorFlow\cite{tensorflow} is a machine learning platform library
+developed in 2016 by Google Brains.
+The develoepers were inspired by
+limitations of previous machine learning architectures.
+DistBelief, the direct predecessor of TensorFlow,
+is based on parameter server architecture.
+In parameter server architecture,
+'parameter server' stores and updates the mutable stable of
+the model parameters, and separate 'worker processes'
+process the training workloads upon receiving required parameters
+from the parameter server.
+DistBelief provides pre-defined layer abstractions
+for users to define and traing neural network models.
+However, in order to define new layers and training algorithms,
+the user should implement the corresponding lower-level programs
+for the layer and algorithm.
+This hinders researchers to quickly develop new models
+and experiment with them.
+
+TensorFlow solves this problem by providing more flexible abstractions.
+TensorFlow is designed based on the computation graph,
+a directed graph that nodes represent operations and
+edges represent flow of values between the operations.
+
+
+
 (explain how ML model is implemented in TF)
 
 (explain how traininig process is executed with TF models)
 
 (explain different APIs, classes in TF)
+
+(explain TF API for distributed training)
+
+
+
+
+---------------------------------------------
+
 
 
 (add more introduction on TF)
@@ -17,7 +51,7 @@ Nowadays, there are lots of deep learning software libraries
 such as Pytorch and Caffe.
 Among them, TensorFlow is one of the famous deep learning software libraries.
 It not only has many APIs that can be used in many languages,
-but also operates on heterogenuous environment\cite{199317}.
+but also operates on heterogenuous environment\cite{tensorflow}.
 Not only that, it has powerful visualization tool TensorBoard
 that makes TensorFlow program easy to understand and debug.
 
