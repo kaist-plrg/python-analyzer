@@ -58,8 +58,14 @@ For example, a module represents a Python code file, composed of
 multiple definitions speicified of statements. 
 The full Python abstract syntax is attched in the supplementary material.
 
-\subsection{Transformation Rule for Distributed TensorFlow ML model}
+\subsection{Training API Patterns for TensorFlow ML model}
 
+(introduce what we describe here, and why it is needed.)
+We categorized TensorFlow ML models by patterns of training API usage.
+
+(explain pattern by pattern with examples)
+
+\subsection{Transformation Rule for Distributed TensorFlow ML model}
 
 In this section, we describe the transformation rule that
 transforms single-GPU based TensorFlow model codes into
@@ -153,6 +159,11 @@ to reuse the input AST components.
 The difference is that first argument expression is multiplied by 'hvd.size()',
 which formally describes the transformation sentence.
 
+We inspected multiple references to define the whole transform function.
+Horovod documentation\cite{horovodtf} describes the code modification
+required to change trainig script. It describes six steps to modify
+existing training scripts to distributed training scripts. 
+In addition to 
 
 \subsection{...}
 Describe how to transform TensorFlow ML models to training them on distributed
