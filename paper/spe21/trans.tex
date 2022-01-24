@@ -60,19 +60,98 @@ The full Python abstract syntax is attched in the supplementary material.
 
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
+
 In this section, we describe the transformation rule that
 transforms single-GPU based TensorFlow model codes into
 multi-GPU based TensorFlow model codes.
-The transformation is formally defined as functions from AST to AST.
-Additionally, we use environments to store arbitrary syntactic information over
-series of function calls. 
-Environments are finite mappings from strings to identifiers.
-Transformation functions get an input environment, update the mapping if needed,
-and return an output environment which will be passed as an argument for 
-the next statement call.
-For example, (...TODO:example for environment usage...)
+We informally understand code transformation rule as
+conditions to select the target code parts
+and methods to actually transform them into another.
+The methods include addition, modification, and deletion of
+specific code parts.
+Currently, code transformation for distributed ML training
+is only described by set of examples and informal explanations.
+In order to automate the code transformation process,
+we need to formally define the code transformation rule
+and ways to convert the definition into software implementation.
+We propose a formal definition of code transformation rule
+for distributed ML training, and implement the automatic code transformation
+software based on the formal definition.
 
+Code transformation is formally defined as a pure function from AST to AST.
+AST is an abbreviation of abstract syntax trees; it is a tree data structure
+that represents grammatical structure of the program code.
+We call this function a transform function.
+We may define multiple transform functions that act on different kinds
+of AST and use them to define other transform functions.
+For example, in order to transform a Python code into another,
+we define a transform function that takes Module AST and returns Module AST.
+Inside the Module transform function definition,
+we may use Statement transform function to transform statements
+that compose the Module AST.
 
+Together with the AST parameter, transform functions take and return
+the environment parameter.
+Environment parameters are used to store specific identifiers
+and pass it to the other calls of the transform function.
+For example, statement transform function frequently use 
+the identifier bound to the TensorFlow module.
+The module name first appears from the import statement.
+The transform function call on the import statement stores
+the TensorFlow module name on the environment and returns it.
+Then the later function calls to other statements can
+retrieve the TensorFlow module name from the environment parameter.
+
+We define the transform function in terms of pattern matching on input AST.
+The pattern matching is used to match the kind and content of the input AST
+and construct an output AST.
+
+(TODO figure of transforming AST of the statement below
+optimizer = tf.keras.optimizers.Adam(lr)
+optimizer = tf.keras.optimziers.Adam(lr * hvd.size())
+)
+
+The above figure illustrates the example of a statement transformation.
+Intutitive understanding of the transformation is as follows:
+if the input code is assignment statment 
+that assigns a new 'tf.keras.optimizer.Adam' instance,
+then multiply 'hvd.size()' on learning rate argument expression of the
+instance constructor function.
+The transform function should describe two aspects of the sentence;
+first it should describe the condition of "assignment statement that
+creates 'tf.keras.optimizer.Adam' instance";
+second it should describe the transformation sentence
+of "multiply 'hvd.size()' on the learning rate argument". 
+
+(TODO figure of part of transform function describing the example) 
+
+\includegraphics[width=15cm]{trans_ex01}
+
+The figure defines the part of Statement transform function. 
+The pattern matched by the function is described on the first line;
+it matches the assignment statements with operator '=' and
+right-hand side of function call expression.
+Note that the input AST components are matched onto pattern variables.
+This allows the definition to reuse the input AST component
+when constructing the output AST.
+The second line illustrates pattern guard that matches the input AST content.
+It checks the callee expression is the expression 'tf.keras.optimizers.Adam'.
+The pattern guard uses the environment parameter $\sigma$ to retrieve
+module name for the Keras module.
+
+(TODO figure of part of transformation function deescribing example,
+output only. remove the keyword args case)
+
+\includegraphics[width=15cm]{trans_ex02}
+
+The figure defines the following part of the function.
+It describes the construction of an output AST and environment.
+The output AST is assignment statement which
+the right-hand side function argument expression is modified.
+As previously mentioned, the construction use pattern matched variables
+to reuse the input AST components.
+The difference is that first argument expression is multiplied by 'hvd.size()',
+which formally describes the transformation sentence.
 
 
 \subsection{...}
