@@ -11,25 +11,29 @@ trait MainScriptRule extends Transformer {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
+    //// AssignStmt with CallExpr 
     case stmt @ AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))
       val call = Call(expr1, exprs, kwds)
+      // Match Func Expr
       expr1 match {
-        // learning rate schelduler
+        // 1. Func = learning rate schelduler
         case _ if env.isSubclass(expr1, CONST_LEARNING_RATE_SCHEDULER) =>
           (stmt, env.add("lr_scheduler", idr))
+
         case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER) =>
           val newCall =
             changeArg(call, "initial_learning_rate", lrScaling)
           val newStmt = stmt.copy(expr=newCall)
           (newStmt, env.add("lr_scheduler", idr))
+
         case _ if env.isSubclass(expr1, LEARNING_RATE_SCHEDULER_TF_V1) =>
           val newCall =
             changeArg(call, "learning_rate", lrScaling)
           val newStmt = stmt.copy(expr=newCall)
           (newStmt, env.add("lr_scheduler", idr))
 
-        // optimizer
+        // 2. Func = optimizer
         case _ if env.isSubclass(expr1, OPTIMIZER) =>
           val optimWrapping = getStmts("wrapping-optim", idr)
           val lrScalingOptim: Expr => Expr = {
@@ -41,7 +45,7 @@ trait MainScriptRule extends Transformer {
           val newStmt = stmt.copy(expr=newCall)
           (newStmt :: optimWrapping, env.add("optimizer", idr))
 
-        // model
+        // 3. Func = model
         case _ if env.isSubclass(expr1, MODEL) =>
           (stmt, env.add("model", idr))
         case Attribute(EName(idt), Id("evaluate"))
@@ -52,11 +56,12 @@ trait MainScriptRule extends Transformer {
             val newStmt = stmt.copy(expr=newCall)
             (newStmt, env)
 
-        // check point
+        // 4. Func = Checkpoint
         case Attribute(Attribute(EName(idt), Id("train")), Id("Checkpoint"))
           if env get "tensor_flow" contains idt =>
             (stmt, env.add("checkpoint", idr))
 
+        // Default: super
         case _ => super.transform(stmt)
       }
 

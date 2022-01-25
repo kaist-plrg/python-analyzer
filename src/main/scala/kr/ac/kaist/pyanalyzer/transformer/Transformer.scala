@@ -62,63 +62,71 @@ trait Transformer extends TransformerWalker {
   // TODO: need new id gen algorithm
   def newId: Id = Id("id_new")
 
+  // Utility
   def findKwarg(lk: List[Kwarg], str: String): Option[NormalKwarg] =
     (lk.find {
       case NormalKwarg(Id(x), _) if x == str => true
       case _ => false
     }).asInstanceOf[Option[NormalKwarg]]
 
-  def replaceElement[T](lk: List[T], from: T, to: T): List[T] = lk match {
-    case Nil => lk
-    case h :: t =>
-      if (h == from) to :: t
-      else h :: replaceElement(t, from, to)
-  }
+  def replaceElement[T](list: List[T], from: T, to: T): List[T] = 
+    list.map(elem => if (elem == from) to else elem)
 
-  // default is change head of le
+  def removeElement[T](list: List[T], from: T): List[T] = 
+    list.filter(elem => elem == from)  
+
+  // Utility fn for transformation
+  // Change a keyword-or-positional argument expr in func. call 
   def changeArg(
-    call: Call,
-    name: String,
-    changeFunc: Expr => Expr,
-    position: Int = 0
+    callExpr: Call,
+    targetKwd: String,
+    transFn: Expr => Expr,
+    pos: Int = 0
   ): Call = {
-    val Call(f, le, lk) = call
-    findKwarg(lk, name) match {
-      case Some(kwarg) =>
-        val newKwarg = kwarg.copy(expr=changeFunc(kwarg.expr))
-        Call(f, le, replaceElement(lk, kwarg, newKwarg))
-      case None => Try(le(position)).toOption match {
-        case Some(e) =>
-          Call(f, replaceElement(le, e, changeFunc(e)), lk)
-        case None =>
-          println(s"""$YELLOW[Warning] No argument given: $name
-                      |${beautify(call)}$RESET""".stripMargin)
-          call
+    val Call(f, exprs, kwds) = callExpr
+    findKwarg(kwds, targetKwd) match {
+      // exist in kwd
+      case Some(kwarg) => {
+        val newKwarg = kwarg.copy(expr=transFn(kwarg.expr))
+        Call(f, exprs, replaceElement(kwds, kwarg, newKwarg))
       }
+      case None => 
+        exprs.lift(pos) match {
+          // exist in positional
+          case Some(arg) =>
+            Call(f, replaceElement(exprs, arg, transFn(arg)), kwds)
+          // does not exist -> warning
+          case None =>
+            println(s"""$YELLOW[Warning] No argument given: $targetKwd
+                        |${beautify(callExpr)}$RESET""".stripMargin)
+            callExpr
+        }
     }
   }
 
-  // default is add
+  // Chane a keyword-or-positional argument in func.call,
+  // add the argument if does not exist
   def changeOrAddArg(
-    call: Call,
-    name: String,
+    callExpr: Call,
+    targetKwd: String,
     e: Expr,
-    position: Int = -1
+    pos: Int = -1
   ): Call = {
-    val Call(f, le, lk) = call
-    findKwarg(lk, name) match {
-      case None if le.length < position || position < 0 =>
-        Call(f, le, lk :+ NormalKwarg(Id(name), e))
+    val Call(f, exprs, kwds) = callExpr
+    findKwarg(kwds, targetKwd) match {
+      // x exist in kwds and exprs short 
+      case None if exprs.length < pos || pos < 0 =>
+        Call(f, exprs, kwds :+ NormalKwarg(Id(targetKwd), e))
+      // exist in kwds -> use changArg
       case _ =>
-        changeArg(call, name, _ => e, position)
+        changeArg(callExpr, targetKwd, _ => e, pos)
     }
   }
 
+  // changeFuncs
+  val lrScaling: Expr => Expr =
+    e => parseExpr(s"${beautify(e)} * hvd.size()")
 
-  def removeElement[T](lk: List[T], from: T): List[T] = lk match {
-    case h :: t => if (h == from) removeElement(t, from) else h :: removeElement(t, from)
-    case Nil => Nil
-  }
 
   /////////////////////////////////////////
   // Data needed for transformation
@@ -133,7 +141,4 @@ trait Transformer extends TransformerWalker {
     }
   private val codeData: Map[String, List[String] => String] = Map()
 
-  // changeFuncs
-  val lrScaling: Expr => Expr =
-    e => parseExpr(s"${beautify(e)} * hvd.size()")
 }
