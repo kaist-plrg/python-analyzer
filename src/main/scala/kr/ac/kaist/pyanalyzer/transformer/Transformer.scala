@@ -44,25 +44,6 @@ object Transformer extends Transformer {
 
 // Transform rule
 trait Transformer extends TransformerWalker {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
-  ): (List[Stmt], Env, List[Warning]) = stmt match {
-    case AssignStmt(
-      List(Subscript(Attribute(EName(idt), Id("environ")),
-      EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty) 
-      if env.get("os") contains idt => 
-        (Nil, env)
-    case _ => super.transform(stmt)
-  }
-
-  override def transform(alias: Alias)(implicit env: Env): Env = alias match {
-    case Alias(List(x), None) if x.name == "os" =>
-      env.add("os", x)
-    case Alias(List(x), Some(as)) if x.name == "os" =>
-      env.add("os", as)
-    case _ => super.transform(alias)
-  }
-
   /////////////////////////////////////////
   // helper functions
   /////////////////////////////////////////

@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.parser.ast._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 
+
 // Transform rule for main module
 trait MainScriptRule extends Transformer {
   override def transform(stmt: Stmt)(
@@ -97,6 +98,13 @@ trait MainScriptRule extends Transformer {
       val classUpdatedEnv = transferStmt(env.getClassOrder)(stmt)
       val newEnv = transform(al)(env.copy(classOrder = classUpdatedEnv))
       (ImportFromStmt(lv, fromId, al), newEnv)
+    /// copied from Transformer
+    case AssignStmt(
+      List(Subscript(Attribute(EName(idt), Id("environ")),
+      EConst(StringLiteral("CUDA_VISIBLE_DEVICES")))), expr, ty) 
+      if env.get("os") contains idt => 
+        (Nil, env)
+    /// default to super
     case _ =>
       val newEnv = env.copy(classOrder = transferStmt(env.getClassOrder)(stmt))
       super.transform(stmt)(newEnv)
@@ -131,6 +139,10 @@ trait MainScriptRule extends Transformer {
       env.add("optimizers", x)
     case Alias(List(x), Some(as)) if x.name == "optimizers" =>
       env.add("optimizers", as)
+    case Alias(List(x), None) if x.name == "os" =>
+      env.add("os", x)
+    case Alias(List(x), Some(as)) if x.name == "os" =>
+      env.add("os", as)
     case _ => super.transform(alias)
   }
 
