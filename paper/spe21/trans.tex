@@ -112,10 +112,47 @@ We define the transform function in terms of pattern matching on input AST.
 The pattern matching is used to match the kind and content of the input AST
 and construct an output AST.
 
-(TODO figure of transforming AST of the statement below
-optimizer = tf.keras.optimizers.Adam(lr)
-optimizer = tf.keras.optimziers.Adam(lr * hvd.size())
-)
+% explain how transform function works by example
+% ISSUE : should remove `import tensorflow as tf` ?
+
+\begin{lstlisting}[language=Python, caption = Original code example]
+import tensorflow as tf
+import tensorflow.keras as keras
+
+optimizer = keras.optimizers.Adam(lr)
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption = Transformed code example]
+import tensorflow as tf
+import horovod.tensorflow as hvd
+hvd_broadcast_done = False
+hvd.init()
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:  tf.config.experimental.set_memory_growth(gpu, True)
+if gpus:  tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
+import tensorflow.keras as keras
+
+optimizer = keras.optimizers.Adam(lr * hvd.size())
+optimizer = hvd.DistributedOptimizer(optimizer)
+\end{lstlisting}
+
+We first describe how the transform function works by example.
+The above figures illustrate a pair of TensorFlow model codes
+before and after the transformation.
+
+
+\begin{itemize}
+  \item show module AST of the original code
+  \item explain module AST == list of Stmt AST
+  \item show module AST transform function, passing env
+  \item show Stmt transform function for import \& Alias transform function
+  \item show how pattern matching is used
+  \item show keras identifier is stored in env
+  \item show Stmt transform funciton for assignstmt
+  \item show how pattern guard is additionally used
+  \item show how pattern matched variables are used
+  \item conclude with how output module AST is constructed
+\end{itemize}
 
 The above figure illustrates the example of a statement transformation.
 Intutitive understanding of the transformation is as follows:
@@ -131,8 +168,6 @@ of "multiply 'hvd.size()' on the learning rate argument".
 
 (TODO figure of part of transform function describing the example) 
 
-\includegraphics[width=15cm]{trans_ex01}
-
 The figure defines the part of Statement transform function. 
 The pattern matched by the function is described on the first line;
 it matches the assignment statements with operator '=' and
@@ -145,11 +180,6 @@ It checks the callee expression is the expression 'tf.keras.optimizers.Adam'.
 The pattern guard uses the environment parameter $\sigma$ to retrieve
 module name for the Keras module.
 
-(TODO figure of part of transformation function deescribing example,
-output only. remove the keyword args case)
-
-\includegraphics[width=15cm]{trans_ex02}
-
 The figure defines the following part of the function.
 It describes the construction of an output AST and environment.
 The output AST is assignment statement which
@@ -158,6 +188,15 @@ As previously mentioned, the construction use pattern matched variables
 to reuse the input AST components.
 The difference is that first argument expression is multiplied by 'hvd.size()',
 which formally describes the transformation sentence.
+
+We describe the transform function definition.
+\begin{itemize}
+  \item explain types and aux functions
+  \item explain trans Module/Stmt list (env passing \& concating the results
+  \item explain trans Stmt (pattern match \& pattern guard)
+  \item explain trans Expr (recursively check all expr in code)
+  \item explain trans Alias \& WithItem (stores id on env)
+\end{itemize}
 
 We inspected multiple references to define the whole transform function.
 Horovod documentation\cite{horovodtf} describes the code modification
