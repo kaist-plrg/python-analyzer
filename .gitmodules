@@ -4,3 +4,6 @@
 [submodule "py-ast/ast2jsoncustom"]
 	path = py-ast/ast2jsoncustom
 	url = git@github.com:yusungsim/ast2json.git
+[submodule "TensorFlow-2.x-Tutorials"]
+	path = TensorFlow-2.x-Tutorials
+	url = https://github.com/dragen1860/TensorFlow-2.x-Tutorials.git
