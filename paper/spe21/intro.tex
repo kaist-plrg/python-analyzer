@@ -30,21 +30,21 @@ in various works \cite{brown2020gpt-3} \cite{silver2017alphazero}
 As ML models are becoming more complex and training dataset are growing,
 the need for distributing the training process in ML research is inevitable.
 
-Transforming DL model for distributed training involves manual code rewriting.
-This is a time-consuming and labor-intensive task for developers.
-In addiiton to the difficulty, the developer need to understand and locate 
+Transforming an ML model for distributed training involves code rewriting.
+Until now, developers have manully rewrite the model codes.
+This is time-consuming and labor-intensive tasks for developers.
+In addiiton, developers need to understand and locate 
 specific components involved in the model training.
 This requires the developer to fully understand library APIs,
 which is a difficult challenge.
 
-
 In this paper, we propose an automated Python code transformation that enables
 TensorFlow ML models to perform distributed training.
-We first formally define the code transformation of rewriting from
-single-GPU based DL model code to distributed training model code.
-Then the transformation is implemented in actual algorithm together with
+We first formally define the code transformation from
+single-GPU based ML model code to distributed training model code.
+Then the transformation is implemented in actual software together with
 adequate pre-analysis that provides information used in the transformation.
-The transformer software is evaluated by comparing against 
+The transformation software is evaluated by comparing against 
 examples of distributed training model codes, 
 each including an original single-GPU based model code 
 and a manually transformed distributed model code.
@@ -52,15 +52,10 @@ and a manually transformed distributed model code.
 The contributions of this paper are as follows:
 
 \begin{itemize}
-  \item We identified different patterns of API usage in TensorFlow model
-        training codes. TensorFlow library provides various training APIs,
-        which should be treated differently during the transformation phase.
-        We propose 4 patterns of training API usage that covers
-        most of the use cases.
   \item We formalize the code transformation for distributed ML training
         of TensorFlow models. We first formally define the code transformation
-        as functions from AST to AST. Then we provide formal definitions of
-        transformation functions for each training API patterns.
+        as functions from AST to AST. Then we provide transform function
+        definitions for ouistributed ML model code.
   \item We present the distributed code transformation tool, which implements
         the code transformation functions. We evaluate the tool's performance
         by applying transformation to TensorFlow example model codes.

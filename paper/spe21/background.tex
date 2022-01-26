@@ -1,55 +1,44 @@
 \section{Background}\label{sec:background}
 \subsection{TensorFlow ML Models}
-Describe the structure of TensorFlow ML Models.
-
-(briefly introduce TF library concepts)
 
 TensorFlow\cite{tensorflow} is a machine learning platform library
 developed in 2016 by Google Brains.
-
-(explain how TF was designed: limitation of previous frameworks)
-
-The develoepers were inspired by
-limitations of previous machine learning architectures.
-DistBelief, the direct predecessor of TensorFlow,
-is based on parameter server architecture.
-In parameter server architecture,
-'parameter server' stores and updates the mutable stable of
-the model parameters, and separate 'worker processes'
-process the training workloads upon receiving required parameters
-from the parameter server.
-DistBelief provides pre-defined layer abstractions
-for users to define and training neural network models.
-However, in order to define new layers and training algorithms,
-the user should implement the corresponding lower-level programs
-for the layer and algorithm.
-This involves developing both worker process programs
-for defining low-level computations and
-and parameter sever program for managing and updating model parameters.
-This hinders researchers to quickly develop new models
-and experiment with them.
-
-(how TF design solves the limitations)
-
-TensorFlow solves this problem by providing more flexible abstractions.
-In TensorFlow program, a dataflow graph defines the model.
-The dataflow graph is a directed graph representation of computation,
-where the nodes represent the operation and
-the edges represent flow of values between the operations.
-One crucial innovation of TensorFlow is that the mutable state
-is also represented as operation within the dataflow graph.
+The library is based on a dataflow graph.
+The dataflow graph is a abstraction of the computations
+composing the model.
+In dataflow graphs, nodes represent operations and
+edges represent flow of tensors between the operations.
+One important innovation of TensorFlow compared to its predecessors
+is that the mutable states are also represented as oerations
+within the dataflow graph. 
 A variable node maintains a mutable buffer that can be read or modified.
 This approach allows TensorFlow to define the model parameters
 and updating mechanism at the same time.
-
-TensorFlow also allows users to easily distribute model computation
-over low-level devices.
+TensorFlow also allows users to easily distribute model computation over
+such as GPUs or TPUs.
 Each operation on the dataflow graph defines kernel,
-a low-level implementation for devices such as CPU or GPU.
-This provides users to flexibly assign kernels of the dataflow graph
-according to the devices reside on the system.
+a low-level implementation of the computation.
+Because the dataflow graph explicitly specifies how
+and where the subcomputation results should be sent and recevied,
+users can easliy assign each kernels to different devices and construct
+the whole computaion from individual kernels and the dataflow graph.
 
-(how TF defins DL model and training: by example codes)
+\lstinputlisting[language=Python, caption=Example Tensorflow1 model code]
+{tensorflow1_mnist.py}
+
+We explain a typical form of TensorFlow ML model codes by an example.
+The figure illustrates a simple neural network with 2 hidden layer.
+The code starts with importing the TensorFlow module.
+Typically, TensorFlow ML training codes is divided into two stages.
+In first stage, the model and training algorithm is defined.
+The model is defined by using API functions to construct the dataflow graph.
+Then loss function is defined, usually using the pre-defined functions.
+Optimization is also defined by using API functions to construct
+an Optimizer object, then assigning the target function.
+Actual training is done in the second stage of the code.
+In the second stage, the TensorFlow runtime repeats the training step
+as each data from the training dataset is fetched and
+the model is optimized against it.
 
 (how TF version 2 differs : by example codes)
 
