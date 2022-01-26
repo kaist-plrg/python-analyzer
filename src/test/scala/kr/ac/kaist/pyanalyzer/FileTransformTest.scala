@@ -34,7 +34,7 @@ class FileTransformTest extends AnyFunSuite {
 
         val order = GIVEN_CLASS_ORDER
 
-        val tl = TrainingLoop(orgAst, order).tl
+        val tl = APIAnalyzer(orgAst, order).api
 
         // transform the orgAst
         val transAst = Transformer(orgAst, order, tl)
