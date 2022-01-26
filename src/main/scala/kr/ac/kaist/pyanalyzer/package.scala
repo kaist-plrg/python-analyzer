@@ -8,6 +8,7 @@ package object pyanalyzer {
   val RESOURCE_DIR = s"$SRC_DIR/main/resources"
 
   val HOROVOD_DIR = s"$BASE_DIR/tensorflow-models/tensorflow-to-horovod"
+  val TUTORIAL_DIR = s"$BASE_DIR/TensorFlow-2.x-Tutorials"
 
   val LOG_DIR = s"$BASE_DIR/logs"
   val TEST_LOG_DIR = s"$LOG_DIR/test"

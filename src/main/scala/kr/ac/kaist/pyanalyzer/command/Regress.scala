@@ -28,5 +28,19 @@ object Regress {
           e.printStackTrace
       }
     }
+    val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
+    for {
+      model <- tutoDir.listFiles if model.isDirectory
+    } {
+      val modelName = model.getName
+      val testName = s"$modelName"
+      executeCmd(s"""bash -c "rm $TEST_DIR/regress/$testName/*"""")
+      try runPipe(s"$model", s"$TEST_DIR/regress/$testName")
+      catch {
+        case e: Throwable =>
+          println(s"$YELLOW[Warning] $testName failed!$RESET")
+          e.printStackTrace
+      }
+    }
   }
 }
