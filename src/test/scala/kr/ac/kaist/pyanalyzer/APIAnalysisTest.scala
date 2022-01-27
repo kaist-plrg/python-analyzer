@@ -11,13 +11,19 @@ import scala.Console._
 class APIAnalysisTest extends AnyFunSuite {
   val help = s"""Test API analysis"""
 
-    val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
-    val modelPattern = "\\d\\d.*".r
-    for ( candidate <- tutoDir.listFiles
-      if modelPattern matches candidate.getName
-    ) test(candidate.toString) {
+  // check model
+  val modelPattern = "\\d\\d.*".r
+  val multipleModels = List(
+    "01-TF2.0-Overview",
+    "05-FashionMNIST",
+  )
+  def containsMultipleModel(modelDir: String): Boolean =
+    multipleModels contains modelDir
+
+  // test model
+  def testAPIPattern(name: String, path: String): Unit =
+    test(name) {
       try {
-        val path = candidate.toString
         val targetOpt = CheckFilePipe!!(path)
         val fs = PathPipe!!(path)
         val orgASTs = ParsePipe!!(fs)
@@ -31,4 +37,19 @@ class APIAnalysisTest extends AnyFunSuite {
         case APIException => fail
       }
     }
+
+  // test models
+  val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
+  tutoDir.listFiles.foreach (candidate => {
+    candidate.getName match {
+      case modelDir if containsMultipleModel(modelDir) =>
+        candidate.listFiles.foreach(file =>
+          if (file.toString endsWith ".py")
+            testAPIPattern(s"$modelDir/${file.getName}", file.toString)
+        )
+      case modelDir if modelPattern matches modelDir =>
+        testAPIPattern(modelDir, candidate.toString)
+      case _ =>
+    }
+  })
 }
