@@ -5,6 +5,63 @@
 The abstract syntax should be sufficient to describe our code transformation. 
 We can attach the full Python abstract syntax as supplementary material.)
 
+\begin{tabular}{lrll}
+  \nmodule & := & \mul{\nstmt} ~ \ntypignore & \desc{ModuleDef} \\
+  \nstmt & ::= & \decolist ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexpr)} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt} & \desc{FunDef} \\ 
+  & $|$ & \decolist ~ \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
+  & $|$ & \mul{\nexpr} ~ \oassign ~ \nexpr ~ \optypcomm & \desc{Assign} \\
+  & $|$ & \optypcomm ~ \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{ForLoop} \\
+  & $|$ & \kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{WhileLoop} \\
+  & $|$ & \kif ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{If} \\
+  & $|$ & \optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{With} \\
+  & $|$ & \kimport ~ \mul{\nalias} & \desc{Import} \\
+  & $|$ & \kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias} & \desc{ImportFrom} \\
+  & $|$ & \nexpr & \desc{ExprStmt} \\
+\end{tabular}
+
+\begin{tabular}{lrll}
+  \nexpr & ::= & \nexpr ~ \nboolop ~ \nexpr & \desc{BoolOp} \\
+  & $|$ & \nexpr ~ \nbinop ~ \nexpr & \desc{BinaryOp} \\ 
+  & $|$ & \nunop ~ \nexpr & \desc{UnaryOp} \\ 
+  & $|$ & \lparen{\mul{\nexpr}} & \desc{List} \\ 
+  & $|$ & \sparen{\mul{\nexpr}} & \desc{Tuple} \\ 
+  & $|$ & \nexpr ~ \mul{(\ncompop ~ \nexpr)} & \desc{CompOp} \\
+  & $|$ & \nexpr ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} & \desc{Call} \\
+  & $|$ & \nconstant & \desc{Constant} \\
+  & $|$ & \nexpr {\tt .}\nid& \desc{Attribute} \\
+  & $|$ & \nexpr\lparen{\nexpr} & \desc{Subscript} \\
+  & $|$ & \nid & \desc{Name} \\
+
+  \nboolop & ::= & \oand ~ $|$ ~ \oor & \desc{BoolOperator} \\
+  \nbinop & ::= & \oand ~ $|$ ~ \osub ~ $|$ ~ \omul & \desc{BinOperator} \\
+  \nunop& ::= & \kinvert ~ $|$ ~ \knot ~ $|$ ~ \oadd ~ $|$ ~ \osub & \desc{UnOperator} \\
+  \ncompop& ::= & \oeq ~ $|$ ~ \oneq ~ $|$ ~ \olt ~ $|$ ~ \olte ~ $|$ ~ \ogt ~ $|$ ~ \ogte ~ $|$ ~ \ois ~ $|$ ~ \onis ~ $|$ ~ \oin ~ $|$ ~ \onin & \desc{CompOperator}\\
+  \nargs & ::= & \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg} & \desc{Arguments}\\
+  \narg & ::= & \nid ~ \op{\nexpr}~\op{\nstr} & \desc{Argument} \\
+  \nkeyword & ::= & \op{\nid} \oassign \nexpr & \desc{Keyword} \\ 
+  \nalias & ::= & \nid ~\mul{(.\nid)} \op{(\kas ~ \nid)} & \desc{Alias} \\
+  \nwithitem & ::= & \nexpr ~ \op{(\kas ~ \nexpr)} & \desc{WithItem}\\
+\end{tabular}
+
+\begin{tabular}{lrll}
+  \nconstant & ::= & \knone & \desc{NoneLiteral} \\
+  & $|$ & \nint & \desc{IntLiteral} \\
+  & $|$ & \nfloat & \desc{FloatLiteral} \\
+  & $|$ & \ncomplex & \desc{ComplexLiteral} \\
+  & $|$ & \nstr & \desc{StringLiteral} \\
+  & $|$ & \nbool & \desc{BooleanLiteral} \\
+  & $|$ & \sparen{\mul{\nconstant}} & \desc{TupleLiteral} \\
+  & $|$ & {\tt ...} & \desc{Ellipsis} \\
+  \ntypignore & ::=  & \mul{\nint} & \desc{TypeIgnore} \\
+  \nid & $\in$ & \did \\
+  \nstr & $\in$ & \dstr \\
+  \nbool & $\in$ & \{{\tt True}, {\tt False}\}\\
+  \nint & $\in$ & $\mathbb{Z}$ \\
+  \nfloat & $\in$ & $\mathbb{R}$ \\
+  \ncomplex & $\in$ & $\mathbb{C}$ \\
+\end{tabular}
+
+
 We first define the abstract syntax for Python programming language.
 The syntax of Python is described in the Python Language Reference \cite{pythonref}.
 The reference provides a full grammar specification based on the extended PEG,

@@ -4,7 +4,7 @@
 TensorFlow\cite{tensorflow} is a machine learning platform library
 developed in 2016 by Google Brains.
 The library is based on a dataflow graph.
-The dataflow graph is a abstraction of the computations
+The dataflow graph is an abstraction of the computations
 composing the model.
 In dataflow graphs, nodes represent operations and
 edges represent flow of tensors between the operations.
@@ -40,7 +40,19 @@ In the second stage, the TensorFlow runtime repeats the training step
 as each data from the training dataset is fetched and
 the model is optimized against it.
 
-(how TF version 2 differs : by example codes)
+In Septempber 2019, TensorFlow version 2.0 was released\cite{tf2announce}.
+The main change in the new version is the eager execution feature.
+Eager execution allows devlopers to use Python native variables
+and funcitons to compute the result in real time and define the
+dataflow graph at the same time.
+Explicit calls to Session.run are replaced by Python function calls,
+and TensorFlow variables are replaced by function parameters.
+This way, developers can easily define model components
+and compose them. 
+In addition, TensorFlow 2.0 integrates Keras\cite{keras},
+a deep learning library that provides high-level abstractions for layers.
+
+(TODO: TFv2 model code example)
 
 \subsection{Distributed Training and Horovod Framework}
 
