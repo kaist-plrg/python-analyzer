@@ -1,11 +1,70 @@
 \documentclass{beamer}
 
-\title{Automatic transformation of }
-\author{Yusung Sim, Wonho Shin, Sungho Lee}
-\institute{KAIST PLRG}
+\title{Automated Code Transformation for Distributed Training of TensorFlow ML Models}
+\author{Yusung Sim\inst{1}, Wonho Shin\inst{1}, Sungho Lee\inst{2}}
+\institute{
+  \inst{1}%
+  School of Computing, KAIST
+  \and
+  \inst{2}%
+  Department of Computer Science and Engineering, Chungnam National University
+}
 \date{2022}
 
 \begin{document}
-% 1. Title
+% 0. Title
 \frame{\titlepage}
+
+
+% 1. Introduction
+\begin{frame}
+  \frametitle{Distributed ML Training}
+  Distributed ML Training scales well \& reduces training time.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Challenge: Manual Rewriting}
+  Rewriting single-GPU based model into distributed model
+  \begin{itemize}
+    \item Manual rewriting is tedious and time-consuming
+    \item Developer must understand distributed training API
+    \item Actual code changes are mostly syntactic and simple
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Automatic code transformation}
+  Propose automatic code transformation for distributed ML training
+  \begin{itemize}
+    \item Define formal transformation rule
+    \item Implement the rule as a software
+  \end{itemize}
+\end{frame}
+
+% 2. Background
+\begin{frame}
+  \frametitle{Horovod: Distributed Training Framework}
+  Horovod is a distributed ML training framework developed by Uber, 2017.
+\end{frame}
+
+% 3. Method
+\begin{frame}
+  \frametitle{Python Abstract Syntax}
+  We manually investigated the Python Language Reference,
+  defined the Python abstract syntax.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Training API Patterns for TensorFlow ML Model}
+  TensorFlow provides multiple training APIs.
+  Different training API usage requires different transformation rule 
+\end{frame}
+
+\begin{frame}
+  \frametitle{Formal Transformation Rule for Distributed ML Model}
+  Code transformation is formally defined as AST $\rightarrow$ AST
+  
+\end{frame}
+
+
 \end{document}
