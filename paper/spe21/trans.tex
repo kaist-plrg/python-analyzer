@@ -1,9 +1,14 @@
 \section{Code Transformation for Distributed Training}\label{sec:trans}
 \subsection{Python Abstract Syntax}\label{sec:pysyn}
 
-(Describe the simplified Python abstract syntax here. 
-The abstract syntax should be sufficient to describe our code transformation. 
-We can attach the full Python abstract syntax as supplementary material.)
+We first define the abstract syntax for Python programming language.
+The syntax of Python is described in the Python Language Reference \cite{pythonref}.
+The reference provides a full grammar specification based on the extended PEG,
+and detailed explanation of syntatic components in each section.
+We manually examined the grammar and the details
+to define the Python abstract sytax.
+The syntax is composed of three syntactic components: expressions, statements,
+and top-level components.
 
 \begin{tabular}{lrll}
   \nmodule & := & \mul{\nstmt} ~ \ntypignore & \desc{ModuleDef} \\
@@ -61,22 +66,12 @@ We can attach the full Python abstract syntax as supplementary material.)
   \ncomplex & $\in$ & $\mathbb{C}$ \\
 \end{tabular}
 
-
-We first define the abstract syntax for Python programming language.
-The syntax of Python is described in the Python Language Reference \cite{pythonref}.
-The reference provides a full grammar specification based on the extended PEG,
-and detailed explanation of syntatic components in each section.
-We manually examined the grammar and the details
-to define the Python abstract sytax.
-The syntax is composed of three syntactic components: expressions, statements,
-and top-level components.
-
 Expressions are parts of the code that evaluates to a value.
 Python has 5 kinds of primitive values, 
-which are numbers, strings, booleans, the value 'None' and 'Ellipsis'.
-The value 'None' is used to denote a undefined value,
-similar to the value `null` in Java.
-The value 'Ellipsis' corresponds to the notation "...",
+which are numbers, strings, booleans, the value {\itshape None} and {\itshape Ellipsis}.
+The value None is used to denote a undefined value,
+similar to the value {\itshape null} in Java.
+The value Ellipsis corresponds to the notation ``...",
 which can be used as an special placeholder meaning expansion of the sequence. 
 Python has composite types of tuple, list, set, map, and custom classes.
 The expression syntax defines ways to build up values
@@ -94,7 +89,7 @@ or update a variable value.
 Import statements are used to specify a module, load it
 and get definitions of the module into current namespace.
 In import statements, each target module and its aliased name is represented
-as alias. (...TODO:insert alias abstract syntax...)  
+as alias.   
 Note that procedure call is a special case of expression statements,
 where the expression is a function call.
 
@@ -107,7 +102,6 @@ but the statement additionally adds implicit calls
 to the object's methods related to initialization and destruction.
 Similar to the alias in import statement,
 with statements use WithItem to represent then ame and expression.
-(...TODO:insert WithItem abstract syntax...) 
 
 Top-level components are representation of the program
 in different execution environment of the Python interpreter.
@@ -117,10 +111,41 @@ The full Python abstract syntax is attched in the supplementary material.
 
 \subsection{Training API Patterns for TensorFlow ML model}
 
-(introduce what we describe here, and why it is needed.)
-We categorized TensorFlow ML models by patterns of training API usage.
+Before we define transformation rules for TensorFlow models,
+we categorize the model training codes by their API usage pattern.
+TensorFlow library provides various methods for training process.
 
-(explain pattern by pattern with examples)
+\lstinputlisting[language=Python, caption=Training API usage example]
+{pattern_ex.py}
+
+The above figure illustrates two different API usage for model training.
+Line 7 to 16 uses low-level APIs to manually compute the training loss.
+In line 10, the tf.GradientTape object is instantiated by `with' statement.
+Inside the `with' statement, a prediction loss is computed against
+a given training data.
+The GradientTape object records the computaions occur inside the scope
+and later the gradient can be computed with `gradient()' method call.
+Then the model parameters are optimized against the gradient
+by the method `apply\_gradients'.
+The training step is manually repeated by `for' loop in line 8,
+where each training data is taken from the `tf.data.Dataset` instance.
+
+Line 18 to 20 uses high-level APIs of `tf.keras.Model' class for training.
+The `compile' method in line 19 assigns the optimizer and loss
+function to the training configuration.
+The `fit' method then invokes the training process in one line.
+The method automatically feed the training data to the model,
+compute the loss, and apply the gradients to model parameters.
+
+While both code fragments trains the model in a same way, 
+the code structures significantly differ.
+Using high-level APIs simplifies the program,
+reducing additional codes that compute the prediction loss and apply gradients.
+Low-level APIs are verbose, however, developer can fully control
+the training process.
+
+Different training APIs require different transformation rules.
+
 
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
@@ -214,26 +239,26 @@ before and after the transformation.
 The above figure illustrates the example of a statement transformation.
 Intutitive understanding of the transformation is as follows:
 if the input code is assignment statment 
-that assigns a new 'tf.keras.optimizer.Adam' instance,
-then multiply 'hvd.size()' on learning rate argument expression of the
+that assigns a new `tf.keras.optimizer.Adam' instance,
+then multiply `hvd.size()' on learning rate argument expression of the
 instance constructor function.
 The transform function should describe two aspects of the sentence;
 first it should describe the condition of "assignment statement that
-creates 'tf.keras.optimizer.Adam' instance";
+creates `tf.keras.optimizer.Adam' instance";
 second it should describe the transformation sentence
-of "multiply 'hvd.size()' on the learning rate argument". 
+of "multiply `hvd.size()' on the learning rate argument". 
 
 (TODO figure of part of transform function describing the example) 
 
 The figure defines the part of Statement transform function. 
 The pattern matched by the function is described on the first line;
-it matches the assignment statements with operator '=' and
+it matches the assignment statements with operator `=' and
 right-hand side of function call expression.
 Note that the input AST components are matched onto pattern variables.
 This allows the definition to reuse the input AST component
 when constructing the output AST.
 The second line illustrates pattern guard that matches the input AST content.
-It checks the callee expression is the expression 'tf.keras.optimizers.Adam'.
+It checks the callee expression is the expression `tf.keras.optimizers.Adam'.
 The pattern guard uses the environment parameter $\sigma$ to retrieve
 module name for the Keras module.
 
@@ -243,7 +268,7 @@ The output AST is assignment statement which
 the right-hand side function argument expression is modified.
 As previously mentioned, the construction use pattern matched variables
 to reuse the input AST components.
-The difference is that first argument expression is multiplied by 'hvd.size()',
+The difference is that first argument expression is multiplied by `hvd.size()',
 which formally describes the transformation sentence.
 
 We describe the transform function definition.
@@ -261,9 +286,3 @@ required to change trainig script. It describes six steps to modify
 existing training scripts to distributed training scripts. 
 In addition to 
 
-\subsection{...}
-Describe how to transform TensorFlow ML models to training them on distributed
-systems with the horovod framework. We can use formal rules we defined and some
-code examples here. We can attach the full transformation rules as
-supplementary material as well.  Please write this and some more following
-subsections to describe the transformation.

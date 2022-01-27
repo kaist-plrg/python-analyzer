@@ -1,37 +1,64 @@
 \section{Implementation}\label{sec:impl}
-Describe the structure of our code transformation tool.
 
-We implemented the code transformation rule for distributed training in Scala,
-and our work is available at https://github.com/kaist-plrg/python-analyzer.
-The implementation is divided into 4 parts:
-Parser, Class Hierachy Analyzer, Training API Pattern Analyzer, and API Transformer.
-(...TODO:system architecture diagram...)
 
-\subsection{Parser}
-Describe detailed explanation of Parser.
+We implemented the formal transformation rule for the distributed training
+as a software. We designed the software to be a standalone software, so 
+the ML developers can utilize the software regardless of their environment. 
+The software is written in Scala; the source code and released software
+is available at https://github.com/kaist-plrg/python-analyzer. 
 
-(brief introduction to the parser)
+\includegraphics[width=15cm]{system_arch}
 
-Parser converts the code in string format into AST mentioned in Section 3.1.
-Rather than using Python AST module, we implemented parser for our tool.
-We used scala packrat parser to follow the Python Language Reference
-where full grammar specification is written in the form of mixture of EBNF and PEG.
+The figure illustrates the software architecture and workflow.
+The software is composed of 5 modules:
+Python code parser, class hierarchy analyzer,
+training API pattern anlayzer, AST transformer, and AST beautifier.
+The parser module parses Python codes in the input model package into 
+a set of ASTs. Then the class hierarchy analyzer module 
+produces a class hierarchy graph of the model package.
+The training API pattern analyzer module receives the AST set and
+the class hierarchy graph, identified the training code AST and
+its tranining API pattern. The AST transformer module
+transforms the tranining code AST according to the transformation rule.
+The transformed traning code AST is printed as a Python code in the
+AST beautifier module, to be merged with the original model package
+and become the transformed model package.
 
 \subsection{Class Hierarchy Analyzer}
-Describe detailed explanation of CHA.
 
-(necessity of CHA)
+The class hierarchy analyzer produces a class hierarchy graph, which
+represents the subclassing relations between user-defined classes
+and TensorFlow library classes that appear in the model code.
+The class hierarchy graph is required by the training API pattern anlayzer;
+thus, the class hierarchy analysis must occur before anlayzing the API pattern.
 
-When building a TensorFlow model, there can be user defined classes
-that extend some classes in the TensorFlow library.
-To transform the TensorFlow model correctly,
-we need to analyze the subclass relations of the user defined classes.
-Therefore, there is a class hierarchy analysis part
-before transforming the model.
+\lstinputlisting[language=Python]{subclass_ex.py}
 
-(explanation of full name)
-(TODO: need to check)
+The figure illustrates two Python codes, each defining a model structure
+and training process. The ResNet model class is defined in `/model/ResNet.py',
+which inherits the class `tf.keras.models.Model'.
+This is a typical way to define a new ML model:
+define a user-defined class that inherits a `tf.keras.models.Model'.
+The training code `/train.py' then imports the model definition with
+import statement in line 11.
+The training proceeds by creating an instance of `ResNet' class
+and calling the `fit' method.
+In order to recognize that `/train.py' code is the training code,
+the anlayzer must know that the `ResNet' class is indeed a model, that is,
+a subclass of `tf.keras.models.Model'.
+However, the anlayzer cannot infer that information
+by only inspecting the `/train.py' code.
+In order to infer that the `ResNet' is a subclass of the TensorFlow Model class,
+class hierarchy information of the whole model package should first be generated.
 
+There are several other TensorFlow classes that is inherited by user classes
+to be used as an model training code component.
+The class hierarchy analyzer module is responsible of identifying
+such subclass relation over the model package and producing the
+class hierarchy graph so that the training API pattern analyzer can
+recognize the user-defined model components.
+
+(TODO: impl detail)
 In class hierarchy analysis, each class name is expressed as fully qualified name.
 Here, fully qualified name of a class means qualified name\cite{???}
 on the basis of top of the package.
