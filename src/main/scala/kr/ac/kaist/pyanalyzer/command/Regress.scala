@@ -29,8 +29,9 @@ object Regress {
       }
     }
     val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
+    val tutoModelPattern = "\\d\\d.*".r
     for {
-      model <- tutoDir.listFiles if model.isDirectory
+      model <- tutoDir.listFiles if tutoModelPattern matches model.getName
     } {
       val modelName = model.getName
       val testName = s"$modelName"
