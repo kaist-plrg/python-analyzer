@@ -40,6 +40,8 @@ package object transformer {
   val MODEL_SUBCLASS = List(
     "tensorflow.keras.models.Sequential",
     "tensorflow.keras.models.Functional",
+    "tensorflow.keras.Sequential",
+    "tensorflow.keras.Functional",
   )
   val LEARNING_RATE_SCHEDULER = List(
     "tensorflow.keras.optimizers.schedules.CosineDecay",
