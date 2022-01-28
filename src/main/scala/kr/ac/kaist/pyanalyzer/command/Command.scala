@@ -9,11 +9,11 @@ import scala.Console._
 
 object Command {
   val commands: List[Command] = List(
+    CmdGenTest,
     CmdHelp,
     CmdParse,
     CmdParsePath,
     CmdParseREPL,
-    CmdRegress,
     CmdTransform,
   )
   val cmdMap = commands.foldLeft(Map[String, Command]()) {
@@ -67,10 +67,10 @@ case object CmdParsePath extends Command {
   def apply(args: List[String]): Unit = ParsePath(args)
 }
 
-case object CmdRegress extends Command {
-  val name = "regress"
-  val help = "regression test"
-  def apply(args: List[String]): Unit = Regress(args)
+case object CmdGenTest extends Command {
+  val name = "gen-test"
+  val help = "generate test"
+  def apply(args: List[String]): Unit = GenTest(args)
 }
 
 case object CmdTransform extends Command {
