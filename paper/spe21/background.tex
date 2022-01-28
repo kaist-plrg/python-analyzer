@@ -51,8 +51,7 @@ and funcitons to compute the result in real time and define the
 dataflow graph at the same time.
 Explicit calls to Session.run are replaced by Python function calls,
 and TensorFlow variables are replaced by function parameters.
-This way, developers can easily define model components
-and compose them. 
+This way, developers can easily define model components and compose them. 
 In addition, TensorFlow 2.0 integrates Keras\cite{keras},
 a deep learning library that provides high-level abstractions for layers.
 
@@ -60,8 +59,8 @@ a deep learning library that provides high-level abstractions for layers.
 
 \subsection{Distributed Training and Horovod Framework}
 
-Distributed training is a technique to boast efficiency in ML training
-by parallelizing computation workloads in time.
+\textit{Distributed training} is a technique to boast efficiency in ML training
+by parallelizing computation workloads over multiple devices.
 Training an ML model is an expensive process that involves repetitive
 arithmetic computation over multiple tensors,
 which can be accelerated by multicore devices such as GPU or TPU. 
@@ -73,16 +72,16 @@ In recent years, several works proposed application of distributed
 deep learning in various fields.
 
 There are two approaches in distributed ML training.
-In model-parallel approach, a large ML model is divided into separate unit
-of computation pipes and assigned to different accelerators. The whole model
-is pipelined over series of accelerators and so the forward-propagation and
-back-propagation can be done in the distributed system.
-In data-parallel apporach, however, multiple instances of same ML model
-is assigned to each accelerators. The total training dataset is instead
-divided into a number of smaller datasets which then assigned to different
+In \textit{model-parallel} approach, a large ML model is divided into 
+separate unit of computations and assigned to different accelerators. 
+The whole model is pipelined over devices, so independent computations
+can overlap in time.
+In \textit{data-parallel} apporach, multiple instances of a small ML model
+is assigned to each devices. The total training dataset is instead
+divided into a number of smaller datasets which then assigned to each device.
 accelerators. The training proceeds by simultaneously calculating gradients
 in each accelerators. Then the gradients are averaged before being 
-back-propagated into the model parameters.
+applied into the model parameters.
 
 Facebook's experiment \cite{facebook2018} provides empirical evidence of
 scalability of data-parallel distributed training. In the paper, 

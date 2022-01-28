@@ -150,6 +150,8 @@ Different training APIs require different transformation rules.
 
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
+% breifly introduce the transform function concept
+
 In this section, we describe the transformation rule that
 transforms single-GPU based TensorFlow model codes into
 multi-GPU based TensorFlow model codes.
@@ -168,11 +170,9 @@ for distributed ML training, and implement the automatic code transformation
 software based on the formal definition.
 
 Code transformation is formally defined as a pure function from AST to AST.
-AST is an abbreviation of abstract syntax trees; it is a tree data structure
-that represents grammatical structure of the program code.
 We call this function a transform function.
-We may define multiple transform functions that act on different kinds
-of AST and use them to define other transform functions.
+We may define multiple transform functions that act on different
+language constructs and use them to define other transform functions.
 For example, in order to transform a Python code into another,
 we define a transform function that takes Module AST and returns Module AST.
 Inside the Module transform function definition,
@@ -191,51 +191,195 @@ the TensorFlow module name on the environment and returns it.
 Then the later function calls to other statements can
 retrieve the TensorFlow module name from the environment parameter.
 
-We define the transform function in terms of pattern matching on input AST.
-The pattern matching is used to match the kind and content of the input AST
-and construct an output AST.
-
-% explain how transform function works by example
-% ISSUE : should remove `import tensorflow as tf` ?
+% explain transform function with example
 
 \begin{lstlisting}[language=Python, caption = Original code example]
 import tensorflow as tf
-import tensorflow.keras as keras
-
-optimizer = keras.optimizers.Adam(lr)
-\end{lstlisting}
+optimizer = tf.keras.optimizers.Adam(lr)\end{lstlisting}
 
 \begin{lstlisting}[language=Python, caption = Transformed code example]
 import tensorflow as tf
+# import and init horovod module
 import horovod.tensorflow as hvd
 hvd_broadcast_done = False
 hvd.init()
-gpus = tf.config.experimental.list_physical_devices('GPU')
-for gpu in gpus:  tf.config.experimental.set_memory_growth(gpu, True)
-if gpus:  tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], 'GPU')
 import tensorflow.keras as keras
 
-optimizer = keras.optimizers.Adam(lr * hvd.size())
+# scale the learning rate
+optimizer = tf.keras.optimizers.Adam(lr * hvd.size())
+# wrap the optimizer object
 optimizer = hvd.DistributedOptimizer(optimizer)
 \end{lstlisting}
 
 We first describe how the transform function works by example.
 The above figures illustrate a pair of TensorFlow model codes
 before and after the transformation.
+Informally, three kinds of transformation occur in between;
+1) import and initialize the horovod module;
+2) scale the optimizer's learning rate by {\tt hvd.size()};
+3) Wrap the optimzier with {\tt hvd.DistributedOptimizer}.
 
+The original code parses into a module AST with a list of 2 statements,
+an import statement and an assign statement.
 
-\begin{itemize}
-  \item show module AST of the original code
-  \item explain module AST == list of Stmt AST
-  \item show module AST transform function, passing env
-  \item show Stmt transform function for import \& Alias transform function
-  \item show how pattern matching is used
-  \item show keras identifier is stored in env
-  \item show Stmt transform funciton for assignstmt
-  \item show how pattern guard is additionally used
-  \item show how pattern matched variables are used
-  \item conclude with how output module AST is constructed
-\end{itemize}
+\begin{lstlisting}[language=Scala]
+Module(List(
+  ImportStmt(Id('tensorflow'), Id('tf')),
+  AssignStmt(
+    Id('optimizer'), 
+    CallExpr(
+      Expr('tf.keras.optimizers.Adam'),
+      Args(Id('lr'))
+    )
+  )
+))
+\end{lstlisting}
+
+\begin{tabular}{lcl}
+  \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
+  & \kteq & \tsstmt{[\nstmtsubs{1}, \nstmtsubs{2}]}{\smodenvempty} \\
+
+  & \kteq & \ktlet ~ \mul{\nstmtsubs{1}}$'$, \smodenvsubs{1} ~ \kteq ~ 
+  \tstmt{\nstmtsubs{1}}{\smodenvempty} ~ \ktin \\
+
+  & & \ktlet ~ \mul{\nstmtsubs{2}}$'$, \smodenvsubs{2} ~ \kteq ~ 
+  \tstmt{\nstmtsubs{2}}{\smodenvsubs{1}} ~ \ktin \\
+
+  & & (\mul{\nstmtsubs{1}}$'$ \ktconl ~ \mul{\nstmtsubs{2}}$'$) \\ 
+\end{tabular}
+
+The figure describes how the module transform function 
+is evaluated on the example module AST.
+The module transform function, $\fkmodule$
+applies statement list transform function $\fksstmt$ to its statement list.
+Then $\fksstmt$ applies the statement transform funciton $\fkstmt$
+to each statement in the list.
+In addition, $\fksstmt$ passes the environment parameter $\sigma$
+from a $\fkstmt$ call to the next $\fkstmt$ call.
+
+\begin{tabular}{rcll}
+  \tstmt{\nstmtsubs{1}}{\smodenvempty} & \kteq & 
+  \tstmt{{\tt import tensorflow as tf}}{\smodenvempty} & \\
+
+  & \kteq & \tstmt{\kimport ~ \mul{\nalias}}{\smodenvempty} & 
+  (a) Pattern matching the input \\
+
+  & & {\tt matching} ~ ( & \\
+  && \indent \kimport ~ \mul{\nalias} \kteq ~ 
+  \kimport ~ [{\tt tensorflow} \kas ~ {\tt tf}], & \\
+  && \indent \mul{\nalias} \kteq ~ [\naliassubs{1}], & \\ 
+  && \indent \naliassubs{1} \kteq ~ {\tt tensorflow} \kas ~ {\tt tf} ~ ) & \\
+
+  & \kteq & 
+  \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{[\naliassubs{1}]}{\smodenv} 
+  \ktin & 
+  (b) Check if the TensorFlow module imported \\
+  && \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ 
+  \kteq ~ [\tflow $\mapsto$ \nid] ~ \ktthen &\\ 
+  && ([\kimport ~ \naliassubs{1}, & \\
+  && {\tt import horovod.tensorflow as hvd}, & \\
+  && {\tt hvd\_broadcast\_done = False}, & \\
+  && {\tt hvd.init()}], \smodenvsubs{1}) & \\
+  
+  & \kteq &
+  ([\kimport ~ {\tt tensorflow} \kas ~ {\tt tf}, & 
+  (c) Construct output statements \\
+  && {\tt import horovod.tensorflow as hvd}, & \\
+  && {\tt hvd\_broadcast\_done = False}, & \\
+  && {\tt hvd.init()}], \smodenvsubs{1}) & \\
+
+  \kwith ~ \smodenvsubs{1} 
+  & \kteq & \talias{\naliassubs{1}}{\smodenvempty} & \\
+  & = & \talias{{\tt tensorflow} \kas ~ {\tt tf}}{\smodenvempty} & \\ 
+  & \kteq & \smodenvempty[\tflow $\mapsto$ {\tt tf}] & \\
+  & \kteq & [\tflow $\mapsto$ {\tt tf}] & \\
+\end{tabular}
+
+The first $\fkstmt$ call receives the statement
+{\tt import tensorflow as tf} as an input.
+In part (a), the function first matches the input statement
+with the pattern $\kimport ~ \mul{\nalias}$.
+Transform functions use pattern matching to discriminate target ASTs
+by their syntactic structure.
+Part (b) specifies the pattern guard, which describes detailed condition
+on the content of the input.
+The pattern guard checks if the import statement
+is importing the TensorFlow module.
+In process, the alias transform function $\fkalias$ is applied on the
+{\tt tensorflow as tf}.
+Note that $\fkalias$ also stores the module name {\tt tf}
+in the environment parameter as a form of mapping;
+later calls on transform function can retreive the
+TensorFlow module name from the returned environment, $\smodenvsubs{1}$.
+Finally, the part (c) constructs the output statements
+and returns it with $\smodenvsubs{1}$.
+
+% TODO typesetting this!!!!!
+\begin{tabular}{rcll}
+  \tstmt{\nstmtsubs{2}}{\smodenvempty} & \kteq &
+  \tstmt{{\tt optimizer = tf.keras.optimizers.Adam(lr)}}{\smodenvsubs{1}} &\\
+  &\kteq&
+  \tstmt{\nidsubs{r} \oassign 
+  \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
+  \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+  \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenvsubs{1}} &\\
+  && {\tt matching} ~ ( 
+  \indent\indent\indent\indent\indent (a) Pattern matching the input &\\
+  && \indent \nidsubs{r} \kteq ~ {\tt optimizer}, &\\
+  && \indent \nexprsubs{1} = {\tt tf.keras.optimizers.Adam}, &\\
+  && \indent \nexprsubs{11}= {\tt lr}~) &\\
+
+  &\kteq& \ktif ~ \smodenvsubs{1}(\tflow) ~ \kteq ~ \nidsubs{t} ~ 
+  \indent\indent\indent\indent\indent
+  (b) Check if it calls {\tt tf.keras.optimizers.Adam} &\\ 
+  && \ktand ~ 
+  \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.keras.optimizers.Adam} ~ 
+  \ktthen& \\
+
+  && ([\nidsubs{r} \oassign \nexprsubs{1} 
+  \sparen{\nexprsubs{11} {\tt * hvd.size()} ~ ... ~ \nexprsubs{1n} 
+  ~\op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+  \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], &\\
+  && \smodenvsubs{1}[\optmizer $\mapsto$ \nidsubs{r}])&\\
+  
+  &\kteq& 
+  ([{\tt optimizer = tf.keras.optimizers.Adam(lr * hvd.size())}], &\\   
+  && \smodenvsubs{1}[\optmizer $\mapsto$ \nidsubs{r}])
+  \indent\indent\indent\indent\indent
+  (c) Construct output statements &\\ 
+\end{tabular}
+
+The second $\fkstmt$ receives the statement
+{\tt optimizer = tf.keras.optimizers.Adam(lr)} as an input.
+The part (a) pattern matches the input to the assign statement pattern
+with right-hand side of function call expression.
+The part (b) is a pattern guard that checks if
+the function call is {\tt tf.keras.optimizers.Adam}.
+Note that the guard refers to the environment parameter
+to check the TensorFlow module identifier.
+Because after the first $\fkstmt$ call,
+the environment parameter stores the TensorFlow module identifier {\tt tf},
+so the second $\fkstmt$ call can use the information to
+check if the function call is indeed a constructor for TensorFlow
+optimizer object.
+In the part (c), the output statement is returned.
+As specified in the transform function definition, 
+the first argument expression is multiplied by {\tt hvd.size()}.
+
+\begin{tabular}{rcll}
+  \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
+  &\kteq& (\mul{\nstmtsubs{1}}$'$ \ktconl ~ \mul{\nstmtsubs{2}}$'$) &\\ 
+  &\kteq& 
+  [\kimport ~ {\tt tensorflow} \kas ~ {\tt tf}, &\\ 
+  && {\tt import horovod.tensorflow as hvd}, & \\
+  && {\tt hvd\_broadcast\_done = False}, & \\
+  && {\tt hvd.init()}, &\\
+  && {\tt optimizer = tf.keras.optimizers.Adam(lr * hvd.size())}] &\\   
+\end{tabular}
+
+Finally, the output statement lists are concatenated as specified in the
+$\fksstmt$, and the transformed module AST is constructed.
+
 
 The above figure illustrates the example of a statement transformation.
 Intutitive understanding of the transformation is as follows:
