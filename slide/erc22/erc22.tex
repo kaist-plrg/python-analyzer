@@ -1,5 +1,7 @@
 \documentclass{beamer}
 \usetheme{Oxygen}
+\usepackage{verbatim}
+
 \title{Automated Code Transformation for Distributed Training of TensorFlow ML Models}
 \author{Yusung Sim\inst{1}, Wonho Shin\inst{1}, Sungho Lee\inst{2}}
 \institute{
@@ -23,7 +25,7 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Challenge: Manual Rewriting}
+  \frametitle{Challenge: Distributing single-GPU based model}
   Rewriting single-GPU based model into distributed model
   \begin{itemize}
     \item Manual rewriting is tedious and time-consuming
@@ -58,13 +60,60 @@
   \frametitle{Training API Patterns for TensorFlow ML Model}
   TensorFlow provides multiple training APIs.
   Different training API usage requires different transformation rule 
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Training API Patterns for TensorFlow ML Model}
+  We defined 4 API Patterns
 \end{frame}
 
 \begin{frame}
   \frametitle{Formal Transformation Rule for Distributed ML Model}
-  Code transformation is formally defined as AST $\rightarrow$ AST
+  Code transformation is formally defined as transform function
+  AST $\rightarrow$ AST
+  
+  Env parameter stores specific identifiers and passes to the next call
   
 \end{frame}
 
+\begin{frame}
+  \frametitle{Formal Transformation Rule for Distributed ML Model}
+  Explain the application of tramsform function by example  
+\end{frame}
+
+
+% 4. Implementation
+\begin{frame}
+  \frametitle{Distributed ML Code Transformer Software}
+  We implemented the transformation rule as a software.
+  Scala
+\end{frame}
+
+\begin{frame}
+  \frametitle{Impl. Class Hierarchy Analysis}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Impl. Training API Pattern Analysis}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Impl. Transformer Function}
+\end{frame}
+
+% 5. Evaluation
+\begin{frame}
+  \frametitle{}
+\end{frame}
+
+% for record
+\begin{frame}[fragile]
+  \frametitle{Code example}
+  \begin{verbatim}
+  def add(x, y):
+    return x + y
+  \end{verbatim}
+\end{frame}
 
 \end{document}
