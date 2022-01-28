@@ -379,19 +379,19 @@ the first argument expression is multiplied by {\tt hvd.size()}.
 
 Finally, the output statement lists are concatenated as specified in the
 $\fksstmt$, and the transformed module AST is constructed.
+Although the example shown is relatively short,
+the general process applies to any example training codes.
+The transform function is defined in terms of
+pattern matching agains the input,
+pattern guard to check the content of input AST,
+and output representing the transform result.
+
+We describe the structure transform function definition for each language
+construct, and present some important parts of the definition
+to illustrate the automated code transformation for distributed training.
+The full definition of the transformation rule can be found
+in the supplementary materials.
 
 We describe the transform function definition.
-\begin{itemize}
-  \item explain types and aux functions
-  \item explain trans Module/Stmt list (env passing \& concating the results
-  \item explain trans Stmt (pattern match \& pattern guard)
-  \item explain trans Expr (recursively check all expr in code)
-  \item explain trans Alias \& WithItem (stores id on env)
-\end{itemize}
-
-We inspected multiple references to define the whole transform function.
-Horovod documentation\cite{horovodtf} describes the code modification
-required to change trainig script. It describes six steps to modify
-existing training scripts to distributed training scripts. 
-In addition to 
+ 
 
