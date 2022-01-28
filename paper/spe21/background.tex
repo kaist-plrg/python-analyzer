@@ -1,44 +1,48 @@
 \section{Background}\label{sec:background}
 \subsection{TensorFlow ML Models}
 
-TensorFlow\cite{tensorflow} is a machine learning platform library
+\textit{TensorFlow}\cite{tensorflow} is a machine learning platform library
 developed in 2016 by Google Brains.
-The library is based on a dataflow graph.
-The dataflow graph is an abstraction of the computations
-composing the model.
+The library provides high-level APIs to construct and train general ML models.
+TensorFlow is based on the concept of \textit{dataflow graph},
+which is an abstraction of the computations between
+multiple values.
 In dataflow graphs, nodes represent operations and
 edges represent flow of tensors between the operations.
-One important innovation of TensorFlow compared to its predecessors
+One important innovation of TensorFlow
 is that the mutable states are also represented as oerations
 within the dataflow graph. 
-A variable node maintains a mutable buffer that can be read or modified.
+A \textit{variable node} maintains a mutable buffer that can be read or modified.
 This approach allows TensorFlow to define the model parameters
 and updating mechanism at the same time.
 TensorFlow also allows users to easily distribute model computation over
-such as GPUs or TPUs.
-Each operation on the dataflow graph defines kernel,
+variuos devices such as GPUs or TPUs.
+Each operation on the dataflow graph defines \textit{kernel},
 a low-level implementation of the computation.
 Because the dataflow graph explicitly specifies how
 and where the subcomputation results should be sent and recevied,
-users can easliy assign each kernels to different devices and construct
+developers can easliy assign each kernels to different devices and construct
 the whole computaion from individual kernels and the dataflow graph.
 
 \lstinputlisting[language=Python, caption=Example Tensorflow1 model code]
 {tensorflow1_mnist.py}
 
 We explain a typical form of TensorFlow ML model codes by an example.
-The figure illustrates a simple neural network with 2 hidden layer.
-The code starts with importing the TensorFlow module.
-Typically, TensorFlow ML training codes is divided into two stages.
-In first stage, the model and training algorithm is defined.
+The figure illustrates a simple neural network with 2 hidden layers.
+Typically, a TensorFlow ML code is divided into two parts.
+In the first stage, the model structure and training algorithm is defined.
 The model is defined by using API functions to construct the dataflow graph.
-Then loss function is defined, usually using the pre-defined functions.
+The figure's line 4 to 18 define the neural network structure,
+with the placeholders for input tensor {\tt x} and output tensor {\tt y}.
+The hidden layers are constructed with {\tt variable},
+which corresponds to mutable model parameters, weights and biases.  
+The line 20 to 23 defines the trainin algorithm, 
+by defining loss function and optimization scheme.
 Optimization is also defined by using API functions to construct
 an Optimizer object, then assigning the target function.
-Actual training is done in the second stage of the code.
-In the second stage, the TensorFlow runtime repeats the training step
-as each data from the training dataset is fetched and
-the model is optimized against it.
+The second stage invokes the actual training process
+In the line 25 to 30, the TensorFlow runtime initializes the model parameters
+and repeats the optimization by {\tt Session} API. 
 
 In Septempber 2019, TensorFlow version 2.0 was released\cite{tf2announce}.
 The main change in the new version is the eager execution feature.

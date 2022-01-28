@@ -19,7 +19,7 @@ reducing training time is the most efficient optimization according to
 the Amdahl's law.
 
 In one of the efforts to reduce training time, 
-researchers utilize distributed ML training.
+researchers utilize \textit{distributed training}.
 Distributed training is a technique to parallelize the training computation
 workload over multiple GPUs.
 By taking advantage of parallelism, distributed training enables researchers
@@ -35,11 +35,15 @@ Until now, developers have manully rewrite the model codes.
 This is time-consuming and labor-intensive tasks for developers.
 In addiiton, developers need to understand and locate 
 specific components involved in the model training.
-This requires the developer to fully understand library APIs,
+This requires the developer to fully understand the library APIs,
 which is a difficult challenge.
 
-In this paper, we propose an automated Python code transformation that enables
-TensorFlow ML models to perform distributed training.
+In this paper, we propose an 
+\textit{automated code transformation for distributed training}.
+The transformation
+converts the single-GPU based TensorFlow models
+into the multi-GPU based models, so that the model can be trained
+over a distributed systm.
 We first formally define the code transformation from
 single-GPU based ML model code to distributed training model code.
 Then the transformation is implemented in actual software together with
