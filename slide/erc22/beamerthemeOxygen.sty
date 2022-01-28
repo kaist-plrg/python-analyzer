@@ -1,0 +1,75 @@
+\usetheme{Rochester}
+
+\RequirePackage{pgf}
+
+\pgfdeclareimage[width=.9\paperwidth]{header}{header0}
+\pgfdeclareimage[width=.1\paperwidth]{logo}{logo}
+
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamercovered{transparent}
+
+\beamer@headheight=0.13\paperwidth
+
+\definecolor{oxygenorange}{HTML}{F7800A}
+\definecolor{oxygengray}{HTML}{686868}
+\definecolor{oxygenlightgray}{HTML}{EEEEEE}
+\definecolor{oxygenblue}{HTML}{236EAF}
+\setbeamercolor*{Title bar}{fg=oxygenblue}
+\setbeamercolor*{Location bar}{fg=oxygenorange,bg=oxygenlightgray}
+\setbeamercolor*{frametitle}{parent=Title bar}
+\setbeamercolor*{block title}{bg=oxygenblue,fg=white}
+\setbeamercolor*{block body}{bg=oxygenlightgray,fg=oxygengray}
+\setbeamercolor*{normal text}{bg=white,fg=oxygengray}
+\setbeamercolor*{section in head/foot}{bg=oxygenblue,fg=white}
+
+\usecolortheme[named=oxygenorange]{structure}
+
+\setbeamerfont{section in head/foot}{size=\tiny,series=\normalfont}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+
+%\setbeamertemplate{headline}
+\setbeamertemplate{frametitle}
+{
+  \vskip-0.25\beamer@headheight
+  \vskip-\baselineskip
+  \vskip-0.2cm
+  \hskip0.0cm\usebeamerfont*{frametitle}\insertframetitle
+  \vskip-0.5em
+  \hskip0.0cm\usebeamerfont*{framesubtitle}\insertframesubtitle
+}
+
+\setbeamertemplate{headline}
+{
+  \pgfuseimage{header}
+  \hskip -0.2cm
+  \pgfuseimage{logo}
+  \vskip -0.7cm
+  \linethickness{0pt}
+
+  \framelatex{
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.3\beamer@headheight]{Title bar}
+    \usebeamerfont{section in head/foot}%
+    \insertsectionnavigationhorizontal{0pt}{\hskip0.22cm}{}%
+  \end{beamercolorbox}}
+
+  \vskip 0.3cm
+
+  \hskip -0.5cm
+
+  \framelatex{
+  \begin{beamercolorbox}[wd=\paperwidth,ht=0.7\beamer@headheight]{Title bar}
+  \end{beamercolorbox}}
+}
+
+\setbeamertemplate{footline}
+{
+  \linethickness{0pt}
+  \framelatex{
+  \begin{beamercolorbox}[leftskip=.3cm,wd=\paperwidth,ht=0.3\beamer@headheight,sep=0.1cm]{Location bar}
+    \usebeamerfont{section in head/foot}%
+%    \insertshortauthor~|~\insertshorttitle
+    \insertshorttitle
+    \hfill
+    \insertframenumber/\inserttotalframenumber
+  \end{beamercolorbox}}
+}
