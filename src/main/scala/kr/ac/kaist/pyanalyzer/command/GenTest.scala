@@ -8,7 +8,6 @@ import scala.Console._
 
 object GenTest {
   def genTest(testName: String, path: String): Unit = {
-    executeCmd(s"""bash -c "rm $TEST_DIR/regress/$testName/*"""")
     try runPipe(path, s"$TEST_DIR/regress/$testName")
     catch {
       case e: Throwable =>
@@ -49,11 +48,13 @@ object GenTest {
     tutoDir.listFiles.foreach (candidate => {
       candidate.getName match {
         case modelDir if containsMultipleModel(modelDir) =>
+          executeCmd(s"""bash -c "rm $TEST_DIR/regress/$modelDir/*"""")
           candidate.listFiles.foreach(file =>
             if (file.toString endsWith ".py")
-              genTest(s"$modelDir/${file.getName}", file.toString)
+              genTest(modelDir, file.toString)
           )
         case modelDir if tutoModelPattern matches modelDir =>
+          executeCmd(s"""bash -c "rm $TEST_DIR/regress/$modelDir/*"""")
           genTest(modelDir, candidate.toString)
         case _ =>
       }
