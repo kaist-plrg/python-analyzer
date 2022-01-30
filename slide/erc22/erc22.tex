@@ -20,19 +20,46 @@
 
 % 1. Introduction
 \begin{frame}
+  \frametitle{Reducing ML Training Time}
+  Reducing the training time becomes an important factor in ML developement.
+
+  \begin{itemize}
+    \item Training BERT model in single TPU takes over 1.5 month...
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
   \frametitle{Distributed ML Training}
-  Distributed ML Training scales well \& reduces training time.
+  To reduce the time, distributed training is used.\\
+  Distributed ML Training : parallelize training workload over
+  multiple devices (GPUs, TPUs, etc.)
+  \begin{itemize}
+    \item "Synchronous SGD with data-parallel approach"
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Horvod: Distributed Training Framework}
+  distributed training usually done with didicated framework\\
 \end{frame}
 
 \begin{frame}
-  \frametitle{Challenge: Distributing single-GPU based model}
-  Rewriting single-GPU based model into distributed model
+  \frametitle{Horovod: Distributed Training Framework}
+  Explain rewriting single-GPU based training code 
+  into distributed training code
+\end{frame}
+
+\begin{frame}
+  \frametitle{Challenge: Rewriting Distributed Training Code}
   \begin{itemize}
     \item Manual rewriting is tedious and time-consuming
     \item Developer must understand distributed training API
     \item Actual code changes are mostly syntactic and simple
   \end{itemize}
 \end{frame}
+
 
 \begin{frame}
   \frametitle{Automatic code transformation}
@@ -43,69 +70,56 @@
   \end{itemize}
 \end{frame}
 
-% 2. Background
-\begin{frame}
-  \frametitle{Horovod: Distributed Training Framework}
-  Horovod is a distributed ML training framework developed by Uber, 2017.
-\end{frame}
 
 % 3. Method
 \begin{frame}
-  \frametitle{Python Abstract Syntax}
-  We manually investigated the Python Language Reference,
-  defined the Python abstract syntax.
+  \frametitle{Formal Code Transformation Rule: Definition}
+  Formal definition of code transformation\\
+  Function from AST to AST  
 \end{frame}
+
 
 \begin{frame}
-  \frametitle{Training API Patterns for TensorFlow ML Model}
-  TensorFlow provides multiple training APIs.
-  Different training API usage requires different transformation rule 
-
+  \frametitle{Formal Code Transformation Rule: Environment}
+  Environment parameter: store important identifiers
 \end{frame}
+
 
 \begin{frame}
-  \frametitle{Training API Patterns for TensorFlow ML Model}
-  We defined 4 API Patterns
+  \frametitle{Formal Code Transformation Rule: Example}
+  With example, explain how transform function applies to the code AST
 \end{frame}
+
 
 \begin{frame}
-  \frametitle{Formal Transformation Rule for Distributed ML Model}
-  Code transformation is formally defined as transform function
-  AST $\rightarrow$ AST
-  
-  Env parameter stores specific identifiers and passes to the next call
-  
+  \frametitle{Training API Pattern}
+  Training codes use different APIs to train the model.\\
+  Different type of training code shoud be transformed with different rule.\\
+  Analyze training API pattern.
 \end{frame}
+
 
 \begin{frame}
-  \frametitle{Formal Transformation Rule for Distributed ML Model}
-  Explain the application of tramsform function by example  
+  \frametitle{Class Hierarchy Analysis}
+  User-defined class inherits TensorFlow classes.\\
+  Use CHA to identify such usages
 \end{frame}
 
-
-% 4. Implementation
-\begin{frame}
-  \frametitle{Distributed ML Code Transformer Software}
-  We implemented the transformation rule as a software.
-  Scala
-\end{frame}
 
 \begin{frame}
-  \frametitle{Impl. Class Hierarchy Analysis}
+  \frametitle{Implementation}
+  Scala, ...
 \end{frame}
 
-\begin{frame}
-  \frametitle{Impl. Training API Pattern Analysis}
-\end{frame}
 
 \begin{frame}
-  \frametitle{Impl. Transformer Function}
+  \frametitle{Evaluation}
+  Experiment on 11 selected models.\\
+  Transformation succes
+  manually checked that they are correctly transformed.\\
 \end{frame}
 
-% 5. Evaluation
-\begin{frame}
-  \frametitle{}
-\end{frame}
+% ----------------------------------------------------
 
 % for record
 \begin{frame}[fragile]
