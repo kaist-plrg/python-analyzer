@@ -1,4 +1,4 @@
 erc22.pdf: erc22.tex
-		pdflatex erc22
+		pdflatex --shell-escape erc22
 
 

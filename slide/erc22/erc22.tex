@@ -1,6 +1,7 @@
 \documentclass{beamer}
 \usetheme{Oxygen}
 \usepackage{verbatim}
+\usepackage{minted}
 
 \title{Automated Code Transformation for Distributed Training of TensorFlow ML Models}
 \author{Yusung Sim\inst{1}, Wonho Shin\inst{1}, Sungho Lee\inst{2}}
@@ -19,37 +20,63 @@
 
 
 % 1. Introduction
-\begin{frame}
-  \frametitle{Reducing ML Training Time}
-  Reducing the training time becomes an important factor in ML developement.
+\begin{frame}{Reducing ML Training Time}
+  Reducing the \textbf{training time} is important factor in ML developement.\\
 
   \begin{itemize}
-    \item Training BERT model in single TPU takes over 1.5 month...
+    \item Simple CNN-based classifier for MNIST trains in 2$\sim$3 hours
+    \item Training BERT model in single TPU takes over 1.5 month
+  \end{itemize}
+
+  Long training time makes CI/CD infeasible.
+  \begin{itemize}
+    \item Training data increases largely in real time
+    \item TODO: summarize this frame with good diagram
   \end{itemize}
 \end{frame}
 
 
-\begin{frame}
-  \frametitle{Distributed ML Training}
-  To reduce the time, distributed training is used.\\
-  Distributed ML Training : parallelize training workload over
-  multiple devices (GPUs, TPUs, etc.)
+\begin{frame}{Distributed ML Training}
+  \begin{definition}
+    \textbf{Distributed training} is a ML training technique
+    where the computation is distributed over multiple hardware devices
+    (GPUs, TPUs, etc.). It reduces the total training time,
+    ideally inverse-proportional to the device number.
+  \end{definition}
+
+  \textbf{Data-parallel approach} is commonly used.
   \begin{itemize}
-    \item "Synchronous SGD with data-parallel approach"
+    \item Multiple instances of the model assigned to each devices.
+    \item Train dataset distributed over device.
+    \item Gradients are averaged then applied to the model.
+    \item Use \textit{"Synchronous SGD"} optimization.
   \end{itemize}
 \end{frame}
 
 
-\begin{frame}
-  \frametitle{Horvod: Distributed Training Framework}
-  distributed training usually done with didicated framework\\
+\begin{frame}[fragile]{Horvod: Distributed Training Framework}
+  Distributed training code is often written in \textbf{Horovod},\\
+  a data-parallel distributed training framework for Python. 
+  \begin{figure}[!h]
+    \includegraphics[height=55mm]{horovod_logo}
+  \end{figure}
 \end{frame}
 
-\begin{frame}
-  \frametitle{Horovod: Distributed Training Framework}
+
+\begin{frame}{Distributing TensorFlow ML Training Code}
   Explain rewriting single-GPU based training code 
   into distributed training code
 \end{frame}
+
+
+\begin{frame}[fragile]{Rewriting}
+% code block
+\begin{minted}{Python}
+def main():
+  print("hello") 
+\end{minted}
+\end{frame}
+
 
 \begin{frame}
   \frametitle{Challenge: Rewriting Distributed Training Code}
