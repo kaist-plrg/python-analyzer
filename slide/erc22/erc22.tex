@@ -10,7 +10,8 @@
   School of Computing, KAIST
   \and
   \inst{2}%
-  Department of Computer Science and Engineering, Chungnam National University
+  Department of Computer Science and Engineering,\\ 
+  Chungnam National University
 }
 \date{2022}
 
@@ -21,38 +22,51 @@
 
 % 1. Introduction
 \begin{frame}{Reducing ML Training Time}
-  Reducing the \textbf{training time} is important factor in ML developement.\\
+  Reducing the \textbf{training time} is important factor in ML development.\\
+  
+  Takes longer time than traditional development.
 
   \begin{itemize}
-    \item Simple CNN-based classifier for MNIST trains in 2$\sim$3 hours
-    \item Training BERT model in single TPU takes over 1.5 month
+    \item Simple CNN-based classifier for MNIST trains in \textbf{2-3 hours}
+    \item AlphaGo trained for \textbf{3 weeks} (even with 50 GPUs)
+    \item Training BERT model in single TPU takes over \textbf{1.5 month}
   \end{itemize}
 
-  Long training time makes CI/CD infeasible.
+  Training time is bottleneck in the deployment loop.
+
   \begin{itemize}
-    \item Training data increases largely in real time
-    \item TODO: summarize this frame with good diagram
+    \item Evaluation is done after the tranining is complete
+    \item Development speed cannot catch up increasing size of dataset 
   \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Distributed ML Training}
-  \begin{definition}
-    \textbf{Distributed training} is a ML training technique
-    where the computation is distributed over multiple hardware devices
-    (GPUs, TPUs, etc.). It reduces the total training time,
-    ideally inverse-proportional to the device number.
-  \end{definition}
+  \textbf{Distributed Training} is used to reduce the training time
 
-  \textbf{Data-parallel approach} is commonly used.
-  \begin{itemize}
-    \item Multiple instances of the model assigned to each devices.
-    \item Train dataset distributed over device.
-    \item Gradients are averaged then applied to the model.
-    \item Use \textit{"Synchronous SGD"} optimization.
-  \end{itemize}
+  \begin{definition}
+    \textit{Distributed training} is a ML training technique
+    that\\distributes the training workload over multiple hardware devices
+    (GPUs, TPUs, etc). 
+  \end{definition}
+  \begin{figure}
+    \includegraphics[height=35mm]{TPU}
+    \\ {\tiny TPUs - Google Cloud}
+  \end{figure}
 \end{frame}
 
+\begin{frame}{Distributed ML Training: Data-parallel Approach}
+  \begin{figure}
+    \includegraphics[height=50mm]{data-parallel}
+  \end{figure}
+  {\footnotesize
+  \begin{itemize}
+    \item Multiple instances of the model assigned to each device.
+    \item Train dataset is divided by the number of devices, assigned to each.
+    \item Gradients are averaged before applied to the model.
+  \end{itemize} 
+  }
+\end{frame}
 
 \begin{frame}[fragile]{Horvod: Distributed Training Framework}
   Distributed training code is often written in \textbf{Horovod},\\
@@ -63,9 +77,10 @@
 \end{frame}
 
 
-\begin{frame}{Distributing TensorFlow ML Training Code}
-  Explain rewriting single-GPU based training code 
-  into distributed training code
+\begin{frame}{Distributing TensorFlow Training Code with Horovod}
+  {\tiny
+  \inputminted{Python}{horovod_ex.py}
+  }
 \end{frame}
 
 
