@@ -380,42 +380,6 @@ the first argument expression is multiplied by {\tt hvd.size()}.
 Finally, the output statement lists are concatenated as specified in the
 $\fksstmt$, and the transformed module AST is constructed.
 
-
-The above figure illustrates the example of a statement transformation.
-Intutitive understanding of the transformation is as follows:
-if the input code is assignment statment 
-that assigns a new `tf.keras.optimizer.Adam' instance,
-then multiply `hvd.size()' on learning rate argument expression of the
-instance constructor function.
-The transform function should describe two aspects of the sentence;
-first it should describe the condition of "assignment statement that
-creates `tf.keras.optimizer.Adam' instance";
-second it should describe the transformation sentence
-of "multiply `hvd.size()' on the learning rate argument". 
-
-(TODO figure of part of transform function describing the example) 
-
-The figure defines the part of Statement transform function. 
-The pattern matched by the function is described on the first line;
-it matches the assignment statements with operator `=' and
-right-hand side of function call expression.
-Note that the input AST components are matched onto pattern variables.
-This allows the definition to reuse the input AST component
-when constructing the output AST.
-The second line illustrates pattern guard that matches the input AST content.
-It checks the callee expression is the expression `tf.keras.optimizers.Adam'.
-The pattern guard uses the environment parameter $\sigma$ to retrieve
-module name for the Keras module.
-
-The figure defines the following part of the function.
-It describes the construction of an output AST and environment.
-The output AST is assignment statement which
-the right-hand side function argument expression is modified.
-As previously mentioned, the construction use pattern matched variables
-to reuse the input AST components.
-The difference is that first argument expression is multiplied by `hvd.size()',
-which formally describes the transformation sentence.
-
 We describe the transform function definition.
 \begin{itemize}
   \item explain types and aux functions
