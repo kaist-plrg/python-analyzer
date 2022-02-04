@@ -78,24 +78,52 @@
 \end{frame}
 
 
-\begin{frame}{Distributing TensorFlow Training Code with Horovod}
-  {\tiny
-  \inputminted{Python}{horovod_ex.py}
-  }
+\begin{frame}{Single GPU Training Code to Distributed Training Code}
+  \begin{columns}[t]
+    \begin{column}{.5\textwidth}
+      {\tiny
+        \inputminted{Python}{tensorflow_ex.py}
+      }
+    \end{column}
+    \begin{column}{.5\textwidth}
+      {\tiny
+        \inputminted{Python}{horovod_ex.py}
+      }
+    \end{column}
+  \end{columns}
+  
 \end{frame}
 
 
-\begin{frame}
-  \frametitle{Challenge: Rewriting Distributed Training Code}
+\begin{frame}{Challenge: Rewriting Distributed Training Code}
   Developers have to manually rewrite the single-GPU training code
   into the distributed training code.
   \begin{itemize}
     \item Manual rewriting is labor-intensive and time-consuming.
-    \item Developer must understand the whoel training API.
+    \item Developer must understand the training API.
     \item Code rewriting can be automated.
   \end{itemize}
 \end{frame}
 
+
+\begin{frame}{Problem 1. Different Training APIs}
+  \begin{columns}[t]
+    \begin{column}{.5\textwidth}
+      {\tiny
+        \inputminted{Python}{tensorflow_model_ex.py}
+      }
+    \end{column}
+    \begin{column}{.5\textwidth}
+      {\tiny
+        \inputminted{Python}{horovod_model_ex.py}
+      }
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}{Problem 2. User-defined classes}
+\end{frame}
 
 \begin{frame}
   \frametitle{Automatic code transformation for Distributed ML Training}
