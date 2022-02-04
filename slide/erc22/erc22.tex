@@ -22,7 +22,8 @@
 
 % 1. Introduction
 \begin{frame}{Reducing ML Training Time}
-  Reducing the \textbf{training time} is important factor in ML development.\\
+  Reducing the \textbf{training time} is an 
+  important factor in ML development.\\
   
   Takes longer time than traditional development.
 
@@ -42,7 +43,7 @@
 
 
 \begin{frame}{Distributed ML Training}
-  \textbf{Distributed Training} is used to reduce the training time
+  \textbf{Distributed Training} technique can reduce the training time
 
   \begin{definition}
     \textit{Distributed training} is a ML training technique
@@ -84,31 +85,25 @@
 \end{frame}
 
 
-\begin{frame}[fragile]{Rewriting}
-% code block
-\begin{minted}{Python}
-def main():
-  print("hello") 
-\end{minted}
-\end{frame}
-
-
 \begin{frame}
   \frametitle{Challenge: Rewriting Distributed Training Code}
+  Developers have to manually rewrite the single-GPU training code
+  into the distributed training code.
   \begin{itemize}
-    \item Manual rewriting is tedious and time-consuming
-    \item Developer must understand distributed training API
-    \item Actual code changes are mostly syntactic and simple
+    \item Manual rewriting is labor-intensive and time-consuming.
+    \item Developer must understand the whoel training API.
+    \item Code rewriting can be automated.
   \end{itemize}
 \end{frame}
 
 
 \begin{frame}
-  \frametitle{Automatic code transformation}
-  Propose automatic code transformation for distributed ML training
+  \frametitle{Automatic code transformation for Distributed ML Training}
+  Objective: automatic code transformation for distributed ML training.
   \begin{itemize}
-    \item Define formal transformation rule
-    \item Implement the rule as a software
+    \item Define formal transformation rule.
+    \item Implement the rule as a software.
+    \item Automate the distributed tranining process.
   \end{itemize}
 \end{frame}
 
@@ -159,17 +154,6 @@ def main():
   Experiment on 11 selected models.\\
   Transformation succes
   manually checked that they are correctly transformed.\\
-\end{frame}
-
-% ----------------------------------------------------
-
-% for record
-\begin{frame}[fragile]
-  \frametitle{Code example}
-  \begin{verbatim}
-  def add(x, y):
-    return x + y
-  \end{verbatim}
 \end{frame}
 
 \end{document}
