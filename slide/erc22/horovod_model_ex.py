@@ -5,10 +5,10 @@ hvd.init()
 
 mnist_model = tf.keras.Sequential([...])
 loss = tf.losses.SparseCategoricalCrossentropy()
-opt = tf.optimizers.Adam(0.001 * hvd.size())
+optim = tf.optimizers.Adam(0.001 * hvd.size())
 opt = hvd.DistributedOptimizer(opt)
 
-mnist_model.compile(optimizer=opt, loss=loss)
+model.compile(optimizer=opt)
 model.fit(
   dataset.take(1000),
   callbacks = 
