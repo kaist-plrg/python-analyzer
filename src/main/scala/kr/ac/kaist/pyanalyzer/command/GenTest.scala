@@ -35,29 +35,15 @@ object GenTest {
 
     // tutorial test
     val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
-    val tutoModelPattern = "\\d\\d.*".r
-    val multipleModels = List(
-      "01-TF2.0-Overview",
-      "05-FashionMNIST",
-    )
-    def containsMultipleModel(modelDir: String): Boolean =
-      multipleModels contains modelDir
-
-
-
-    tutoDir.listFiles.foreach (candidate => {
-      candidate.getName match {
-        case modelDir if containsMultipleModel(modelDir) =>
-          executeCmd(s"""bash -c "rm $TEST_DIR/regress/$modelDir/*"""")
-          candidate.listFiles.foreach(file =>
-            if (file.toString endsWith ".py")
-              genTest(modelDir, file.toString)
-          )
+    tutoDir.listFiles.foreach (
+      candidate => candidate.getName match {
         case modelDir if tutoModelPattern matches modelDir =>
           executeCmd(s"""bash -c "rm $TEST_DIR/regress/$modelDir/*"""")
-          genTest(modelDir, candidate.toString)
+          mainscriptOf(modelDir).foreach(
+            ms => genTest(modelDir, s"$candidate/$ms")
+          )
         case _ =>
       }
-    })
+    )
   }
 }
