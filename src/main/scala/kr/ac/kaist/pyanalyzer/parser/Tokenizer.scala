@@ -56,9 +56,12 @@ trait Tokenizers extends RegexParsers {
   //lazy val decInteger: Parser[(String, Int)] = """[([1-9](_\d)*)(0+(_?0)*)]""".r ^^ { (_, 10) }
   lazy val binInteger: Parser[(String, Int)] = "((0b)|(0B))(_?[0-1])+".r ^^ { (_, 2) }
   lazy val octInteger: Parser[(String, Int)] = "((0o)|(0O))(_?[0-7])+".r ^^ { (_, 8) }
-  lazy val hexInteger: Parser[(String, Int)] = "((0x)|(0X))(_?[0-7[a-f][A-F]])+".r ^^ { (_, 16) }
-  lazy val integer: Parser[IntToken] = (decInteger | binInteger | octInteger | hexInteger) ^^ {
-    case (s, b) => IntToken(Integer.parseInt(s, b)) 
+  lazy val hexInteger: Parser[(String, Int)] = "((0x)|(0X))(_?[0-9[a-f][A-F]])+".r ^^ { (_, 16) }
+  lazy val integer: Parser[IntToken] = (binInteger | octInteger | hexInteger | decInteger) ^^ {
+    case (pyDecIntRep, 10) => IntToken(pyDecIntRep.toInt)
+    case (pyNonDecIntRep, b) =>
+      val scalaNonDecIntRep = pyNonDecIntRep.drop(2).filterNot(_ == '_')
+      IntToken(Integer.parseInt(scalaNonDecIntRep, b))
   }
 
   lazy val imagNumber: Parser[ImagToken] = imagNumberRegex.r <~ "[jJ]".r ^^ {
