@@ -1,16 +1,11 @@
-# /model/ResNet.py
 import tensorflow as tf
+import tensorflow.keras as keras
 
-class ResNet(tf.keras.models.Model): 
+class ResNet(keras.models.Model): 
     def __init__(self, layer_num, **kwargs):
-        ...
-
-
-# /train.py
-import tensorflow as tf
-from model.ResNet import ResNet
-
-# ...
+        pass
+    def call(self, inputs):
+        pass
 
 if __name__ = '___main__':
     model = ResNet(50)

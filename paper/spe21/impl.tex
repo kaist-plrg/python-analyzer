@@ -26,57 +26,43 @@ and become the transformed model package.
 
 \subsection{Class Hierarchy Analyzer}
 
-The class hierarchy analyzer produces a class hierarchy graph, which
-represents the subclassing relations between user-defined classes
-and TensorFlow library classes that appear in the model code.
-The class hierarchy graph is required by the training API pattern anlayzer;
-thus, the class hierarchy analysis must occur before anlayzing the API pattern.
+In TensorFlow model codes, \textit{user-defined classes} inherit
+training-related classes to reuse pre-defined methods.
+The {\tt keras.layers.Layer} and {\tt keras.models.Model} classes 
+are typical examples of the case.
+Subclasses of the {\tt keras.layers.Layer} can override
+the {\tt call} method to define the forward propagating computation
+and automatically support gradient updates.
+Subclasses of the {\tt keras.models.Model} can override
+the {\tt call} method to define the model blocks
+and automatically support training-related methods
+such as {\tt fit} or {\tt save}. 
 
 \lstinputlisting[language=Python]{subclass_ex.py}
 
-The figure illustrates two Python codes, each defining a model structure
-and training process. The ResNet model class is defined in `/model/ResNet.py',
+The figure illustrates an example of a training code with
+user-defined class inheriting {\tt keras.mopdels.Model}.
 which inherits the class `tf.keras.models.Model'.
-This is a typical way to define a new ML model:
-define a user-defined class that inherits a `tf.keras.models.Model'.
-The training code `/train.py' then imports the model definition with
-import statement in line 11.
-The training proceeds by creating an instance of `ResNet' class
-and calling the `fit' method.
-In order to recognize that `/train.py' code is the training code,
-the anlayzer must know that the `ResNet' class is indeed a model, that is,
-a subclass of `tf.keras.models.Model'.
-However, the anlayzer cannot infer that information
-by only inspecting the `/train.py' code.
-In order to infer that the `ResNet' is a subclass of the TensorFlow Model class,
-class hierarchy information of the whole model package should first be generated.
+The line 4 defines a new class {\tt ResNet} that inherits the  
+{\tt Layer} class. The instance of {\tt ResNet}, {\tt model}
+is created at line 11. Although the class does not define
+the method {\tt fit}, line 14 trains the model instance by
+{\tt model.fit}. The inherited model {\tt fit}
+automatically repeats gradient descent with
+given model computation and training data. 
 
-There are several other TensorFlow classes that is inherited by user classes
-to be used as an model training code component.
-The class hierarchy analyzer module is responsible of identifying
-such subclass relation over the model package and producing the
-class hierarchy graph so that the training API pattern analyzer can
-recognize the user-defined model components.
+To correctly transform training codes using user-defined classes,
+the subclass relationship between user-defined classes
+and TensorFlow classes should be known before training pattern analysis. 
+In the above figure, for instance, the fact that the {\tt ResNet} class
+is subclass of the {keras.models.Model} is essential to identify
+that the code uses Keras training APIs. 
+Otherwise the function call {\tt model.fit} in line 14 would
+recognized as a plain function call not related to the training pattern.
 
-(TODO: impl detail)
-In class hierarchy analysis, each class name is expressed as fully qualified name.
-Here, fully qualified name of a class means qualified name\cite{???}
-on the basis of top of the package.
-That is, the path to the module where the class is defined
-is used to express the fully qualified name of the class.
-By using the fully qualified name, the same class name in different module
-can be discriminated.
-
-(how CHA work)
-
-When class is declared, subclass relation is explicitly specified.
-We collected all of this information in the class definition,
-and we build a directed graph of subclass relation
-where the node is fully qualified name and the directed edge exists
-from the fully qualified name of child class to that of parent class.
-Accordingly, to figure out whether some class X is subclass of some class Y,
-we check whether there exists some path from the fully qualified name of X
-to that of Y in the graph.
+The class hiearchy analyzer(CHA) module gathers the
+inheritance information between the user-defined classes and TensorFlow classes
+and output the 
 
 \subsection{Training API Pattern Analyzer}
 Describe detailed explanation of TAPA.
