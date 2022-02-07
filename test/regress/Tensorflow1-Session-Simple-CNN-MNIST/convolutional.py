@@ -21,12 +21,12 @@ IMAGE_SIZE = 28
 NUM_CHANNELS = 1
 PIXEL_DEPTH = 255
 NUM_LABELS = 10
-VALIDATION_SIZE = 5000# Size of the validation set.
-SEED = 66478# Set to None for random seed.
+VALIDATION_SIZE = 5000
+SEED = 66478
 BATCH_SIZE = 64
 NUM_EPOCHS = 10
 EVAL_BATCH_SIZE = 64
-EVAL_FREQUENCY = 100# Number of steps between evaluations.
+EVAL_FREQUENCY = 100
 FLAGS = None
 def data_type():
   "Return the type of the activations, weights, and placeholder variables."

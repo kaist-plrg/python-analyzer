@@ -31,11 +31,11 @@ train_tf_dataset = tf.data.Dataset.from_generator(train_generator, (tf.float32, 
 train_tf_dataset = train_tf_dataset.batch(batch_size, ).prefetch(100, ).shuffle(100, )
 model = faster_rcnn.FasterRCNN(num_classes=num_classes, )
 optimizer = keras.optimizers.SGD(0.001 * hvd.size(), momentum=0.9, nesterov=True, )
-(img, img_meta, bboxes, labels) = train_dataset[6]# [N, 4], shape:[N]=data:[62]
+(img, img_meta, bboxes, labels) = train_dataset[6]
 rgb_img = np.round(img + img_mean, )
 ori_img = get_original_image(img, img_meta, img_mean, )
-batch_imgs = tf.convert_to_tensor(np.expand_dims(img, 0, ), )# [1, 1216, 1216, 3]
-batch_metas = tf.convert_to_tensor(np.expand_dims(img_meta, 0, ), )# [1, 11]
+batch_imgs = tf.convert_to_tensor(np.expand_dims(img, 0, ), )
+batch_metas = tf.convert_to_tensor(np.expand_dims(img_meta, 0, ), )
 _ = model((batch_imgs, batch_metas), training=False, )
 proposals = model.simple_test_rpn(img, img_meta, )
 res = model.simple_test_bboxes(img, img_meta, proposals, )

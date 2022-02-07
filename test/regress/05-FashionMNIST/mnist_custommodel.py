@@ -43,7 +43,7 @@ class MyModel(keras.Model, ):
     return x
 def main():
   tf.random.set_seed(22, )
-  os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"# or any {'0', '1', '2'}
+  os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
   (train_dataset, val_dataset) = mnist_dataset()
   model = MyModel()
   model.compile(optimizer=optimizers.Adam(0.001, ), loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )

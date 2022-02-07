@@ -42,7 +42,7 @@ def DarknetConv(x, filters, size, strides=1, batch_norm=True, ):
   if strides == 1:
     padding = "same"
   else:
-    x = ZeroPadding2D(((1, 0), (1, 0)), )(x, )# top left half-padding
+    x = ZeroPadding2D(((1, 0), (1, 0)), )(x, )
     padding = "valid"
   x = Conv2D(filters=filters, kernel_size=size, strides=strides, padding=padding, use_bias=not batch_norm, kernel_regularizer=l2(5.0E-4, ), )(x, )
   if batch_norm:
@@ -64,8 +64,8 @@ def Darknet(name=None, ):
   x = inputs = Input([None, None, 3], )
   x = DarknetConv(x, 32, 3, )
   x = DarknetBlock(x, 64, 1, )
-  x = DarknetBlock(x, 128, 2, )# skip connection
-  x = x_36 = DarknetBlock(x, 256, 8, )# skip connection
+  x = DarknetBlock(x, 128, 2, )
+  x = x_36 = DarknetBlock(x, 256, 8, )
   x = x_61 = DarknetBlock(x, 512, 8, )
   x = DarknetBlock(x, 1024, 4, )
   return tf.keras.Model(inputs, (x_36, x_61, x), name=name, )
@@ -79,7 +79,7 @@ def DarknetTiny(name=None, ):
   x = MaxPool2D(2, 2, "same", )(x, )
   x = DarknetConv(x, 128, 3, )
   x = MaxPool2D(2, 2, "same", )(x, )
-  x = x_8 = DarknetConv(x, 256, 3, )# skip connection
+  x = x_8 = DarknetConv(x, 256, 3, )
   x = MaxPool2D(2, 2, "same", )(x, )
   x = DarknetConv(x, 512, 3, )
   x = MaxPool2D(2, 1, "same", )(x, )
@@ -126,15 +126,14 @@ def YoloOutput(filters, anchors, classes, name=None, ):
 def _meshgrid(n_a, n_b, ):
   return [tf.reshape(tf.tile(tf.range(n_a, ), [n_b], ), (n_b, n_a), ), tf.reshape(tf.repeat(tf.range(n_b, ), n_a, ), (n_b, n_a), )]
 def yolo_boxes(pred, anchors, classes, ):
-# pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
   grid_size = tf.shape(pred, )[1:3]
   (box_xy, box_wh, objectness, class_probs) = tf.split(pred, (2, 2, 1, classes), axis=-1, )
   box_xy = tf.sigmoid(box_xy, )
   objectness = tf.sigmoid(objectness, )
   class_probs = tf.sigmoid(class_probs, )
-  pred_box = tf.concat((box_xy, box_wh), axis=-1, )# original xywh for loss
+  pred_box = tf.concat((box_xy, box_wh), axis=-1, )
   grid = _meshgrid(grid_size[1], grid_size[0], )
-  grid = tf.expand_dims(tf.stack(grid, axis=-1, ), axis=2, )# [gx, gy, 1, 2]
+  grid = tf.expand_dims(tf.stack(grid, axis=-1, ), axis=2, )
   box_xy = (box_xy + tf.cast(grid, tf.float32, )) / tf.cast(grid_size, tf.float32, )
   box_wh = tf.exp(box_wh, ) * anchors
   box_x1y1 = box_xy - box_wh / 2
@@ -142,7 +141,6 @@ def yolo_boxes(pred, anchors, classes, ):
   bbox = tf.concat([box_x1y1, box_x2y2], axis=-1, )
   return (bbox, objectness, class_probs, pred_box)
 def yolo_nms(outputs, anchors, masks, classes, ):
-# boxes, conf, type
   (b, c, t) = ([], [], [])
   for o in outputs:
     b.append(tf.reshape(o[0], (tf.shape(o[0], )[0], -1, tf.shape(o[0], )[-1]), ), )

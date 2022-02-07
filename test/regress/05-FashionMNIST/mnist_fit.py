@@ -27,7 +27,7 @@ def mnist_dataset():
   ds_val = ds_val.shuffle(10000, ).batch(100, )
   return (ds, ds_val)
 def main():
-  os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"# or any {'0', '1', '2'}
+  os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
   (train_dataset, val_dataset) = mnist_dataset()
   model = keras.Sequential([layers.Reshape(target_shape=(28 * 28,), input_shape=(28, 28), ), layers.Dense(200, activation="relu", ), layers.Dense(200, activation="relu", ), layers.Dense(200, activation="relu", ), layers.Dense(10, )], )
   model.compile(optimizer=optimizers.Adam(0.001, ), loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )

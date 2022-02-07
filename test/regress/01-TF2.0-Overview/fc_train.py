@@ -10,7 +10,7 @@ if gpus:
   tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], "GPU", )
 from tensorflow import keras
 from tensorflow.keras import layers, optimizers, datasets
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"# or any {'0', '1', '2'}
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 def mnist_dataset():
   ((x, y), _) = datasets.mnist.load_data()
   ds = tf.data.Dataset.from_tensor_slices((x, y), )

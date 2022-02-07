@@ -11,15 +11,15 @@ if gpus:
 from tensorflow.keras import Model, layers
 import numpy as np
 from tensorflow.keras.datasets import mnist
-num_classes = 10# total classes (0-9 digits).
-num_features = 784# data features (img shape: 28*28).
+num_classes = 10
+num_features = 784
 learning_rate = 0.001
 training_steps = 10000
 batch_size = 32
 display_step = 100
-num_input = 28# number of sequences.
-timesteps = 28# timesteps.
-num_units = 32# number of neurons for the LSTM layer.
+num_input = 28
+timesteps = 28
+num_units = 32
 ((x_train, y_train), (x_test, y_test)) = mnist.load_data()
 (x_train, x_test) = (np.array(x_train, np.float32, ), np.array(x_test, np.float32, ))
 (x_train, x_test) = (x_train.reshape([-1, 28, 28], ), x_test.reshape([-1, num_features], ))
@@ -32,7 +32,6 @@ class LSTM(Model, ):
     self.lstm_layer = layers.LSTM(units=num_units, )
     self.out = layers.Dense(num_classes, )
   def call(self, x, is_training=False, ):
-  # LSTM layer.
     x = self.lstm_layer(x, )
     x = self.out(x, )
     if not is_training:
@@ -40,17 +39,14 @@ class LSTM(Model, ):
     return x
 lstm_net = LSTM()
 def cross_entropy_loss(x, y, ):
-# Convert labels to int 64 for tf cross-entropy function.
   y = tf.cast(y, tf.int64, )
   loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=x, )
   return tf.reduce_mean(loss, )
 def accuracy(y_pred, y_true, ):
-# Predicted class is the index of highest score in prediction vector (i.e. argmax).
   correct_prediction = tf.equal(tf.argmax(y_pred, 1, ), tf.cast(y_true, tf.int64, ), )
   return tf.reduce_mean(tf.cast(correct_prediction, tf.float32, ), axis=-1, )
 optimizer = tf.optimizers.Adam(learning_rate * hvd.size(), )
 def run_optimization(x, y, ):
-# Wrap computation inside a GradientTape for automatic differentiation.
   with tf.GradientTape() as g:
     pred = lstm_net(x, is_training=True, )
     loss = cross_entropy_loss(pred, y, )

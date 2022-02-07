@@ -19,7 +19,7 @@ np.random.seed(22, )
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 assert tf.__version__.startswith("2.", )
 learning_rate = 2.0E-4
-batch_size = 1# Set batch size to 4 or 16 if training multigpu
+batch_size = 1
 img_size = 256
 cyc_lambda = 10
 epochs = 1000

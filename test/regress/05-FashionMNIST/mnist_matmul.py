@@ -63,7 +63,7 @@ class MyLayer(layers.Layer, ):
       x = tf.matmul(x, self.trainable_variables[i], ) + self.trainable_variables[i + 1]
     return x
 def main():
-  os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"# or any {'0', '1', '2'}
+  os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
   train_dataset = mnist_dataset()
   model = MyLayer([28 * 28, 200, 200, 10], )
   for p in model.trainable_variables:

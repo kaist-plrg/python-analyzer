@@ -13,7 +13,7 @@ from tensorflow.keras import datasets, layers, optimizers
 import argparse
 import numpy as np
 from network import VGG16
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"# or any {'0', '1', '2'}
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 argparser = argparse.ArgumentParser()
 argparser.add_argument("--train_dir", type=str, default="/tmp/cifar10_train", help="Directory where to write event logs and checkpoint.", )
 argparser.add_argument("--max_steps", type=int, default=1000000, help="Number of batches to run.", )

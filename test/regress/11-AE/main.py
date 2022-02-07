@@ -46,7 +46,6 @@ class AE(tf.keras.Model, ):
   def decode(self, h, ):
     return tf.nn.sigmoid(self.decode_logits(h, ), )
   def call(self, inputs, training=None, mask=None, ):
-  # encoder
     h = self.encode(inputs, )
     x_reconstructed_logits = self.decode_logits(h, )
     return x_reconstructed_logits
@@ -79,7 +78,7 @@ for epoch in range(num_epochs, ):
       if hvd.rank() == 0:
         print("Epoch[{}/{}], Step [{}/{}], Reconst Loss: {:.4f}".format(epoch + 1, num_epochs, step + 1, num_batches, float(reconstruction_loss, ), ), )
   out_logits = model(x[:batch_size // 2], )
-  out = tf.nn.sigmoid(out_logits, )# out is just the logits, use sigmoid
+  out = tf.nn.sigmoid(out_logits, )
   out = tf.reshape(out, [-1, 28, 28], ).numpy() * 255
   x = tf.reshape(x[:batch_size // 2], [-1, 28, 28], )
   x_concat = tf.concat([x, out], axis=0, ).numpy() * 255.0

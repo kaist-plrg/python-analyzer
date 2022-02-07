@@ -29,7 +29,7 @@ if hvd.rank() == 0:
   print("y:", y_train.shape, y_val.shape, y_test.shape, )
 if hvd.rank() == 0:
   print("mask:", train_mask.shape, val_mask.shape, test_mask.shape, )
-features = preprocess_features(features, )# [49216, 2], [49216], [2708, 1433]
+features = preprocess_features(features, )
 if hvd.rank() == 0:
   print("features coordinates::", features[0].shape, )
 if hvd.rank() == 0:
@@ -45,12 +45,12 @@ elif args.model == "gcn_cheby":
   num_supports = 1 + args.max_degree
   model_func = GCN
 elif args.model == "dense":
-  support = [preprocess_adj(adj, )]# Not used
+  support = [preprocess_adj(adj, )]
   num_supports = 1
   model_func = MLP
 else:
   raise ValueError("Invalid argument for model: " + str(args.model, ), )
-model = GCN(input_dim=features[2][1], output_dim=y_train.shape[1], num_features_nonzero=features[1].shape, )# [1433]
+model = GCN(input_dim=features[2][1], output_dim=y_train.shape[1], num_features_nonzero=features[1].shape, )
 train_label = tf.convert_to_tensor(y_train, )
 train_mask = tf.convert_to_tensor(train_mask, )
 val_label = tf.convert_to_tensor(y_val, )
