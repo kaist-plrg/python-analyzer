@@ -8,7 +8,9 @@ import org.apache.commons.text.StringEscapeUtils._
 // TODO change to Parser[Token]
 object Tokenizer extends Tokenizers {
   def tokenizeText(source: String): List[Token] =  {
-    IndentParser().tokenizeSource(source)
+    IndentParser()
+      .tokenizeSource(source)
+      .filter(!_.isInstanceOf[CommentToken])
   }
 }
 
