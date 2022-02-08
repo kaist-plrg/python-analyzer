@@ -48,7 +48,7 @@ The line 4 defines a new class {\tt ResNet} that inherits the
 is created at line 11. Although the class does not define
 the method {\tt fit}, line 14 trains the model instance by
 {\tt model.fit}. The inherited model {\tt fit}
-automatically repeats gradient descent with
+automatically repeats the gradient descent with
 given model computation and training data. 
 
 To correctly transform training codes using user-defined classes,
@@ -60,9 +60,22 @@ that the code uses Keras training APIs.
 Otherwise the function call {\tt model.fit} in line 14 would
 recognized as a plain function call not related to the training pattern.
 
-The class hiearchy analyzer(CHA) module gathers the
-inheritance information between the user-defined classes and TensorFlow classes
-and output the 
+The class hierarchy analyzer(CHA) module analyzes the
+class subclass relationship between the 
+user-defined classes and TensorFlow classes.
+The module returns a class hierarchy graph(CHG) as an output.
+A CHG is a directed graph structure that represents the class hierarchy.
+Each node in the graph represents a class,
+and each directed eadge represents a class inheritance,
+where the start node indicates the child class
+and the end node indicates the parent class.
+Suppose the node A corresponds to the class A and node B corresponds ta
+the class B.
+If there is a (directed) path from the node A to the node B in CHG,
+then the class A is a subclass of the class B.
+
+The CHA module gets a model code package as an input.
+
 
 \subsection{Training API Pattern Analyzer}
 Describe detailed explanation of TAPA.
