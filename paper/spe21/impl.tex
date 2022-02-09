@@ -69,13 +69,52 @@ Each node in the graph represents a class,
 and each directed eadge represents a class inheritance,
 where the start node indicates the child class
 and the end node indicates the parent class.
-Suppose the node A corresponds to the class A and node B corresponds ta
+Suppose the node A corresponds to the class A and node B corresponds to
 the class B.
 If there is a (directed) path from the node A to the node B in CHG,
 then the class A is a subclass of the class B.
 
-The CHA module gets a model code package as an input.
+The CHA module gets a model code package as an input,
+and creates the model package CHG as an output.
+The analysis iterates over the files in the package,
+and extract every subclass information available in each file.
+New Python classes are defined with the {\tt class} statements.
+In {\tt class} statements, newly defined class can
+inherit another class by specifing the class expression
+in the argument position.
+The analyzer finds all {\tt class} statements from the module AST,
+add the CHG node for the new class. The analyzer also adds an edge
+to the parent class node if the {\tt class} statement specifies an inheritance.
 
+After CHGs for all model code files are generated, 
+they are merged into one CHG.
+One caveat in the process is correct translation of class names
+of submodules in the package.
+The Python packaging system is closely related with the file system.
+A package is specified by a directory; 
+the directory name is the package name, 
+and Python code files in the directory is the modules included in the package.
+A package can include subpackages, which is specified
+by the subdirectories, and modules in the subpackages are called submodules.
+A module can access to a module in the subpackage by a qualified name,
+which prefixes describe subpackage path to the target module.
+This means that a same class should be specified by different qualified
+names in perspectives of different subpackages.
+The analyzer should also take account of the qualified names
+in merging CHGs of the submodules. 
+When a node in the submodule CHG is merged into the parent module CHG,
+the class qualified name of the node should be prefixed with the
+submodule name.
+We implemented the CHG merging algorithm that constructs a correct
+qualified name, and utilized it when the CHA produces the CHG for
+a Python package. 
+
+The CHA module produces a CHG for the model package and deliever to
+other modules. Given the CHG, a module can compute whether a class is
+subclass of another by finding path in the graph.
+We implemented the CHG as a class and path-finding algorithm as
+a method for the class. The path-finding algorithm is based on
+a recursive depth-first search.
 
 \subsection{Training API Pattern Analyzer}
 Describe detailed explanation of TAPA.
