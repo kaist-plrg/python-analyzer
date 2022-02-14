@@ -118,27 +118,10 @@ a recursive depth-first search.
 
 \subsection{Training API Pattern Analyzer}
 
-TensorFlow provides multiple methods to define the training process.
-TensorFlow 1 provides {\tt Session} API to invoke any computation
-on the computation graph, and provide {\tt MonitoredTrainingSession} API to
-define automatic training in terms of hooks. 
-TensorFlow 2 provides {\tt GradientTape} API to define a low-level
-training step, and provide {\tt Model} API to train a model without
-definine low-level details.
-These APIs are directly related to the training process, apart from the
-model definition.
-We call these APIs as \textit{training APIs}.
-The model training codes are written using one of the training APIs.
-To correctly transform any training codes,
-the transformation software should be able to recognize the training APIs
-used in the target training code and apply appropriate transformation.
-
-We first define training API categories for TensorFlow training codes. 
-We inspected open-source TensorFlow training codes to find
-common pattern in their training API usage. 
-As a result, we categoriezed the training codes into total four categories,
-two for TensorFlow 1 and two for TensorFlow 2.
-
+The training API pattern analyzer module implements the training API
+patterns and the training code categorization into the tranining API categories.
+First, the code patterns of the traninig API patterns are implemented
+in terms of pattern matching expressions.
 
 
 
@@ -180,13 +163,17 @@ In this case, we reject to transform because we assumes
 that each model uses only one training API pattern in the transformation rule.
 
 \subsection{AST Transformer}
-Describe detailed explanation of AST Transformer.
+The AST transformer module is responsible of the actual transformation of
+the original training code AST into the distributed training code AST.
+The module takes three inputs: the original training code AST,
+the training API category, and the class hierarchy graph.
+The trainig API category is used to select appropriate transform function
+before applying it to the code AST. The CHG is used to identify
+user-defined classes in the transform function pattern matching.
 
-In transformation, it takes results of class hierarchy analysis
-and training API pattern analysis, and it transforms the code
-according to the rule mentioned in Section 3.2.
-Because of dynamic behaviors of Python, we give up soundness
-to get more complete result.
-We leaves warning log with some suggestions
-when transformation rule is potentially inaccurate.
+The module implements the transform functions in natural way;
+a transform function for each language construct is implemented as
+an Scala function that takes the language construct AST class,
+the patterns and pattern guards in the transform funciton definitions
+are implemented as the Scala pattern matching and pattern guards. 
 
