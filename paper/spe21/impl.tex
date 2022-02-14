@@ -118,17 +118,29 @@ a recursive depth-first search.
 
 \subsection{Training API Pattern Analyzer}
 
-There are several methods to define the TensorFlow model training process.
+TensorFlow provides multiple methods to define the training process.
 TensorFlow 1 provides {\tt Session} API to invoke any computation
 on the computation graph, and provide {\tt MonitoredTrainingSession} API to
 define automatic training in terms of hooks. 
 TensorFlow 2 provides {\tt GradientTape} API to define a low-level
 training step, and provide {\tt Model} API to train a model without
 definine low-level details.
-The model training codes are written with one of the training APIs,
-and training codes using different APIs should be differently transformed.
-To correctly transform the TensorFlow ML model codes,
-we 
+These APIs are directly related to the training process, apart from the
+model definition.
+We call these APIs as \textit{training APIs}.
+The model training codes are written using one of the training APIs.
+To correctly transform any training codes,
+the transformation software should be able to recognize the training APIs
+used in the target training code and apply appropriate transformation.
+
+We first define training API categories for TensorFlow training codes. 
+We inspected open-source TensorFlow training codes to find
+common pattern in their training API usage. 
+As a result, we categoriezed the training codes into total four categories,
+two for TensorFlow 1 and two for TensorFlow 2.
+
+
+
 
 -----------
 
