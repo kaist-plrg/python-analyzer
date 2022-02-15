@@ -60,7 +60,8 @@ object GenTest {
     }
 
     // CNN text classification example
-    f("CNN-text-classification", CNN_DIR)
+    f("CNN-text-classification-train", s"$CNN_DIR/train.py")
+    f("CNN-text-classification-eval", s"$CNN_DIR/eval.py")
   }
 
   val tutoModelPattern = "\\d\\d.*".r
