@@ -1,5 +1,6 @@
 package kr.ac.kaist.pyanalyzer
 
+import kr.ac.kaist.pyanalyzer.command.GenTest._
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import kr.ac.kaist.pyanalyzer.util.Errors._
 import kr.ac.kaist.pyanalyzer.pipeline._
@@ -29,15 +30,5 @@ class APIAnalysisTest extends AnyFunSuite {
       }
     }
 
-  // test models
-  val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
-  tutoDir.listFiles.foreach (
-    candidate => candidate.getName match {
-      case modelDir if tutoModelPattern matches modelDir =>
-        mainscriptOf(modelDir).foreach(
-          ms => testAPIPattern(s"$modelDir/$ms", s"$candidate/$ms")
-        )
-      case _ =>
-    }
-  )
+  iterTests(testAPIPattern)
 }

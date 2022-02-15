@@ -19,29 +19,15 @@ package object pyanalyzer {
 
   val TEST_DIR = s"$BASE_DIR/test"
 
-
   // tutorial
   val TUTORIAL_DIR = s"$BASE_DIR/TensorFlow-2.x-Tutorials"
-  val tutoModelPattern = "\\d\\d.*".r
-  // tutorial test
-  val MAINSCRIPTS_MAP = Map(
-    "01-TF2.0-Overview" -> List(
-      "conv_train.py",
-      "fc_train.py"
-    ),
-    "05-FashionMNIST" -> List(
-      "mnist_Seqential_gradient.py",
-      "mnist_fit.py",
-      "mnist_custommodel.py",
-      "mnist_matmul.py",
-    ),
-    "21-CN-EN-Translation-BERT" -> List(
-      "bert_train.py",
-      "transformer_train.py",
-    ),
-  )
-  def mainscriptOf(model: String): List[String] =
-    MAINSCRIPTS_MAP.getOrElse(model, List(""))
+
+  // tutorial
+  val TUTORIAL_DIR_2 =
+    s"$BASE_DIR/TensorFlow-Examples/examples/3_NeuralNetworks"
+
+  // cnn
+  val CNN_DIR = s"$BASE_DIR/cnn-text-classification-tf"
 
   // Others
   val LINE_SEP = System.getProperty("line.separator")

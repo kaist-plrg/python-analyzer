@@ -7,43 +7,80 @@ import java.io.File
 import scala.Console._
 
 object GenTest {
-  def genTest(testName: String, path: String): Unit = {
-    try runPipe(path, s"$TEST_DIR/regress/$testName")
+  def apply(optionMap: Map[String, String]): Unit = {
+    iterTests(genTest)
+  }
+
+  def genTest(dirname: String, path: String): Unit = {
+    try runPipe(path, s"$TEST_DIR/regress/$dirname")
     catch {
       case e: Throwable =>
-        println(s"$YELLOW[Warning] $testName failed!$RESET")
+        println(s"$YELLOW[Warning] $dirname failed!$RESET")
         e.printStackTrace
     }
   }
 
-  def apply(optionMap: Map[String, String]): Unit = {
-    // hvd test
-    val hvdDir = new File(HOROVOD_DIR) // TODO: add test cases
+  def iterTests(f: (String, String) => Unit): Unit = {
+    // horovod example
+    val hvdDir = new File(HOROVOD_DIR)
     for {
       version <- hvdDir.listFiles if version.isDirectory
       api <- version.listFiles if api.isDirectory
       model <- api.listFiles if model.isDirectory
     } {
-      val versionName = version.getName
-      val apiName = api.getName
-      val modelName = model.getName
       val targetDirName =
         if (model.listFiles.exists(_.getName == "org_mod")) "org_mod" else "org"
-      val testName = s"$versionName-$apiName-$modelName"
-      genTest(testName, s"$model/$targetDirName")
+      val testName =
+        s"HVD$model".diff(s"$hvdDir").replace('/', '-')
+      f(testName, s"$model/$targetDirName")
     }
 
-    // tutorial test
-    val tutoDir = new File(TUTORIAL_DIR) // TODO: add test cases
-    tutoDir.listFiles.foreach (
-      candidate => candidate.getName match {
-        case modelDir if tutoModelPattern matches modelDir =>
-          executeCmd(s"""bash -c "rm $TEST_DIR/regress/$modelDir/*"""")
-          mainscriptOf(modelDir).foreach(
-            ms => genTest(modelDir, s"$candidate/$ms")
-          )
-        case _ =>
-      }
-    )
+    // tutorial example 1
+    val tutoDir = new File(TUTORIAL_DIR)
+    tutoDir.listFiles.foreach { exDir =>
+      val exDirName = exDir.getName
+
+      // tutorial example directory that contains multiple mainscipts
+      if (TUTO_MAINSCRIPTS_MAP contains exDirName)
+        tutoMainscriptOf(exDirName).foreach{ ms =>
+          val additionalName = ms.dropRight(3).replace("_", "-")
+          f(s"TUTO1-$exDirName-$additionalName", s"$exDir/$ms")
+        }
+
+      // normal tutorial example directory
+      else if (tutoModelPattern matches exDirName)
+        f(s"TUTO1-$exDirName", s"$exDir")
+    }
+
+    // tutorial example 2
+    val tutoDir2 = new File(TUTORIAL_DIR_2)
+    tutoDir2.listFiles.foreach { file =>
+      val testName = s"TUTO2-${file.getName.replace("_", "-").dropRight(3)}"
+      f(testName, file.toString)
+    }
+
+    // CNN text classification example
+    f("CNN-text-classification", CNN_DIR)
   }
+
+  val tutoModelPattern = "\\d\\d.*".r
+  // tutorial test
+  val TUTO_MAINSCRIPTS_MAP = Map(
+    "01-TF2.0-Overview" -> List(
+      "conv_train.py",
+      "fc_train.py"
+    ),
+    "05-FashionMNIST" -> List(
+      "mnist_Seqential_gradient.py",
+      "mnist_fit.py",
+      "mnist_custommodel.py",
+      "mnist_matmul.py",
+    ),
+    "21-CN-EN-Translation-BERT" -> List(
+      "bert_train.py",
+      "transformer_train.py",
+    ),
+  )
+  def tutoMainscriptOf(model: String): List[String] =
+    TUTO_MAINSCRIPTS_MAP(model)
 }
