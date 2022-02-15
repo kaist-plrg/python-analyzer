@@ -163,17 +163,18 @@ In this case, we reject to transform because we assumes
 that each model uses only one training API pattern in the transformation rule.
 
 \subsection{AST Transformer}
-The AST transformer module is responsible of the actual transformation of
-the original training code AST into the distributed training code AST.
-The module takes three inputs: the original training code AST,
-the training API category, and the class hierarchy graph.
-The trainig API category is used to select appropriate transform function
-before applying it to the code AST. The CHG is used to identify
-user-defined classes in the transform function pattern matching.
 
-The module implements the transform functions in natural way;
-a transform function for each language construct is implemented as
-an Scala function that takes the language construct AST class,
-the patterns and pattern guards in the transform funciton definitions
-are implemented as the Scala pattern matching and pattern guards. 
+The AST transformer module takes three input objects: a module AST,
+a class hierarchy graph, and the training API usage summary.
+The module AST represents the original training code, which will
+be transformed into a distributed training code.
+The class hierarchy graph represents the hierarchy between
+user-defined classes and TensorFlow classes appear in the model code package.
+The training API usage summary stores the training API category
+information of the training code AST. Given these three inputs,
+the AST transformer selects the appropriate transform function
+for the training API category and apply it to the input AST.
+In the transform function application, the pattern matching
+and pattern guard utilizes the subclassing information
+given by the CHG. 
 
