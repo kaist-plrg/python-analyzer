@@ -57,6 +57,7 @@ case object MainScriptPipe extends Pipeline[
           case Some(s) => (s, findTargetLoopType(loopTypes, s))
           case None => findTargetWithoutName(loopTypes)
         }
+        if (targetAPI == Bot) throw TargetNotFound(targetName)
         // ASSUME: mainscript file exist in fs
         // find a file AST that has targetName
         fs.find(fi => fi.name == targetName) match {
