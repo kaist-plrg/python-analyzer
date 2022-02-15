@@ -84,23 +84,23 @@ object APIAnalyzer {
           if (!(api ⊑ MonSess)) throw APIException
           api = MonSess
 
-        // // Estimator API indicator
-        // case Call(expr1, _, _)
-        // if isSubclass(expr1, "tensorflow.compat.v1.estimator.Estimator") =>
-        //   if (!(api ⊑ Est)) throw APIException
-        //   api = Est
+        // Estimator API indicator
+        case Call(expr1, _, _)
+        if isSubclass(expr1, "tensorflow.compat.v1.estimator.Estimator") =>
+          if (!(api ⊑ Est)) throw APIException
+          api = Est
 
         // TODO: Simple-CNN-MNIST-2 not detected!
-        // DistributedGradientTape API indicator
+        // GradientTape API indicator
         case Call(expr1, _, _) if isSubclass(expr1, "tensorflow.GradientTape") =>
-          if (!(api ⊑ DistGradTape)) throw APIException
-          api = DistGradTape
+          if (!(api ⊑ GradTape)) throw APIException
+          api = GradTape
 
-        // DistributedOptimizer API indicator
+        // Keras API indicator
         case Call(Attribute(EName(model), Id("fit")), _, _)
         if (outerEnv ++ env).get(model) contains ValueSummary(model.name, "model") =>
-          if (!(api ⊑ DistOptim)) throw APIException
-          api = DistOptim
+          if (!(api ⊑ Keras)) throw APIException
+          api = Keras
 
         case Call(expr1, _, _)
         if isSubclass(expr1, "tensorflow.compat.v1.app.run") ||
@@ -214,11 +214,11 @@ case object Sess extends APIType
 
 case object MonSess extends APIType
 
-// case object Est extends APIType
+case object Est extends APIType
 
-case object DistGradTape extends APIType
+case object GradTape extends APIType
 
-case object DistOptim extends APIType
+case object Keras extends APIType
 
 case object Bot extends APIType
 

@@ -24,8 +24,8 @@ object Transformer extends Transformer {
       case Sess => SessRule(module)
       case MonSess => MonSessRule(module)
       // case Est => EstRule(module)
-      case DistGradTape => DistGradTapeRule(module)
-      case DistOptim => DistOptimRule(module)
+      case GradTape => GradTapeRule(module)
+      case Keras => KerasRule(module)
       case Bot =>
         val (body, _, lw) = transform(module.body)
         (module.copy(body=body), lw)

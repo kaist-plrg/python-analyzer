@@ -7,15 +7,15 @@ import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object DistGradTapeRule extends DistGradTapeRule {
+object GradTapeRule extends GradTapeRule {
   def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
     val (stmts, _, lw) = transform(module.body)
     (module.copy(body=stmts), lw)
   }
 }
 
-// Transform rule for main module of DistributedGradientTape model
-trait DistGradTapeRule extends MainScriptRule {
+// Transform rule for main module of GradientTape model
+trait GradTapeRule extends MainScriptRule {
   override def transform(stmt: Stmt)(
     implicit env: Env
   ): (List[Stmt], Env, List[Warning]) = stmt match {
