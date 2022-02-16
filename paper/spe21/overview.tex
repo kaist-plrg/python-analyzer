@@ -19,7 +19,12 @@ are described in the Section \ref{sec:trans}.
 
 \subsection{Class Hierarchy Analyzer}
 
-\lstinputlisting[language=Python]{motiv_ex.py}
+
+\vspace{-3em}
+\begin{figure}[h]
+  \lstinputlisting[language=Python]{motiv_ex.py}
+\end{figure}
+\vspace{-3em}
 
 To correctly transform TensorFlow training codes,
 the transformation software requires subclassing relationship
@@ -41,4 +46,6 @@ Training API pattern analyzer is responsible of identifying
 TensorFlow training APIs occur in the input code and select appropriate
 transformation rule.
 
+\subsection{AST Transformer}
 
+The AST transformer module transforms the input AST into the output AST.

@@ -1,0 +1,119 @@
+\section{Python Abstract Syntax and Parser}
+\subsection{Python Abstract Syntax}\label{sec:pysyn}
+
+We first define the abstract syntax for Python programming language.
+The syntax of Python is described in the Python Language Reference \cite{pythonref}.
+The reference provides a full grammar specification based on the extended PEG,
+and detailed explanation of syntatic components in each section.
+We manually examined the grammar and the details
+to define the Python abstract sytax.
+The syntax is composed of three syntactic components: expressions, statements,
+and top-level components.
+
+\begin{tabular}{lrll}
+  \nmodule & := & \mul{\nstmt} ~ \ntypignore & \desc{ModuleDef} \\
+  \nstmt & ::= & \decolist ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexpr)} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt} & \desc{FunDef} \\ 
+  & $|$ & \decolist ~ \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
+  & $|$ & \mul{\nexpr} ~ \oassign ~ \nexpr ~ \optypcomm & \desc{Assign} \\
+  & $|$ & \optypcomm ~ \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{ForLoop} \\
+  & $|$ & \kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{WhileLoop} \\
+  & $|$ & \kif ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{If} \\
+  & $|$ & \optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{With} \\
+  & $|$ & \kimport ~ \mul{\nalias} & \desc{Import} \\
+  & $|$ & \kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias} & \desc{ImportFrom} \\
+  & $|$ & \nexpr & \desc{ExprStmt} \\
+\end{tabular}
+
+\begin{tabular}{lrll}
+  \nexpr & ::= & \nexpr ~ \nboolop ~ \nexpr & \desc{BoolOp} \\
+  & $|$ & \nexpr ~ \nbinop ~ \nexpr & \desc{BinaryOp} \\ 
+  & $|$ & \nunop ~ \nexpr & \desc{UnaryOp} \\ 
+  & $|$ & \lparen{\mul{\nexpr}} & \desc{List} \\ 
+  & $|$ & \sparen{\mul{\nexpr}} & \desc{Tuple} \\ 
+  & $|$ & \nexpr ~ \mul{(\ncompop ~ \nexpr)} & \desc{CompOp} \\
+  & $|$ & \nexpr ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} & \desc{Call} \\
+  & $|$ & \nconstant & \desc{Constant} \\
+  & $|$ & \nexpr {\tt .}\nid& \desc{Attribute} \\
+  & $|$ & \nexpr\lparen{\nexpr} & \desc{Subscript} \\
+  & $|$ & \nid & \desc{Name} \\
+
+  \nboolop & ::= & \oand ~ $|$ ~ \oor & \desc{BoolOperator} \\
+  \nbinop & ::= & \oand ~ $|$ ~ \osub ~ $|$ ~ \omul & \desc{BinOperator} \\
+  \nunop& ::= & \kinvert ~ $|$ ~ \knot ~ $|$ ~ \oadd ~ $|$ ~ \osub & \desc{UnOperator} \\
+  \ncompop& ::= & \oeq ~ $|$ ~ \oneq ~ $|$ ~ \olt ~ $|$ ~ \olte ~ $|$ ~ \ogt ~ $|$ ~ \ogte ~ $|$ ~ \ois ~ $|$ ~ \onis ~ $|$ ~ \oin ~ $|$ ~ \onin & \desc{CompOperator}\\
+  \nargs & ::= & \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg} & \desc{Arguments}\\
+  \narg & ::= & \nid ~ \op{\nexpr}~\op{\nstr} & \desc{Argument} \\
+  \nkeyword & ::= & \op{\nid} \oassign \nexpr & \desc{Keyword} \\ 
+  \nalias & ::= & \nid ~\mul{(.\nid)} \op{(\kas ~ \nid)} & \desc{Alias} \\
+  \nwithitem & ::= & \nexpr ~ \op{(\kas ~ \nexpr)} & \desc{WithItem}\\
+\end{tabular}
+
+\begin{tabular}{lrll}
+  \nconstant & ::= & \knone & \desc{NoneLiteral} \\
+  & $|$ & \nint & \desc{IntLiteral} \\
+  & $|$ & \nfloat & \desc{FloatLiteral} \\
+  & $|$ & \ncomplex & \desc{ComplexLiteral} \\
+  & $|$ & \nstr & \desc{StringLiteral} \\
+  & $|$ & \nbool & \desc{BooleanLiteral} \\
+  & $|$ & \sparen{\mul{\nconstant}} & \desc{TupleLiteral} \\
+  & $|$ & {\tt ...} & \desc{Ellipsis} \\
+  \ntypignore & ::=  & \mul{\nint} & \desc{TypeIgnore} \\
+  \nid & $\in$ & \did \\
+  \nstr & $\in$ & \dstr \\
+  \nbool & $\in$ & \{{\tt True}, {\tt False}\}\\
+  \nint & $\in$ & $\mathbb{Z}$ \\
+  \nfloat & $\in$ & $\mathbb{R}$ \\
+  \ncomplex & $\in$ & $\mathbb{C}$ \\
+\end{tabular}
+
+Expressions are parts of the code that evaluates to a value.
+Python has 5 kinds of primitive values, 
+which are numbers, strings, booleans, the value {\itshape None} and {\itshape Ellipsis}.
+The value None is used to denote a undefined value,
+similar to the value {\itshape null} in Java.
+The value Ellipsis corresponds to the notation ``...",
+which can be used as an special placeholder meaning expansion of the sequence. 
+Python has composite types of tuple, list, set, map, and custom classes.
+The expression syntax defines ways to build up values
+and complex expressions such as operators, comprehension, and function calls. 
+
+Statements are parts of the code that changes the program state,
+such as variable binding or control flow. 
+Python statements are categorized into 
+simple statements which denote a single state changing step, 
+or compound statements which are composed of multiple statements.
+
+Simple statements include assignment statements and import statements.
+Assignment statements are used to declare a new variable and its value
+or update a variable value.
+Import statements are used to specify a module, load it
+and get definitions of the module into current namespace.
+In import statements, each target module and its aliased name is represented
+as alias.   
+Note that procedure call is a special case of expression statements,
+where the expression is a function call.
+
+Compound statements include conditional statements, loop statements,
+and definitions for functions and classes.
+Additionally, the with statement is an special kind of compound statement.
+With statement is identical to the assignment statement 
+in a way that it binds an expression to a name, 
+but the statement additionally adds implicit calls
+to the object's methods related to initialization and destruction.
+Similar to the alias in import statement,
+with statements use WithItem to represent then ame and expression.
+
+Top-level components are representation of the program
+in different execution environment of the Python interpreter.
+For example, a module represents a Python code file, composed of
+multiple definitions speicified of statements. 
+The full Python abstract syntax is attched in the supplementary material.
+
+\subsection{Parser Implementation}
+
+We implmented the Python parser in Scala.
+
+\begin{itemize}
+  \item Parsing rule given by extended PEG in PLR
+  \item Used Scala packrat parse combinator library
+\end{itemize}

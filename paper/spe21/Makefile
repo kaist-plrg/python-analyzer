@@ -2,7 +2,7 @@ PACKAGE=WileyNJD-v2
 
 all: WileyNJD-v2.cls spe.pdf
 
-%.pdf: %.tex intro.tex background.tex trans.tex impl.tex overview.tex cha.tex discussion.tex related.tex conclusion.tex ref.bib $(PACKAGE).cls 
+%.pdf: %.tex intro.tex background.tex trans.tex impl.tex overview.tex parse.tex cha.tex pattern.tex discussion.tex related.tex conclusion.tex ref.bib $(PACKAGE).cls 
 	pdflatex $<
 	- bibtex $*
 	pdflatex $<

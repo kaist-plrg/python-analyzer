@@ -1,0 +1,92 @@
+\section{Training API Pattern Analysis}
+
+\subsection{TensorFlow ML Training API Patterns}
+
+\lstinputlisting[language=Python]
+{pattern_ex.py}
+
+TensorFlow provides various APIs to define the training process.
+The above figure illustrates two examples of using 
+different APIs for the model training.
+Line 2 to 10 uses low-level APIs to repeat training steps over the training
+data set. Inside the {\tt for} loop, 
+the code uses the {\tt GradientTape} instance to record the loss computation,
+then uses the {\tt gradient} method and the {\tt apply\_gradient} method to
+back-propagate the gradient to the model parameters.
+In contrast, line 13 and 14 uses high-level APIs to automatically
+invoke the model training process by two methods calls, {\tt compile} and
+{\tt fit}. The {\tt fit} method repeats a same process with the {\tt for}
+loop in line 2; it takes each training data from the set and
+applies the gradient to the model parameter.
+
+While both code fragments train the model in a same way, 
+the code structures significantly differ.
+Using high-level APIs simplifies the program,
+reducing additional codes that compute the prediction loss and apply gradients.
+Low-level APIs are verbose, however, developer can fully control
+the training process.
+Developers can freely choose from different training code styles to
+take advantage of each way.
+
+To correctly transform the training codes,
+the transform software must transform different training APIs
+based on different transformation rules. 
+We first inspected multiple TensorFlow training codes and categorized them
+byr their training API usage. 
+As as result, we defined total four \textit{training API categories},
+two for TensorFlow version 1 and two for TensorFlow version 2.
+
+\begin{center}
+  \begin{tabular}{|c|c|l|}
+  \hline
+  TF version & Category name & Explanation \\ 
+  \hline
+  TFv1 & Session & Low-level training method using {\tt Session} API. \\
+  \hline
+  TFv1 & MonitoredSession & Low-level Training using {\tt MonitoredSession} instance. \\
+  \hline
+  TFv2 & GradientTape & Low-level training using {\tt GradientTape} instance. \\
+  \hline
+  TFv2 & Keras & High-level training using {\tt fit} method of {\tt keras.models.Model} instance. \\
+  \hline
+\end{tabular}
+\end{center}
+
+Then, we defined \textit{training API patterns} to automatically
+categorize training codes into one of the four categories.
+We adopted the pattern matching concept to define \textit{code patterns}.
+The code patterns are \textit{pattern for code AST}; they are AST with
+special holes that are later matched with concrete value.
+When a code pattern is matched against a code AST,
+it \textit{succeeds} with the holes matched with the AST subnodes,
+or \textit{fails} to match the given AST.
+The training API pattern is a set of code patterns
+to match against a training code and decide whether the code belongs to
+the corresponding category.
+Given a training code and a training API pattern,
+code patterns in the training API pattern is matched against the code. 
+If all the code patterns succeed to match, the code is classified as 
+the corresponding training API category.
+If one of the code patterns fails to match, the code is not classified
+as the category.
+
+Each training API category has a corresponding training API pattern.
+To categorize a training code into a training API category,
+the code AST is matched against total four training API patterns.
+If the code has exactly one match with the pattern,
+the code is categorized into the corresponding training API category.
+If the code has no match or has more than one match with the patterns, 
+the code is thought to be an erroneous training code; 
+the transform software aborts with an error indicating
+no appropriate training category is matched.
+
+
+\subsection{Implementation}
+
+We implemented the training API using pattern matching.
+
+\begin{itemize}
+  \item how API patterns correspond to Scala pattern matching
+  \item "Summary" based implementation explanation 
+  \item when making function summary, return class also
+\end{itemize}
