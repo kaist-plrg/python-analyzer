@@ -1,0 +1,44 @@
+\section{Overview}
+
+\includegraphics[width=1\textwidth]{system_arch}
+
+We first describe the overall structure of the code transformation software.
+The figure illustrates the system architecture of the software.
+The system is composed of five modules: the input parser,
+the class hierarchy analyzer, the API pattern analyzer,
+the AST transformer, and the output code generator.
+
+\subsection{Parser}
+
+The parser module is responsible of locating Python code files in the
+input ML model package and parsing each into corresponding AST.
+We refer to the Python lanugage reference\cite{pythonref}
+to define Python abstract syntax and Python parser.
+The Python abstract syntax and the parser 
+are described in the Section \ref{sec:trans}.
+
+\subsection{Class Hierarchy Analyzer}
+
+\lstinputlisting[language=Python]{motiv_ex.py}
+
+To correctly transform TensorFlow training codes,
+the transformation software requires subclassing relationship
+between user-defined classes and TensorFlow library classes.
+In the above code example, for instance, the software need to recognize
+the {\tt model.fit} method call as an training API.
+To recognize this, the software should identify the user-defined class
+{\tt ResNet} as a subclass of the TensorFlow class {\tt keras.models.Model},
+so that the {\tt ResNet} instance {\tt model} inherits the {\tt fit}
+method from the parent class. 
+We implemented the class hierarchy analyzer for Python code package
+to generate the class hierarchy graph which is utilized by
+other modules. The details of the class hierarchy analyzer is
+described in the Section \ref{sec:cha}.
+
+\subsection{Training API Pattern Analyzer}
+
+Training API pattern analyzer is responsible of identifying
+TensorFlow training APIs occur in the input code and select appropriate
+transformation rule.
+
+
