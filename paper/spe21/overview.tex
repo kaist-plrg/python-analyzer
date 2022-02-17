@@ -1,9 +1,15 @@
 \section{Overview}
 
+We provide an overview of the code transformation software.
+The software input is a single-GPU-based ML model code package
+that include a training code.
+The software parses the Python code files in the package
+into AST format, apply an appropriate transformation on the AST,
+and generates an output code package that corresponds to
+the distributed training code.
+
 \includegraphics[width=1\textwidth]{system_arch}
 
-We first describe the overall structure of the code transformation software.
-The figure illustrates the system architecture of the software.
 The system is composed of five modules: the input parser,
 the class hierarchy analyzer, the API pattern analyzer,
 the AST transformer, and the output code generator.
