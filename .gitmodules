@@ -7,9 +7,9 @@
 [submodule "TensorFlow-2.x-Tutorials"]
 	path = TensorFlow-2.x-Tutorials
 	url = https://github.com/dragen1860/TensorFlow-2.x-Tutorials.git
-[submodule "cnn-text-classification-tf"]
-	path = cnn-text-classification-tf
-	url = https://github.com/dennybritz/cnn-text-classification-tf.git
 [submodule "TensorFlow-Examples"]
 	path = TensorFlow-Examples
-	url = https://github.com/aymericdamien/TensorFlow-Examples.git
+	url = https://github.com/ShinWonho/TensorFlow-Examples.git
+[submodule "cnn-text-classification-tf"]
+	path = cnn-text-classification-tf
+	url = https://github.com/ShinWonho/cnn-text-classification-tf.git
