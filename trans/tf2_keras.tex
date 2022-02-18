@@ -134,7 +134,7 @@
   \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
   \inden\inden\inden\smodenv[\checkpoint $\mapsto$ \nidsubs{r}])\\
 
-  \inden \comment{TODO}\\
+  \inden \comment{Default}\\
 
   \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
   \inden\inden\inden\smodenv)\\
@@ -165,11 +165,14 @@
 \noindent
 \begin{tabular}{l}
   \tstmt{\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \nexprsubs{3})}}{\smodenv} = ([\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \texpr{\nexprsubs{3}}{\smodenv})}], \smodenv)\\
+  \inden \comment{Dataset in Assign}\\
   \inden \ktif ~ \nexprsubs{1} ~ \kteq ~ \nidsubs{1} ~ \ktand ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{2} \\
   \inden \ktand ~ \nexprsubs{3} ~ \kteq ~ {\tt \nidsubs{2}.data.Dataset.\nexprsubs{4} \sparen{\mul{\nexprsubs{5}} \mul{\nkeyword}}} \ktthen \\
   \inden\inden ([\nexprsubs{1} \kcolon ~ \nexprsubs{2} \oassign ~\nexprsubs{3} \optypcomm], \smodenv[\tdata $\mapsto$ \nidsubs{1}])\\
   \inden \ktelse ~ ([\nexprsubs{1} \kcolon ~ \nexprsubs{2} \op{(\oassign \texpr{\nexprsubs{3}}{\smodenv})}], \smodenv)\\
 \end{tabular}\\\vpar
+
+
 
 % ForLoop
 \noindent
