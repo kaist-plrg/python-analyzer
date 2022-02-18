@@ -64,8 +64,9 @@
 \begin{longtable}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
 
+  
   % const learning rate scheduler
-
+  \inden \comment{Learning rate scheduler scaling}\\
   \inden \ktif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay} ~ \ktthen\\
   \inden\inden 
   ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
@@ -97,22 +98,38 @@
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
   \inden\inden\inden\inden \smodenv[\lrscheduler $\mapsto$ \nidsubs{r}])\\
 
+
   % optimizer
 
-  \inden \ktif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\    
-  \inden\inden   
+  \inden \comment{Optimizer learning rate scaling and wrapping}\\
+  \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\    
+\inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden ~ ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
+\inden\inden\inden\nidsubs{r} \oassign {\tt hvd.DistributedOptimizer(\nidsubs{r})}] \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
+  \inden\inden\inden\nidsubs{r} \oassign {\tt hvd.DistributedOptimizer(\nidsubs{r})}], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+
+
+% Model
+  \inden \comment{Model related} \\
+  \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.models.Model} ~ \ktthen\\
+  \inden\inden 
   ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
-  \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])
-  \\
-  % dataset
-  \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.data.Dataset.\nexprsubs{3}} ~ \ktthen\\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
-  \inden\inden\inden\smodenv[\tdata $\mapsto$ \nidsubs{r}])\\
+\inden\inden\inden\smodenv[\model $\mapsto$ \nidsubs{r}])\\
 
-  \inden \ktelif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.Checkpoint} ~ \ktthen\\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
-  \inden\inden\inden\smodenv[\checkpoint $\mapsto$ \nidsubs{r}])\\
+  \inden \ktelif ~ \smodenv(\model) ~ \kteq ~ \nidsubs{t} ~ \ktand ~
+  \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.evaluate} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt verbose} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign {\tt 1 if hvd.rank() == 0 else 0}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv)\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden ~ {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0 }} \optypcomm], \smodenv)\\
 
+
+  \inden \comment{TODO}\\
   \inden \ktelif  ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.optimizers.Adam} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
