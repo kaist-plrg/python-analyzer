@@ -90,7 +90,7 @@
    % leraning rate scheduler TFv1
 
   \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.compat.v1.train.exponential\_decay} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt initial\_learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\lrscheduler $\mapsto$ \nidsubs{r}])\\
   \inden\inden \ktelse \\
