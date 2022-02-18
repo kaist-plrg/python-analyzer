@@ -128,56 +128,13 @@
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
   \inden\inden\inden ~ {\tt verbose} \oassign {\tt 1 if hvd.rank() == 0 else 0 }} \optypcomm], \smodenv)\\
 
+  \inden \comment{Checkpoint}\\
+  % checkpoint
+  \inden \ktelif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.Checkpoint} ~ \ktthen\\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
+  \inden\inden\inden\smodenv[\checkpoint $\mapsto$ \nidsubs{r}])\\
 
   \inden \comment{TODO}\\
-  \inden \ktelif  ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.optimizers.Adam} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
-  \inden\inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
-  \inden \ktelif  ~ \smodenv(\optimizers) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.Adam} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
-  \inden\inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
-  \inden \ktelif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt grads\_and\_vars} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{2i},\\
-  \inden\inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
-  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
-  \inden\inden \ktelse \\
-  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
-  \inden\inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
-  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
-  \inden \ktelif ~ \smodenv(\checkpoint) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.save} ~ \ktthen\\
-  \inden\inden ([\kif ~ {\tt hvd.rank() == 0:} [\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm]],\\
-  \inden\inden\inden\smodenv)\\
-  % Rule for GradientOptimizer
-  \inden \ktelif ~ \smodenv(\tkeras) ~ \kteq ~ \nidsubs{k} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{k}.models.Sequential} ~ \ktthen  \\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{r}])\\
-  % Rule for GradientOptimizer
-  \inden \ktelif  ~ \smodenv(\tkeras) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.optimizers.Adam} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
-  \inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
-  \inden\inden\inden\nidsubs{r} ~ \oassign ~ {\tt hvd.DistributedOptimizer(\nidsubs{r})}], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
-  \inden\inden\inden\nidsubs{r} ~ \oassign ~ {\tt hvd.DistributedOptimizer(\nidsubs{r})}], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
 
   \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
   \inden\inden\inden\smodenv)\\
