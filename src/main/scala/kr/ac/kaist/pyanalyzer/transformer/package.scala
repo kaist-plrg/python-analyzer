@@ -79,5 +79,7 @@ package object transformer {
         p => (parseStrFullname(p._1), parseStrFullname(p._2))
       )
     )
+
+  mkdir(TRANS_LOG_DIR)
   val TRANS_PRINT_WRITER = getPrintWriter(s"$TRANS_LOG_DIR/Warnings")
 }

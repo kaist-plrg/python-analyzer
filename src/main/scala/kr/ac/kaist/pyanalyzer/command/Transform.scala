@@ -12,8 +12,6 @@ import scala.util.Try
 import java.io.File
 
 object Transform {
-  mkdir(TRANS_LOG_DIR)
-
   def apply(optionMap: Map[String, String]): Unit = {
     val path = optionMap.get("inPath") match {
       case Some(p) => p
