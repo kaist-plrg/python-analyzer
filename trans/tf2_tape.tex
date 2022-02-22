@@ -187,10 +187,12 @@
 % AnnAssign
 \noindent
 \begin{tabular}{l}
-  \tstmt{\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \nexprsubs{3})}}{\smodenv} = ([\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \texpr{\nexprsubs{3}}{\smodenv})}], \smodenv)\\
+  \tstmt{\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \nexprsubs{3})}}{\smodenv} = \\
+  \inden \comment{Dataset} \\
+  % dataset
   \inden \ktif ~ \nexprsubs{1} ~ \kteq ~ \nidsubs{1} ~ \ktand ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{2} \\
-  \inden \ktand ~ \nexprsubs{3} ~ \kteq ~ {\tt \nidsubs{2}.data.Dataset.\nexprsubs{4} \sparen{\mul{\nexprsubs{5}} \mul{\nkeyword}}} \ktthen \\
-  \inden\inden ([\nexprsubs{1} \kcolon ~ \nexprsubs{2} \oassign ~\nexprsubs{3} \optypcomm], \smodenv[\tdata $\mapsto$ \nidsubs{1}])\\
+  \inden\inden \ktand ~ \nexprsubs{3} ~ \kteq ~ {\tt \nidsubs{2}.data.Dataset.\nexprsubs{4} \sparen{\mul{\nexprsubs{5}} \mul{\nkeyword}}} \ktthen \\
+  \inden\inden\inden ([\nexprsubs{1} \kcolon ~ \nexprsubs{2} \oassign ~\nexprsubs{3} \optypcomm], \smodenv[\tdata $\mapsto$ \nidsubs{1}])\\
   \inden \ktelse ~ ([\nexprsubs{1} \kcolon ~ \nexprsubs{2} \op{(\oassign \texpr{\nexprsubs{3}}{\smodenv})}], \smodenv)\\
 \end{tabular}\\\vpar
 
