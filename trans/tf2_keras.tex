@@ -341,6 +341,7 @@
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
 
   %% Rule for MainScript
+  \inden \comment{MainScript rule}\\
   \inden \ktelif ~ \nexprsubs{1} ~ \kteq ~ {\tt print} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.write} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.summary} ~ \ktor \\
   \inden\inden\nexprsubs{1} ~ \kteq ~ {\tt \nexpr.save\_weights} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.load\_weights} ~ \ktthen\\
   \inden\inden\inden ([\kif ~ {\tt hvd.rank() == 0:} \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
