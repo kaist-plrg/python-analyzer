@@ -164,18 +164,16 @@
 \end{longtable}
 
 \noindent
-\begin{tabular}{l}
-  \tstmt{\nexprsubs{0} \oassign \nexprsubs{1} \optypcomm}{\smodenv} = \\
-  \indent \ktif ~ \smodenv(\os) ~ \kteq ~ \nidsubs{os} ~ \ktand ~ \nexprsubs{0} ~ \kteq ~ \nidsubs{os}{\tt.environ} \lparen{\tt `CUDA\_VISIBLE\_DEVICES'}\\
-  \indent \ktthen ~ ([], \smodenv) \\
-\end{tabular}\\\vpar
-
-\noindent
 {\bf A general form of assignment statements except for the strict form}
 
 \noindent
 \begin{tabular}{l}
-  \tstmt{\mul{\nexprsubs{1}} \oassign \nexprsubs{2} \optypcomm}{\smodenv} = ([\mul{\nexprsubs{1}} \oassign \texpr{\nexprsubs{2}}{\smodenv} \optypcomm], \smodenv)\\
+  \tstmt{\mul{\nexprsubs{1}} \oassign \nexprsubs{2} \optypcomm}{\smodenv} = \\
+  % CUDA visible device
+  \inden\comment{CUDA Visible Devices} \\
+  \inden \ktif ~ \smodenv(\os) ~ \kteq ~ \nidsubs{os} ~ \ktand ~ \nexprsubs{0} ~ \kteq ~ \nidsubs{os}{\tt.environ} \lparen{\tt `CUDA\_VISIBLE\_DEVICES'} ~ \ktthen\\
+  \inden\indent ([], \smodenv) \\
+  \inden \ktelse ~ ([\mul{\nexprsubs{1}} \oassign \texpr{\nexprsubs{2}}{\smodenv} \optypcomm], \smodenv) \\
 \end{tabular}\\\vpar
 
 % AugAssign
@@ -200,7 +198,13 @@
 \noindent
 \begin{tabular}{l}
   \tstmt{\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ([\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kcolon \\
+  % adjust steps
+  \inden \comment{Adjust Steps} \\
+  \inden \ktif ~ \smodenv(\config) ~ \kteq ~ \nidsubs{c} ~ \ktand ~ (\nexprsubs{2} ~ \kteq ~ {\tt range(\nidsubs{c}.iterations\_per\_epoch)} ~ \ktor \\
+  \inden\inden \nexprsubs{2} ~ \kteq ~ {\tt tqdm(range(\nidsubs{c}.iterations\_per\_epoch))}) ~ \ktthen \\
+  \inden\inden\inden ([\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ {\tt range(\nidsubs{c}.iterations\_per\_epoch // hvd.size())} ~ \kcolon \\
+  \inden\inden\inden\inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
+  \inden\ktelse ~ ([\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kcolon \\
   \inden \inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
 \end{tabular}\\\vpar
 
@@ -208,8 +212,14 @@
 \noindent
 \begin{tabular}{l}
   \tstmt{\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
-  \inden ([\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kcolon \\
-  \inden\inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
+  % adjust steps
+  \inden \comment{Adjust Steps} \\
+  \inden \ktif ~ \smodenv(\config) ~ \kteq ~ \nidsubs{c} ~ \ktand ~ (\nexprsubs{2} ~ \kteq ~ {\tt range(\nidsubs{c}.iterations\_per\_epoch)} ~ \ktor \\
+  \inden\inden \nexprsubs{2} ~ \kteq ~ {\tt tqdm(range(\nidsubs{c}.iterations\_per\_epoch))}) ~ \ktthen \\
+  \inden\inden\inden ([\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ {\tt range(\nidsubs{c}.iterations\_per\_epoch // hvd.size())} ~ \kcolon \\
+  \inden\inden\inden\inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
+  \inden\ktelse ~ ([\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kcolon \\
+  \inden \inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
 \end{tabular}\\\vpar
 
 % WhileLoop
