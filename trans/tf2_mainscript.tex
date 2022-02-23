@@ -275,11 +275,13 @@
 \noindent
 \begin{longtable}{l}
   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \comment{Config} \\
   % config
   \inden \ktif ~ \nidsubs{t} ~ \kteq ~ \smodenv(\tflow) ~ \ktand \\
   \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt
   \nidsubs{t}.config.experimental.set\_visible\_devices} ~ \ktthen ~ ([], \smodenv) \\
 
+  \inden \comment{Root Rank Blocking} \\
   % write methods
   \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ (\nexprsubs{1} ~ \kteq ~
   {\tt \nidsubs{m}.write} ~ \ktor \\
@@ -293,7 +295,6 @@
   \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt print} ~ \ktthen\\
   \inden\inden\inden ([\kif ~ {\tt hvd.rank() == 0:} \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
 
-  % Rule for GradientOptimizer
   \inden \ktelse \\
   \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
 \end{longtable}
@@ -544,9 +545,7 @@
 \begin{tabular}{l}
   \talias{\nid}{\smodenv} = \\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nid]\\
   \inden \ktlet ~ \nid ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nid]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt optimizers} ~ \ktthen ~ \smodenv[\optimizers $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 

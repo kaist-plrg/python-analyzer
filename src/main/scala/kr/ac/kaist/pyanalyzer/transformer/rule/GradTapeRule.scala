@@ -76,34 +76,34 @@ trait GradTapeRule extends MainScriptRule {
           //(AnnAssign(e1, e2, e3.map(transform)), env)
       }
 
-      case stmt @ ForStmt(ty, forExpr,
+    case stmt @ ForStmt(ty, forExpr,
+      Call(
+        EName(Id("range")),
+        List(Attribute(EName(config), Id("iterations_per_epoch"))),
+        Nil
+      ), doStmt, elseStmt) if env.get("config") contains config =>
+        val newCallExpr = parseExpr(
+          s"range(${config.name}.iterations_per_epoch // hvd.size()")
+        val (newDoStmt, _, dolw) = transform(doStmt)
+        val (newElseStmt, _, elselw) = transform(elseStmt)
+        val newForStmt =
+          ForStmt(ty, forExpr, newCallExpr, newDoStmt, newElseStmt)
+        (newForStmt, env, dolw ++ elselw)
+    case stmt @ ForStmt(ty, forExpr,
+      Call(EName(Id("tqdm")), List(
         Call(
           EName(Id("range")),
           List(Attribute(EName(config), Id("iterations_per_epoch"))),
           Nil
-        ), doStmt, elseStmt) if env.get("config") contains config =>
-          val newCallExpr = parseExpr(
-            s"range(${config.name}.iterations_per_epoch // hvd.size()")
-          val (newDoStmt, _, dolw) = transform(doStmt)
-          val (newElseStmt, _, elselw) = transform(elseStmt)
-          val newForStmt =
-            ForStmt(ty, forExpr, newCallExpr, newDoStmt, newElseStmt)
-          (newForStmt, env, dolw ++ elselw)
-      case stmt @ ForStmt(ty, forExpr,
-        Call(EName(Id("tqdm")), List(
-          Call(
-            EName(Id("range")),
-            List(Attribute(EName(config), Id("iterations_per_epoch"))),
-            Nil
-          )
-        ), Nil), doStmt, elseStmt) if env.get("config") contains config =>
-          val newCallExpr = parseExpr(
-            s"range(${config.name}.iterations_per_epoch // hvd.size())")
-          val (newDoStmt, _, dolw) = transform(doStmt)
-          val (newElseStmt, _, elselw) = transform(elseStmt)
-          val newForStmt =
-            ForStmt(ty, forExpr, newCallExpr, newDoStmt, newElseStmt)
-          (newForStmt, env, dolw ++ elselw)
+        )
+      ), Nil), doStmt, elseStmt) if env.get("config") contains config =>
+        val newCallExpr = parseExpr(
+          s"range(${config.name}.iterations_per_epoch // hvd.size())")
+        val (newDoStmt, _, dolw) = transform(doStmt)
+        val (newElseStmt, _, elselw) = transform(elseStmt)
+        val newForStmt =
+          ForStmt(ty, forExpr, newCallExpr, newDoStmt, newElseStmt)
+        (newForStmt, env, dolw ++ elselw)
     /////////////////////////////////////////////////////////////////
     // with statement
     /////////////////////////////////////////////////////////////////
