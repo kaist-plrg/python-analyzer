@@ -31,54 +31,67 @@ take advantage of each way.
 To correctly transform the training codes,
 the transform software must transform different training APIs
 based on different transformation rules. 
-We first inspected multiple TensorFlow training codes and categorized them
-byr their training API usage. 
-As as result, we defined total four \textit{training API categories},
-two for TensorFlow version 1 and two for TensorFlow version 2.
-
-\begin{center}
-  \begin{tabular}{|c|c|l|}
-  \hline
-  TF version & Category name & Explanation \\ 
-  \hline
-  TFv1 & Session & Low-level training method using {\tt Session} API. \\
-  \hline
-  TFv1 & MonitoredSession & Low-level Training using {\tt MonitoredSession} instance. \\
-  \hline
-  TFv2 & GradientTape & Low-level training using {\tt GradientTape} instance. \\
-  \hline
-  TFv2 & Keras & High-level training using {\tt fit} method of {\tt keras.models.Model} instance. \\
-  \hline
-\end{tabular}
-\end{center}
-
-Then, we defined \textit{training API patterns} to automatically
-categorize training codes into one of the four categories.
-We adopted the pattern matching concept to define \textit{code patterns}.
-The code patterns are \textit{pattern for code AST}; they are AST with
+We implemented a \textit{API pattern analysis} that identifies
+the TensorFlow API usage with \textit{training API patterns} 
+Each training API pattern is a set of code patterns for AST,
+and code patterns are ASTs with
 special holes that are later matched with concrete value.
 When a code pattern is matched against a code AST,
-it \textit{succeeds} with the holes matched with the AST subnodes,
-or \textit{fails} to match the given AST.
-The training API pattern is a set of code patterns
-to match against a training code and decide whether the code belongs to
-the corresponding category.
-Given a training code and a training API pattern,
-code patterns in the training API pattern is matched against the code. 
-If all the code patterns succeed to match, the code is classified as 
-the corresponding training API category.
-If one of the code patterns fails to match, the code is not classified
-as the category.
+it succeeds with the holes matched with the AST subnodes,
+or fails to match the given AST.
+The software matches a training API pattern to the target training code,
+and if the match succeeds, the corresponding transformation rule
+is used to transform the training code.
 
-Each training API category has a corresponding training API pattern.
-To categorize a training code into a training API category,
-the code AST is matched against total four training API patterns.
-If the code has exactly one match with the pattern,
-the code is categorized into the corresponding training API category.
-If the code has no match or has more than one match with the patterns, 
-the code is thought to be an erroneous training code; 
-the transform software aborts with an error indicating
-no appropriate training category is matched.
+We manually inspected multiple TensorFlow training codes to identify
+common patterns of training-related API usage. 
+In this end, we defined four training API patterns
+that effectively identify kinds of training APIs usage in the target code.
+The figure \ref{tab:patterns} briefly explains each training API pattern.
+Note that each pattern are assigned with different TensorFlow versions.
+The transformation software also supports legacy training codes
+that use compatibility module for TensorFlow version 1.x.
+
+\begin{figure}
+  \centering
+  \begin{tabular}{|c|c|l|}
+    \hline
+    TF version & Pattern name & Explanation \\
+    \hline
+    1.x & Session & Low-level training API using {\tt Session} instance\\
+    \hline
+    1.x & MonitoredSession & Low-level training API using {\tt MonitoresSession} instance \\
+    \hline
+    2.x & GradientTape & Low-level training API using {\tt GradientTape} instance\\
+    \hline
+    2.x & Keras & High-level training API using {\tt fit} method of {\tt keras.models.Model} instance\\
+    \hline
+  \end{tabular}
+  \caption{Training API patterns}
+  \label{tab:patterns}
+\end{figure}
+
+We now explain each traing API pattern with concrete code examples.
+
+\textbf{Session Pattern} 
+In TensorFlow 1.x, the {\tt tensorflow.Session} instance provides methods to
+invoke computations on the computation graph.
+Developers use the {\tt run} method to run the optimization on the model,
+usually inside the {\tt for} loop to repeat the process with training data.
+The Session pattern matches call expressions that the function
+call expression is the method {\tt tensorflow.Session.run}.
+
+\begin{figure}
+\begin{lstlisting}[language=Python]
+with tf.Session() as sess:
+    for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
+      sess.run(optimizer, feed_dict=feed_dict)
+\end{lstlisting}
+\caption{Session pattern code example}
+\end{figure}
+
+\textbf{MonitoredSession Pattern}
+The {\tt MonitoredSession}
 
 
 \subsection{Implementation}
