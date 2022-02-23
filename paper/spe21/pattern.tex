@@ -74,7 +74,7 @@ that use compatibility module for TensorFlow version 1.x.
 We now explain each traing API pattern with concrete code examples.
 
 \textbf{Session Pattern} 
-In TensorFlow 1.x, the {\tt tensorflow.Session} instance provides methods to
+The {\tt tf.compat.v1.train.Session} instance provides methods to
 invoke computations on the computation graph.
 Developers use the {\tt run} method to run the optimization on the model,
 usually inside the {\tt for} loop to repeat the process with training data.
@@ -91,7 +91,68 @@ with tf.Session() as sess:
 \end{figure}
 
 \textbf{MonitoredSession Pattern}
-The {\tt MonitoredSession}
+The {\tt tf.compat.v1.train.MonitoredSession} is used to handle initialization,
+recovery, and hooks in the training process\cite{monitoredsession}.
+Similar to the {\tt Session} instance, the {\tt run} method of
+{\tt MonitoredSession} instance is used to invoke the training computation.
+In addition, {\tt MonitoredSession} instances can automatically
+initialize and invoke methods of {\tt Hook} objects.
+The MonitoresSession pattern matches the constructor calls for the
+{\tt MonitoresSession} instance in the training code.
+
+\begin{figure}
+  \begin{lstlisting}[language=Python]
+with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
+    while not mon_sess.should_stop():
+        mon_sess.run(train_op, feed_dict=feed_dict)
+  \end{lstlisting}
+  \caption{MonitoredSession pattern code example}
+\end{figure}
+
+\textbf{GradientTape Pattern}
+In TensorFlow 2.x, the computations are eagerly evaluated.
+Unlike in TensorFlow 1.x, developers do not need to explicitly invoke the computations
+with {\tt Session} or {\tt MonitoredSession} instances.
+Instead, TensorFlow 2.x training codes use {\tt tf.GradientTape} instances
+to record the forward pass operation and automatically compute the gradient.
+The GradientTape pattern matches the call expressions in {\tt with} statements
+that constructs {\tt GradientTape} instances.
+
+\begin{figure}
+  \begin{lstlisting}[language=Python]
+with tf.GradientTape() as g:
+    pred = conv_net(x)
+    loss = cross_entropy(pred, y)
+    
+trainable_variables = list(weights.values()) + list(biases.values())
+gradients = g.gradient(loss, trainable_variables)
+optimizer.apply_gradients(zip(gradients, trainable_variables))
+  \end{lstlisting}
+  \caption{GradientTape pattern code example}
+\end{figure}
+
+\textbf{Keras Pattern}
+Another common pattern to define the training process is to define
+the model with {\tt tf.keras} API and automatically train the model
+instance with {\tt fit} method.
+In this methods, the models are subclasses of {\tt tf.keras.models.Model} class
+and inherits training-related method.
+The Keras pattern matches the call expressions that is invoking the {\tt fit}
+method of the subclass instances of {\tt tf.keras.models.Model}
+In the pattern matching process, the API pattern analyzer
+make use of the CHG to identify subclass relationship. 
+
+\begin{figure}
+  \begin{lstlisting}[language=Python]
+class ResNet(tf.keras.models.Model):
+  ...
+
+
+model = ResNet([2, 2, 2], num_classes)
+model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
+  \end{lstlisting}
+  \caption{Keras pattern code example}
+\end{figure}
 
 
 \subsection{Implementation}
