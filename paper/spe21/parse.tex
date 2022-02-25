@@ -111,9 +111,12 @@ The full Python abstract syntax is attched in the supplementary material.
 
 \subsection{Parser Implementation}
 
-We implmented the Python parser in Scala.
+The section 10 of the Python language reference\cite{pythonref}
+provides full Python grammar specification based on mixture of 
+extended BNF and PEG\cite{bryan2004peg}. We implemented the Python parser
+according to the grammar specification with the Scala parser combinators 
+library\cite{scalaparser}. We utilized the library's implementation of
+the Packrat parser\cite{bryan02packrat}, which is a time-efficient parser
+for the PEGs.
 
-\begin{itemize}
-  \item Parsing rule given by extended PEG in PLR
-  \item Used Scala packrat parse combinator library
-\end{itemize}
+

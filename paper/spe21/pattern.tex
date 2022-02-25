@@ -158,6 +158,9 @@ model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
 \subsection{Implementation}
 
 We implemented the training API using pattern matching.
+The training API patterns are implemented in forms of pattern matching
+on the AST object. 
+
 
 \begin{itemize}
   \item how API patterns correspond to Scala pattern matching
