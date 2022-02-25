@@ -554,9 +554,7 @@
 \begin{tabular}{l}
   \talias{\nidsubs{1} \kas ~ \nidsubs{2}}{\smodenv} = \\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
-  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.keras} ~ \ktthen ~ \smodenv[\tkeras $\mapsto$ \nidsubs{2}]\\
   \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nidsubs{2}]\\
-  \inden \ktlet ~ \nid ~ \kteq ~ {\tt optimizers} ~ \ktthen ~ \smodenv[\optimizers $\mapsto$ \nid]\\
   \inden \ktelse ~ \smodenv\\
 \end{tabular}\\\vpar
 
@@ -590,9 +588,7 @@
 \noindent
 \begin{tabular}{l}
   \twithitem{\nexprsubs{1} \kas ~ \nexprsubs{2}}{smodenv} = \\
-  \inden \ktif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{1} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{1}.GradientTape()} ~ \ktand ~ \nexprsubs{2} ~ \kteq ~ \nidsubs{2} ~ \ktthen \\
-  \inden\inden (\nexprsubs{1} \kas ~ \nexprsubs{2}, \smodenv[\gtape $\mapsto$ \nidsubs{2}])\\
-  \inden \ktelse ~ (\texpr{\nexprsubs{1}}{\smodenv} \kas ~ \nexprsubs{2}, \smodenv)\\
+  \inden (\texpr{\nexprsubs{1}}{\smodenv} \kas ~ \nexprsubs{2}, \smodenv)\\
 \end{tabular}\\\vpar
 
 \noindent
