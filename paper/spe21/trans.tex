@@ -243,10 +243,176 @@ traninig API category. The paper only explains important parts of the
 definition; the full definition of the transform functions can be found
 in the supplementary material.
 
-\subsubsection{Transform function for {\tt Session} category}
+\subsection{Description of Transform functions}
 
-\subsubsection{Transform function for {\tt MonitoredSession} category}
+\subsubsection{Transform function for Session pattern}
 
-\subsubsection{Transform function for {\tt GradientTape} category}
+\subsubsection{Transform function for MonitoredSession pattern}
 
-\subsubsection{Transform function for {\tt Keras} category}
+\subsubsection{Transform function for GradientTape pattern}
+
+In training codes matched in the GradientTape pattern,
+the {\tt GradientTape} instance is wrapped with
+{\tt hvd.DistributedGradientTape} function.
+The {\tt GradientTape} instances are created by {\tt with} statements
+in the training codes, which automatically invokeds initialization
+and destruction functions before and after the {\tt with} statement scope.
+The transform function matches the {\tt with} statement that
+creates the {\tt GradientTape} instance and insert the
+wrapping statement after it.
+Figure \ref{fig:trans:gtape} illustrates the transform function definition
+regarding the {\tt GradientTape} wrapping.
+
+\begin{figure}[h]
+\noindent
+\begin{tabular}{l}
+  \tstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
+  \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+  \inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\gtape $\mapsto$ \nid] ~ \ktthen\\
+  \inden\inden ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$, \\
+  \inden\inden \nid ~ \oassign {\tt hvd.DistributedGradientTape(\nid)}], \smodenvsubs{2})\\
+  \inden \ktelse ~ ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+\end{tabular}
+  \caption{GradientTape pattern transform function: wrapping {\tt GradientTape} instance}
+  \label{fig:trans:gtape}
+\end{figure}
+
+In addition, the variable broadcast should be manually done with
+{\tt hvd.broadcast\_variables} function.
+Because the variable broadcast should done exactly once at the start of the
+training, we utilize a global boolean variable {\tt hvd\_broadcast\_done}
+that tracks whether the broadcast is already performed or not.
+The variable {\tt hvd\_broadcast\_done} is declared within the Horovod
+initialization codes and initialized to {\tt False} as described in
+the figure \ref{fig:trans:gtape2}.
+
+\begin{figure}[h]
+\begin{tabular}{l}
+  \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
+  \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
+  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid] ~ \ktthen \\
+  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
+  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
+  \inden\hspace{1em} {\tt hvd\_broadcast\_done} \oassign {\tt False}, \\
+  \inden\hspace{1em} {\tt hvd.init()}, \\
+  \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
+  \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
+  \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
+  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
+\end{tabular}
+  \caption{GradientTape pattern transform function: initializing {\tt hvd\_broadcast\_done}}
+  \label{fig:trans:gtape2}
+\end{figure}
+
+The statements that perform the variable broadcast are inserted after
+the {\tt Optimizer} instance applies the training gradient.
+Corresponding transform function is described in figure \ref{fig:trans:gtape3}.
+The inserted codes check and modify the boolean value of 
+{\tt hvd\_broadcast\_done} to ensure that the variable broadcast
+happens only once.
+
+\begin{figure}[h]
+\begin{longtable}{l}
+  \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  % variable broadcasting
+  \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt grads\_and\_vars} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
+  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{2i},\\
+  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\\
+  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
+  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
+  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
+  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
+  \inden\inden \ktelse \\
+  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
+  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
+  \inden\inden\inden \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\\
+  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
+  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
+  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
+  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
+\end{longtable}
+  \caption{GradientTape pattern transform fuinction: the variable broadcast}
+  \label{fig:trans:gtape3}
+\end{figure}
+ 
+\subsubsection{Transform function for Keras pattern}
+
+In the tranining codes matching the Keras pattern,
+the {\tt Model} instances are created and used to invoke the
+training process. The transform function first stores the {\tt Model} instance
+variable name in the environment as described in the figure \ref{fig:trans:ker}.
+The AST pattern guard tests that the given function expression is a subclass
+of {\tt tensorflow.keras.Model}, which corresponds to the class constructors
+of subclass instances of {\tt tensorflow.keras.Model} class.
+
+\begin{figure}[h]
+\begin{longtable}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
+  \inden \ktelif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.keras.Model} ~ \ktthen  \\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{r}])\\
+\end{longtable}
+  \caption{Keras pattern transform function: storing the {\tt Model} instance}
+  \label{fig:trans:ker}
+\end{figure}
+
+The tranining process is invoked with {\tt fit} method of the {\tt Model} instance.
+For the training codes matching the Keras pattern, the variable broadcast should
+be done by adding the {\tt hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)}
+callback to the {\tt fit} method argument.
+The transform function utilizes the environment parameter to identify the {\tt fit}
+method call and insert the callback object to the argument.
+The figure \ref{fig:trans:ker2} describes the transform function that
+adds the callback to the {\tt fit} function call expression.
+
+\begin{figure}[h]
+\begin{longtable}{l}
+  \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ 
+          \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
+  \inden\inden\inden ([{\tt callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
+  \inden\inden\inden ~ {\tt if hvd.rank() == 0: callbacks.append(\nexprsubs{2i})}, \\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (optim ... \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                              {\tt callbacks \oassign callbacks} ... 
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([{\tt callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (optim ... \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}...
+                              {\tt callbacks \oassign callbacks} {\tt )}], \smodenv) \\ 
+\end{longtable}
+  \caption{Keras pattern transform function: adding the broadcast callback}
+  \label{fig:trans:ker2}
+\end{figure}
+
+The Keras pattern transform function also modifies the {\tt Optimizer} instance.
+First, the learning rate parameter of the instance should be scaled by
+{\tt hvd.size()}. Second, the instance should be wrapped with
+{\tt hvd.Distributed Optimizer} function, similar to the GradientTape pattern's case.
+The firgure \ref{fig:trans:ker3} describes the transform function modifying
+the {\tt Optimizer} instance.
+
+\begin{figure}[h]
+\begin{longtable}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
+  \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
+  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
+  {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)}
+\nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
+  \inden\inden\inden{\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+\end{longtable}
+  \caption{Keras pattern transform function: modifying the {\tt Optimizer} instance}
+  \label{fig:trans:ker3}
+\end{figure}
