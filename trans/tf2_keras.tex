@@ -308,6 +308,16 @@
                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
                               \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
 
+  \inden \comment{model.fit}\\
+  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ 
+          \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
+  \inden\inden\inden ([{\tt callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
+  \inden\inden\inden ~ {\tt if hvd.rank() == 0: callbacks.append(\nexprsubs{2i})}, \\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (optim ... \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                              {\tt callbacks \oassign callbacks} ... 
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
 
   \inden \comment{Root Rank Blocking} \\
   % write methods
