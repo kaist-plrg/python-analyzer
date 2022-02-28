@@ -284,6 +284,31 @@
   \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt
   \nidsubs{t}.config.experimental.set\_visible\_devices} ~ \ktthen ~ ([], \smodenv) \\
 
+  \inden \comment{model.compile} \\
+  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ 
+          \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.compile} ~ \ktthen \\
+  \inden\inden \comment{string "adam" case} \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt optimizer} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktand ~
+                \nexprsubs{2i} ~ \kteq ~ {\tt "adam"} ~ \ktthen \\
+  \inden\inden\inden ([{\tt optim = tf.optimizers.Adam(learning\_rate=0.001 * hvd.size)}, \\
+  \inden\inden\inden ~ {\tt optim = hvd.DistributedOptimizer(optim)}, \\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} ... \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                              \nidsubs{i} \oassign {\tt optim} ...
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
+  \inden\inden \ktelif ~ \nexprsubs{11} ~ \kteq ~ {\tt "adam"} ~ \ktthen \\
+  \inden\inden\inden ([{\tt optim = tf.optimizers.Adam(learning\_rate=0.001 * hvd.size)}, \\
+  \inden\inden\inden ~ {\tt optim = hvd.DistributedOptimizer(optim)}, \\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (optim ... \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
+
+  \inden\inden \ktelse \\
+  \inden\inden\inden ~ [{\tt \nexprsubs{1} (\nexprsubs{11} ... \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
+
+
   \inden \comment{Root Rank Blocking} \\
   % write methods
   \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ (\nexprsubs{1} ~ \kteq ~
