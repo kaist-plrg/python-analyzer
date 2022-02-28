@@ -1,0 +1,695 @@
+\subsection{Rule: TensorFlow 1.x Mainscript API Pattern}
+\subsubsection{Transformation Rules}
+\noindent
+\typdesc{\fkmodule & : & \dmodule ~ $\rightarrow$ ~ \dmodule}
+
+% ModuleDef
+\noindent
+\begin{tabular}{lll}
+  \tmodule{\mul{\nstmt} ~ \ntypignore} & = & \tsstmt{\mul{\nstmt}}{\smodenv}\fst ~ \ntypignore \\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fksstmt& : & \dstmt ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}
+% Stmt list
+\noindent
+\begin{tabular}{lll}
+  \tsstmt{\nstmtsubs{1} ~ \nstmtsubs{2} ... \nstmtsubs{n}}{\smodenv} & = & \ktlet ~ \mul{\nstmtsubs{1}}$'$, \smodenvsubs{1} ~ \kteq ~ \tstmt{\nstmtsubs{1}}{\smodenv} ~ \ktin \\
+  && \ktlet ~ \mul{\nstmtsubs{2}}$'$, \smodenvsubs{2} ~ \kteq ~ \tstmt{\nstmtsubs{2}}{\smodenvsubs{1}} ~ \ktin \\
+  && {\tt ...} \\
+  && \ktlet ~ \mul{\nstmtsubs{n}}$'$, \smodenvsubs{n} ~ \kteq ~ \tstmt{\nstmtsubs{n}}{\smodenvsubs{n-1}} ~ \ktin \\
+  && (\mul{\nstmtsubs{1}}$'$ \ktconl~\mul{\nstmtsubs{2}}$'$ \ktconl~... \ktconl~\mul{\nstmtsubs{n}}$'$, \smodenvsubs{n})
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}
+% FunDef
+\noindent
+\begin{tabular}{l}
+  \tstmt{\decolistsubs{1} ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~  \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden ([\decolistsubs{1} ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst], \smodenv)\\
+\end{tabular}\\\vpar
+
+% AsyncFunDef
+\noindent
+\begin{tabular}{l}
+  \tstmt{\decolistsubs{1} ~ \kasync ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden ([\decolistsubs{1} ~ \kasync ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexprsubs{2})} ~ \kcolon ~ \optypcomm ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst], \smodenv)\\
+\end{tabular}\\\vpar
+
+% ClassDef
+\noindent
+\begin{tabular}{l}
+  \tstmt{\decolistsubs{1} ~ \kclass ~ \nid ~ \sparen{\mul{\nexprsubs{2}} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden ([\decolistsubs{1} ~ \kclass ~ \nid ~ \sparen{\mul{\nexprsubs{2}} \mul{\nkeyword}} ~ \kcolon ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst], \smodenv) = \\
+\end{tabular}\\\vpar
+
+% Return
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kreturn ~ \op{\nexpr}}{\smodenv} = ([\kreturn ~ \op{(\texpr{\nexpr}{\smodenv})}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Delete
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kdelete ~ \mul{\nexpr}}{\smodenv} = ([\kdelete ~ \mul{\nexpr}], \smodenv) \\
+\end{tabular}\\\vpar
+
+% Assign
+\noindent
+{\bf A strict form of assignment statements}
+
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1j} ~ \op{(\nidsubs{11} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{1k} \oassign)} \nexprsubs{2k}} \\
+  \inden \comment{Minimized Optimizer} \\
+  % minimized optimizer
+  \inden .\nidsubs{m} \sparen{\nexprsubs{31} ... \nexprsubs{3l} ~ \op{(\nidsubs{41} \oassign)} \nexprsubs{41} ... \op{(\nidsubs{4n} \oassign)} \nexprsubs{4n}} \optypcomm}{\smodenv} = \\
+  \inden\inden \ktif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.compat.v1.train.Optimizer} ~ \ktand ~ \nidsubs{m} ~ \kteq ~ {\tt minimize} ~ \ktthen \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1j} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}.\nidsubs{m} \sparen{\nexprsubs{31} ... \nexprsubs{3l} ~ \op{(\nidsubs{41} \oassign)} \nexprsubs{41} ... \op{(\nidsubs{4n} \oassign)} \nexprsubs{4n}} \optypcomm, \\
+  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optimizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ~ {\tt * hvd.size()} ... \nexprsubs{1j} ~ \op{(\nidsubs{1} \oassign)} ~ \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
+  \inden\inden\inden\inden.\nidsubs{m} \sparen{\nexprsubs{31} ... \nexprsubs{3l} ~ \op{(\nidsubs{41} \oassign)} \nexprsubs{41} ... \op{(\nidsubs{4n} \oassign)} \nexprsubs{4n}} \optypcomm, \\
+  \inden\inden\inden{\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optimizer $\mapsto$ \nidsubs{r}])\\
+\end{tabular}
+
+\noindent
+\begin{longtable}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
+
+  \inden \comment{Config Proto} \\
+  % config proto
+  \inden \ktif ~ \nidsubs{t} ~ \kteq ~ \tflow ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.ConfigProto} ~ \ktthen \\
+  \inden\inden (\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
+  \inden\inden\inden \smodenv[\nidsubs{r} $\mapsto$ \configproto]) \\
+
+  % mainscript rule
+  \inden \comment{Learning rate scheduler scaling} \\
+  % const lr scheduler
+  \inden \ktif ~ \nexprsubs{1} \ktsubty ~ {\tt "tensorflow.keras.optimizers.schedules.PiecewiseConstantDecay"} ~ \ktthen\\
+  \inden\inden
+  ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
+  \inden\inden\inden\smodenv[\lrscheduler $\mapsto$ \nidsubs{r}]) \\
+
+  % lr scheduler
+  \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.schedules.LearningRateSchedule} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt initial\_learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}
+  \optypcomm], \smodenv[\lrscheduler $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
+  \inden\inden\inden\inden \smodenv[\lrscheduler $\mapsto$ \nidsubs{r}])\\
+
+  % tf1 lr scheduler
+  \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt
+  tensorflow.compat.v1.train.exponential\_decay} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}
+  \optypcomm], \smodenv[\lrscheduler $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \\
+  \inden\inden\inden\inden \smodenv[\lrscheduler $\mapsto$ \nidsubs{r}])\\
+
+  \inden \comment{Optimizer learning rate scaling and wrapping} \\
+  % optimizer
+  \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
+  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optimizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
+  {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)}
+\nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
+  \inden\inden\inden{\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optimizer $\mapsto$ \nidsubs{r}])\\
+
+  \inden \comment{Model related} \\
+  % model
+  \inden \ktelif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.keras.Model} ~ \ktthen  \\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{r}])\\
+
+  % model.evaluate
+  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \model ~ \ktand ~ \nexprsubs{1} \kteq ~
+  {\tt \nidsubs{t}.evaluate} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt verbose} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
+    ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ...
+    \nidsubs{i} \oassign {\tt 1 if hvd.rank() == 0 else 0}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}
+  \optypcomm], \smodenv)\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
+    ~ \nexprsubs{12} ~
+  {\tt 1 if hvd.rank() == 0 else 0} ... \nexprsubs{1n} \\
+  \inden\inden\inden\inden\op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm], \smodenv)\\
+
+  \inden \comment{Checkpoint} \\
+  % checkpoint
+  \inden \ktelif ~ \smodenv(\tflow) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.Checkpoint} ~ \ktthen\\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm],\\
+  \inden\inden\inden\smodenv[\checkpoint $\mapsto$ \nidsubs{r}])\\
+
+  \inden \comment{Default} \\
+  % default
+  \inden \ktelse ~ ([\nidsubs{r} \oassign \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} \optypcomm], \\
+  \inden\inden\inden\smodenv)\\
+\end{longtable}
+
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nexprsubs{0} \oassign \nexprsubs{1} \optypcomm}{\smodenv} = \\
+  \indent \ktif ~ \smodenv(\os) ~ \kteq ~ \nidsubs{os} ~ \ktand ~ \nexprsubs{0} ~ \kteq ~ \nidsubs{os}{\tt.environ} \lparen{\tt `CUDA\_VISIBLE\_DEVICES'}\\
+  \indent \ktthen ~ ([], \smodenv) \\
+\end{tabular}\\\vpar
+
+\noindent
+{\bf A general form of assignment statements except for the strict form}
+
+\noindent
+\begin{tabular}{l}
+  \tstmt{\mul{\nexprsubs{1}} \oassign \nexprsubs{2} \optypcomm}{\smodenv} = ([\mul{\nexprsubs{1}} \oassign \texpr{\nexprsubs{2}}{\smodenv} \optypcomm], \smodenv)\\
+\end{tabular}\\\vpar
+
+% AugAssign
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nexprsubs{1} \nbinop~\oassign \nexprsubs{2}}{\smodenv} = ([\nexprsubs{1} \nbinop~\oassign \texpr{\nexprsubs{2}}{\smodenv}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% AnnAssign
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \nexprsubs{3})}}{\smodenv} = ([\nexprsubs{1} \kcolon~\nexprsubs{2} \op{(\oassign \texpr{\nexprsubs{3}}{\smodenv})}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% ForLoop
+\noindent
+\begin{tabular}{l}
+  \tstmt{\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
+  \inden ([\optypcomm ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kcolon \\
+  \inden \inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% AsyncForLoop
+\noindent
+\begin{tabular}{l}
+  \tstmt{\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \nexprsubs{2} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
+  \inden ([\optypcomm ~ \kasync ~ \kfor ~ \nexprsubs{1} ~ \kin ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kcolon \\
+  \inden\inden \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% WhileLoop
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})}}{\smodenv} = \\
+  \inden ([\kwhile ~ \sparen{\texpr{\nexpr}{\smodenv}} ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% If
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kif ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}}{\smodenv} = \\
+  \inden ([\kif ~ \sparen{\texpr{\nexpr}{\smodenv}} ~ \kcolon ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst ~ \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst)}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% With
+\noindent
+\begin{tabular}{l}
+  \tstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+\end{tabular}\\\vpar
+
+% AsyncWith
+\noindent
+\begin{tabular}{l}
+  \tstmt{\optypcomm ~ \kasync ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~
+  \mul{\nstmt}}{\smodenv} = \\
+  \inden ([\optypcomm ~ \kasync ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+\end{tabular}\\\vpar
+
+% Match
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kmatch ~ \nexpr ~ \kcolon ~ \mul{\nmatchcase}}{\smodenv} = \\
+  \inden ([\kmatch ~ \texpr{\nexpr}{\smodenv} ~ \kcolon ~ \mul{(\tcase{\nmatchcase}{\smodenv})}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Raise
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kraise ~ \op{\nexprsubs{1}} ~ \op{(\kfrom ~ \nexprsubs{2})}}{\smodenv} = ([\kraise ~ \op{\nexprsubs{1}} ~ \op{(\kfrom ~ \nexprsubs{2})}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Try
+\noindent
+\begin{tabular}{l}
+  \tstmt{\ktry ~ \kcolon ~ \mul{\nstmtsubs{1}} ~ \mul{\nexchandler} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmtsubs{2}})} ~ \op{(\kfinally ~ \kcolon ~ \mul{\nstmtsubs{3}})}}{\smodenv} = \\
+  \inden ([\ktry ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{1}}}{\smodenv}\fst ~ \mul{(\thandler{\nexchandler}{\smodenv})} \\
+  \inden \op{(\kelse ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{2}}}{\smodenv}\fst)} ~ \op{(\kfinally ~ \kcolon ~ \tsstmt{\mul{\nstmtsubs{3}}}{\smodenv}\fst)}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Asssert
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kassert ~ \nexprsubs{1} ~ \op{\nexprsubs{2}}}{\smodenv} = ([\kassert ~ \texpr{\nexprsubs{1}}{\smodenv} ~ \op{\nexprsubs{2}}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Import
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
+  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflowc $\mapsto$ \nid] ~ \ktthen \\
+  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
+  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
+  \inden\hspace{1em} {\tt hvd.init()}], \smodenvsubs{1})\\
+  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
+\end{tabular}\\\vpar
+
+
+% ImportFrom
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}}{\smodenv} = ([\kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias}], \smodenvsubs{1})\\
+\end{tabular}\\\vpar
+
+% Global
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kglobal ~ \mul{\nid}}{\smodenv} = ([\kglobal ~ \mul{\nid}], \smodenv)\\
+\end{tabular}\\\vpar
+
+% NonLocal
+\noindent
+\begin{tabular}{l}
+  \tstmt{\knonlocal ~ \mul{\nid}}{\smodenv} = ([\knonlocal ~ \mul{\nid}], \smodenv)\\
+\end{tabular}\\\vpar
+
+\noindent
+{\bf A strict form of expr statements}
+
+% ExprStmt
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \comment{Config} \\
+  % config
+  \inden \ktif ~ \nidsubs{t} ~ \kteq ~ \smodenv(\tflow) ~ \ktand \\
+  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt
+  \nidsubs{t}.config.experimental.set\_visible\_devices} ~ \ktthen ~ ([], \smodenv) \\
+
+  \inden \comment{Root Rank Blocking} \\
+  % write methods
+  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ (\nexprsubs{1} ~ \kteq ~
+  {\tt \nidsubs{m}.write} ~ \ktor \\
+  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.summary} ~ \ktor ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.save\_weights} ~ \ktor \\
+  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt \nexpr.load\_weights} ~ \ktor ~
+  \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.save}) ~ \ktor \\
+  \inden\inden \nidsubs{c} ~ \kteq ~ \smodenv(\checkpoint) ~ \ktand ~
+  \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{c}.save} ~ \ktor \\
+  \inden\inden \nidsubs{t} ~ \kteq ~ \smodenv(\tflow) ~ \ktand ~ \nexprsubs{1} ~ \kteq ~
+  {\tt \nidsubs{t}.print} ~ \ktor \\
+  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt print} ~ \ktthen\\
+  \inden\inden\inden ([\kif ~ {\tt hvd.rank() == 0:} \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv) \\
+
+  \inden \ktelse \\
+  \inden\inden [\texpr{\nexprsubs{1} \sparen{\nexprsubs{11}  ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv}], \smodenv)\\
+\end{tabular}
+
+\noindent
+{\bf A general form of expr statements except for the strict form}
+
+% ExprStmt
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nexpr}{\smodenv} = \\
+  \inden \comment{Variable Broadcasting} \\
+  % variable broadcasting in session
+  \inden \ktif ~ \smodenv(\sess) ~ \kteq ~ \nidsubs{s} ~ \ktand ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
+  \inden\inden \nexpr ~ \kteq ~ {\tt \nidsubs{s}.run(\nidsubs{t}.global\_variables\_initializer())} ~ \ktthen \\
+  \inden\inden\inden ([\nexpr, \\
+  \inden\inden\inden {\tt \nidsubs{s}.run(hvd.broadcast\_global\_variables(root\_rank=0))}], \smodenv)\\
+  % variable broadcasting outside session
+  \inden \ktelif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
+  \inden\inden \nexpr ~ \kteq ~ {\tt \nidsubs{t}.global\_variables\_initializer().run()} ~ \ktthen \\
+  \inden\inden\inden ([\nexpr, \\
+  \inden\inden\inden {\tt hvd.broadcast\_global\_variables(root\_rank=0).run()}], \smodenv)\\
+  \inden \ktelse ~ ([\texpr{\nexpr}{\smodenv}], \smodenv)
+\end{tabular}\\\vpar
+
+% Pass
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kpass}{\smodenv} = ([\kpass], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Break
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kbreak}{\smodenv} = ([\kbreak], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Continue
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kcontinue}{\smodenv} = ([\kcontinue], \smodenv)\\
+\end{tabular}\\\vpar
+
+% Expr list
+\noindent
+\begin{tabular}{l}
+  \teexpr{\nexprsubs{1} ~ \nexprsubs{2} ... \nexprsubs{n}}{\smodenv} = \texpr{\nexprsubs{1}}{\smodenv} ~ \texpr{\nexprsubs{2}}{\smodenv} ... \texpr{\nexprsubs{n}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkexpr& : &\dexpr ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dexpr}
+% BoolOp
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} ~ \nboolop ~ \nexprsubs{2}}{\smodenv} = \texpr{\nexprsubs{1}}{\smodenv} ~ \nboolop ~ \texpr{\nexprsubs{2}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% NamedExpr
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} ~ {\tt\bf:=} ~ \nexprsubs{2}}{\smodenv} = \nexprsubs{1} ~ {\tt\bf:=} ~ \texpr{\nexprsubs{2}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% BinaryOp
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} ~ \nbinop ~ \nexprsubs{2}}{\smodenv} = \texpr{\nexprsubs{1}}{\smodenv} ~ \nbinop ~ \texpr{\nexprsubs{2}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% UnaryOp
+\noindent
+\begin{tabular}{l}
+  \texpr{\nunop ~ \nexpr}{\smodenv} = \nunop ~ \texpr{\nexpr}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% Lambda
+\noindent
+\begin{tabular}{l}
+  \texpr{\klambda ~ \nargs ~ \kcolon ~ \nexpr}{\smodenv} = \klambda ~ \nargs ~ \kcolon ~ \texpr{\nexpr}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% IfExpr
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} ~ \kif ~ \nexprsubs{2} ~ \kelse ~ \nexprsubs{3}}{\smodenv} = \\
+  \inden \texpr{\nexprsubs{1}}{\smodenv} ~ \kif ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kelse ~ \texpr{\nexprsubs{3}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% IfExpr
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} ~ \kif ~ \nexprsubs{2} ~ \kelse ~ \nexprsubs{3}}{\smodenv} = \\
+  \inden \texpr{\nexprsubs{1}}{\smodenv} ~ \kif ~ \texpr{\nexprsubs{2}}{\smodenv} ~ \kelse ~ \texpr{\nexprsubs{3}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% Dictionary
+\noindent
+\begin{tabular}{l}
+  \texpr{\mparen{\mul{(\nexprsubs{1} ~ \kcolon ~ \nexprsubs{2})} \mul{({\tt\bf**}\nexprsubs{3})}}}{\smodenv} = \mparen{\mul{(\nexprsubs{1} ~ \kcolon ~ \texpr{\nexprsubs{2}}{\smodenv})} \mul{({\tt\bf**}\nexprsubs{3})}}\\
+\end{tabular}\\\vpar
+
+% Set
+\noindent
+\begin{tabular}{l}
+  \texpr{\mparen{\mul{\nexpr}}}{\smodenv} = \mparen{\mul{(\texpr{\nexpr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% List
+\noindent
+\begin{tabular}{l}
+  \texpr{\lparen{\mul{\nexpr}}}{\smodenv} = \lparen{\mul{(\texpr{\nexpr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% Tuple
+\noindent
+\begin{tabular}{l}
+  \texpr{\sparen{\mul{\nexpr}}}{\smodenv} = \sparen{\mul{(\texpr{\nexpr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% DictionaryComp
+\noindent
+\begin{tabular}{l}
+  \texpr{\mparen{\nexprsubs{1}\kcolon \nexprsubs{2} \mul{\ncompr}}}{\smodenv} = \mparen{\nexprsubs{1}\kcolon \texpr{\nexprsubs{2}}{\smodenv} \mul{(\tcomp{\ncompr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% SetComp 
+\noindent
+\begin{tabular}{l}
+  \texpr{\mparen{\nexpr ~ \mul{\ncompr}}}{\smodenv} = \mparen{\texpr{\nexpr}{\smodenv} \mul{(\tcomp{\ncompr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% ListComp 
+\noindent
+\begin{tabular}{l}
+  \texpr{\lparen{\nexpr ~ \mul{\ncompr}}}{\smodenv} = \lparen{\texpr{\nexpr}{\smodenv} \mul{(\tcomp{\ncompr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% GeneratorComp
+\noindent
+\begin{tabular}{l}
+  \texpr{\sparen{\nexpr ~ \mul{\ncompr}}}{\smodenv} = \sparen{\texpr{\nexpr}{\smodenv} \mul{(\tcomp{\ncompr}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% Await
+\noindent
+\begin{tabular}{l}
+  \texpr{\kawait ~ \nexpr}{\smodenv} = \kawait ~ \texpr{\nexpr}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% Yield
+\noindent
+\begin{tabular}{l}
+  \texpr{\kyield ~ \op{\nexpr}}{\smodenv} = \kyield ~ \op{(\texpr{\nexpr}{\smodenv})}\\
+\end{tabular}\\\vpar
+
+% YieldFrom
+\noindent
+\begin{tabular}{l}
+  \texpr{\kyield ~ \kfrom ~ \nexpr}{\smodenv} = \kyield ~ \kfrom ~ \texpr{\nexpr}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% CompOp
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} \mul{(\ncompop ~ \nexprsubs{2})}}{\smodenv} = \texpr{\nexprsubs{1}}{\smodenv} \mul{(\ncompop ~ \texpr{\nexprsubs{2}}{\smodenv})}\\
+\end{tabular}\\\vpar
+
+% Call
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \texpr{\nexprsubs{1}}{\smodenv} \sparen{\texpr{\nexprsubs{11}}{\smodenv}  ... \texpr{\nexprsubs{1n}}{\smodenv} \\
+  \inden\inden \op{(\nidsubs{1} \oassign)} \texpr{\nexprsubs{21}}{\smodenv} ... \op{(\nidsubs{k} \oassign)} \texpr{\nexprsubs{2k}}{\smodenv}}\\
+\end{tabular}\\\vpar
+
+% FormattedValue
+\noindent
+\begin{tabular}{l}
+  \texpr{\mparen{\nexprsubs{1} ~ \op{({\tt !}\nint)} \op{({\tt :}\nexprsubs{2})}}}{\smodenv} = \mparen{\nexprsubs{1} ~ \op{({\tt !}\nint)} \op{({\tt :}\nexprsubs{2})}}\\
+\end{tabular}\\\vpar
+
+% JoinedStr
+\noindent
+\begin{tabular}{l}
+  \texpr{\mul{\nexpr}}{\smodenv} = \mul{\nexpr}\\
+\end{tabular}\\\vpar
+
+% Constant
+\noindent
+\begin{tabular}{l}
+  \texpr{\nconstant}{\smodenv} = \nconstant\\
+\end{tabular}\\\vpar
+
+% Attribute
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexpr.\nid}{\smodenv} = (\texpr{\nexpr}{\smodenv}).\nid\\
+\end{tabular}\\\vpar
+
+% Subscript
+\noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1}\lparen{\nexprsubs{2}}}{\smodenv} = \texpr{\nexprsubs{1}}{\smodenv}\lparen{\texpr{\nexprsubs{2}}{\smodenv}}\\
+\end{tabular}\\\vpar
+
+% Starred
+\noindent
+\begin{tabular}{l}
+  \texpr{{\tt*}\nexpr}{\smodenv} = {\tt*}\nexpr \\
+\end{tabular}\\\vpar
+
+% DoubleStarred
+\noindent
+\begin{tabular}{l}
+  \texpr{{\tt**}\nexpr}{\smodenv} = {\tt**}\nexpr \\
+\end{tabular}\\\vpar
+
+% Name
+\noindent
+\begin{tabular}{l}
+  \texpr{\nid}{\smodenv} = \nid\\
+\end{tabular}\\\vpar
+
+% Slice
+\noindent
+\begin{tabular}{l}
+  \texpr{\op{\nexprsubs{1}} \op{(\kcolon \nexprsubs{2})} \op{(\kcolon \nexprsubs{3})}}{\smodenv} = \op{\texpr{\nexprsubs{1}}{\smodenv}} \op{(\kcolon \texpr{\nexprsubs{2}}{\smodenv})} \op{(\kcolon \texpr{\nexprsubs{3}}{\smodenv})}\\
+\end{tabular}\\\vpar
+
+
+\noindent
+\typdesc{\fkcomp& : &\dcomp ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dcomp}
+% Comprehension
+\noindent
+\begin{tabular}{l}
+  \tcomp{\kfor ~ \nexprsubs{1} \kin ~ \nexprsubs{2} \mul{(\kif ~ \nexprsubs{3})}}{\smodenv} = \kfor ~ \nexprsubs{1} \kin ~ \texpr{\nexprsubs{2}}{\smodenv} \mul{(\kif ~ \texpr{\nexprsubs{3}}{\smodenv})}\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkhandler& : & \dhandler ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dhandler}
+% ExcHandler
+\noindent
+\begin{tabular}{l}
+  \thandler{\kexcept ~ \op{\nexpr} \op{(\kas ~ \nid)} \kcolon ~ \mul{\nstmt}}{\smodenv} = \kexcept ~ \op{\nexpr} \op{(\kas ~ \nid)} \kcolon ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst\\
+\end{tabular}\\\vpar
+
+
+\noindent
+\typdesc{\fkaalias& : & \dalias ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dmodenv}
+% Alias List
+\noindent
+\begin{tabular}{l}
+  \taalias{\naliassubs{1} ... \naliassubs{n-1} \naliassubs{n}}{\smodenv} = \talias{\naliassubs{n}}{\talias{\naliassubs{n-1}}{... \talias{\naliassubs{1}}{\smodenv}}}\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkalias& : & \dalias ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dmodenv}
+% Alias containing an id only
+\noindent
+\begin{tabular}{l}
+  \talias{\nid}{\smodenv} = \\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow.compat.v1} ~ \ktthen ~ \smodenv[\tflowc $\mapsto$ \nid]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nid]\\
+  \inden \ktlet ~ \nid ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nid]\\
+  \inden \ktelse ~ \smodenv\\
+\end{tabular}\\\vpar
+
+% Alias containing an id and an as phrase
+\noindent
+\begin{tabular}{l}
+  \talias{\nidsubs{1} \kas ~ \nidsubs{2}}{\smodenv} = \\
+  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow.compat.v1} ~ \ktthen ~ \smodenv[\tflowc $\mapsto$ \nidsubs{2}] \\
+  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt tensorflow} ~ \ktthen ~ \smodenv[\tflow $\mapsto$ \nidsubs{2}]\\
+  \inden \ktlet ~ \nidsubs{1} ~ \kteq ~ {\tt os} ~ \ktthen ~ \smodenv[\os $\mapsto$ \nidsubs{2}]\\
+  \inden \ktelse ~ \smodenv\\
+\end{tabular}\\\vpar
+
+% Alias containing an attribute
+\noindent
+\begin{tabular}{l}
+  \talias{\nidsubs{1} .\nidsubs{2} \mul{(.\nidsubs{3})} \op{(\kas ~ \nidsubs{2})}}{\smodenv} = \smodenv\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkwwithitem & : & \dwithitem ~ list ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ list $\times$ \dmodenv)} 
+\noindent
+\begin{tabular}{l}
+  \twwithitem{\nwithitemsubs{1} \nwithitemsubs{2} ... \nwithitemsubs{n}}{\smodenv} = \\
+  \inden \ktlet ~ \nwithitemsubs{1}$'$, \smodenvsubs{1} ~ \kteq ~ \twithitem{\nwithitemsubs{1}}{\smodenv} ~ \ktin \\
+  \inden \ktlet ~ \nwithitemsubs{2}$'$, \smodenvsubs{2} ~ \kteq ~ \twithitem{\nwithitemsubs{2}}{\smodenvsubs{1}} ~ \ktin \\
+  \inden {\tt ...} \\
+  \inden \ktlet ~ \nwithitemsubs{n}$'$, \smodenvsubs{n} ~ \kteq ~ \twithitem{\nwithitemsubs{n}}{\smodenvsubs{n-1}} ~ \ktin \\
+  \inden (\nwithitemsubs{1}$'$ \ktappl~\nwithitemsubs{2}$'$ \ktappl~... \ktappl~[\nwithitemsubs{n}$'$], \smodenvsubs{n})
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)} 
+% WithItem without an as phrase
+\noindent
+\begin{tabular}{l}
+  \twithitem{\nexpr}{\smodenv} = (\texpr{\nexpr}{\smodenv}, \smodenv)\\
+\end{tabular}\\\vpar
+
+% WithItem with an as phrase
+\noindent
+\begin{tabular}{l}
+  \twithitem{\nexprsubs{1} \kas ~ \nexprsubs{2}}{\smodenv} = \\
+  \inden (\texpr{\nexprsubs{1}}{\smodenv} \kas ~ \nexprsubs{2}, \smodenv)\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkcase & : & \dcase ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dcase}
+% Case
+\noindent
+\begin{tabular}{l}
+  \tcase{\kcase ~ \npattern ~ \op{(\kif ~ \nexpr)} \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden \kcase ~ \tpattern{\npattern}{\smodenv} ~ \op{(\kif ~ \texpr{\nexpr}{\smodenv})} \kcolon ~ \tsstmt{\mul{\nstmt}}{\smodenv}\fst\\
+\end{tabular}\\\vpar
+
+\noindent
+\typdesc{\fkpattern& : & \dpattern~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ \dpattern}
+% MatchValue
+\noindent
+\begin{tabular}{l}
+  \tpattern{\nexpr}{\smodenv} = \texpr{\nexpr}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% MatchSingleton
+\noindent
+\begin{tabular}{l}
+  \tpattern{\nconstant}{\smodenv} = \nconstant\\
+\end{tabular}\\\vpar
+
+% MatchSequence
+\noindent
+\begin{tabular}{l}
+  \tpattern{\lparen{\mul{\npattern}}}{\smodenv} = \lparen{\mul{\tpattern{\npattern}{\smodenv}}}\\
+\end{tabular}\\\vpar
+
+% MatchStar
+\noindent
+\begin{tabular}{l}
+  \tpattern{{\tt *}\op{(\nid)}}{\smodenv} = {\tt *}\op{(\nid)}\\
+\end{tabular}\\\vpar
+
+% MatchMapping
+\noindent
+\begin{tabular}{l}
+  \tpattern{\mparen{\mul{(\nexpr ~ \kcolon ~ \npattern)} \op{\nid}}}{\smodenv} = \mparen{\mul{(\nexpr ~ \kcolon ~ \tpattern{\npattern}{\smodenv})} \op{\nid}}\\
+\end{tabular}\\\vpar
+
+% MatchClass
+\noindent
+\begin{tabular}{l}
+  \tpattern{\nexpr ~ \sparen{\mul{\npatternsubs{1}} \mul{(\nid ~ \oassign ~ \npatternsubs{2})}}}{\smodenv} = \nexpr ~ \sparen{\mul{\tpattern{\npatternsubs{1}}{\smodenv}} \mul{(\nid ~ \oassign ~ \tpattern{\npatternsubs{2}}{\smodenv})}}\\
+\end{tabular}\\\vpar
+
+% MatchAs
+\noindent
+\begin{tabular}{l}
+  \tpattern{\op{(\npattern ~ \kas)} \nid}{\smodenv} = \op{(\tpattern{\npattern}{\smodenv} \kas)} \nid \\
+\end{tabular}\\\vpar
+
+% MatchOr
+\noindent
+\begin{tabular}{l}
+  \tpattern{\npatternsubs{1} {\tt |} \npatternsubs{2}}{\smodenv} = \tpattern{\npatternsubs{1}}{\smodenv} {\tt |} \tpattern{\npatternsubs{2}}{\smodenv}\\
+\end{tabular}\\\vpar
+
+% MatchWildcard
+\noindent
+\begin{tabular}{l}
+  \tpattern{{\tt \_}}{\smodenv} = {\tt \_}\\
+\end{tabular}\\\vpar
