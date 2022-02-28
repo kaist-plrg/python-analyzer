@@ -61,6 +61,24 @@
 {\bf A strict form of assignment statements}
 
 \noindent
+\begin{tabular}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1j} ~ \op{(\nidsubs{11} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{1k} \oassign)} \nexprsubs{2k}} \\
+  \inden \comment{Minimized Optimizer} \\
+  % minimized optimizer
+  \inden .\nidsubs{m} \sparen{\nexprsubs{31} ... \nexprsubs{3l} ~ \op{(\nidsubs{41} \oassign)} \nexprsubs{41} ... \op{(\nidsubs{4n} \oassign)} \nexprsubs{4n}} \optypcomm}{\smodenv} = \\
+  \inden\inden \ktif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.compat.v1.train.Optimizer} ~ \ktand ~ \nidsubs{m} ~ \kteq ~ {\tt minimize} ~ \ktthen \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1j} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}.\nidsubs{m} \sparen{\nexprsubs{31} ... \nexprsubs{3l} ~ \op{(\nidsubs{41} \oassign)} \nexprsubs{41} ... \op{(\nidsubs{4n} \oassign)} \nexprsubs{4n}} \optypcomm, \\
+  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optimizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ~ {\tt * hvd.size()} ... \nexprsubs{1j} ~ \op{(\nidsubs{1} \oassign)} ~ \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
+  \inden\inden\inden\inden.\nidsubs{m} \sparen{\nexprsubs{31} ... \nexprsubs{3l} ~ \op{(\nidsubs{41} \oassign)} \nexprsubs{41} ... \op{(\nidsubs{4n} \oassign)} \nexprsubs{4n}} \optypcomm, \\
+  \inden\inden\inden{\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optimizer $\mapsto$ \nidsubs{r}])\\
+\end{tabular}
+
+\noindent
 \begin{longtable}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
 
@@ -69,9 +87,6 @@
   \inden \ktif ~ \nidsubs{t} ~ \kteq ~ \tflow ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.ConfigProto} ~ \ktthen \\
   \inden\inden (\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
   \inden\inden\inden \smodenv[\nidsubs{r} $\mapsto$ \configproto]) \\
-
-  \inden \comment{Minimize} \\
-  % minimize need additional pattern matching
 
   % mainscript rule
   \inden \comment{Learning rate scheduler scaling} \\
@@ -251,7 +266,11 @@
 \noindent
 \begin{tabular}{l}
   \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
-  \inden ([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
+  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflowc $\mapsto$ \nid] ~ \ktthen \\
+  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
+  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
+  \inden\hspace{1em} {\tt hvd.init()}], \smodenvsubs{1})\\
+  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
 \end{tabular}\\\vpar
 
 
