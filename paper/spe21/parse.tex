@@ -112,11 +112,11 @@ The full Python abstract syntax is attched in the supplementary material.
 \subsection{Parser Implementation}
 
 The section 10 of the Python language reference\cite{pythonref}
-provides full Python grammar specification based on mixture of 
+provides a full Python grammar specification.
+The specification is descrbied in the mixture of 
 extended BNF and PEG\cite{bryan2004peg}. We implemented the Python parser
 according to the grammar specification with the Scala parser combinators 
 library\cite{scalaparser}. We utilized the library's implementation of
 the Packrat parser\cite{bryan02packrat}, which is a time-efficient parser
-for the PEGs.
-
+for the PEG.
 

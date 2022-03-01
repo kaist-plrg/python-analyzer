@@ -3,38 +3,65 @@
 \subsection{Class Hierarchy Analyzer}
 
 In TensorFlow model codes, \textit{user-defined classes} inherit
-training-related classes to reuse pre-defined methods.
+TensosFlow library classes to reuse and extend training-related methods.
 The {\tt keras.layers.Layer} and {\tt keras.models.Model} classes 
 are typical examples of the case.
-Subclasses of the {\tt keras.layers.Layer} can override
-the {\tt call} method to define the forward propagating computation
+The {\tt keras.layers.Layer} is a base class for
+layers that define parts of the ML model computation.
+Subclasses of the {\tt keras.layers.Layer} can extend
+the {\tt call} method to define the forward propagation
 and automatically support gradient updates.
-Subclasses of the {\tt keras.models.Model} can override
+The {\tt keras.model.Model} is a base class for models.
+Subclasses of the {\tt keras.models.Model} can extend
 the {\tt call} method to define the model blocks
 and automatically support training-related methods
 such as {\tt fit} or {\tt save}. 
 
+\begin{figure}[h]
 \lstinputlisting[language=Python]{subclass_ex.py}
+\caption{Training code example of using a user-defined class}
+\label{fig:cha:ex}
+\end{figure}
 
-The figure illustrates an example of a training code with
-user-defined class inheriting {\tt keras.mopdels.Model}.
-which inherits the class `tf.keras.models.Model'.
-The line 4 defines a new class {\tt ResNet} that inherits the  
-{\tt Layer} class. The instance of {\tt ResNet}, {\tt model}
-is created at line 11. Although the class does not define
-the method {\tt fit}, line 14 trains the model instance by
+The figure \ref{fig:cha:ex} illustrates an example of a training code
+utilizing the user-defined class. 
+Line 4 defines a new class {\tt ResNet} that inherits the  
+{\tt keras.models.Model} class. The instance of {\tt ResNet}, {\tt model}
+is created at line 11. Although the {\tt ResNet} class does not define
+the method {\tt fit}, line 14 calls the {\tt fit} method to train the model.
+Because the {\tt fit} method is inherited from the {\tt Model} class,
+the {\tt ResNet} instance can invoke the training process with
 {\tt model.fit}. The inherited model {\tt fit}
 automatically repeats the gradient descent with
 given model computation and training data. 
 
 To correctly transform training codes using user-defined classes,
 the subclass relationship between user-defined classes
-and TensorFlow classes should be known before training pattern analysis. 
-In the above figure, for instance, the fact that the {\tt ResNet} class
+and TensorFlow classes should be known before the training API pattern analysis. 
+In the figure \ref{fig:cha:ex}, for instance, 
+the fact that the {\tt ResNet} class
 is subclass of the {keras.models.Model} is essential to identify
-that the code uses Keras training APIs. 
+that the code uses a high-level API in {\tt tf.keras} module. 
 Otherwise the function call {\tt model.fit} in line 14 would
-recognized as a plain function call not related to the training pattern.
+recognized as an ordinary function call not related to the training pattern.
+
+\begin{figure}[h]
+\begin{lstlisting}[language=Python]
+class A:
+  pass
+
+class B(A): # inherits A
+  pass
+
+class C(B): # inherits B
+  pass
+
+c = C()
+isinstance(c, A) # returns True
+\end{lstlisting}
+\caption{Code example of Python class inheritance}
+\label{fig:cha:pythonex}
+\end{figure}
 
 The class hierarchy analyzer(CHA) module analyzes the
 class subclass relationship between the 
@@ -45,6 +72,11 @@ Each node in the graph represents a class,
 and each directed eadge represents a class inheritance,
 where the start node indicates the child class
 and the end node indicates the parent class.
+Consider the example in figure \ref{fig:cha:pythonex}.
+The class B is a subclass of the class A, and the class C is a subclass of the
+class C.
+This subclass relationship will represented as a CHG with three node,
+each corresponding to a class A, B, or C.
 Suppose the node A corresponds to the class A and node B corresponds to
 the class B.
 If there is a (directed) path from the node A to the node B in CHG,
