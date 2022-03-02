@@ -4,50 +4,54 @@
 \textit{TensorFlow}\cite{tensorflow} is a machine learning platform library
 developed in 2016 by Google Brains.
 The library provides high-level APIs to construct and train general ML models.
-TensorFlow is based on the concept of \textit{dataflow graph},
+TensorFlow is based on the concept of a \textit{dataflow graph},
 which is an abstraction of the computations between
 multiple values.
 In dataflow graphs, nodes represent operations and
-edges represent flow of tensors between the operations.
+edges represent the flow of tensors between the operations.
 One important innovation of TensorFlow
-is that the mutable states are also represented as oerations
+is that the mutable states are also represented as operations
 within the dataflow graph. 
 A \textit{variable node} maintains a mutable buffer that can be read or modified.
 This approach allows TensorFlow to define the model parameters
 and updating mechanism at the same time.
 TensorFlow also allows users to easily distribute model computation over
-variuos devices such as GPUs or TPUs.
+various devices such as GPUs or TPUs.
 Each operation on the dataflow graph defines \textit{kernel},
 a low-level implementation of the computation.
 Because the dataflow graph explicitly specifies how
-and where the subcomputation results should be sent and recevied,
-developers can easliy assign each kernels to different devices and construct
-the whole computaion from individual kernels and the dataflow graph.
+and where the sub-computation results should be sent and received,
+developers can easily assign each kernel to different devices and construct
+the whole computation from individual kernels and the dataflow graph.
 
-\lstinputlisting[language=Python, caption=Example Tensorflow1 model code]
+\begin{figure}
+\lstinputlisting[language=Python]
 {tensorflow1_mnist.py}
+\caption{TensorFlow 1 example code}
+\label{fig:bac:tf1}
+\end{figure}
 
 We explain a typical form of TensorFlow ML model codes by an example.
-The figure illustrates a simple neural network with 2 hidden layers.
+The figure \ref{fig:back:tf1} illustrates a simple neural network with 2 hidden layers.
 Typically, a TensorFlow ML code is divided into two parts.
-In the first stage, the model structure and training algorithm is defined.
+In the first stage, the model structure and training algorithm are defined.
 The model is defined by using API functions to construct the dataflow graph.
-The figure's line 4 to 18 define the neural network structure,
+Line 4 to 18 define the neural network structure,
 with the placeholders for input tensor {\tt x} and output tensor {\tt y}.
-The hidden layers are constructed with {\tt variable},
-which corresponds to mutable model parameters, weights and biases.  
-The line 20 to 23 defines the trainin algorithm, 
+The hidden layers are constructed with {\tt variables},
+which corresponds to mutable model parameters, weights, and biases.  
+Line 20 to 23 defines the training algorithm, 
 by defining loss function and optimization scheme.
 Optimization is also defined by using API functions to construct
 an Optimizer object, then assigning the target function.
 The second stage invokes the actual training process
-In the line 25 to 30, the TensorFlow runtime initializes the model parameters
+In line 25 to 30, the TensorFlow runtime initializes the model parameters
 and repeats the optimization by {\tt Session} API. 
 
-In Septempber 2019, TensorFlow version 2.0 was released\cite{tf2announce}.
+In September 2019, TensorFlow version 2.0 was released\cite{tf2announce}.
 The main change in the new version is the eager execution feature.
-Eager execution allows devlopers to use Python native variables
-and funcitons to compute the result in real time and define the
+Eager execution allows developers to use Python native variables
+and functions to compute the result in real-time and define the
 dataflow graph at the same time.
 Explicit calls to Session.run are replaced by Python function calls,
 and TensorFlow variables are replaced by function parameters.
@@ -58,47 +62,47 @@ a deep learning library that provides high-level abstractions for layers.
 
 \subsection{Distributed Training and Horovod Framework}
 
-\textit{Distributed training} is a technique to boast efficiency in ML training
+\textit{Distributed training} is a technique to boost efficiency in ML training
 by parallelizing computation workloads over multiple devices.
 Training an ML model is an expensive process that involves repetitive
 arithmetic computation over multiple tensors,
 which can be accelerated by multicore devices such as GPU or TPU. 
-Distribtue training takes advantage of multiple accelerator devices to
+Distributed training takes advantage of multiple accelerator devices.
 The total training workload is divided into smaller, independent workloads
 so they can be assigned into multiple accelerator devices and
 processed simultaneously. 
-In recent years, several works proposed application of distributed
+In recent years, several works proposed the application of distributed
 deep learning in various fields.
 
-There are two approaches in distributed ML training.
-In \textit{model-parallel} approach, a large ML model is divided into 
-separate unit of computations and assigned to different accelerators. 
+There are two approaches to distributed ML training.
+In the \textit{model-parallel} approach, a large ML model is divided into 
+the separate unit of computations and assigned to different accelerators. 
 The whole model is pipelined over devices, so independent computations
 can overlap in time.
-In \textit{data-parallel} apporach, multiple instances of a small ML model
-is assigned to each devices. The total training dataset is instead
-divided into a number of smaller datasets which then assigned to each device.
-accelerators. The training proceeds by simultaneously calculating gradients
+In the \textit{data-parallel} approach, multiple instances of a small ML model
+are assigned to each device. The total training dataset is instead
+divided into several smaller datasets then assigned to each device.
+accelerator. The training proceeds by simultaneously calculating gradients
 in each accelerators. Then the gradients are averaged before being 
-applied into the model parameters.
+applied to the model parameters.
 
 Facebook's experiment \cite{facebook2018} provides empirical evidence of
-scalability of data-parallel distributed training. In the paper, 
-halving/doubling-based allreduce algorithm is used to reduce communication cost 
-of averaging gradients between the GPUs. 
-Allreduce algorithm eliminates performance bottleneck of traditional
-averaging algorithm by aggregating the average value through series of
+the scalability of data-parallel distributed training. In the paper, 
+the halving/doubling-based allreduce algorithm is used to reduce the communication 
+cost of averaging gradients between the GPUs. 
+Allreduce algorithm eliminates the performance bottleneck of the traditional
+averaging algorithm by aggregating the average value through a series of
 point-to-point communication between GPUs. 
 Experimental results of the paper show that the performance linearly
-scales from 8-GPUs to 352 GPUs, while achieving over 90\% of ideal performance.
+scales from 8-GPUs to 352 GPUs while achieving over 90\% of ideal performance.
 
 Inspired by Facebook's results, Uber Engineering developed a distributed DL
 training framework namely Horovod \cite{sergeev2018horovod}. It is published in
-2017 as a part of DL toolkit for Michelangelo, a ML-as-a-service platform.
+2017 as a part of the DL toolkit for Michelangelo, an ML-as-a-service platform.
 The main motivation of Horovod is to scale single-GPU DL model training
-into distributed model training. Similar to the Facebook's approach,
-Horovod implements allreduce algorithm in NCCL. NCCL is collective communication
+into distributed model training. Similar to Facebook's approach,
+Horovod implements an allreduce algorithm in NCCL. NCCL is a collective communication
 library from NVIDIA, which provides various performant algorithms including
-allreduce. In addition, Horovod introduces high-level API that enables
-convenient use of the distributed training.  
+allreduce. In addition, Horovod introduces a high-level API that enables
+the convenient use of distributed training.  
 
