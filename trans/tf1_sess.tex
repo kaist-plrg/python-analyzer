@@ -224,7 +224,17 @@
 % With
 \noindent
 \begin{tabular}{l}
-  \tstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+  \tstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden \ktif ~ \configproto ~ $\not\in$ ~ \smodenv ~ \ktand ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktthen \\
+  \inden\inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
+  \inden\inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+  \inden\inden\comment{Config} \\
+  \inden\inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\sess $\mapsto$ \nid] ~ \ktthen\\
+  \inden\inden\inden ([{\tt config = \nidsubs{t}.ConfigProto()} \\
+  \inden\inden\inden {\tt config.gpu\_options.allow\_growth = True} \\
+  \inden\inden\inden {\tt config.gpu\_options.visible\_device\_list = str(hvd.local\_rank())} \\
+  \inden\inden\inden\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2}), \\
+  \inden \ktelse ~ ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
 \end{tabular}\\\vpar
 
 % AsyncWith
@@ -616,6 +626,23 @@
 
 \noindent
 \typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)} 
+
+% Assign
+\noindent
+{\bf A strict form of with item}
+
+\noindent
+\begin{tabular}{l}
+  \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \ktif ~ \configproto ~ $\not\in$ ~ \smodenv ~ \ktand ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
+  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.Session} ~ \ktthen \\
+  \inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} {\tt config}\! \oassign\!{\tt config}}, \smodenv) \\
+  \inden \ktelse ~ (\texpr{\nexpr}{\smodenv}, \smodenv)\\
+\end{tabular}\\\vpar
+
+\noindent
+{\bf A general form of with item except for the strict form}
+
 % WithItem without an as phrase
 \noindent
 \begin{tabular}{l}
