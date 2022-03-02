@@ -12,16 +12,16 @@ a set of ASTs. Then the class hierarchy analyzer module
 produces a class hierarchy graph of the model package.
 The training API pattern analyzer module receives the AST set and
 the class hierarchy graph, identified the training code AST and
-its tranining API pattern. The AST transformer module
-transforms the tranining code AST according to the transformation rule.
-The transformed traning code AST is printed as a Python code in the
+its training API pattern. The AST transformer module
+transforms the training code AST according to the transformation rule.
+The transformed training code AST is printed as a Python code in the
 AST beautifier module, to be merged with the original model package
 and become the transformed model package.
 
 \subsection{Training API Pattern Analyzer}
 
 The training API pattern analyzer module implements the training API
-patterns and the training code categorization into the tranining API categories.
+patterns and the training code categorization into the training API categories.
 First, the code patterns of the traninig API patterns are implemented
 in terms of pattern matching expressions.
 
