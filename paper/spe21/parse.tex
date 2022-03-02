@@ -1,12 +1,12 @@
 \section{Python Abstract Syntax and Parser}\label{sec:pysyn}
 \subsection{Python Abstract Syntax}
 
-We first define the abstract syntax for Python programming language.
+We first define the abstract syntax for the Python programming language.
 The syntax of Python is described in the Python Language Reference \cite{pythonref}.
-The reference provides a full grammar specification based on the extended PEG,
-and detailed explanation of syntatic components in each section.
+The reference provides a full grammar specification based on the extended PEG
+and a detailed explanation of syntactic components in each section.
 We manually examined the grammar and the details
-to define the Python abstract sytax.
+to define the Python abstract syntax.
 The syntax is composed of three syntactic components: expressions, statements,
 and top-level components.
 
@@ -66,54 +66,54 @@ and top-level components.
   \ncomplex & $\in$ & $\mathbb{C}$ \\
 \end{tabular}
 
-Expressions are parts of the code that evaluates to a value.
+Expressions are parts of the code that evaluates a value.
 Python has 5 kinds of primitive values, 
-which are numbers, strings, booleans, the value {\itshape None} and {\itshape Ellipsis}.
-The value None is used to denote a undefined value,
+which are numbers, strings, booleans, the value {\itshape None}, and {\itshape Ellipsis}.
+The value None is used to denote an undefined value,
 similar to the value {\itshape null} in Java.
 The value Ellipsis corresponds to the notation ``...",
-which can be used as an special placeholder meaning expansion of the sequence. 
-Python has composite types of tuple, list, set, map, and custom classes.
+which can be used as a special placeholder meaning expansion of the sequence. 
+Python has composite types of a tuple, list, set, map, and custom classes.
 The expression syntax defines ways to build up values
 and complex expressions such as operators, comprehension, and function calls. 
 
 Statements are parts of the code that changes the program state,
 such as variable binding or control flow. 
 Python statements are categorized into 
-simple statements which denote a single state changing step, 
-or compound statements which are composed of multiple statements.
+simple statements which denote a single state-changing step, 
+or compound statements that are composed of multiple statements.
 
 Simple statements include assignment statements and import statements.
 Assignment statements are used to declare a new variable and its value
 or update a variable value.
 Import statements are used to specify a module, load it
-and get definitions of the module into current namespace.
+and get definitions of the module into the current namespace.
 In import statements, each target module and its aliased name is represented
-as alias.   
-Note that procedure call is a special case of expression statements,
+as an alias.   
+Note that the procedure call is a special case of expression statements,
 where the expression is a function call.
 
 Compound statements include conditional statements, loop statements,
 and definitions for functions and classes.
-Additionally, the with statement is an special kind of compound statement.
+Additionally, the with statement is a special kind of compound statement.
 With statement is identical to the assignment statement 
 in a way that it binds an expression to a name, 
 but the statement additionally adds implicit calls
 to the object's methods related to initialization and destruction.
-Similar to the alias in import statement,
-with statements use WithItem to represent then ame and expression.
+Similar to the alias in an {\tt import} statement,
+with statements use WithItem to represent then name and expression.
 
-Top-level components are representation of the program
-in different execution environment of the Python interpreter.
+Top-level components are the representation of the program
+in the different execution environments of the Python interpreter.
 For example, a module represents a Python code file, composed of
-multiple definitions speicified of statements. 
-The full Python abstract syntax is attched in the supplementary material.
+multiple definitions specified by statements. 
+The full Python abstract syntax is attached in the supplementary material.
 
 \subsection{Parser Implementation}
 
-The section 10 of the Python language reference\cite{pythonref}
+Section 10 of the Python language reference\cite{pythonref}
 provides a full Python grammar specification.
-The specification is descrbied in the mixture of 
+The specification is described in the mixture of 
 extended BNF and PEG\cite{bryan2004peg}. We implemented the Python parser
 according to the grammar specification with the Scala parser combinators 
 library\cite{scalaparser}. We utilized the library's implementation of

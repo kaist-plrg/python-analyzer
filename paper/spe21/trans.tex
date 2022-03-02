@@ -2,42 +2,42 @@
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
 In this section, we describe the transformation rule that
-transforms single-GPU based TensorFlow model codes into
-multi-GPU based TensorFlow model codes.
+transforms single-GPU-based TensorFlow model codes into
+multi-GPU-based TensorFlow model codes.
 We informally understand code transformation rule as
 conditions to select the target code parts
-and methods to actually transform them into another.
-The methods include addition, modification, and deletion of
+and methods to transform them into another.
+The methods include the addition, modification, and deletion of
 specific code parts.
 Currently, code transformation for distributed ML training
-is only described by set of examples and informal explanations.
-In order to automate the code transformation process,
+is only described by a set of examples and informal explanations.
+To automate the code transformation process,
 we need to formally define the code transformation rule
 and ways to convert the definition into software implementation.
-We propose a formal definition of code transformation rule
-for distributed ML training, and implement the automatic code transformation
+We propose a formal definition of the code transformation rule
+for distributed ML training and implement the automatic code transformation
 software based on the formal definition.
 
 Code transformation is formally defined as a pure function from AST to AST.
 We call this function a transform function.
 We may define multiple transform functions that act on different
 language constructs and use them to define other transform functions.
-For example, in order to transform a Python code into another,
+For example, to transform a Python code into another,
 we define a transform function that takes Module AST and returns Module AST.
 Inside the Module transform function definition,
-we may use Statement transform function to transform statements
+we may use the statement transform function to transform statements
 that compose the Module AST.
 
 Together with the AST parameter, transform functions take and return
 the environment parameter.
 Environment parameters are used to store specific identifiers
-and pass it to the other calls of the transform function.
-For example, statement transform function frequently use 
+and pass them to the other calls of the transform function.
+For example, the statement transform function frequently uses 
 the identifier bound to the TensorFlow module.
 The module name first appears from the import statement.
 The transform function call on the import statement stores
 the TensorFlow module name on the environment and returns it.
-Then the later function calls to other statements can
+Then the later function calls to other statements
 retrieve the TensorFlow module name from the environment parameter.
 
 % explain transform function with example
@@ -66,7 +66,7 @@ before and after the transformation.
 Informally, three kinds of transformation occur in between;
 1) import and initialize the horovod module;
 2) scale the optimizer's learning rate by {\tt hvd.size()};
-3) Wrap the optimzier with {\tt hvd.DistributedOptimizer}.
+3) Wrap the optimizer with {\tt hvd.DistributedOptimizer}.
 
 The original code parses into a module AST with a list of 2 statements,
 an import statement and an assign statement.
@@ -101,7 +101,7 @@ The figure describes how the module transform function
 is evaluated on the example module AST.
 The module transform function, $\fkmodule$
 applies statement list transform function $\fksstmt$ to its statement list.
-Then $\fksstmt$ applies the statement transform funciton $\fkstmt$
+Then $\fksstmt$ applies the statement transform function $\fkstmt$
 to each statement in the list.
 In addition, $\fksstmt$ passes the environment parameter $\sigma$
 from a $\fkstmt$ call to the next $\fkstmt$ call.
@@ -150,17 +150,17 @@ In part (a), the function first matches the input statement
 with the pattern $\kimport ~ \mul{\nalias}$.
 Transform functions use pattern matching to discriminate target ASTs
 by their syntactic structure.
-Part (b) specifies the pattern guard, which describes detailed condition
+Part (b) specifies the pattern guard, which describes the detailed conditions
 on the content of the input.
 The pattern guard checks if the import statement
 is importing the TensorFlow module.
-In process, the alias transform function $\fkalias$ is applied on the
+In the process, the alias transform function $\fkalias$ is applied on the
 {\tt tensorflow as tf}.
 Note that $\fkalias$ also stores the module name {\tt tf}
 in the environment parameter as a form of mapping;
-later calls on transform function can retreive the
+later calls on the transform function can retrieve the
 TensorFlow module name from the returned environment, $\smodenvsubs{1}$.
-Finally, the part (c) constructs the output statements
+Finally, part (c) constructs the output statements
 and returns it with $\smodenvsubs{1}$.
 
 % TODO typesetting this!!!!!
@@ -200,9 +200,9 @@ and returns it with $\smodenvsubs{1}$.
 
 The second $\fkstmt$ receives the statement
 {\tt optimizer = tf.keras.optimizers.Adam(lr)} as an input.
-The part (a) pattern matches the input to the assign statement pattern
-with right-hand side of function call expression.
-The part (b) is a pattern guard that checks if
+Part (a) pattern matches the input to the assign statement pattern
+with the right-hand side of the function call expression.
+Part (b) is a pattern guard that checks if
 the function call is {\tt tf.keras.optimizers.Adam}.
 Note that the guard refers to the environment parameter
 to check the TensorFlow module identifier.
@@ -211,7 +211,7 @@ the environment parameter stores the TensorFlow module identifier {\tt tf},
 so the second $\fkstmt$ call can use the information to
 check if the function call is indeed a constructor for TensorFlow
 optimizer object.
-In the part (c), the output statement is returned.
+In part (c), the output statement is returned.
 As specified in the transform function definition, 
 the first argument expression is multiplied by {\tt hvd.size()}.
 
@@ -230,7 +230,7 @@ Finally, the output statement lists are concatenated as specified in the
 $\fksstmt$, and the transformed module AST is constructed.
 
 As described in the example, the transform functions are defined for
-each language constructs. The functions are described in terms of
+each language construct. The functions are described in terms of
 pattern matching against the input AST; the matching patterns and 
 pattern guards select the target AST to transform, and
 the output AST is constructed with the matched variables.
@@ -238,8 +238,8 @@ the output AST is constructed with the matched variables.
 Each training API category defines a corresponding transform function.
 Given a training code of the category, the corresponding module AST transform
 function is applied to the target code AST with an empty environment parameter.
-In following subsections, we describe the transform function for each
-traninig API category. The paper only explains important parts of the 
+In the following subsections, we describe the transform function for each
+training API category. The paper only explains important parts of the 
 definition; the full definition of the transform functions can be found
 in the supplementary material.
 
@@ -255,10 +255,10 @@ In training codes matched in the GradientTape pattern,
 the {\tt GradientTape} instance is wrapped with
 {\tt hvd.DistributedGradientTape} function.
 The {\tt GradientTape} instances are created by {\tt with} statements
-in the training codes, which automatically invokeds initialization
+in the training codes, which automatically invokes initialization
 and destruction functions before and after the {\tt with} statement scope.
 The transform function matches the {\tt with} statement that
-creates the {\tt GradientTape} instance and insert the
+creates the {\tt GradientTape} instance and inserts the
 wrapping statement after it.
 Figure \ref{fig:trans:gtape} illustrates the transform function definition
 regarding the {\tt GradientTape} wrapping.
@@ -280,12 +280,12 @@ regarding the {\tt GradientTape} wrapping.
 
 In addition, the variable broadcast should be manually done with
 {\tt hvd.broadcast\_variables} function.
-Because the variable broadcast should done exactly once at the start of the
+Because the variable broadcast should be done exactly once at the start of the
 training, we utilize a global boolean variable {\tt hvd\_broadcast\_done}
 that tracks whether the broadcast is already performed or not.
 The variable {\tt hvd\_broadcast\_done} is declared within the Horovod
 initialization codes and initialized to {\tt False} as described in
-the figure \ref{fig:trans:gtape2}.
+figure \ref{fig:trans:gtape2}.
 
 \begin{figure}[h]
 \begin{tabular}{l}
@@ -307,7 +307,7 @@ the figure \ref{fig:trans:gtape2}.
 
 The statements that perform the variable broadcast are inserted after
 the {\tt Optimizer} instance applies the training gradient.
-Corresponding transform function is described in figure \ref{fig:trans:gtape3}.
+The corresponding transform function is described in figure \ref{fig:trans:gtape3}.
 The inserted codes check and modify the boolean value of 
 {\tt hvd\_broadcast\_done} to ensure that the variable broadcast
 happens only once.
@@ -340,10 +340,10 @@ happens only once.
  
 \subsubsection{Transform function for Keras pattern}
 
-In the tranining codes matching the Keras pattern,
+In the training codes matching the Keras pattern,
 the {\tt Model} instances are created and used to invoke the
 training process. The transform function first stores the {\tt Model} instance
-variable name in the environment as described in the figure \ref{fig:trans:ker}.
+variable name in the environment as described in figure \ref{fig:trans:ker}.
 The AST pattern guard tests that the given function expression is a subclass
 of {\tt tensorflow.keras.Model}, which corresponds to the class constructors
 of subclass instances of {\tt tensorflow.keras.Model} class.
@@ -358,13 +358,13 @@ of subclass instances of {\tt tensorflow.keras.Model} class.
   \label{fig:trans:ker}
 \end{figure}
 
-The tranining process is invoked with {\tt fit} method of the {\tt Model} instance.
+The training process is invoked with {\tt fit} method of the {\tt Model} instance.
 For the training codes matching the Keras pattern, the variable broadcast should
 be done by adding the {\tt hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)}
 callback to the {\tt fit} method argument.
 The transform function utilizes the environment parameter to identify the {\tt fit}
 method call and insert the callback object to the argument.
-The figure \ref{fig:trans:ker2} describes the transform function that
+Figure \ref{fig:trans:ker2} describes the transform function that
 adds the callback to the {\tt fit} function call expression.
 
 \begin{figure}[h]
@@ -394,7 +394,7 @@ The Keras pattern transform function also modifies the {\tt Optimizer} instance.
 First, the learning rate parameter of the instance should be scaled by
 {\tt hvd.size()}. Second, the instance should be wrapped with
 {\tt hvd.Distributed Optimizer} function, similar to the GradientTape pattern's case.
-The firgure \ref{fig:trans:ker3} describes the transform function modifying
+Figure \ref{fig:trans:ker3} describes the transform function modifying
 the {\tt Optimizer} instance.
 
 \begin{figure}[h]

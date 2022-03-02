@@ -13,31 +13,31 @@ data set. Inside the {\tt for} loop,
 the code uses the {\tt GradientTape} instance to record the loss computation,
 then uses the {\tt gradient} method and the {\tt apply\_gradient} method to
 back-propagate the gradient to the model parameters.
-In contrast, line 13 and 14 uses high-level APIs to automatically
+In contrast, lines 13 and 14 use high-level APIs to automatically
 invoke the model training process by two methods calls, {\tt compile} and
-{\tt fit}. The {\tt fit} method repeats a same process with the {\tt for}
+{\tt fit}. The {\tt fit} method repeats the same process with the {\tt for}
 loop in line 2; it takes each training data from the set and
 applies the gradient to the model parameter.
 
-While both code fragments train the model in a same way, 
+While both code fragments train the model in the same way, 
 the code structures significantly differ.
 Using high-level APIs simplifies the program,
 reducing additional codes that compute the prediction loss and apply gradients.
-Low-level APIs are verbose, however, developer can fully control
+Low-level APIs are verbose, however, developers can fully control
 the training process.
 Developers can freely choose from different training code styles to
 take advantage of each way.
 
 To correctly transform the training codes,
-the transform software must transform different training APIs
+the transformation software must transform different training APIs
 based on different transformation rules. 
-We implemented a \textit{API pattern analysis} that identifies
+We implemented an \textit{API pattern analysis} that identifies
 the TensorFlow API usage with \textit{training API patterns} 
 Each training API pattern is a set of code patterns for AST,
 and code patterns are ASTs with
 special holes that are later matched with concrete value.
 When a code pattern is matched against a code AST,
-it succeeds with the holes matched with the AST subnodes,
+it succeeds with the holes matched with the AST subnodes
 or fails to match the given AST.
 The software matches a training API pattern to the target training code,
 and if the match succeeds, the corresponding transformation rule
@@ -45,12 +45,12 @@ is used to transform the training code.
 
 We manually inspected multiple TensorFlow training codes to identify
 common patterns of training-related API usage. 
-In this end, we defined four training API patterns
+To this end, we defined four training API patterns
 that effectively identify kinds of training APIs usage in the target code.
-The figure \ref{tab:patterns} briefly explains each training API pattern.
-Note that each pattern are assigned with different TensorFlow versions.
+Figure \ref{tab:patterns} briefly explains each training API pattern.
+Note that each pattern is assigned with different TensorFlow versions.
 The transformation software also supports legacy training codes
-that use compatibility module for TensorFlow version 1.x.
+that use compatibility modules for TensorFlow version 1.x.
 
 \begin{figure}
   \centering
@@ -71,7 +71,7 @@ that use compatibility module for TensorFlow version 1.x.
   \label{tab:patterns}
 \end{figure}
 
-We now explain each traing API pattern with concrete code examples.
+We now explain each training API pattern with concrete code examples.
 
 \textbf{Session Pattern} 
 The {\tt tf.compat.v1.train.Session} instance provides methods to
@@ -115,8 +115,8 @@ Unlike in TensorFlow 1.x, developers do not need to explicitly invoke the comput
 with {\tt Session} or {\tt MonitoredSession} instances.
 Instead, TensorFlow 2.x training codes use {\tt tf.GradientTape} instances
 to record the forward pass operation and automatically compute the gradient.
-The GradientTape pattern matches the call expressions in {\tt with} statements
-that constructs {\tt GradientTape} instances.
+The GradientTape pattern matches the call expressions {\tt with} statements
+that construct {\tt GradientTape} instances.
 
 \begin{figure}
   \begin{lstlisting}[language=Python]
@@ -135,12 +135,12 @@ optimizer.apply_gradients(zip(gradients, trainable_variables))
 Another common pattern to define the training process is to define
 the model with {\tt tf.keras} API and automatically train the model
 instance with {\tt fit} method.
-In this methods, the models are subclasses of {\tt tf.keras.models.Model} class
+In this method, the models are subclasses of {\tt tf.keras.models.Model} class
 and inherits training-related method.
 The Keras pattern matches the call expressions that is invoking the {\tt fit}
 method of the subclass instances of {\tt tf.keras.models.Model}
 In the pattern matching process, the API pattern analyzer
-make use of the CHG to identify subclass relationship. 
+makes use of the CHG to identify subclass relationships. 
 
 \begin{figure}
   \begin{lstlisting}[language=Python]
@@ -158,7 +158,7 @@ model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
 \subsection{Implementation}
 
 We implemented the training API using pattern matching.
-The training API patterns are implemented in forms of pattern matching
+The training API patterns are implemented in the forms of pattern matching
 on the AST object. The ASTs are implemented as \textit{case classes}.
 Case classes in Scala are equipped with destructors(the method {\tt unapply}),
 so they can be used as patterns. 
