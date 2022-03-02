@@ -1,4 +1,4 @@
-\subsection{Rule: TensorFlow 1.x Session API Pattern}
+\subsection{Rule: TensorFlow 1.x Monitored Session API Pattern}
 \subsubsection{Transformation Rules}
 \noindent
 \typdesc{\fkmodule & : & \dmodule ~ $\rightarrow$ ~ \dmodule}
@@ -229,7 +229,7 @@
   \inden\inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
   \inden\inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
   \inden\inden\comment{Config} \\
-  \inden\inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\sess $\mapsto$ \nid] ~ \ktthen\\
+  \inden\inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\msess $\mapsto$ \nid] ~ \ktthen\\
   \inden\inden\inden ([{\tt config = \nidsubs{t}.ConfigProto()} \\
   \inden\inden\inden {\tt config.gpu\_options.allow\_growth = True} \\
   \inden\inden\inden {\tt config.gpu\_options.visible\_device\_list = str(hvd.local\_rank())} \\
@@ -339,19 +339,7 @@
 % ExprStmt
 \noindent
 \begin{tabular}{l}
-  \tstmt{\nexpr}{\smodenv} = \\
-  \inden \comment{Variable Broadcasting} \\
-  % variable broadcasting in session
-  \inden \ktif ~ \smodenv(\sess) ~ \kteq ~ \nidsubs{s} ~ \ktand ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
-  \inden\inden \nexpr ~ \kteq ~ {\tt \nidsubs{s}.run(\nidsubs{t}.global\_variables\_initializer())} ~ \ktthen \\
-  \inden\inden\inden ([\nexpr, \\
-  \inden\inden\inden {\tt \nidsubs{s}.run(hvd.broadcast\_global\_variables(root\_rank=0))}], \smodenv)\\
-  % variable broadcasting outside session
-  \inden \ktelif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
-  \inden\inden \nexpr ~ \kteq ~ {\tt \nidsubs{t}.global\_variables\_initializer().run()} ~ \ktthen \\
-  \inden\inden\inden ([\nexpr, \\
-  \inden\inden\inden {\tt hvd.broadcast\_global\_variables(root\_rank=0).run()}], \smodenv)\\
-  \inden \ktelse ~ ([\texpr{\nexpr}{\smodenv}], \smodenv)
+  \tstmt{\nexpr}{\smodenv} = ([\texpr{\nexpr}{\smodenv}], \smodenv)\\
 \end{tabular}\\\vpar
 
 % Pass
@@ -500,7 +488,13 @@
 \noindent
 \begin{tabular}{l}
   \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \texpr{\nexprsubs{1}}{\smodenv} \sparen{\texpr{\nexprsubs{11}}{\smodenv}  ... \texpr{\nexprsubs{1n}}{\smodenv} \\
+  \inden \ktif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.StopAtStepHook} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt last\_step} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt // hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} {\tt // hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
+  \inden \ktelse ~ \texpr{\nexprsubs{1}}{\smodenv} \sparen{\texpr{\nexprsubs{11}}{\smodenv}  ... \texpr{\nexprsubs{1n}}{\smodenv} \\
   \inden\inden \op{(\nidsubs{1} \oassign)} \texpr{\nexprsubs{21}}{\smodenv} ... \op{(\nidsubs{k} \oassign)} \texpr{\nexprsubs{2k}}{\smodenv}}\\
 \end{tabular}\\\vpar
 
@@ -634,9 +628,9 @@
 \noindent
 \begin{tabular}{l}
   \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \ktif ~ \configproto ~ $\not\in$ ~ \smodenv ~ \ktand ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
-  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.Session} ~ \ktthen \\
-  \inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} {\tt config}\! \oassign\!{\tt config}}, \\
+  \inden \ktif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
+  \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.MonitoredTrainingSession} ~ \ktthen \\
+  \inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \\ %TODO
   \inden\inden\inden\inden \smodenv[\sess $\mapsto$ \kas]) \\
   \inden \ktelse ~ (\texpr{\nexpr}{\smodenv}, \smodenv)\\
 \end{tabular}\\\vpar
