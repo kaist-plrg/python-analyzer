@@ -1,6 +1,6 @@
 [submodule "tensorflow-models"]
 	path = tensorflow-models
-	url = https://github.com/xjayleex/Tensorflow2Horovod.git
+	url = https://github.com/yusungsim/Tensorflow2Horovod.git
 [submodule "py-ast/ast2jsoncustom"]
 	path = py-ast/ast2jsoncustom
 	url = git@github.com:yusungsim/ast2json.git
