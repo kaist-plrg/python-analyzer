@@ -628,10 +628,28 @@
 \noindent
 \begin{tabular}{l}
   \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \comment{MonitoredSession} \\
+  % monitored session
   \inden \ktif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
   \inden\inden \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.MonitoredTrainingSession} ~ \ktthen \\
-  \inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \\ %TODO
-  \inden\inden\inden\inden \smodenv[\sess $\mapsto$ \kas]) \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden \ktif ~ \configproto $\not\in$ \smodenv ~ \ktthen\\
+  \inden\inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
+  \inden\inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
+  \inden\inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} {\tt config \!\oassign\!config}}, \\
+  \inden\inden\inden\inden\inden \smodenv[\msess $\mapsto$ \kas]) \\
+  \inden\inden\inden \ktelse \\
+  \inden\inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
+  \inden\inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
+  \inden\inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \smodenv[\msess $\mapsto$ \kas]) \\
+  \inden\inden \ktelse \\
+  \inden\inden\inden \ktif ~ \configproto $\not\in$ \smodenv ~ \ktthen\\
+  \inden\inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ...  \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden\inden\inden {\tt hooks \!\oassign\![hvd.BroadcastGlobalVariablesHook(0)]} {\tt config \!\oassign\!config}}, \\
+  \inden\inden\inden\inden\inden \smodenv[\msess $\mapsto$ \kas]) \\
+  \inden\inden\inden \ktelse \\
+  \inden\inden\inden\inden (\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} \\
+  \inden\inden\inden\inden\inden {\tt hooks \!\oassign\![hvd.BroadcastGlobalVariablesHook(0)]}}, \smodenv[\msess $\mapsto$ \kas]) \\
   \inden \ktelse ~ (\texpr{\nexpr}{\smodenv}, \smodenv)\\
 \end{tabular}\\\vpar
 
