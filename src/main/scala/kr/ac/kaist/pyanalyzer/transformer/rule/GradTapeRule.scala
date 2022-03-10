@@ -249,8 +249,7 @@ trait GradTapeRule extends MainScriptRule {
     // strict assign
     "assign-optimizer-some" -> (names => {
         val name = names(0)
-        s"""global hvd_broadcast_done
-           |if not hvd_broadcast_done:
+        s"""if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
            |    [x[1] for x in ${name}],
            |    root_rank=0
@@ -260,8 +259,7 @@ trait GradTapeRule extends MainScriptRule {
     // strict assign
     "assign-optimizer-none" -> (names => { 
         val name = names(0)
-        s"""global hvd_broadcast_done
-           |if not hvd_broadcast_done:
+        s"""if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
            |    [x[1] for x in ${name}],
            |    root_rank=0
@@ -285,8 +283,7 @@ trait GradTapeRule extends MainScriptRule {
     "expr-optimizer-some" -> (names => {
         val idz = names(0)
         val idt = names(1)
-        s"""global hvd_broadcast_done
-           |if not hvd_broadcast_done:
+        s"""if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
            |    [x[1] for x in ${idz}],
            |    root_rank=0
@@ -301,8 +298,7 @@ trait GradTapeRule extends MainScriptRule {
     "expr-optimizer-none" -> (names => { 
         val idz = names(0)
         val idt = names(1)
-        s"""global hvd_broadcast_done
-           |if not hvd_broadcast_done:
+        s"""if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
            |    [x[1] for x in ${idz}],
            |    root_rank=0

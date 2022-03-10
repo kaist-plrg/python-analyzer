@@ -24,7 +24,6 @@ def training_step(images, labels, first_batch, ):
   grads = tape.gradient(loss_value, mnist_model.trainable_variables, )
   id_new = zip(grads, mnist_model.trainable_variables, )
   opt.apply_gradients(id_new, )
-  global hvd_broadcast_done
   if not hvd_broadcast_done:
     hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
     hvd.broadcast_variables(opt.variables(), root_rank=0, )

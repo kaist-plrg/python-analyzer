@@ -44,12 +44,12 @@ object GenTest {
       if (TUTO_MAINSCRIPTS_MAP contains exDirName)
         tutoMainscriptOf(exDirName).foreach{ ms =>
           val additionalName = ms.dropRight(3).replace("_", "-")
-          f(s"TUTO1-$exDirName-$additionalName", s"$exDir/$ms")
+          f(s"TUTO1-$exDirName-$additionalName", s"$exDir/org/$ms")
         }
 
       // normal tutorial example directory
       else if (tutoModelPattern matches exDirName)
-        f(s"TUTO1-$exDirName", s"$exDir")
+        f(s"TUTO1-$exDirName", s"$exDir/org")
     }
 
     // tutorial example 2

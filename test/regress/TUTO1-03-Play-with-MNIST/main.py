@@ -32,7 +32,6 @@ for (step, (x, y)) in enumerate(db, ):
   grads = tape.gradient(loss, network.trainable_variables, )
   id_new = zip(grads, network.trainable_variables, )
   optimizer.apply_gradients(id_new, )
-  global hvd_broadcast_done
   if not hvd_broadcast_done:
     hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
     hvd.broadcast_variables(optimizer.variables(), root_rank=0, )

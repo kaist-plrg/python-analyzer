@@ -96,7 +96,6 @@ def main():
     grads = tape.gradient(g_loss, generator.trainable_variables, )
     id_new = zip(grads, generator.trainable_variables, )
     g_optimizer.apply_gradients(id_new, )
-    global hvd_broadcast_done
     if not hvd_broadcast_done:
       hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
       hvd.broadcast_variables(g_optimizer.variables(), root_rank=0, )

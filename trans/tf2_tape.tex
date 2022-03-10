@@ -79,7 +79,6 @@
   \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
   \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{2i},\\
   \inden\inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
   \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
@@ -87,7 +86,6 @@
   \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
   \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
   \inden\inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm,\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
   \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
@@ -332,7 +330,6 @@
   \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
   \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{2i},\\
   \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
   \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
@@ -340,7 +337,6 @@
   \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
   \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
   \inden\inden\inden \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
   \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
   \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
