@@ -63,6 +63,7 @@ package object transformer {
   val WRITE_METHOD = List(
     "write", "summary", "save_weights", "load_weights", "save"
   )
+  val KERAS_FIT_METHOD = List("fit", "fit_generator")
 
   private val NODES = OPTIMIZER ++ OPTIMIZER_TF_V1 ++ MODEL ++
       LEARNING_RATE_SCHEDULER ++ LEARNING_RATE_SCHEDULER_TF_V1

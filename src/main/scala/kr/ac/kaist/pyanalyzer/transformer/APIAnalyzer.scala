@@ -97,10 +97,13 @@ object APIAnalyzer {
           api = GradTape
 
         // Keras API indicator
-        case Call(Attribute(EName(model), Id("fit")), _, _)
-        if (outerEnv ++ env).get(model) contains ValueSummary(model.name, "model") =>
+        case Call(Attribute(EName(model), method), _, _)
+          if KERAS_FIT_METHOD.contains(method.name)
+            && (outerEnv ++ env).get(model).contains(ValueSummary(model.name, "model")) =>
+        {
           if (!(api ⊑ Keras)) throw APIException
           api = Keras
+        }
 
         case Call(expr1, _, _)
         if isSubclass(expr1, "tensorflow.compat.v1.app.run") ||
