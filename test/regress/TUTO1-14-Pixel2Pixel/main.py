@@ -126,6 +126,7 @@ def main():
       discriminator_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables, )
       id_new = zip(discriminator_gradients, discriminator.trainable_variables, )
       d_optimizer.apply_gradients(id_new, )
+      global hvd_broadcast_done
       if not hvd_broadcast_done:
         hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
         hvd.broadcast_variables(d_optimizer.variables(), root_rank=0, )

@@ -20,6 +20,7 @@ object Transformer extends Transformer {
   def apply(module: Module, order: ClassOrder, tl: APIType): Module = {
     // transform
     implicit val env = Env(classOrder=order)
+    implicit val isTopLevel = true
     val (newModule, lw) = tl match {
       case Sess => SessRule(module)
       case MonSess => MonSessRule(module)

@@ -7,17 +7,14 @@ import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object SessRule extends SessRule {
-  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
-    val (stmts, _, lw) = transform(module.body)
-    (module.copy(body=stmts), lw)
-  }
-}
+object SessRule extends SessRule
 
 // Transform rule for main module of Session model
 trait SessRule extends TFv1MainScriptRule {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     case ExprStmt(
       Call(
@@ -40,7 +37,7 @@ trait SessRule extends TFv1MainScriptRule {
           (stmt :: getStmts("broadcast-outside-sess"), env)
     case WithStmt(ty, items, doStmt) if !env.contains("config_proto") =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv, isTopLevel)
       val diffEnv = tempEnv \ env
       diffEnv.get("session") match {
         case Some(id) if diffEnv.size == 1 =>

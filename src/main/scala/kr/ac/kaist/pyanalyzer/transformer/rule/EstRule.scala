@@ -7,17 +7,14 @@ import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object EstRule extends EstRule {
-  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
-    val (stmts, _, lw) = transform(module.body)
-    (module.copy(body=stmts), lw)
-  }
-}
+object EstRule extends EstRule
 
 // Transform rule for main module of Estimator model
 trait EstRule extends TFv1MainScriptRule {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))

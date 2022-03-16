@@ -7,21 +7,18 @@ import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object MonSessRule extends MonSessRule {
-  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
-    val (stmts, _, lw) = transform(module.body)
-    (module.copy(body=stmts), lw)
-  }
-}
+object MonSessRule extends MonSessRule
 
 // Transform rule for main module of MonitoredSession model
 trait MonSessRule extends TFv1MainScriptRule {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     case WithStmt(ty, items, doStmt) if !env.contains("config_proto") =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv, isTopLevel)
       val diffEnv = tempEnv \ env
       diffEnv.get("monitored_session") match {
         case Some(id) if diffEnv.size == 1 =>

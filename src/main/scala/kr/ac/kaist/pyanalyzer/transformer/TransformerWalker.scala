@@ -3,26 +3,38 @@ package kr.ac.kaist.pyanalyzer.transformer
 import kr.ac.kaist.pyanalyzer.parser.ast._
 
 trait TransformerWalker {
+  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
+    implicit val isTopLevel = true
+    val (stmts, _, lw) = transform(module.body)
+    (module.copy(body=stmts), lw)
+  }
+
   /////////////////////////////////////////
   // transformer for statements
   /////////////////////////////////////////
-  def transform(stmts: List[Stmt])(
-    implicit env: Env
+  def transform(stmts: List[Stmt])
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) =
     stmts.foldLeft((List[Stmt](), env, List[Warning]())) {
       case ((stmtList, e, lw), stmt) =>
-        val (newStmtList, newEnv, newlw) = transform(stmt)(e)
+        val (newStmtList, newEnv, newlw) = transform(stmt)(e, isTopLevel)
         (stmtList ++ newStmtList, newEnv, lw ++ newlw)
     }
 
-  def transform(stmt: Stmt)(
-    implicit env: Env
+  def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     // function def
     case FunDef(decos, name, args, retTy, tyExpr, body) =>
+      implicit val isTopLevel = false
       val (newBody, _, lw) = transform(body)
       (FunDef(decos, name, args, retTy, tyExpr, newBody), env, lw)
     case AsyncFunDef(decos, name, args, retTy, tyExpr, body) =>
+      implicit val isTopLevel = false
       val (newBody, _, lw) = transform(body)
       (AsyncFunDef(decos, name, args, retTy, tyExpr, newBody), env, lw)
 
@@ -76,11 +88,11 @@ trait TransformerWalker {
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, interEnv) = transformWithList(items)
-      val (newStmts, newEnv, newWarning) = transform(doStmt)(interEnv)
+      val (newStmts, newEnv, newWarning) = transform(doStmt)(interEnv, isTopLevel)
       (WithStmt(ty, newItems, newStmts), newEnv, newWarning)
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, interEnv) = transformWithList(items)
-      val (newStmts, newEnv, newWarning) = transform(doStmt)(interEnv)
+      val (newStmts, newEnv, newWarning) = transform(doStmt)(interEnv, isTopLevel)
       (WithStmt(ty, newItems, newStmts), newEnv, newWarning)
 
     /////////////////////////////////////////////////////////////////
@@ -227,6 +239,8 @@ trait TransformerWalker {
   ): (ExcHandler, List[Warning]) =
     handler match {
       case ExcHandler(except, idOpt, body) =>
+        // TODO: pass isTopLevel argument
+        implicit val isTopLevel = false
         val (newHandler, _, lw) = transform(body)
         (ExcHandler(except, idOpt, newHandler), lw)
     }
@@ -257,6 +271,8 @@ trait TransformerWalker {
     implicit env: Env
   ): (MatchCase, List[Warning]) = mc match {
     case MatchCase(pat, cond, body) =>
+      // TODO: pass isTopLevel argument
+      implicit val isTopLevel = false
       val (newBody, _, lw) = transform(body)
       (MatchCase(transform(pat), cond.map(transform), newBody), lw)
   }

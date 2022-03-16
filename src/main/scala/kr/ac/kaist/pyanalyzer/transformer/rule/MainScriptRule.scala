@@ -8,8 +8,10 @@ import kr.ac.kaist.pyanalyzer.util.Useful._
 
 // Transform rule for main module
 trait MainScriptRule extends Transformer {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     //// AssignStmt with CallExpr 
     case stmt @ AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
@@ -112,7 +114,7 @@ trait MainScriptRule extends Transformer {
     /// default to super
     case _ =>
       val newEnv = env.copy(classOrder = transferStmt(env.getClassOrder)(stmt))
-      super.transform(stmt)(newEnv)
+      super.transform(stmt)(newEnv, isTopLevel)
   }
 
   override def transform(expr: Expr)(implicit env: Env): Expr = expr match {
@@ -170,8 +172,10 @@ trait MainScriptRule extends Transformer {
 trait TFv1MainScriptRule extends MainScriptRule {
 
   // TODO: check
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean = true
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     case AssignStmt(List(EName(idr)), Call(expr1, exprs, kwds), ty) =>
       val targets = List(EName(idr))

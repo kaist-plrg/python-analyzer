@@ -112,6 +112,7 @@ def train(train_datasetA, train_datasetB, epochs, lsgan=True, cyc_lambda=10, ):
     genA2B_optimizer.apply_gradients(zip(genA2B_gradients, genA2B.trainable_variables, ), )
     id_new = zip(genB2A_gradients, genB2A.trainable_variables, )
     genB2A_optimizer.apply_gradients(id_new, )
+    global hvd_broadcast_done
     if not hvd_broadcast_done:
       hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
       hvd.broadcast_variables(genB2A_optimizer.variables(), root_rank=0, )

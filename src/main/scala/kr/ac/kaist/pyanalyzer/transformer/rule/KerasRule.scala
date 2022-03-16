@@ -7,17 +7,14 @@ import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object KerasRule extends KerasRule {
-  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
-    val (stmts, _, lw) = transform(module.body)
-    (module.copy(body=stmts), lw)
-  }
-}
+object KerasRule extends KerasRule
 
 // Transform rule for main module of keras model
 trait KerasRule extends MainScriptRule {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     /////////////////////////////////////////////////////////////////
     // importstmt

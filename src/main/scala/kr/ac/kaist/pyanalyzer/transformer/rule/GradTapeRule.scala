@@ -7,17 +7,14 @@ import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
 import scala.Console._
 
-object GradTapeRule extends GradTapeRule {
-  def apply(module: Module)(implicit env: Env = Env()): (Module, List[Warning]) = {
-    val (stmts, _, lw) = transform(module.body)
-    (module.copy(body=stmts), lw)
-  }
-}
+object GradTapeRule extends GradTapeRule
 
 // Transform rule for main module of GradientTape model
 trait GradTapeRule extends MainScriptRule {
-  override def transform(stmt: Stmt)(
-    implicit env: Env
+  override def transform(stmt: Stmt)
+  (implicit
+    env: Env,
+    isTopLevel: Boolean
   ): (List[Stmt], Env, List[Warning]) = stmt match {
     /////////////////////////////////////////////////////////////////
     //// strict form of assignment
@@ -109,7 +106,7 @@ trait GradTapeRule extends MainScriptRule {
     /////////////////////////////////////////////////////////////////
     case WithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv, isTopLevel)
       val diffEnv = tempEnv \ env
       // get "gradient_tape" id
       diffEnv.get("gradient_tape") match {
@@ -127,7 +124,7 @@ trait GradTapeRule extends MainScriptRule {
     /////////////////////////////////////////////////////////////////
     case AsyncWithStmt(ty, items, doStmt) =>
       val (newItems, tempEnv) = transformWithList(items)
-      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv)
+      val (newStmts, newEnv, lw) = transform(doStmt)(tempEnv, isTopLevel)
       val diffEnv = tempEnv \ env
       // get "gradient_tap" id
       diffEnv.get("gradient_tape") match {
@@ -173,7 +170,10 @@ trait GradTapeRule extends MainScriptRule {
               val newStmts = List(
                 AssignStmt(List(EName(idz)), expr2i),
                 ExprStmt(Call(expr1, exprs, newkwds)),
-              ) ++ getStmts("expr-optimizer-some", idz, idt)
+              ) ++ (
+                if (isTopLevel) getStmts("top-level-expr-optimizer-some", idz, idt)
+                else getStmts("expr-optimizer-some", idz, idt)
+              )
 
               (newStmts, env)
             // not found
@@ -181,7 +181,10 @@ trait GradTapeRule extends MainScriptRule {
               val newStmts = List(
                 AssignStmt(List(EName(idz)), exprs.head),
                 ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
-              ) ++ getStmts("expr-optimizer-none", idz, idt)
+              ) ++ (
+                if (isTopLevel) getStmts("top-level-expr-optimizer-none", idz, idt)
+                else getStmts("expr-optimizer-none", idz, idt)
+              )
               (newStmts, env)
           }
       // case _) other expr stmts
@@ -280,7 +283,7 @@ trait GradTapeRule extends MainScriptRule {
            |    set_visible_devices(gpus[hvd.local_rank()], 'GPU')""".stripMargin
     }),
     // expression stmt
-    "expr-optimizer-some" -> (names => {
+    "top-level-expr-optimizer-some" -> (names => {
         val idz = names(0)
         val idt = names(1)
         s"""if not hvd_broadcast_done:
@@ -295,10 +298,42 @@ trait GradTapeRule extends MainScriptRule {
            |  hvd_broadcast_done = True""".stripMargin
     }),
     // expression stmt
-    "expr-optimizer-none" -> (names => { 
+    "top-level-expr-optimizer-none" -> (names => { 
         val idz = names(0)
         val idt = names(1)
         s"""if not hvd_broadcast_done:
+           |  hvd.broadcast_variables(
+           |    [x[1] for x in ${idz}],
+           |    root_rank=0
+           |  )
+           |  hvd.broadcast_variables(
+           |    ${idt}.variables(),
+           |    root_rank=0
+           |  )
+           |  hvd_broadcast_done = True""".stripMargin
+    }),
+    // expression stmt
+    "expr-optimizer-some" -> (names => {
+        val idz = names(0)
+        val idt = names(1)
+        s"""global hvd_broadcast_done
+           |if not hvd_broadcast_done:
+           |  hvd.broadcast_variables(
+           |    [x[1] for x in ${idz}],
+           |    root_rank=0
+           |  )
+           |  hvd.broadcast_variables(
+           |    ${idt}.variables(),
+           |    root_rank=0
+           |  )
+           |  hvd_broadcast_done = True""".stripMargin
+    }),
+    // expression stmt
+    "expr-optimizer-none" -> (names => { 
+        val idz = names(0)
+        val idt = names(1)
+        s"""global hvd_broadcast_done
+           |if not hvd_broadcast_done:
            |  hvd.broadcast_variables(
            |    [x[1] for x in ${idz}],
            |    root_rank=0
