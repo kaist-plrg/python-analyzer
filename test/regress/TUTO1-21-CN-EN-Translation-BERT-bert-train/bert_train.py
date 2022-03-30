@@ -76,11 +76,10 @@ def train_step(inp, tar, ):
     loss = loss_function(tar_real, predictions, )
   tape = hvd.DistributedGradientTape(tape, )
   gradients = tape.gradient(loss, transformer.trainable_variables, )
-  id_new = zip(gradients, transformer.trainable_variables, )
-  optimizer.apply_gradients(id_new, )
+  optimizer.apply_gradients(zip(gradients, transformer.trainable_variables, ), )
   global hvd_broadcast_done
   if not hvd_broadcast_done:
-    hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+    hvd.broadcast_variables(transformer.variables, root_rank=0, )
     hvd.broadcast_variables(optimizer.variables(), root_rank=0, )
     hvd_broadcast_done = True
   train_loss(loss, )

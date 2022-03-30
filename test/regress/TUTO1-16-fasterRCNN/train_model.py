@@ -56,10 +56,9 @@ for epoch in range(100, ):
       loss_value = rpn_class_loss + rpn_bbox_loss + rcnn_class_loss + rcnn_bbox_loss
     tape = hvd.DistributedGradientTape(tape, )
     grads = tape.gradient(loss_value, model.trainable_variables, )
-    id_new = zip(grads, model.trainable_variables, )
-    optimizer.apply_gradients(id_new, )
+    optimizer.apply_gradients(zip(grads, model.trainable_variables, ), )
     if not hvd_broadcast_done:
-      hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+      hvd.broadcast_variables(model.variables, root_rank=0, )
       hvd.broadcast_variables(optimizer.variables(), root_rank=0, )
       hvd_broadcast_done = True
     loss_history.append(loss_value.numpy(), )

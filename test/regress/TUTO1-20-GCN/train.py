@@ -67,10 +67,9 @@ for epoch in range(args.epochs, ):
     (loss, acc) = model((features, train_label, train_mask, support), )
   tape = hvd.DistributedGradientTape(tape, )
   grads = tape.gradient(loss, model.trainable_variables, )
-  id_new = zip(grads, model.trainable_variables, )
-  optimizer.apply_gradients(id_new, )
+  optimizer.apply_gradients(zip(grads, model.trainable_variables, ), )
   if not hvd_broadcast_done:
-    hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+    hvd.broadcast_variables(model.variables, root_rank=0, )
     hvd.broadcast_variables(optimizer.variables(), root_rank=0, )
     hvd_broadcast_done = True
   (_, val_acc) = model((features, val_label, val_mask, support), training=False, )

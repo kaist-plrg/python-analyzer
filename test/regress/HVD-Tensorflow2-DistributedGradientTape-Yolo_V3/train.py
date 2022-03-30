@@ -291,11 +291,10 @@ def main(_argv, ):
         total_loss = tf.reduce_sum(pred_loss, ) + regularization_loss
       tape = hvd.DistributedGradientTape(tape, )
       grads = tape.gradient(total_loss, model.trainable_variables, )
-      id_new = zip(grads, model.trainable_variables, )
-      optimizer.apply_gradients(id_new, )
+      optimizer.apply_gradients(zip(grads, model.trainable_variables, ), )
       global hvd_broadcast_done
       if not hvd_broadcast_done:
-        hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+        hvd.broadcast_variables(model.variables, root_rank=0, )
         hvd.broadcast_variables(optimizer.variables(), root_rank=0, )
         hvd_broadcast_done = True
       logging.info("{}_train_{}, {}, {}".format(epoch, batch, total_loss.numpy(), list(map(lambda x,  : np.sum(x.numpy(), ), pred_loss, ), ), ), )

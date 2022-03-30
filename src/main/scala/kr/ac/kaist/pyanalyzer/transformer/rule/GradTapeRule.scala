@@ -35,7 +35,15 @@ trait GradTapeRule extends MainScriptRule {
         {
           val model = env.get("model") match {
             case Some(v) => v
-            case None => throw InvalidCase
+            case None =>
+              exprs.head match {
+                case Call(
+                  EName(zip),
+                  _ :: Attribute(model, Id("trainable_variables")) :: _,
+                  _
+                ) => model
+                case _ => throw InvalidCase
+              }
           }
           // find id_i "grads_and_vars"
           findKwarg(kwds, "grads_and_vars") match {
@@ -54,7 +62,15 @@ trait GradTapeRule extends MainScriptRule {
         case Attribute(EName(idt), Id("apply_gradients")) =>
           val model = env.get("model") match {
             case Some(v) => v
-            case None => throw InvalidCase
+            case None =>
+              exprs.head match {
+                case Call(
+                  EName(zip),
+                  _ :: Attribute(model, Id("trainable_variables")) :: _,
+                  _
+                ) => model
+                case _ => throw InvalidCase
+              }
           }
           // find id_i "grads_and_vars"
           findKwarg(kwds, "grads_and_vars") match {
@@ -180,7 +196,15 @@ trait GradTapeRule extends MainScriptRule {
       {
         val model = env.get("model") match {
           case Some(v) => v
-          case None => throw InvalidCase
+          case None =>
+            exprs.head match {
+              case Call(
+                EName(zip),
+                _ :: Attribute(model, Id("trainable_variables")) :: _,
+                _
+              ) => model
+              case _ => throw InvalidCase
+            }
         }
         // get "grads_and_vars" id
         findKwarg(kwds, "grads_and_vars") match {
@@ -206,7 +230,15 @@ trait GradTapeRule extends MainScriptRule {
       case Attribute(EName(idt), Id("apply_gradients")) =>
         val model = env.get("model") match {
           case Some(v) => v
-          case None => throw InvalidCase
+          case None =>
+            exprs.head match {
+              case Call(
+                EName(zip),
+                _ :: Attribute(model, Id("trainable_variables")) :: _,
+                _
+              ) => model
+              case _ => throw InvalidCase
+            }
         }
         // get "grads_and_vars" id
         findKwarg(kwds, "grads_and_vars") match {
