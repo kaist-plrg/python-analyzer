@@ -42,12 +42,34 @@ trait KerasRule extends MainScriptRule {
         case Attribute(EName(idt), Id("compile")) if env.get("model") contains idt =>
           val optim = Id("optim")
           findKwarg(kwds, "optimizer") match {
+            // optimizer given as string literal
             case Some(kwarg) if kwarg.expr == EConst(StringLiteral("adam")) =>
               val newKwarg = kwarg.copy(expr = EName(optim))
               val newkwds = replaceElement(kwds, kwarg, newKwarg)
               val newStmts =  getStmts("assign-optimizer-default-adam", optim) ++
                 ExprStmt(Call(expr1, exprs, newkwds))
               (newStmts, env)
+            // optimizer given inline
+            case Some(kwarg) => {
+              kwarg.expr match {
+                // 
+                case optimExpr @ Call(callExpr, argExprs, kwdExprs) if env.isSubclass(callExpr, OPTIMIZER) => {
+                  val lrScalingOptim: Expr => Expr = {
+                    case e @ EName(ids) if env get "lr_scheduler" contains ids => e
+                    case e => lrScaling(e)
+                  }
+                  val newOptimExpr = changeArg(optimExpr, "learning_rate", lrScalingOptim)  
+                  val newOptimAssign: Stmt = AssignStmt(List(EName(optim)), newOptimExpr, None)
+                  val newOptimWrapping: List[Stmt] = getStmts("wrapping-optim", optim)
+                  val newCompileCall = changeArg(call, "optimizer", _ => EName(optim))
+                  val newCompileStmt: Stmt = ExprStmt(newCompileCall)
+                  val newStmtList = List(newOptimAssign) ++ newOptimWrapping ++ List(newCompileStmt)
+                  (newStmtList, env)
+                }
+                // object not a optimizer object; error
+                case _ => ???
+              }
+            }
             case None if exprs.headOption contains EConst(StringLiteral("adam")) =>
               val newStmts = getStmts("assign-optimizer-default-adam", optim) ++
                 ExprStmt(Call(expr1, EName(optim) :: exprs.tail, kwds))
@@ -124,6 +146,10 @@ trait KerasRule extends MainScriptRule {
         s"""callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0)]
           |if hvd.rank() == 0:
           |  callbacks.append($existing_callbacks)""".stripMargin
+    }),
+    "wrapping-optim" -> (codes => {
+        val optim = codes(0)
+        s"""$optim = hvd.DistributedOptimizer($optim)"""
     }),
   )
 }
