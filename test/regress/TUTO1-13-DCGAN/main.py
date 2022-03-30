@@ -91,7 +91,13 @@ def main():
       d_loss = d_loss_fn(generator, discriminator, batch_z, batch_x, is_training, )
     tape = hvd.DistributedGradientTape(tape, )
     grads = tape.gradient(d_loss, discriminator.trainable_variables, )
-    d_optimizer.apply_gradients(zip(grads, discriminator.trainable_variables, ), )
+    id_new = zip(grads, discriminator.trainable_variables, )
+    d_optimizer.apply_gradients(id_new, )
+    global hvd_broadcast_done
+    if not hvd_broadcast_done:
+      hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+      hvd.broadcast_variables(d_optimizer.variables(), root_rank=0, )
+      hvd_broadcast_done = True
     with train_summary_writer.as_default():
       tf.summary.scalar("d_loss", d_loss, step=epoch, )
     with tf.GradientTape() as tape:

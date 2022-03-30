@@ -34,7 +34,9 @@ def main():
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
   (train_dataset, val_dataset) = mnist_dataset()
   model = keras.Sequential([layers.Reshape(target_shape=(28 * 28,), input_shape=(28, 28), ), layers.Dense(200, activation="relu", ), layers.Dense(200, activation="relu", ), layers.Dense(200, activation="relu", ), layers.Dense(10, )], )
-  model.compile(optimizer=optimizers.Adam(0.001, ), loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
+  optim = optimizers.Adam(0.001 * hvd.size(), )
+  optim = hvd.DistributedOptimizer(optim, )
+  model.compile(optimizer=optim, loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
   callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0, )]
   if hvd.rank() == 0:
     callbacks.append([tensorboard_callback], )

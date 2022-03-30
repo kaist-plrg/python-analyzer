@@ -122,7 +122,13 @@ def main():
         disc_loss = discriminator_loss(disc_real_output, disc_generated_output, )
       gen_tape = hvd.DistributedGradientTape(gen_tape, )
       generator_gradients = gen_tape.gradient(gen_loss, generator.trainable_variables, )
-      g_optimizer.apply_gradients(zip(generator_gradients, generator.trainable_variables, ), )
+      id_new = zip(generator_gradients, generator.trainable_variables, )
+      g_optimizer.apply_gradients(id_new, )
+      global hvd_broadcast_done
+      if not hvd_broadcast_done:
+        hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+        hvd.broadcast_variables(g_optimizer.variables(), root_rank=0, )
+        hvd_broadcast_done = True
       discriminator_gradients = disc_tape.gradient(disc_loss, discriminator.trainable_variables, )
       id_new = zip(discriminator_gradients, discriminator.trainable_variables, )
       d_optimizer.apply_gradients(id_new, )

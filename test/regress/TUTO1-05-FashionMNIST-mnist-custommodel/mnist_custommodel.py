@@ -46,7 +46,9 @@ def main():
   os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
   (train_dataset, val_dataset) = mnist_dataset()
   model = MyModel()
-  model.compile(optimizer=optimizers.Adam(0.001, ), loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
+  optim = optimizers.Adam(0.001 * hvd.size(), )
+  optim = hvd.DistributedOptimizer(optim, )
+  model.compile(optimizer=optim, loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
   model.fit(train_dataset.repeat(), epochs=30, steps_per_epoch=500 // hvd.size(), verbose=1 if hvd.rank() == 0 else 0, validation_data=val_dataset.repeat(), validation_steps=2, callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0, )], )
 if __name__ == "__main__":
   main()

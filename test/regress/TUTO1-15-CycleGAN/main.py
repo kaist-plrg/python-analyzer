@@ -106,7 +106,13 @@ def train(train_datasetA, train_datasetB, epochs, lsgan=True, cyc_lambda=10, ):
     genB2A_gradients = genB2A_tape.gradient(genB2A_loss, genB2A.trainable_variables, )
     discA_gradients = discA_tape.gradient(discA_loss, discA.trainable_variables, )
     discB_gradients = discB_tape.gradient(discB_loss, discB.trainable_variables, )
-    genA2B_optimizer.apply_gradients(zip(genA2B_gradients, genA2B.trainable_variables, ), )
+    id_new = zip(genA2B_gradients, genA2B.trainable_variables, )
+    genA2B_optimizer.apply_gradients(id_new, )
+    global hvd_broadcast_done
+    if not hvd_broadcast_done:
+      hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+      hvd.broadcast_variables(genA2B_optimizer.variables(), root_rank=0, )
+      hvd_broadcast_done = True
     id_new = zip(genB2A_gradients, genB2A.trainable_variables, )
     genB2A_optimizer.apply_gradients(id_new, )
     global hvd_broadcast_done
@@ -114,8 +120,20 @@ def train(train_datasetA, train_datasetB, epochs, lsgan=True, cyc_lambda=10, ):
       hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
       hvd.broadcast_variables(genB2A_optimizer.variables(), root_rank=0, )
       hvd_broadcast_done = True
-    discA_optimizer.apply_gradients(zip(discA_gradients, discA.trainable_variables, ), )
-    discB_optimizer.apply_gradients(zip(discB_gradients, discB.trainable_variables, ), )
+    id_new = zip(discA_gradients, discA.trainable_variables, )
+    discA_optimizer.apply_gradients(id_new, )
+    global hvd_broadcast_done
+    if not hvd_broadcast_done:
+      hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+      hvd.broadcast_variables(discA_optimizer.variables(), root_rank=0, )
+      hvd_broadcast_done = True
+    id_new = zip(discB_gradients, discB.trainable_variables, )
+    discB_optimizer.apply_gradients(id_new, )
+    global hvd_broadcast_done
+    if not hvd_broadcast_done:
+      hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+      hvd.broadcast_variables(discB_optimizer.variables(), root_rank=0, )
+      hvd_broadcast_done = True
     with train_summary_writer.as_default():
       tf.summary.scalar("genA2B_loss", genA2B_loss, step=epoch, )
       tf.summary.scalar("genB2A_loss", genB2A_loss, step=epoch, )

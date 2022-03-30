@@ -50,7 +50,9 @@ def main():
   batch_size = 32
   epochs = 20
   model = RNN(units, num_classes, num_layers=2, )
-  model.compile(optimizer=keras.optimizers.Adam(0.001, ), loss=keras.losses.BinaryCrossentropy(from_logits=True, ), metrics=["accuracy"], )
+  optim = keras.optimizers.Adam(0.001 * hvd.size(), )
+  optim = hvd.DistributedOptimizer(optim, )
+  model.compile(optimizer=optim, loss=keras.losses.BinaryCrossentropy(from_logits=True, ), metrics=["accuracy"], )
   callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0, )]
   if hvd.rank() == 0:
     callbacks.append([tensorboard_callback], )

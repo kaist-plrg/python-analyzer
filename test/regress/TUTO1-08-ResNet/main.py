@@ -102,7 +102,9 @@ def main():
   batch_size = 32
   epochs = 1
   model = ResNet([2, 2, 2], num_classes, )
-  model.compile(optimizer=keras.optimizers.Adam(0.001, ), loss=keras.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
+  optim = keras.optimizers.Adam(0.001 * hvd.size(), )
+  optim = hvd.DistributedOptimizer(optim, )
+  model.compile(optimizer=optim, loss=keras.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
   model.build(input_shape=(None, 28, 28, 1), )
   if hvd.rank() == 0:
     print("Number of variables in the model :", len(model.variables, ), )
