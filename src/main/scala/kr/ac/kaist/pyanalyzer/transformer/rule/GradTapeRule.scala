@@ -53,6 +53,30 @@ trait GradTapeRule extends MainScriptRule {
                 (newStmts, env)
             }
 
+        // idt.apply_gradients without information about idt
+        case Attribute(EName(idt), Id("apply_gradients")) =>
+          val idz = newId
+          // find id_i "grads_and_vars"
+          findKwarg(kwds, "grads_and_vars") match {
+            case Some(kwarg) =>
+              val expr2i = kwarg.expr
+              val newkwds = replaceElement(kwds, kwarg,
+                kwarg.copy(expr = EName(idz)))
+              val newStmts = List(
+                AssignStmt(List(EName(idz)), expr2i),
+                AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
+              ) ++ getStmts("assign-optimizer-some", idz)
+              (newStmts, env, Warning("Cannot identify optimizer", stmt))
+            // such id_i doesn't exist
+            case None => 
+              // idz == expr_11
+              val newStmts = List(
+                AssignStmt(List(EName(idz)), exprs.head),
+                AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
+              ) ++ getStmts("assign-optimizer-none", idz)
+              (newStmts, env, Warning("Cannot identify optimizer", stmt))
+          }
+
         case _ =>
           super.transform(stmt)
           //(AssignStmt(targets, transform(Call(expr1, exprs, kwds)), ty), env)
@@ -187,6 +211,37 @@ trait GradTapeRule extends MainScriptRule {
               )
               (newStmts, env)
           }
+
+      // idt.apply_gradients without info about idt
+      case Attribute(EName(idt), Id("apply_gradients")) =>
+        val idz = newId
+        // get "grads_and_vars" id
+        findKwarg(kwds, "grads_and_vars") match {
+          // found 
+          case Some(kwarg) =>
+            val expr2i = kwarg.expr
+            val newkwarg = kwarg.copy(expr = EName(idz))
+            val newkwds = replaceElement(kwds, kwarg, newkwarg)
+            val newStmts = List(
+              AssignStmt(List(EName(idz)), expr2i),
+              ExprStmt(Call(expr1, exprs, newkwds)),
+            ) ++ (
+              if (isTopLevel) getStmts("top-level-expr-optimizer-some", idz, idt)
+              else getStmts("expr-optimizer-some", idz, idt)
+            )
+
+            (newStmts, env, Warning("Cannot identify optimizer", stmt))
+          // not found
+          case None => 
+            val newStmts = List(
+              AssignStmt(List(EName(idz)), exprs.head),
+              ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
+            ) ++ (
+              if (isTopLevel) getStmts("top-level-expr-optimizer-none", idz, idt)
+              else getStmts("expr-optimizer-none", idz, idt)
+            )
+            (newStmts, env, Warning("Cannot identify optimizer", stmt))
+        }
       // case _) other expr stmts
       case _ => super.transform(stmt)
     }
