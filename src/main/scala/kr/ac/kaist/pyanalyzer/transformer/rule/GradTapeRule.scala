@@ -130,7 +130,9 @@ trait GradTapeRule extends MainScriptRule {
           val newerStmts = 
             List(WithStmt(ty, newItems, newStmts)) ++ 
             parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
-          (newerStmts, newEnv, lw)
+          // after tape is wrapped, remove the tape entry from map;
+          // so that later tape can be detected
+          (newerStmts, newEnv.removeKey("gradient_tape"), lw)
         // not found
         case _ => (WithStmt(ty, newItems, newStmts), newEnv, lw)
       }
@@ -148,7 +150,8 @@ trait GradTapeRule extends MainScriptRule {
           val newerStmts =
             List(AsyncWithStmt(ty, newItems, newStmts)) ++
             parseStmts(s"${id.name} = hvd.DistributedGradientTape(${id.name})")
-          (newerStmts, newEnv, lw)
+          // same as non-async case
+          (newerStmts, newEnv.removeKey("gradient_tape"), lw)
         case _ => (AsyncWithStmt(ty, newItems, newStmts), newEnv, lw)
       }
 

@@ -16,6 +16,7 @@ case class Env(
   def add(s: String, x: Id): Env = this.copy(map=map + (s -> x))
   def size: Int = map.size
   def \(env: Env): Env = this.copy(map=map -- env.getMap.keySet)
+  def removeKey(key: String): Env = this.copy(map = map -- Set(key))
   def contains(key: String): Boolean = map contains key
 
   // class order
