@@ -53,11 +53,10 @@ def run_optimization(x, y, ):
   g = hvd.DistributedGradientTape(g, )
   trainable_variables = lstm_net.trainable_variables
   gradients = g.gradient(loss, trainable_variables, )
-  id_new = zip(gradients, trainable_variables, )
-  optimizer.apply_gradients(id_new, )
+  optimizer.apply_gradients(zip(gradients, trainable_variables, ), )
   global hvd_broadcast_done
   if not hvd_broadcast_done:
-    hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+    hvd.broadcast_variables(lstm_net.variables, root_rank=0, )
     hvd.broadcast_variables(optimizer.variables(), root_rank=0, )
     hvd_broadcast_done = True
 for (step, (batch_x, batch_y)) in enumerate(train_data.take(training_steps // hvd.size(), ), 1, ):

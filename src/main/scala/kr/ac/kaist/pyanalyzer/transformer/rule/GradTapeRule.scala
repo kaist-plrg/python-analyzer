@@ -5,6 +5,7 @@ import kr.ac.kaist.pyanalyzer.parser.ast.Beautifier._
 import kr.ac.kaist.pyanalyzer.hierarchy.ClassOrder._
 import kr.ac.kaist.pyanalyzer.transformer.MainScriptRule
 import kr.ac.kaist.pyanalyzer.util.Useful._
+import kr.ac.kaist.pyanalyzer.util.Errors._
 import scala.Console._
 
 object GradTapeRule extends GradTapeRule
@@ -29,51 +30,41 @@ trait GradTapeRule extends MainScriptRule {
               env.add("dataset", idr))
 
         // case 3) "optimizer" -> apply_gradients
-        case Attribute(EName(idt), Id("apply_gradients"))
+        case Attribute(EName(idt), Id("apply_gradients")) 
           if env.get("optimizer") contains idt =>
-            val idz = newId
-            // find id_i "grads_and_vars"
-            findKwarg(kwds, "grads_and_vars") match {
-              case Some(kwarg) =>
-                val expr2i = kwarg.expr
-                val newkwds = replaceElement(kwds, kwarg,
-                  kwarg.copy(expr = EName(idz)))
-                val newStmts = List(
-                  AssignStmt(List(EName(idz)), expr2i),
-                  AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-                ) ++ getStmts("assign-optimizer-some", idz)
-                (newStmts, env) 
-              // such id_i doesn't exist
-              case None => 
-                // idz == expr_11
-                val newStmts = List(
-                  AssignStmt(List(EName(idz)), exprs.head),
-                  AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
-                ) ++ getStmts("assign-optimizer-none", idz)
-                (newStmts, env)
-            }
-
-        // idt.apply_gradients without information about idt
-        case Attribute(EName(idt), Id("apply_gradients")) =>
-          val idz = newId
+        {
+          val model = env.get("model") match {
+            case Some(v) => v
+            case None => throw InvalidCase
+          }
           // find id_i "grads_and_vars"
           findKwarg(kwds, "grads_and_vars") match {
             case Some(kwarg) =>
-              val expr2i = kwarg.expr
-              val newkwds = replaceElement(kwds, kwarg,
-                kwarg.copy(expr = EName(idz)))
-              val newStmts = List(
-                AssignStmt(List(EName(idz)), expr2i),
-                AssignStmt(targets, Call(expr1, exprs, newkwds), ty),
-              ) ++ getStmts("assign-optimizer-some", idz)
+              val newStmts = stmt :: getStmts("assign-optimizer-some", model)
+              (newStmts, env) 
+            // such id_i doesn't exist
+            case None => 
+              // idz == expr_11
+              val newStmts = stmt :: getStmts("assign-optimizer-none", model)
+              (newStmts, env)
+          }
+        }
+
+        // idt.apply_gradients without information about idt
+        case Attribute(EName(idt), Id("apply_gradients")) =>
+          val model = env.get("model") match {
+            case Some(v) => v
+            case None => throw InvalidCase
+          }
+          // find id_i "grads_and_vars"
+          findKwarg(kwds, "grads_and_vars") match {
+            case Some(kwarg) =>
+              val newStmts = stmt :: getStmts("assign-optimizer-some", model)
               (newStmts, env, Warning("Cannot identify optimizer", stmt))
             // such id_i doesn't exist
             case None => 
               // idz == expr_11
-              val newStmts = List(
-                AssignStmt(List(EName(idz)), exprs.head),
-                AssignStmt(targets, Call(expr1, EName(idz)::exprs.tail, kwds), ty)
-              ) ++ getStmts("assign-optimizer-none", idz)
+              val newStmts = stmt :: getStmts("assign-optimizer-none", model)
               (newStmts, env, Warning("Cannot identify optimizer", stmt))
           }
 
@@ -183,62 +174,52 @@ trait GradTapeRule extends MainScriptRule {
       // case 1) func expr is "optimizer.apply_gradients"
       case Attribute(EName(idt), Id("apply_gradients")) 
         if env.get("optimizer") contains idt =>
-          val idz = newId
-          // get "grads_and_vars" id
-          findKwarg(kwds, "grads_and_vars") match {
-            // found 
-            case Some(kwarg) =>
-              val expr2i = kwarg.expr
-              val newkwarg = kwarg.copy(expr = EName(idz))
-              val newkwds = replaceElement(kwds, kwarg, newkwarg)
-              val newStmts = List(
-                AssignStmt(List(EName(idz)), expr2i),
-                ExprStmt(Call(expr1, exprs, newkwds)),
-              ) ++ (
-                if (isTopLevel) getStmts("top-level-expr-optimizer-some", idz, idt)
-                else getStmts("expr-optimizer-some", idz, idt)
-              )
-
-              (newStmts, env)
-            // not found
-            case None => 
-              val newStmts = List(
-                AssignStmt(List(EName(idz)), exprs.head),
-                ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
-              ) ++ (
-                if (isTopLevel) getStmts("top-level-expr-optimizer-none", idz, idt)
-                else getStmts("expr-optimizer-none", idz, idt)
-              )
-              (newStmts, env)
-          }
-
-      // idt.apply_gradients without info about idt
-      case Attribute(EName(idt), Id("apply_gradients")) =>
-        val idz = newId
+      {
+        val model = env.get("model") match {
+          case Some(v) => v
+          case None => throw InvalidCase
+        }
         // get "grads_and_vars" id
         findKwarg(kwds, "grads_and_vars") match {
           // found 
           case Some(kwarg) =>
-            val expr2i = kwarg.expr
-            val newkwarg = kwarg.copy(expr = EName(idz))
-            val newkwds = replaceElement(kwds, kwarg, newkwarg)
-            val newStmts = List(
-              AssignStmt(List(EName(idz)), expr2i),
-              ExprStmt(Call(expr1, exprs, newkwds)),
-            ) ++ (
-              if (isTopLevel) getStmts("top-level-expr-optimizer-some", idz, idt)
-              else getStmts("expr-optimizer-some", idz, idt)
+            val newStmts = stmt :: (
+              if (isTopLevel) getStmts("top-level-expr-optimizer-some", model, idt)
+              else getStmts("expr-optimizer-some", model, idt)
+            )
+
+            (newStmts, env)
+          // not found
+          case None => 
+            val newStmts = stmt :: (
+              if (isTopLevel) getStmts("top-level-expr-optimizer-none", model, idt)
+              else getStmts("expr-optimizer-none", model, idt)
+            )
+            (newStmts, env)
+        }
+      }
+
+      // idt.apply_gradients without info about idt
+      case Attribute(EName(idt), Id("apply_gradients")) =>
+        val model = env.get("model") match {
+          case Some(v) => v
+          case None => throw InvalidCase
+        }
+        // get "grads_and_vars" id
+        findKwarg(kwds, "grads_and_vars") match {
+          // found 
+          case Some(kwarg) =>
+            val newStmts = stmt :: (
+              if (isTopLevel) getStmts("top-level-expr-optimizer-some", model, idt)
+              else getStmts("expr-optimizer-some", model, idt)
             )
 
             (newStmts, env, Warning("Cannot identify optimizer", stmt))
           // not found
           case None => 
-            val newStmts = List(
-              AssignStmt(List(EName(idz)), exprs.head),
-              ExprStmt(Call(expr1, EName(idz) :: exprs.tail, kwds)),
-            ) ++ (
-              if (isTopLevel) getStmts("top-level-expr-optimizer-none", idz, idt)
-              else getStmts("expr-optimizer-none", idz, idt)
+            val newStmts = stmt :: (
+              if (isTopLevel) getStmts("top-level-expr-optimizer-none", model, idt)
+              else getStmts("expr-optimizer-none", model, idt)
             )
             (newStmts, env, Warning("Cannot identify optimizer", stmt))
         }
@@ -306,22 +287,16 @@ trait GradTapeRule extends MainScriptRule {
     }),
     // strict assign
     "assign-optimizer-some" -> (names => {
-        val name = names(0)
+        val model = names(0)
         s"""if not hvd_broadcast_done:
-           |  hvd.broadcast_variables(
-           |    [x[1] for x in ${name}],
-           |    root_rank=0
-           |  )
+           |  hvd.broadcast_variables($model.variables, root_rank=0)
            |  hvd_broadcast_done = True""".stripMargin
     }),
     // strict assign
     "assign-optimizer-none" -> (names => { 
         val name = names(0)
         s"""if not hvd_broadcast_done:
-           |  hvd.broadcast_variables(
-           |    [x[1] for x in ${name}],
-           |    root_rank=0
-           |  )
+           |  hvd.broadcast_variables([x[1] for x in ${name}], root_rank=0)
            |  hvd_broadcast_done = True""".stripMargin
     }),
     // import stmt
@@ -339,64 +314,40 @@ trait GradTapeRule extends MainScriptRule {
     }),
     // expression stmt
     "top-level-expr-optimizer-some" -> (names => {
-        val idz = names(0)
+        val model = names(0)
         val idt = names(1)
         s"""if not hvd_broadcast_done:
-           |  hvd.broadcast_variables(
-           |    [x[1] for x in ${idz}],
-           |    root_rank=0
-           |  )
-           |  hvd.broadcast_variables(
-           |    ${idt}.variables(),
-           |    root_rank=0
-           |  )
+           |  hvd.broadcast_variables($model.variables, root_rank=0)
+           |  hvd.broadcast_variables(${idt}.variables(), root_rank=0)
            |  hvd_broadcast_done = True""".stripMargin
     }),
     // expression stmt
     "top-level-expr-optimizer-none" -> (names => { 
-        val idz = names(0)
+        val model = names(0)
         val idt = names(1)
         s"""if not hvd_broadcast_done:
-           |  hvd.broadcast_variables(
-           |    [x[1] for x in ${idz}],
-           |    root_rank=0
-           |  )
-           |  hvd.broadcast_variables(
-           |    ${idt}.variables(),
-           |    root_rank=0
-           |  )
+           |  hvd.broadcast_variables($model.variables, root_rank=0)
+           |  hvd.broadcast_variables(${idt}.variables(), root_rank=0)
            |  hvd_broadcast_done = True""".stripMargin
     }),
     // expression stmt
     "expr-optimizer-some" -> (names => {
-        val idz = names(0)
+        val model = names(0)
         val idt = names(1)
         s"""global hvd_broadcast_done
            |if not hvd_broadcast_done:
-           |  hvd.broadcast_variables(
-           |    [x[1] for x in ${idz}],
-           |    root_rank=0
-           |  )
-           |  hvd.broadcast_variables(
-           |    ${idt}.variables(),
-           |    root_rank=0
-           |  )
+           |  hvd.broadcast_variables($model.variables, root_rank=0)
+           |  hvd.broadcast_variables(${idt}.variables(), root_rank=0)
            |  hvd_broadcast_done = True""".stripMargin
     }),
     // expression stmt
     "expr-optimizer-none" -> (names => { 
-        val idz = names(0)
+        val model = names(0)
         val idt = names(1)
         s"""global hvd_broadcast_done
            |if not hvd_broadcast_done:
-           |  hvd.broadcast_variables(
-           |    [x[1] for x in ${idz}],
-           |    root_rank=0
-           |  )
-           |  hvd.broadcast_variables(
-           |    ${idt}.variables(),
-           |    root_rank=0
-           |  )
+           |  hvd.broadcast_variables($model.variables, root_rank=0)
+           |  hvd.broadcast_variables(${idt}.variables(), root_rank=0)
            |  hvd_broadcast_done = True""".stripMargin
     }),
   )

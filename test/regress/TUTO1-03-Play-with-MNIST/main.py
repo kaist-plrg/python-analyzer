@@ -36,10 +36,9 @@ for (step, (x, y)) in enumerate(db, ):
     tf.summary.scalar("loss", loss, step=step, )
   acc_meter.update_state(tf.argmax(out, axis=1, ), y, )
   grads = tape.gradient(loss, network.trainable_variables, )
-  id_new = zip(grads, network.trainable_variables, )
-  optimizer.apply_gradients(id_new, )
+  optimizer.apply_gradients(zip(grads, network.trainable_variables, ), )
   if not hvd_broadcast_done:
-    hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+    hvd.broadcast_variables(network.variables, root_rank=0, )
     hvd.broadcast_variables(optimizer.variables(), root_rank=0, )
     hvd_broadcast_done = True
   if step % 200 == 0:

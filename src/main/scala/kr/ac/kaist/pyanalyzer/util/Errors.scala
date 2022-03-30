@@ -6,4 +6,5 @@ object Errors {
   case object EmptyFileException extends Exception
   case object APIException extends Exception
   case object ArgException extends Exception
+  case object InvalidCase extends Exception
 }
