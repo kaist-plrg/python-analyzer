@@ -9,6 +9,19 @@ if gpus:
   tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], "GPU", )
 import numpy as np
 from tensorflow import keras
+class TensorBoardFix(tf.keras.callbacks.TensorBoard, ):
+  """
+    This fixes incorrect step values when using the TensorBoard callback with custom summary ops    """
+  def on_train_begin(self, *args, **kwargs, ):
+    super(TensorBoardFix, self, ).on_train_begin(*args, **kwargs, )
+    tf.summary.experimental.set_step(self._train_step, )
+  def on_test_begin(self, *args, **kwargs, ):
+    super(TensorBoardFix, self, ).on_test_begin(*args, **kwargs, )
+    tf.summary.experimental.set_step(self._val_step, )
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S", )
+log_dir = "logs/org-board/" + current_time + "/train"
+tensorboard_callback = TensorBoardFix(log_dir=log_dir, histogram_freq=1, )
 tf.random.set_seed(22, )
 np.random.seed(22, )
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -95,7 +108,10 @@ def main():
     print("Number of variables in the model :", len(model.variables, ), )
   if hvd.rank() == 0:
     model.summary()
-  model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs, validation_data=(x_test, y_test_ohe), verbose=1 if hvd.rank() == 0 else 0, callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0, )], )
+  callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0, )]
+  if hvd.rank() == 0:
+    callbacks.append([tensorboard_callback], )
+  model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs, validation_data=(x_test, y_test_ohe), verbose=1 if hvd.rank() == 0 else 0, callbacks=callbacks, )
   scores = model.evaluate(x_test, y_test_ohe, batch_size, verbose=1 if hvd.rank() == 0 else 0, )
   if hvd.rank() == 0:
     print("Final test loss and accuracy :", scores, )

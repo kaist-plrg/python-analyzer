@@ -10,9 +10,12 @@ if gpus:
   tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], "GPU", )
 import numpy as np
 from tensorflow import keras
-from matplotlib import pyplot as plt
 from utils import load_dataset, parse
 from model import RNNColorbot
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S", )
+train_log_dir = "logs/org-board/" + current_time + "/train"
+train_summary_writer = tf.summary.create_file_writer(train_log_dir, )
 tf.random.set_seed(22, )
 np.random.seed(22, )
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -37,6 +40,8 @@ def train_one_epoch(model, optimizer, train_data, log_interval, epoch, ):
     tape = hvd.DistributedGradientTape(tape, )
     grads = tape.gradient(loss, model.trainable_variables, )
     optimizer.apply_gradients(zip(grads, model.trainable_variables, ), )
+    with train_summary_writer.as_default():
+      tf.summary.scalar("loss", loss, step=epoch * 40 + step, )
     if step % 100 == 0:
       if hvd.rank() == 0:
         print(epoch, step, "loss:", float(loss, ), )
@@ -76,8 +81,5 @@ def main():
     if hvd.rank() == 0:
       print("rgb:", rgb, )
     data = [[clipped_preds]]
-    plt.imshow(data, )
-    plt.title(color_name, )
-    plt.savefig(color_name + ".png", )
 if __name__ == "__main__":
   main()

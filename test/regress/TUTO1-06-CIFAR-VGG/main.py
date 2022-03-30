@@ -12,6 +12,10 @@ from tensorflow import keras
 from tensorflow.keras import datasets, layers, optimizers
 import argparse
 import numpy as np
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S", )
+train_log_dir = "logs/org-board-epoch/" + current_time + "/train"
+train_summary_writer = tf.summary.create_file_writer(train_log_dir, )
 from network import VGG16
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 argparser = argparse.ArgumentParser()
@@ -85,5 +89,7 @@ def main():
       if hvd.rank() == 0:
         print("test acc:", metric.result().numpy(), )
       metric.reset_states()
+    with train_summary_writer.as_default():
+      tf.summary.scalar("loss", loss, step=epoch, )
 if __name__ == "__main__":
   main()

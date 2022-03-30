@@ -9,6 +9,10 @@ if gpus:
   tf.config.experimental.set_visible_devices(gpus[hvd.local_rank()], "GPU", )
 from tensorflow import keras
 from tensorflow.keras import layers, optimizers, datasets
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S", )
+log_dir = "logs/org-board/" + current_time + "/train"
+tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1, )
 def prepare_mnist_features_and_labels(x, y, ):
   x = tf.cast(x, tf.float32, ) / 255.0
   y = tf.cast(y, tf.int64, )
@@ -31,6 +35,9 @@ def main():
   (train_dataset, val_dataset) = mnist_dataset()
   model = keras.Sequential([layers.Reshape(target_shape=(28 * 28,), input_shape=(28, 28), ), layers.Dense(200, activation="relu", ), layers.Dense(200, activation="relu", ), layers.Dense(200, activation="relu", ), layers.Dense(10, )], )
   model.compile(optimizer=optimizers.Adam(0.001, ), loss=tf.losses.CategoricalCrossentropy(from_logits=True, ), metrics=["accuracy"], )
-  model.fit(train_dataset.repeat(), epochs=30, steps_per_epoch=500 // hvd.size(), validation_data=val_dataset.repeat(), validation_steps=2, verbose=1 if hvd.rank() == 0 else 0, callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0, )], )
+  callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0, )]
+  if hvd.rank() == 0:
+    callbacks.append([tensorboard_callback], )
+  model.fit(train_dataset.repeat(), epochs=30, steps_per_epoch=500 // hvd.size(), validation_data=val_dataset.repeat(), validation_steps=2, callbacks=callbacks, verbose=1 if hvd.rank() == 0 else 0, )
 if __name__ == "__main__":
   main()

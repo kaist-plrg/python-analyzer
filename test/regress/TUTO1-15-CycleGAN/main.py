@@ -1,7 +1,6 @@
 import os
 import time
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
 import horovod.tensorflow as hvd
 hvd_broadcast_done = False
@@ -14,6 +13,10 @@ if gpus:
 import numpy as np
 from tensorflow import keras
 from model import Generator, Discriminator, cycle_consistency_loss, generator_loss, discriminator_loss
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S", )
+train_log_dir = "logs/org-board/" + current_time + "/train"
+train_summary_writer = tf.summary.create_file_writer(train_log_dir, )
 tf.random.set_seed(22, )
 np.random.seed(22, )
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -67,20 +70,14 @@ genB2A_optimizer = keras.optimizers.Adam(learning_rate * hvd.size(), beta_1=0.5,
 def generate_images(A, B, B2A, A2B, epoch, ):
   """
     :param A:    :param B:    :param B2A:    :param A2B:    :param epoch:    :return:    """
-  plt.figure(figsize=(15, 15), )
   A = tf.reshape(A, [256, 256, 3], ).numpy()
   B = tf.reshape(B, [256, 256, 3], ).numpy()
   B2A = tf.reshape(B2A, [256, 256, 3], ).numpy()
   A2B = tf.reshape(A2B, [256, 256, 3], ).numpy()
   display_list = [A, B, A2B, B2A]
   title = ["A", "B", "A2B", "B2A"]
-  for i in range(4, ):
-    plt.subplot(2, 2, i + 1, )
-    plt.title(title[i], )
-    plt.imshow(display_list[i] * 0.5 + 0.5, )
-    plt.axis("off", )
-  plt.savefig("images/generated_%d.png" % epoch, )
-  plt.close()
+  """
+    for i in range(4):        plt.subplot(2, 2, i + 1)        plt.title(title[i])        # getting the pixel values between [0, 1] to plot it.        plt.imshow(display_list[i] * 0.5 + 0.5)        plt.axis('off')    plt.savefig('images/generated_%d.png'%epoch)    plt.close()    """
 def train(train_datasetA, train_datasetB, epochs, lsgan=True, cyc_lambda=10, ):
   for epoch in range(epochs, ):
     start = time.time()
@@ -119,6 +116,11 @@ def train(train_datasetA, train_datasetB, epochs, lsgan=True, cyc_lambda=10, ):
       hvd_broadcast_done = True
     discA_optimizer.apply_gradients(zip(discA_gradients, discA.trainable_variables, ), )
     discB_optimizer.apply_gradients(zip(discB_gradients, discB.trainable_variables, ), )
+    with train_summary_writer.as_default():
+      tf.summary.scalar("genA2B_loss", genA2B_loss, step=epoch, )
+      tf.summary.scalar("genB2A_loss", genB2A_loss, step=epoch, )
+      tf.summary.scalar("discA_loss", discA_loss, step=epoch, )
+      tf.summary.scalar("discB_loss", discB_loss, step=epoch, )
     if epoch % 40 == 0:
       generate_images(trainA, trainB, genB2A_output, genA2B_output, epoch, )
       if hvd.rank() == 0:
