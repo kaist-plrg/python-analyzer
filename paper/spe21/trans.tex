@@ -351,8 +351,8 @@ of subclass instances of {\tt tensorflow.keras.Model} class.
 \begin{figure}[h]
 \begin{longtable}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
-  \inden \ktelif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.keras.Model} ~ \ktthen  \\
-  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\model $\mapsto$ \nidsubs{r}])\\
+  \inden \ktelif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.keras.Model} ~ \ktthen\\
+  \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{2} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], \smodenv[\tmodel \nidsubs{r}])\\
 \end{longtable}
   \caption{Keras pattern transform function: storing the {\tt Model} instance}
   \label{fig:trans:ker}
@@ -370,7 +370,7 @@ adds the callback to the {\tt fit} function call expression.
 \begin{figure}[h]
 \begin{longtable}{l}
   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\model) ~ \ktand ~ 
+  \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\tmodel) ~ \ktand ~ 
           \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
   \inden\inden\inden ([{\tt callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\

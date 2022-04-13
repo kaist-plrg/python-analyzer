@@ -6,3 +6,35 @@ the ML developers can utilize the software regardless of their environment.
 The software is written in Scala; the source code and released software
 is available at https://github.com/kaist-plrg/python-analyzer. 
 
+To evaluate the transformation tool,
+we designed two experiments: transformation experiment and
+distributed training experiment.
+The transformation experiment evaluates the correctness of the tool
+by checking if the tool successfully transforms the target model codes.
+The distributed training experiment tests if the automatic transformation
+results in training speed-up.   
+
+\subsection{Experiment Setting}
+
+We first gathered open-source DL model codes written in TensorFlow. 
+The models come from two sources. The first source is the official
+Horovod code examples published in the Horovod GitHub\cite{horovodgithub}. 
+The GitHub repository offers DL model codes that use the Horovod library
+written in various DL frameworks. We select the models in TensorFlow and
+Keras library. The second source is the TensorFlow 2.x tutorials published in
+GitHub\cite{tf2tutogithub}. The GitHub repository provides over twenty
+TensorFlow DL model codes of various architectures.
+
+
+\subsection{Transformation Experiment}
+
+First, we manually inspected the transformed model codes to check if the 
+intended transformations are correctly applied.  
+
+\subsection{Distributed Training Experiment}
+
+Second, we compared the training speed between the original models and
+corresponding transformed model. 
+
+The results show that ??\% of models showed speed-up in the training speed.
+Although  
