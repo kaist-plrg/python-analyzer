@@ -4,32 +4,67 @@ We implemented the formal transformation rule for the distributed training
 as a software. We designed the software to be a standalone software, so 
 the ML developers can utilize the software regardless of their environment. 
 The software is written in Scala; the source code and released software
-is available at https://github.com/kaist-plrg/python-analyzer. 
+is available at https://github.com/kaist-plrg/python-analyzer.
 
-To evaluate the transformation tool,
+To evaluate the automated transformation tool, we set up two research
+questions.
+
+\begin{itemize}
+\item RQ1. (Correctness) Does the tool correctly transform single-GPU based DL model codes into
+the corresponding distributed model codes?
+
+\item RQ2. (Effectiveness) Does the automatic transformation result in speed-up 
+in distributed training compared to single-GPU training?
+\end{itemize}
+
+To answer these questions,  
 we designed two experiments: transformation experiment and
 distributed training experiment.
-The transformation experiment evaluates the correctness of the tool
-by checking if the tool successfully transforms the target model codes.
-The distributed training experiment tests if the automatic transformation
-results in training speed-up.   
+The transformation experiment aims to answer the RQ1; it tests if the
+transformation tool correctly transforms the target model codes into
+the answer code.
+The distributed training experiment aims to answer the RQ2;
+it measures the training speed of single-GPU based model and its
+corresponding transformed distributed model and compare them.
+In this section, we describe the experiment setting,
+and discuss the results of the experiments and its implications.
 
-\subsection{Experiment Setting}
+\subsection{Experiment Targets}
 
-We first gathered open-source DL model codes written in TensorFlow. 
+We gathered target DL model codes to be transformed.
+The target models are open-source DL model codes written in TensorFlow.
 The models come from two sources. The first source is the official
 Horovod code examples published in the Horovod GitHub\cite{horovodgithub}. 
-The GitHub repository offers DL model codes that use the Horovod library
-written in various DL frameworks. We select the models in TensorFlow and
-Keras library. The second source is the TensorFlow 2.x tutorials published in
-GitHub\cite{tf2tutogithub}. The GitHub repository provides over twenty
-TensorFlow DL model codes of various architectures.
+The Horovod repository's example directory contains examples of
+distributed training codes using several DL frameworks.  
+We selected the codes for TensorFlow and Keras,
+which are the target libraries of the transformation tool.
 
+(TODO: should check ETRI model sources)
+
+Selected example models are manually rewritten into
+single-GPU based model codes. To manually rewrite the distributed Horovod
+training codes, cetrain API calls are eliminated and rest are remained.   
+
+(TODO: clarify with example)
+
+The second source is the TensorFlow 2.x tutorials published in
+GitHub\cite{tf2tutogithub}. The GitHub repository provides over twenty
+TensorFlow DL models of various architectures. 
+We selected the TensorFlow 2.x tutorial codes in addition to the official
+Horovod examples codes in order to show that the transformation tool
+also works well on the codes of various DL architectures.
+
+We excluded some models from experiments to keep only trainable model codes. 
+For example, the CycleGAN model in the TensorFlow 2.x tutorials
+was unsuable because the training dataset was not accessible from the
+Internet. Additionally we modified some parts of the model in order to patch
+minor bugs in the code in training.
 
 \subsection{Transformation Experiment}
 
-First, we manually inspected the transformed model codes to check if the 
-intended transformations are correctly applied.  
+The transformation experiment aims to evaluate the correctness of the
+transformation tool.   
 
 \subsection{Distributed Training Experiment}
 
