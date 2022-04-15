@@ -64,7 +64,15 @@ minor bugs in the code in training.
 \subsection{Transformation Experiment}
 
 The transformation experiment aims to evaluate the correctness of the
-transformation tool.   
+transformation tool. To measure the correctness, we pair up every
+target model codes with \textit{"answer"} codes. In specific,      
+each single-GPU based codes are considered as our \textit{target codes},
+and each target codes are paired with \textit{answer codes}, which are
+correct implementations of the distributed version of the target codes. 
+We manually paired each target model code with a corresponding answer codes.
+For a target code from the official Horovod example, each single-GPU based
+model codes are paired with the original Horovod model codes.     
+
 
 \subsection{Distributed Training Experiment}
 
