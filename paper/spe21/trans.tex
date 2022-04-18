@@ -42,11 +42,16 @@ retrieve the TensorFlow module name from the environment parameter.
 
 % explain transform function with example
 
-\begin{lstlisting}[language=Python, caption = Original code example]
+\begin{figure}[h]
+\begin{lstlisting}[language=Python]
 import tensorflow as tf
-optimizer = tf.keras.optimizers.Adam(lr)\end{lstlisting}
+optimizer = tf.keras.optimizers.Adam(lr)
+\end{lstlisting}
+  \caption{Original code example}
+\end{figure}
 
-\begin{lstlisting}[language=Python, caption = Transformed code example]
+\begin{figure}[h]
+\begin{lstlisting}[language=Python]
 import tensorflow as tf
 # import and init horovod module
 import horovod.tensorflow as hvd
@@ -59,6 +64,8 @@ optimizer = tf.keras.optimizers.Adam(lr * hvd.size())
 # wrap the optimizer object
 optimizer = hvd.DistributedOptimizer(optimizer)
 \end{lstlisting}
+  \caption{Transformed code example}
+\end{figure}
 
 We first describe how the transform function works by example.
 The above figures illustrate a pair of TensorFlow model codes
@@ -71,6 +78,7 @@ Informally, three kinds of transformation occur in between;
 The original code parses into a module AST with a list of 2 statements,
 an import statement and an assign statement.
 
+\begin{figure}[h]
 \begin{lstlisting}[language=Scala]
 Module(List(
   ImportStmt(Id('tensorflow'), Id('tf')),
@@ -83,6 +91,7 @@ Module(List(
   )
 ))
 \end{lstlisting}
+\end{figure}
 
 \begin{tabular}{lcl}
   \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
@@ -247,7 +256,103 @@ in the supplementary material.
 
 \subsubsection{Transform function for Session pattern}
 
+The training codes in Session pattern and MonitoredSesion pattern
+use legacy version of the TensorFlow 1.x library. 
+These legacy codes can be identified by specific import statement as below.
+
+\begin{figure}[h]
+\begin{lstlisting}[language=Python]
+import tensorflow.compat.v1 as tf
+\end{lstlisting}
+\caption{Import statements for using TensorFlow 1.x legacy module}
+\end{figure}
+
+Session pattern and MonitoredSesison pattern uses the following
+transform function to match the legacy import statement
+and add the import statement for Horovod library.
+
+\begin{figure}[h]
+\noindent
+\begin{tabular}{l}
+  \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
+  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflowc $\mapsto$ \nid] ~ \ktthen \\
+  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
+  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
+  \inden\hspace{1em} {\tt hvd.init()}], \smodenvsubs{1})\\
+  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
+\end{tabular}
+\caption{Session pattern transform function: Importing Horovod}
+\end{figure}
+
+The Session pattern codes use the {\tt Session} object to define the computation environment.
+The {\tt Session} objects are usually defined by {\tt With} statements,
+and later used by calling the method {\tt Session.run}.
+(TODO: add explanation)
+
+The {\tt Optimizer} instances must be modified for distributed training.
+First, the learning rate is scaled by {\tt hvd.size()},
+and the optimizer instance is wrapped with {\tt hvd.DistributedOptimizer}.
+The following rule describes the part of the transform function that
+performs learning rate scaling and the wrapping.
+The function matches an assignment statement that assigns an
+instance of {\tt Optimizer} class, and modifies the learning rate argument
+given the the instance constructor. Then the rule appends the statement
+that wraps the {\tt Optimizer} instance with {\tt hvd.DistributedOptimizer}.
+
+\begin{figure}[h]
+\noindent
+\begin{longtable}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
+\inden \ktif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
+  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
+  {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)}
+\nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
+  \inden\inden\inden{\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
+  \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+\end{longtable}
+  \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
+  \label{fig:sess:opt}
+\end{figure}
+
+
 \subsubsection{Transform function for MonitoredSession pattern}
+
+The training codes matched in the MoniotoredSesion pattern uses the
+{\tt MonitoredSession} instance to define the training step and
+automatically repeat the step.  
+The transform function for MonitoredSession pattern uses same rules
+as the figure \ref{fig:sess:opt} to identify the optimizer instance
+and modify it.
+
+The codes for MonitoreSession pattern additionally need to modify the
+{\tt StopAtStepHook} instance in order to scale down the number of
+training steps. The {\tt Hook} instances are given as an list argument of
+the {\tt MonitoredSesion} instance constructor.
+To modify the number of traning steps, the transform function
+identifies by expression that constructs the {\tt StopAtStepHook} instance
+and transform its {\tt last\_step} keyword argument.
+
+\begin{figure}[h]
+ \noindent
+\begin{tabular}{l}
+  \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+  \inden \ktif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.StopAtStepHook} ~ \ktthen \\
+  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt last\_step} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt // hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}\\
+  \inden\inden \ktelse \\
+  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} {\tt // hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
+  \inden \ktelse ~ \texpr{\nexprsubs{1}}{\smodenv} \sparen{\texpr{\nexprsubs{11}}{\smodenv}  ... \texpr{\nexprsubs{1n}}{\smodenv} \\
+  \inden\inden \op{(\nidsubs{1} \oassign)} \texpr{\nexprsubs{21}}{\smodenv} ... \op{(\nidsubs{k} \oassign)} \texpr{\nexprsubs{2k}}{\smodenv}}\\
+\end{tabular}\\\vpar
+\caption{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance}
+\end{figure}
 
 \subsubsection{Transform function for GradientTape pattern}
 
