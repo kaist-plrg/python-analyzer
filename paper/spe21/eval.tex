@@ -84,4 +84,42 @@ The loss value is a result value of the loss function which is computed
 at each epoch or step in the ML training process.
 In theory, the loss value derease over training time and converge
 to some low value.
-The training speed can be understood as  
+The training speed can be understood as the time required in the
+loss convergence.
+
+We measure the per-epoch loss during the traininig using
+TensorBoard library \cite{tensorboard}. 
+TensorBoard is a library that provides visualization and tools
+for ML experiments.
+We used the TensorBoard APIs to record the loss value every traininig epoch
+to gather the data and visualize in time-loss graph.
+
+\newcommand{\orgbf}{\textbf{ORG}}
+\newcommand{\hvdbf}{\textbf{HVD}}
+
+The distributed training experiment is done as follows.
+First, a pair of the original ML model and the corresponding transformed model
+is prepared. For convenience, we refer to the original, single-GPU based model
+as \textbf{ORG} model, and the auto-transformed, distributed model as
+\textbf{HVD} model. To measure the epoch loss, we manually modify both  
+\orgbf and \hvdbf training code to include the TensorBoard API. 
+(TODO: detailed explain on TensorBoard code)
+
+Second, we run the training of \textbf{ORG} model and
+\textbf{HVD} model. We utilize the {\tt mpirun} command to execute both
+\textbf{ORG} and \textbf{HVD} training. The command specifies the number of
+GPUs used for the training; 1 GPU is used for \textbf{ORG} model training  
+and 4 GPUs are used for \textbf{HVD} model training. 
+(TODO: machine spec of the training server)
+As mentioned earlier, the epoch loss is recorded and stored in the
+TensorBoard log file.
+After the training is done, the TensorBoard log file is used to plot the
+graph between time and epoch loss. 
+
+(TODO: add the graph figure)
+
+The results of the distributed traininig experiment 
+are shown in the figure \ref{??}.
+The x-axis of the graphs are the time passed in the training.
+The red 
+
