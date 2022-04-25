@@ -28,13 +28,14 @@ the whole computation from individual kernels and the dataflow graph.
 \lstinputlisting[language=Python]
 {tensorflow1_mnist.py}
 \caption{TensorFlow 1 example code}
-\label{fig:bac:tf1}
+\label{fig:back:tf1}
 \end{figure}
 
 We explain a typical form of TensorFlow ML model codes by an example.
-The figure \ref{fig:back:tf1} illustrates a simple neural network with 2 hidden layers.
+The figure \ref{fig:back:tf1} illustrates the TensorFlow model code for
+a simple neural network with 2 hidden layers.
 Typically, a TensorFlow ML code is divided into two parts.
-In the first stage, the model structure and training algorithm are defined.
+In the first part, the model structure and training algorithm are defined.
 The model is defined by using API functions to construct the dataflow graph.
 Line 4 to 18 define the neural network structure,
 with the placeholders for input tensor {\tt x} and output tensor {\tt y}.
@@ -44,7 +45,7 @@ Line 20 to 23 defines the training algorithm,
 by defining loss function and optimization scheme.
 Optimization is also defined by using API functions to construct
 an Optimizer object, then assigning the target function.
-The second stage invokes the actual training process
+The second part invokes the actual training process
 In line 25 to 30, the TensorFlow runtime initializes the model parameters
 and repeats the optimization by {\tt Session} API. 
 

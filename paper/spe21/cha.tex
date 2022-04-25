@@ -24,7 +24,7 @@ such as {\tt fit} or {\tt save}.
 \end{figure}
 
 Figure \ref{fig:cha:ex} illustrates an example of a training code
-utilizing the user-defined class. 
+using the user-defined class. 
 Line 4 defines a new class {\tt ResNet} that inherits the  
 {\tt keras.models.Model} class. The instance of {\tt ResNet}, {\tt model}
 is created at line 11. Although the {\tt ResNet} class does not define
@@ -35,7 +35,7 @@ the {\tt ResNet} instance can invoke the training process with
 automatically repeats the gradient descent with
 given model computation and training data. 
 
-To correctly transform training codes using user-defined classes,
+To correctly transform the codes with user-defined classes,
 the subclass relationship between user-defined classes
 and TensorFlow classes should be known before the training API pattern analysis. 
 In figure \ref{fig:cha:ex}, for instance, 
@@ -64,7 +64,7 @@ isinstance(c, A) # returns True
 \end{figure}
 
 The class hierarchy analyzer(CHA) module analyzes the
-class subclass relationship between the 
+subclass relationship between the 
 user-defined classes and TensorFlow classes.
 The module returns a class hierarchy graph(CHG) as an output.
 A CHG is a directed graph structure that represents the class hierarchy.
@@ -74,13 +74,19 @@ where the start node indicates the child class
 and the end node indicates the parent class.
 Consider the example in figure \ref{fig:cha:pythonex}.
 Class B is a subclass of class A, and class C is a subclass of 
-class C.
+class B.
 This subclass relationship is represented as a CHG with three nodes,
 each corresponding to a class A, B, or C.
-Suppose node A corresponds to class A and node B corresponds to
-class B.
-If there is a (directed) path from node A to node B in CHG,
-then class A is a subclass of class B.
+Suppose node A corresponds to class A, node B corresponds to
+class B, and node C corresponds to class C.
+Then the CHG includes two directed edges, from A to B and from B to C,
+each representing the inheritance relationship of the classes.
+Identifying a subclass relationship between the class A and class C
+reduces to finding a (direct) path between node A to node C in the CHG;
+in the figure \ref{fig:cha:pythonex} case, the CHG contains a
+path from node A to node C, therefore class C is a subclass
+of class A.
+
 
 The CHA module gets a model code package as an input
 and creates the model package CHG as an output.

@@ -18,8 +18,8 @@ in distributed training compared to single-GPU training?
 \end{itemize}
 
 To answer these questions,  
-we designed two experiments: transformation experiment and
-distributed training experiment.
+we designed two experiments: \textbf{transformation experiment} and
+\textbf{distributed training experiment}.
 The transformation experiment aims to answer the RQ1; it tests if the
 transformation tool correctly transforms the target model codes into
 the answer code.
@@ -29,7 +29,7 @@ corresponding transformed distributed model and compare them.
 In this section, we describe the experiment setting,
 and discuss the results of the experiments and its implications.
 
-\subsection{Experiment Targets}
+\subsection{Experiment Targets and Settings}
 
 We gathered target DL model codes to be transformed.
 The target models are open-source DL model codes written in TensorFlow.
@@ -78,6 +78,10 @@ model codes are paired with the original Horovod model codes.
 
 Second, we compared the training speed between the original models and
 corresponding transformed model. 
-
-The results show that ??\% of models showed speed-up in the training speed.
-Although  
+To quantify the training speed, we measured the epoch loss during the training
+of each model.
+The loss value is a result value of the loss function which is computed
+at each epoch or step in the ML training process.
+In theory, the loss value derease over training time and converge
+to some low value.
+The training speed can be understood as  

@@ -2,11 +2,15 @@
 
 \subsection{TensorFlow ML Training API Patterns}
 
+\begin{figure}
 \lstinputlisting[language=Python]
 {pattern_ex.py}
+  \caption{TensorFlow model code example using two different API patterns}
+  \label{fig:pattern:ex01}
+\end{figure}
 
 TensorFlow provides various APIs to define the training process.
-The above figure illustrates two examples of using 
+The figure \ref{fig:pattern:ex01} illustrates two examples of using 
 different APIs for the model training.
 Line 2 to 10 uses low-level APIs to repeat training steps over the training
 data set. Inside the {\tt for} loop, 
@@ -28,7 +32,7 @@ the training process.
 Developers can freely choose from different training code styles to
 take advantage of each way.
 
-To correctly transform the training codes,
+To correctly transform the training codes, 
 the transformation software must transform different training APIs
 based on different transformation rules. 
 We implemented an \textit{API pattern analysis} that identifies
@@ -81,7 +85,7 @@ usually inside the {\tt for} loop to repeat the process with training data.
 The Session pattern matches call expressions that the function
 call expression is the method {\tt tensorflow.Session.run}.
 
-\begin{figure}
+\begin{figure}[!ht]
 \begin{lstlisting}[language=Python]
 with tf.Session() as sess:
     for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
@@ -100,7 +104,7 @@ initialize and invoke methods of {\tt Hook} objects.
 The MonitoresSession pattern matches the constructor calls for the
 {\tt MonitoresSession} instance in the training code.
 
-\begin{figure}
+\begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
 with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     while not mon_sess.should_stop():
@@ -108,6 +112,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
   \end{lstlisting}
   \caption{MonitoredSession pattern code example}
 \end{figure}
+
 
 \textbf{GradientTape Pattern}
 In TensorFlow 2.x, the computations are eagerly evaluated.
@@ -118,7 +123,7 @@ to record the forward pass operation and automatically compute the gradient.
 The GradientTape pattern matches the call expressions {\tt with} statements
 that construct {\tt GradientTape} instances.
 
-\begin{figure}
+\begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
 with tf.GradientTape() as g:
     pred = conv_net(x)
@@ -142,7 +147,7 @@ method of the subclass instances of {\tt tf.keras.models.Model}
 In the pattern matching process, the API pattern analyzer
 makes use of the CHG to identify subclass relationships. 
 
-\begin{figure}
+\begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
 class ResNet(tf.keras.models.Model):
   ...

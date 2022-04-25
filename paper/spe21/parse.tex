@@ -10,6 +10,7 @@ to define the Python abstract syntax.
 The syntax is composed of three syntactic components: expressions, statements,
 and top-level components.
 
+\begin{figure}[!ht]
 \begin{tabular}{lrll}
   \nmodule & := & \mul{\nstmt} ~ \ntypignore & \desc{ModuleDef} \\
   \nstmt & ::= & \decolist ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexpr)} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt} & \desc{FunDef} \\ 
@@ -65,6 +66,9 @@ and top-level components.
   \nfloat & $\in$ & $\mathbb{R}$ \\
   \ncomplex & $\in$ & $\mathbb{C}$ \\
 \end{tabular}
+  \caption{Python abstract syntax}
+  \label{fig:parse:abssyntax}
+\end{figure}
 
 Expressions are parts of the code that evaluates a value.
 Python has 5 kinds of primitive values, 
@@ -107,6 +111,7 @@ Top-level components are the representation of the program
 in the different execution environments of the Python interpreter.
 For example, a module represents a Python code file, composed of
 multiple definitions specified by statements. 
+We summarize the Python abstract syntax in figure \ref{fig:parse:abssyntax}.
 The full Python abstract syntax is attached in the supplementary material.
 
 \subsection{Parser Implementation}

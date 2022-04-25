@@ -48,6 +48,7 @@ import tensorflow as tf
 optimizer = tf.keras.optimizers.Adam(lr)
 \end{lstlisting}
   \caption{Original code example}
+  \label{fig:trans:org}
 \end{figure}
 
 \begin{figure}[h]
@@ -65,18 +66,24 @@ optimizer = tf.keras.optimizers.Adam(lr * hvd.size())
 optimizer = hvd.DistributedOptimizer(optimizer)
 \end{lstlisting}
   \caption{Transformed code example}
+  \label{fig:trans:hvd}
 \end{figure}
 
 We first describe how the transform function works by example.
 The above figures illustrate a pair of TensorFlow model codes
-before and after the transformation.
+before and after the transformation;
+the figure \ref{fig:trans:org} represents the original
+training code before the transformation and
+the figure \ref{fig:trans:org} represents the distributed
+training code after the transformatioin.
 Informally, three kinds of transformation occur in between;
 1) import and initialize the horovod module;
 2) scale the optimizer's learning rate by {\tt hvd.size()};
 3) Wrap the optimizer with {\tt hvd.DistributedOptimizer}.
 
 The original code parses into a module AST with a list of 2 statements,
-an import statement and an assign statement.
+an import statement and an assign statement, 
+as illustrated in the figure \ref{fig:trans:ast}. 
 
 \begin{figure}[h]
 \begin{lstlisting}[language=Scala]
@@ -91,8 +98,11 @@ Module(List(
   )
 ))
 \end{lstlisting}
+  \caption{The AST of the code in figure \ref{fig:trans:org}, represented in Scala object}
+  \label{fig:trans:ast}
 \end{figure}
 
+\begin{figure}[!ht]
 \begin{tabular}{lcl}
   \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
   & \kteq & \tsstmt{[\nstmtsubs{1}, \nstmtsubs{2}]}{\smodenvempty} \\
@@ -105,8 +115,12 @@ Module(List(
 
   & & (\mul{\nstmtsubs{1}}$'$ \ktconl ~ \mul{\nstmtsubs{2}}$'$) \\ 
 \end{tabular}
+  \caption{Transform function evaluated on the module AST}
+  \label{fig:trans:ex_module}
+\end{figure}
 
-The figure describes how the module transform function 
+The figure \ref{fig:trans:ex_module} 
+describes how the module transform function 
 is evaluated on the example module AST.
 The module transform function, $\fkmodule$
 applies statement list transform function $\fksstmt$ to its statement list.
@@ -115,6 +129,29 @@ to each statement in the list.
 In addition, $\fksstmt$ passes the environment parameter $\sigma$
 from a $\fkstmt$ call to the next $\fkstmt$ call.
 
+The figure \ref{fig:trans:ex_stmt1} illustrates the evaluation of
+the transform function on \nstmtsubs{1}.
+The first $\fkstmt$ call receives the statement
+{\tt import tensorflow as tf} as an input.
+In part (a), the function first matches the input statement
+with the pattern $\kimport ~ \mul{\nalias}$.
+Transform functions use pattern matching to discriminate target ASTs
+by their syntactic structure.
+Part (b) specifies the pattern guard, which describes the detailed conditions
+on the content of the input.
+The pattern guard checks if the import statement
+is importing the TensorFlow module.
+In the process, the alias transform function $\fkalias$ is applied on the
+{\tt tensorflow as tf}.
+Note that $\fkalias$ also stores the module name {\tt tf}
+in the environment parameter as a form of mapping;
+later calls on the transform function can retrieve the
+TensorFlow module name from the returned environment, $\smodenvsubs{1}$.
+Finally, part (c) constructs the output statements
+and returns it with $\smodenvsubs{1}$.
+
+
+\begin{figure}[!ht]
 \begin{tabular}{rcll}
   \tstmt{\nstmtsubs{1}}{\smodenvempty} & \kteq & 
   \tstmt{{\tt import tensorflow as tf}}{\smodenvempty} & \\
@@ -152,27 +189,11 @@ from a $\fkstmt$ call to the next $\fkstmt$ call.
   & \kteq & \smodenvempty[\tflow $\mapsto$ {\tt tf}] & \\
   & \kteq & [\tflow $\mapsto$ {\tt tf}] & \\
 \end{tabular}
+  \caption{Transform function evaluated on the first statement AST}
+  \label{fig:trans:ex_stmt1}
+\end{figure}
 
-The first $\fkstmt$ call receives the statement
-{\tt import tensorflow as tf} as an input.
-In part (a), the function first matches the input statement
-with the pattern $\kimport ~ \mul{\nalias}$.
-Transform functions use pattern matching to discriminate target ASTs
-by their syntactic structure.
-Part (b) specifies the pattern guard, which describes the detailed conditions
-on the content of the input.
-The pattern guard checks if the import statement
-is importing the TensorFlow module.
-In the process, the alias transform function $\fkalias$ is applied on the
-{\tt tensorflow as tf}.
-Note that $\fkalias$ also stores the module name {\tt tf}
-in the environment parameter as a form of mapping;
-later calls on the transform function can retrieve the
-TensorFlow module name from the returned environment, $\smodenvsubs{1}$.
-Finally, part (c) constructs the output statements
-and returns it with $\smodenvsubs{1}$.
-
-% TODO typesetting this!!!!!
+\begin{figure}
 \begin{tabular}{rcll}
   \tstmt{\nstmtsubs{2}}{\smodenvempty} & \kteq &
   \tstmt{{\tt optimizer = tf.keras.optimizers.Adam(lr)}}{\smodenvsubs{1}} &\\
@@ -206,7 +227,12 @@ and returns it with $\smodenvsubs{1}$.
   \indent\indent\indent\indent\indent
   (c) Construct output statements &\\ 
 \end{tabular}
+  \caption{Transform function evaluated on the second statement AST}
+  \label{fig:trans:ex_stmt2}
+\end{figure}
 
+The figure \ref{fig:trans:ex_stmt2} illustrates the evaluation of
+the transform funcion on \nstmtsubs{2}.
 The second $\fkstmt$ receives the statement
 {\tt optimizer = tf.keras.optimizers.Adam(lr)} as an input.
 Part (a) pattern matches the input to the assign statement pattern
@@ -224,6 +250,7 @@ In part (c), the output statement is returned.
 As specified in the transform function definition, 
 the first argument expression is multiplied by {\tt hvd.size()}.
 
+\begin{figure}[!ht]
 \begin{tabular}{rcll}
   \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
   &\kteq& (\mul{\nstmtsubs{1}}$'$ \ktconl ~ \mul{\nstmtsubs{2}}$'$) &\\ 
@@ -234,9 +261,13 @@ the first argument expression is multiplied by {\tt hvd.size()}.
   && {\tt hvd.init()}, &\\
   && {\tt optimizer = tf.keras.optimizers.Adam(lr * hvd.size())}] &\\   
 \end{tabular}
+  \caption{Transform function concatenating the resulting statements}
+  \label{fig:trans:ex_concat}
+\end{figure}
 
 Finally, the output statement lists are concatenated as specified in the
-$\fksstmt$, and the transformed module AST is constructed.
+$\fksstmt$, and the transformed module AST is constructed
+as illustrated on the figure \ref{fig:trans:ex_concat}.
 
 As described in the example, the transform functions are defined for
 each language construct. The functions are described in terms of
@@ -273,14 +304,14 @@ and add the import statement for Horovod library.
 
 \begin{figure}[h]
 \noindent
-\begin{tabular}{l}
+\begin{longtable}{l}
   \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
   \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflowc $\mapsto$ \nid] ~ \ktthen \\
   \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
   \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
   \inden\hspace{1em} {\tt hvd.init()}], \smodenvsubs{1})\\
   \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
-\end{tabular}
+\end{longtable}
 \caption{Session pattern transform function: Importing Horovod}
 \end{figure}
 
