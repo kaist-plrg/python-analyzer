@@ -60,6 +60,38 @@ For example, the CycleGAN model in the TensorFlow 2.x tutorials
 was unsuable because the training dataset was not accessible from the
 Internet. Additionally we modified some parts of the model in order to patch
 minor bugs in the code in training.
+The full list of the experiment target models is described in the
+figure \ref{fig:eval:targets}.
+
+\begin{figure}[!ht]
+  \begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    Model Name & API Pattern & Source \\
+    \hline
+    LSTM-MNIST & GradientTape & Americ Damien \\
+    SimpleCNN-GradientTape-1 & GradientTape & Americ Damien \\
+    SimpleCNN-GradientTape-2 & GradientTape & Horovod Examples \\
+    SimpleCNN-MonitoredSession & MonitoredSession & Horovod Examples \\
+    SimpleCNN-Session & Session & TensorFlow Model Garden \\
+    VGG-CIFAR10 & Keras & CIFAR-10 Example with TensorFlow 2.0 \\
+    Play-with-MNIST & GradientTape & TensorFlow 2.x Tutorials \\
+    Linear-Regression & GradientTape & TensorFlow 2.x Tutorials \\
+    Fashion-MNIST & Keras & TensorFlow 2.x Tutorials \\
+    CIFAR10-VGG16 & GradientTape & TensorFlow 2.x Tutorials\\
+    Inception-Network & GradientTape & TensorFlow 2.x Tutorials \\
+    RNN-Sentiment-Analysis & Keras & TensorFlow 2.x Tutorials \\
+    Stacked-LSTM-ColorBot & GradientTape & TensorFlow 2.x Tutorials \\
+    Auto-Encoder & GradientTape & TensorFlow 2.x Tutorials \\
+    Variational-Auto-Encoder & GradientTape & TensorFlow 2.x Tutorials \\
+    DCGAN & GradientTape & TensorFlow 2.x Tutorials \\
+    BERT & Keras & TensorFlow 2.x Tutorials \\
+    \hline
+  \end{tabular}
+  \end{center}
+  \caption{List of the target Models}
+  \label{fig:eval:targets}
+\end{figure}
 
 \subsection{Transformation Experiment}
 
@@ -70,9 +102,46 @@ each single-GPU based codes are considered as our \textit{target codes},
 and each target codes are paired with \textit{answer codes}, which are
 correct implementations of the distributed version of the target codes. 
 We manually paired each target model code with a corresponding answer codes.
-For a target code from the official Horovod example, each single-GPU based
+For target codes from the official Horovod example, each single-GPU based
 model codes are paired with the original Horovod model codes.     
+For other open-source model codes, we manually examined the training code
+file and modified it according to the Horovod document.
 
+
+\begin{figure}[!ht]
+  \begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    Model Name & API Pattern & Transformation Success \\
+    \hline
+    LSTM-MNIST & GradientTape & o \\
+    SimpleCNN-GradientTape-1 & GradientTape & o\\
+    SimpleCNN-GradientTape-2 & GradientTape & x \\
+    SimpleCNN-MonitoredSession & MonitoredSession &o\\
+    SimpleCNN-Session & Session & o\\
+    VGG-CIFAR10 & Keras & o \\ 
+    Play-with-MNIST & GradientTape & o \\
+    Linear-Regression & GradientTape & o \\
+    Fashion-MNIST & Keras & o \\
+    CIFAR10-VGG16 & GradientTape & o\\
+    Inception-Network & GradientTape & o \\
+    RNN-Sentiment-Analysis & Keras & o \\
+    Stacked-LSTM-ColorBot & GradientTape & o \\
+    Auto-Encoder & GradientTape & o \\
+    Variational-Auto-Encoder & GradientTape & o \\
+    DCGAN & GradientTape & o \\
+    BERT & Keras & x \\
+    \hline
+  \end{tabular}
+  \end{center}
+  \caption{Transformation experiment Result}
+  \label{fig:eval:trans}
+\end{figure}
+
+The transformation experiment result is described in the 
+figure \ref{fig:eval:trans}. Among 17 targets, only two models are failed to
+be correctly transformed.
+(TODO: detailed discussion on the failure, and why it is ok)
 
 \subsection{Distributed Training Experiment}
 
@@ -116,10 +185,47 @@ TensorBoard log file.
 After the training is done, the TensorBoard log file is used to plot the
 graph between time and epoch loss. 
 
-(TODO: add the graph figure)
+\begin{figure}[!ht]
+  \includegraphics[width=\hsize]{tape-lstm-graph}
+  \caption{Time-loss graph of LSTM-MNIST model}
+\end{figure}
+
+\begin{figure}[!ht]
+  \includegraphics[width=\hsize]{tape-simplecnn1-graph}
+  \caption{Time-loss graph of LSTM-MNIST model}
+\end{figure}
+
+(TODO: include other graphs, too, and make it sane size)
 
 The results of the distributed traininig experiment 
 are shown in the figure \ref{??}.
-The x-axis of the graphs are the time passed in the training.
-The red 
+The points in the graphs represent the loss value of the given time;
+sky blue points correspond to the \orgbf model training and
+orange points coresspond to the \hvdbf model training.
+The lines represent the smoothed loss values;
+blue lines correspond to the \orgbf model training
+and the red lines correspond to the \hvdbf model training.
+As shown in the figure, all of the training data show that
+the loss value decreases over time, meaning that the training
+process is valid.
 
+The distributed training experiment result show that the 8 out of 17 transformed
+models show speedup in distributed traininig. The result is rather surprising,
+considering that the distributed training itself is successfully executed
+without errors. To further investigate the factors that influence the
+training speed in the distributed training, 
+we performed additional distributed training of some models with
+different hyperparameters.
+
+(TODO: include the result of exp with changed lr)
+
+The results show that the training speed difference between single-GPU and
+distributed training can differ according to the model hyperparameters
+such as the learning rate. The fact that various combinations of hyperparameters
+must be considered and experiement to reach optimal training speed is 
+well-known in ML community. This problem also applies to distributed training,
+where optimial hyperparameters should be re-searched after the training
+code is transformed. Our transformation tool do not target to search the 
+optimal hyperparameters, although we do implement the guidelines from the
+official Horovod documents to scale learning rate and epoch numbers
+by number of the GPUs.  
