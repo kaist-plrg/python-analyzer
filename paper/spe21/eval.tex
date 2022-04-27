@@ -186,20 +186,92 @@ TensorBoard log file.
 After the training is done, the TensorBoard log file is used to plot the
 graph between time and epoch loss. 
 
-\begin{figure}[!ht]
-  \includegraphics[width=\hsize]{tape-lstm-graph}
-  \caption{Time-loss graph of LSTM-MNIST model}
-\end{figure}
+\begin{figure}[t]
+  \centering
 
-\begin{figure}[!ht]
-  \includegraphics[width=\hsize]{tape-simplecnn1-graph}
-  \caption{Time-loss graph of LSTM-MNIST model}
+
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tape-lstm}
+    \caption{LSTM-MNIST}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tape-simple1}
+    \caption{SimpleCNN-GradientTape-1}
+  \end{subfigure} 
+  ~ 
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tape-simple2}
+    \caption{SimpleCNN-GradientTape-2}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{keras-cifar}
+    \caption{VGG-CIFAR10}
+  \end{subfigure}
+
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-03}
+    \caption{Play-with-MNIST}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-04}
+    \caption{Linear-Regression}
+  \end{subfigure} 
+  ~ 
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-05}
+    \caption{Fashion-MNIST}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-06}
+    \caption{CIFAR10-VGG16}
+  \end{subfigure}
+
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-07}
+    \caption{Inception-network}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-09}
+    \caption{RNN-Sentiment-Analysis}
+  \end{subfigure} 
+  ~ 
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-10}
+    \caption{Stacked-LSTM-ColorBot}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-11}
+    \caption{Auto-Encoder}
+  \end{subfigure}
+
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-12}
+    \caption{Variational-Auto-Encoder}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{tf2-13}
+    \caption{DCGAN}
+  \end{subfigure} 
+
+  \caption{Distributed training experiment result time-loss graphs.}
+  \begin{tabular}{r@{: }l r@{: }l}
+    X-axis & Time (seconds) & Y-axis & Loss value\\
+    Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
+  \end{tabular}
+  \label{fig:eval:train}
 \end{figure}
 
 (TODO: include other graphs, too, and make it sane size)
 
 The results of the distributed traininig experiment 
-are shown in the figure \ref{??}.
+are shown in the figure \ref{fig:eval:train}.
 The points in the graphs represent the loss value of the given time;
 sky blue points correspond to the \orgbf model training and
 orange points coresspond to the \hvdbf model training.
