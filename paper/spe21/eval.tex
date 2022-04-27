@@ -31,61 +31,62 @@ and discuss the results of the experiments and its implications.
 
 \subsection{Experiment Targets and Settings}
 
-We gathered target DL model codes to be transformed.
-The target models are open-source DL model codes written in TensorFlow.
-The models come from two sources. The first source is the official
-Horovod code examples published in the Horovod GitHub\cite{horovodgithub}. 
-The Horovod repository's example directory contains examples of
-distributed training codes using several DL frameworks.  
-We selected the codes for TensorFlow and Keras,
-which are the target libraries of the transformation tool.
+We gathered open-source TensorFlow DL model codes as the experiment target.
+The full list of the experiment target models is described in the
+figure \ref{fig:eval:targets}.
+At first, we targetd the example model codes in the Horovod 
+Github\cite{horovodgithub}. Although the Horovod GitHub repository provides
+examples for various ML frameworks, we could only use two models based on the
+TensorFlow frameworks. As a result, we searched for other GitHub repositories
+that contain TensorFlow ML model codes.
+The TensorFlow model garden\cite{tfmodelgarden} is one of the official
+collections of ML models from TensorFlow.
+Other sources\cite{tfexamplesdamien}\cite{cifar10github}\cite{tf2tutogithub} are
+non-official ML examples that include various ML architectures.
+We selected targets with various ML architectures to show that
+our transformation tool works well regardless of the architecture types.
 
-(TODO: should check ETRI model sources)
-
-Selected example models are manually rewritten into
-single-GPU based model codes. To manually rewrite the distributed Horovod
-training codes, cetrain API calls are eliminated and rest are remained.   
-
-(TODO: clarify with example)
-
-The second source is the TensorFlow 2.x tutorials published in
-GitHub\cite{tf2tutogithub}. The GitHub repository provides over twenty
-TensorFlow DL models of various architectures. 
-We selected the TensorFlow 2.x tutorial codes in addition to the official
-Horovod examples codes in order to show that the transformation tool
-also works well on the codes of various DL architectures.
-
+After gathering the models, we selected valid experiment targets to be used. 
 We excluded some models from experiments to keep only trainable model codes. 
 For example, the CycleGAN model in the TensorFlow 2.x tutorials
 was unsuable because the training dataset was not accessible from the
 Internet. Additionally we modified some parts of the model in order to patch
 minor bugs in the code in training.
-The full list of the experiment target models is described in the
-figure \ref{fig:eval:targets}.
+Then, we manually rewrite each model code into distributed model codes using
+the Horovod library. The manually rewritten codes will be used as "answers" 
+for the transform experiment.
+For the case of Horovod GitHub example codes, which are distirbuted model
+codes from the start, we manually inspect the codes and eliminate
+Horovod library-related codes to rewrite them into single-GPU based
+models, and use them as the target codes.
 
 \begin{figure}[!ht]
   \begin{center}
-  \begin{tabular}{|c|c|c|}
+  \begin{tabular}{c|c|l}
     \hline
     Model Name & API Pattern & Source \\
     \hline
-    LSTM-MNIST & GradientTape & Americ Damien \\
-    SimpleCNN-GradientTape-1 & GradientTape & Americ Damien \\
-    SimpleCNN-GradientTape-2 & GradientTape & Horovod Examples \\
-    SimpleCNN-MonitoredSession & MonitoredSession & Horovod Examples \\
-    SimpleCNN-Session & Session & TensorFlow Model Garden \\
-    VGG-CIFAR10 & Keras & CIFAR-10 Example with TensorFlow 2.0 \\
-    Play-with-MNIST & GradientTape & TensorFlow 2.x Tutorials \\
-    Linear-Regression & GradientTape & TensorFlow 2.x Tutorials \\
-    Fashion-MNIST & Keras & TensorFlow 2.x Tutorials \\
-    CIFAR10-VGG16 & GradientTape & TensorFlow 2.x Tutorials\\
-    Inception-Network & GradientTape & TensorFlow 2.x Tutorials \\
-    RNN-Sentiment-Analysis & Keras & TensorFlow 2.x Tutorials \\
-    Stacked-LSTM-ColorBot & GradientTape & TensorFlow 2.x Tutorials \\
-    Auto-Encoder & GradientTape & TensorFlow 2.x Tutorials \\
-    Variational-Auto-Encoder & GradientTape & TensorFlow 2.x Tutorials \\
-    DCGAN & GradientTape & TensorFlow 2.x Tutorials \\
-    BERT & Keras & TensorFlow 2.x Tutorials \\
+    LSTM-MNIST & GradientTape & \multirow{2}{*}{TensorFlow Examples by Americ Damien\cite{tfexamplesdamien}} \\
+    SimpleCNN-GradientTape-1 & GradientTape \\
+    \hline
+    SimpleCNN-GradientTape-2 & GradientTape & \multirow{2}{*}{Horovod GitHub\cite{horovodgithub}} \\
+    SimpleCNN-MonitoredSession & MonitoredSession  \\
+    \hline
+    SimpleCNN-Session & Session & TensorFlow Model Garden\cite{tfmodelgarden} \\
+    \hline
+    VGG-CIFAR10 & Keras & CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github} \\
+    \hline
+    Play-with-MNIST & GradientTape & \multirow{11}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} \\
+    Linear-Regression & GradientTape  \\
+    Fashion-MNIST & Keras  \\
+    CIFAR10-VGG16 & GradientTape \\
+    Inception-Network & GradientTape  \\
+    RNN-Sentiment-Analysis & Keras  \\
+    Stacked-LSTM-ColorBot & GradientTape  \\
+    Auto-Encoder & GradientTape  \\
+    Variational-Auto-Encoder & GradientTape  \\
+    DCGAN & GradientTape  \\
+    BERT & Keras  \\
     \hline
   \end{tabular}
   \end{center}
