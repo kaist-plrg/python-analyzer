@@ -76,7 +76,7 @@ models, and use them as the target codes.
     \hline
     VGG-CIFAR10 & Keras & CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github} \\
     \hline
-    Play-with-MNIST & GradientTape & \multirow{11}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} \\
+    Play-with-MNIST & GradientTape & \multirow{10}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} \\
     Linear-Regression & GradientTape  \\
     Fashion-MNIST & Keras  \\
     CIFAR10-VGG16 & GradientTape \\
@@ -86,7 +86,6 @@ models, and use them as the target codes.
     Auto-Encoder & GradientTape  \\
     Variational-Auto-Encoder & GradientTape  \\
     DCGAN & GradientTape  \\
-    BERT & Keras  \\
     \hline
   \end{tabular}
   \end{center}
@@ -116,8 +115,8 @@ file and modified it according to the Horovod document.
     Model Name & API Pattern & Transformation Success \\
     \hline
     LSTM-MNIST & GradientTape & o \\
-    SimpleCNN-GradientTape-1 & GradientTape & o\\
-    SimpleCNN-GradientTape-2 & GradientTape & x \\
+    SimpleCNN-GradientTape-1 & GradientTape & x\\
+    SimpleCNN-GradientTape-2 & GradientTape & o \\
     SimpleCNN-MonitoredSession & MonitoredSession &o\\
     SimpleCNN-Session & Session & o\\
     VGG-CIFAR10 & Keras & o \\ 
@@ -131,7 +130,6 @@ file and modified it according to the Horovod document.
     Auto-Encoder & GradientTape & o \\
     Variational-Auto-Encoder & GradientTape & o \\
     DCGAN & GradientTape & o \\
-    BERT & Keras & x \\
     \hline
   \end{tabular}
   \end{center}
@@ -140,8 +138,65 @@ file and modified it according to the Horovod document.
 \end{figure}
 
 The transformation experiment result is described in the 
-figure \ref{fig:eval:trans}. Among 17 targets, only two models are failed to
-be correctly transformed.
+figure \ref{fig:eval:trans}. Among 16 targets, only one model failed to
+be correctly transformed. As shown in the figure \ref{fig:eval:trans},
+the SimpleCNN-GradientTape-1 model failed to be transformed into the
+distributed model.
+
+\begin{figure}[!ht]
+  \begin{lstlisting}[language=Python]
+# Model object is not used, instead a function used
+def conv_net(x):
+    x = tf.reshape(x, [-1, 28, 28, 1])
+    conv1 = conv2d(x, weights['wc1'], biases['bc1'])
+    conv1 = maxpool2d(conv1, k=2)
+    conv2 = conv2d(conv1, weights['wc2'], biases['bc2'])
+    conv2 = maxpool2d(conv2, k=2)
+    fc1 = tf.reshape(conv2, [-1, weights['wd1'].get_shape().as_list()[0]])
+    fc1 = tf.add(tf.matmul(fc1, weights['wd1']), biases['bd1'])
+    fc1 = tf.nn.relu(fc1)
+    out = tf.add(tf.matmul(fc1, weights['out']), biases['out'])
+    return tf.nn.softmax(out)
+
+optimizer = tf.optimizers.Adam(learning_rate)
+
+def run_optimization(x, y):
+    with tf.GradientTape() as g:
+        pred = conv_net(x)
+        loss = cross_entropy(pred, y) 
+    trainable_variables = list(weights.values()) + list(biases.values())
+    gradients = g.gradient(loss, trainable_variables)
+    optimizer.apply_gradients(zip(gradients, trainable_variables))
+    # cannot perform variable broadcast with Model.variables
+
+# training loop
+for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):
+    run_optimization(batch_x, batch_y)
+  \end{lstlisting}
+  \caption{Training code of SimpleCNN-GradientTape-1 model}
+  \label{fig:eval:simplecnn1}
+\end{figure}
+
+We manually investigate the SimpleCNN-GradientTape-1 model code to 
+identify the cause of the transformation failure.
+The figure \ref{fig:eval:simplecnn1} illustrate the part of the training code
+of the model.
+The code uses the GradientTape pattern in lines 17 to 22, which
+creates a {\tt GradientTape} object to record the computation
+and automatically backpropagate the gradients to the model parameters.
+It turns out that the code does not use the {\tt Model} instance to
+define the neural network, instead define the function {\tt conv\_net} 
+to eagerly compute the loss value.
+To transform the GradientTape pattern codes into the distributed codes,
+the vairable broadcast should be done to the {\tt variables} attributed of
+the {\tt Model} instance. Because the SimpleCNN-GradientTape-1 training code
+does not include the {\tt Model} instance, the code cannot be correctly
+transformed into a distributed code by our transformation tool.
+
+We claim that this is a very rare case, and our tool can transform most of the
+codes. In TensorFlow  
+
+
 (TODO: detailed discussion on the failure, and why it is ok)
 
 \subsection{Distributed Training Experiment}
