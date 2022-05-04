@@ -232,15 +232,57 @@ First, a pair of the original ML model and the corresponding transformed model
 is prepared. For convenience, we refer to the original, single-GPU based model
 as \textbf{ORG} model, and the auto-transformed, distributed model as
 \textbf{HVD} model. To measure the epoch loss, we manually modify both  
-\orgbf and \hvdbf training code to include the TensorBoard API. 
-(TODO: detailed explain on TensorBoard code)
+\orgbf ~ and \hvdbf ~ training code to include the TensorBoard API. 
+In specific, we manually added following code frgaments in the training code to
+store the per-epoch loss into log files.
+The {\tt datetime} library is used to name the log files with
+the date and time of the experiment.
+For GradientTape pattern codes, the call
+{\tt tf.summary.scalar} is used every epoch to store the
+computed loss value.
+For Keras pattern codes, the {\tt TensorBoard} callback instance is
+created and augmented to the original {\tt callbacks} argument
+of the {\tt Model.fit} method call.
+
+\begin{figure}[!ht]
+  \begin{lstlisting}[language=Python]
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+train_log_dir = 'logs/model_name/' + current_time + '/train'
+train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+
+# main training loop
+for epoch in range(N): 
+  loss = ... # the original loss computation is unchanged
+  # tensorboard
+  with train_summary_writer.as_default():
+    tf.summary.scalar('loss', loss, step=epoch*250+step)
+  \end{lstlisting}
+  \caption{TensorBoard code fragement for GradientTape pattern codes}
+\end{figure}
+
+\begin{figure}[!ht]
+  \begin{lstlisting}[language=Python]
+import datetime
+current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+log_dir = 'logs/model_name/' + current_time + '/train'
+tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+# train
+model.fit(... # the original arguments are unchanged
+              callbacks=[tensorboard_callback]) # tensorboard_callback is added
+  \end{lstlisting}
+  \caption{TensorBoard code fragement for Keras pattern codes}
+\end{figure}
 
 Second, we run the training of \textbf{ORG} model and
 \textbf{HVD} model. We utilize the {\tt mpirun} command to execute both
 \textbf{ORG} and \textbf{HVD} training. The command specifies the number of
 GPUs used for the training; 1 GPU is used for \textbf{ORG} model training  
 and 4 GPUs are used for \textbf{HVD} model training. 
+
 (TODO: machine spec of the training server)
+
 As mentioned earlier, the epoch loss is recorded and stored in the
 TensorBoard log file.
 After the training is done, the TensorBoard log file is used to plot the
@@ -323,9 +365,6 @@ graph between time and epoch loss.
 
 The results of the distributed traininig experiment 
 are shown in the figure \ref{fig:eval:train}.
-The points in the graphs represent the loss value of the given time;
-sky blue points correspond to the \orgbf model training and
-orange points coresspond to the \hvdbf model training.
 The lines represent the smoothed loss values;
 blue lines correspond to the \orgbf model training
 and the red lines correspond to the \hvdbf model training.
