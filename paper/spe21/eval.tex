@@ -192,17 +192,22 @@ the vairable broadcast should be done to the {\tt variables} attributed of
 the {\tt Model} instance. Because the SimpleCNN-GradientTape-1 training code
 does not include the {\tt Model} instance, the code cannot be correctly
 transformed into a distributed code by our transformation tool.
-
 We claim that this is a very rare case, and our tool can transform most of the
-codes. In TensorFlow  
-
-
-(TODO: detailed discussion on the failure, and why it is ok)
+codes. Among 11 target models of GraidentTape pattern, only
+SimpleCNN-GradientTape-1 model fails to be correctly transformed.
+All other model codes include the {\tt Model} instance, 
+which is a common method to define the ML model in TensorFlow. 
 
 \subsection{Distributed Training Experiment}
 
-Second, we compared the training speed between the original models and
+We compared the training speed between the original models and
 corresponding transformed model. 
+The target models of the distributed training experiment are 
+13 models that are using the TensorFlow 2.x APIs and correctly
+transformed in the previous experiment.
+We excluded the models using the legacy API of
+TensorFlow version 1.x because they do not suppor the TensorBoard library. 
+
 To quantify the training speed, we measured the epoch loss during the training
 of each model.
 The loss value is a result value of the loss function which is computed
@@ -247,11 +252,6 @@ graph between time and epoch loss.
     \includegraphics[width=\textwidth]{tape-lstm}
     \caption{LSTM-MNIST}
   \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{tape-simple1}
-    \caption{SimpleCNN-GradientTape-1}
-  \end{subfigure} 
   ~ 
   \begin{subfigure}[t]{.24\textwidth}
     \includegraphics[width=\textwidth]{tape-simple2}
