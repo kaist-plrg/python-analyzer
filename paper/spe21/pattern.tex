@@ -2,9 +2,33 @@
 
 \subsection{TensorFlow ML Training API Patterns}
 
-\begin{figure}
-\lstinputlisting[language=Python]
-{pattern_ex.py}
+\begin{figure}[t!]
+\centering
+  \begin{subfigure}[t]{0.4\textwidth}
+    \begin{lstlisting}[language=Python]
+# using low-level training API and loop
+for x, y in train_data.take(training_steps):
+    with tf.GradientTape() as tape:
+        pred = model(x, is_training=True)
+        loss = loss_compute(y, pred)
+
+    trainable_vars = model.trainable_variables
+    gradients = tape.gradient(loss, trainable_vars)
+    pairs = zip(gradients, trainable_vars)
+    optimizer.apply_gradients(pairs) 
+    \end{lstlisting}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+# using high-level training API
+model.compile(
+    optimizer = optimizer, 
+    loss = loss_compute) 
+model.fit(train_data.take(training_steps))
+    \end{lstlisting} 
+  \end{subfigure}
+
   \caption{TensorFlow model code example using two different API patterns}
   \label{fig:pattern:ex01}
 \end{figure}
@@ -125,13 +149,14 @@ that construct {\tt GradientTape} instances.
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
-with tf.GradientTape() as g:
+for x, y in train_data.take(training_steps):
+  with tf.GradientTape() as g:
     pred = conv_net(x)
     loss = cross_entropy(pred, y)
     
-trainable_variables = list(weights.values()) + list(biases.values())
-gradients = g.gradient(loss, trainable_variables)
-optimizer.apply_gradients(zip(gradients, trainable_variables))
+  trainable_variables = list(weights.values()) + list(biases.values())
+  gradients = g.gradient(loss, trainable_variables)
+  optimizer.apply_gradients(zip(gradients, trainable_variables))
   \end{lstlisting}
   \caption{GradientTape pattern code example}
 \end{figure}
@@ -150,8 +175,7 @@ makes use of the CHG to identify subclass relationships.
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
 class ResNet(tf.keras.models.Model):
-  ...
-
+  # model definition
 
 model = ResNet([2, 2, 2], num_classes)
 model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,

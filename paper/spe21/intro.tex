@@ -1,9 +1,9 @@
 \section{Introduction}\label{sec:intro}
 
-Recent advancements in machine learning(ML) have opened the wide possibility of
+Recent advancements in deep learning(DL) have opened the wide possibility of
 applying artificial intelligence in various fields.
-One major factor to consider in ML development is training time.
-While training is an essential part of ML development,
+One major factor to consider in DL development is training time.
+While training is an essential part of DL development,
 the process requires heavy computational workloads.
 According to the analysis by S. Bianco et al. \cite{bianco2018benchmark},
 the majority of the image recognition models including ResNet, VGG, SENet, etc.
@@ -25,10 +25,10 @@ to spend less time in training while preserving accuracy.
 Using multiple GPUs or TPUs to train the model is already adopted
 in various works \cite{brown2020gpt-3} \cite{silver2017alphazero}
 \cite{zhang2019distrspeech} \cite{tian2020distrwebattack}.
-As ML models are becoming more complex and training datasets are growing,
-the need for distributing the training process in ML research is inevitable.
+As DL models are becoming more complex and training datasets are growing,
+the need for distributing the training process in DL research is inevitable.
 
-Transforming an ML model for distributed training involves code rewriting.
+Transforming an DL model for distributed training involves code rewriting.
 Until now, developers have manually rewritten the model codes.
 This is a time-consuming and labor-intensive task for developers.
 In addition, developers need to understand and locate 
@@ -43,7 +43,7 @@ converts the single-GPU-based TensorFlow models
 into the multi-GPU-based models so that the model can be trained
 over a distributed system.
 We first formally define the code transformation from
-single-GPU-based ML model code to distributed training model code.
+single-GPU-based DL model code to distributed training model code.
 Then the transformation is implemented in actual software together with
 adequate pre-analysis that provides information used in the transformation.
 The transformation software is evaluated by comparing against 
@@ -54,10 +54,14 @@ and a manually transformed distributed model code.
 The contributions of this paper are as follows:
 
 \begin{itemize}
-  \item We formalize the code transformation for distributed ML training
-        of TensorFlow models. We first formally define the code transformation
-        as functions from AST to AST. Then we provide transform function
-        definitions for distributed ML model code.
+  \item We formalize the code transformation for distributed DL training
+        of TensorFlow models. We formally define the code transformation
+        as functions from AST to AST. After manually inspecting
+        the Horovod documentation and code examples,
+        We provide transform function definitions for 
+        automatically transforming single-GPU model codes into
+        distributed DL model codes.
+
   \item We present the distributed code transformation tool, which implements
         the code transformation functions. We evaluate the tool's performance
         by applying the transformation to TensorFlow example model codes.
