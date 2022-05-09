@@ -383,7 +383,35 @@ training speed in the distributed training,
 we performed additional distributed training of some models with
 different hyperparameters.
 
-(TODO: include the result of exp with changed lr)
+\begin{figure}[!ht]
+  \centering
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{keras-cifar}
+    \caption{VGG-CIFAR10 model with lr=0.001 (default value)}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{cifar-1e4}
+    \caption{VGG-CIFAR10 model with lr=0.0001}
+  \end{subfigure} 
+  ~ 
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{cifar-1e5}
+    \caption{VGG-CIFAR10 model with lr=0.00001}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.24\textwidth}
+    \includegraphics[width=\textwidth]{cifar-1e6}
+    \caption{VGG-CIFAR10 model with lr=0.000001}
+  \end{subfigure}
+
+  \caption{Distributed training experiments of VGG-CIFAR10 model with different learning rates.}
+  \begin{tabular}{r@{: }l r@{: }l}
+    X-axis & Time (seconds) & Y-axis & Loss value\\
+    Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
+  \end{tabular}
+\end{figure}
+
 
 The results show that the training speed difference between single-GPU and
 distributed training can differ according to the model hyperparameters
