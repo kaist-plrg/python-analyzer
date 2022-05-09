@@ -192,7 +192,7 @@ the vairable broadcast should be done to the {\tt variables} attributed of
 the {\tt Model} instance. Because the SimpleCNN-GradientTape-1 training code
 does not include the {\tt Model} instance, the code cannot be correctly
 transformed into a distributed code by our transformation tool.
-We claim that this is a very rare case, and our tool can transform most of the
+We argue that this is a very rare case, and our tool can transform most of the
 codes. Among 11 target models of GraidentTape pattern, only
 SimpleCNN-GradientTape-1 model fails to be correctly transformed.
 All other model codes include the {\tt Model} instance, 
