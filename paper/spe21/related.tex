@@ -4,6 +4,32 @@ We need to survey some related work and describe them here.
 \subsection{Distributed DL frameworks}
 
 Many frameworks are developed to support distributed DL training.
-Horovod
+
+TensorFlow provides {\tt tf.distributed.Strategy} API to perform
+distributed training across GPUs.
+ 
+Horovod is a multi-framework library for distributed training.
+
+(TODO: find more distributed training frameworks.)
+
+None of these frameworks support automatic transformation from single-GPU
+based training to distributed training. 
+
+(TODO: explain that our work is different from using frameworks;
+it can automatically transform)
 
 \subsection{Code Transformation}
+
+Code transformation is a technique which source codes are automatically
+transformed into another. The techinique is primarily used in compilers,
+for optimization process. 
+
+(TODO: find more use case of code transformation)
+
+Note that our approach is not a semantic-preserving code transformation.
+
+(TODO: explain that our's code transformation is different from
+compilers and optimization techniques)
+
+Semantic-preserving code transformation for DL model codes should be
+further investigated.
