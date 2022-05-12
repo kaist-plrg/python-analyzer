@@ -242,3 +242,79 @@ url = {https://www.usenix.org/conference/osdi16/technical-sessions/presentation/
 publisher = {USENIX Association},
 month = nov,
 }
+
+
+
+
+@InProceedings{Loulergue2020,
+  author    = {Loulergue, Fr{\'e}d{\'e}ric and Philippe, Jolan},
+  booktitle = {Algorithms and Architectures for Parallel Processing},
+  title     = {Automatic Optimization of Python Skeletal Parallel Programs},
+  year      = {2020},
+  address   = {Cham},
+  editor    = {Wen, Sheng and Zomaya, Albert and Yang, Laurence T.},
+  pages     = {183--197},
+  publisher = {Springer International Publishing},
+  abstract  = {Skeletal parallelism is a model of parallelism where parallel constructs are provided to the programmer as usual patterns of parallel algorithms. High-level skeleton libraries often offer a global view of programs instead of the common Single Program Multiple Data view in parallel programming. A program is written as a sequential program but operates on parallel data structures. Most of the time, skeletons on a parallel data structure have counterparts on a sequential data structure. For example, the map function that applies a given function to all the elements of a sequential collection (e.g., a list) has a map skeleton counterpart that applies a sequential function to all the elements of a distributed collection.},
+  groups    = {Code Trans. for ML},
+  isbn      = {978-3-030-38991-8},
+}
+
+
+@InProceedings{mlcatchup,
+  author    = {Haryono, Stefanus A. and Thung, Ferdian and Lo, David and Lawall, Julia and Jiang, Lingxiao},
+  booktitle = {2021 IEEE International Conference on Software Maintenance and Evolution (ICSME)},
+  title     = {MLCatchUp: Automated Update of Deprecated Machine-Learning APIs in Python},
+  year      = {2021},
+  pages     = {584-588},
+  doi       = {10.1109/ICSME52107.2021.00061},
+  groups    = {Code Trans. for ML},
+}
+
+
+@Misc{torchfx,
+  author    = {Reed, James K. and DeVito, Zachary and He, Horace and Ussery, Ansley and Ansel, Jason},
+  title     = {Torch.fx: Practical Program Capture and Transformation for Deep Learning in Python},
+  year      = {2021},
+  copyright = {arXiv.org perpetual, non-exclusive license},
+  doi       = {10.48550/ARXIV.2112.08429},
+  groups    = {Code Trans. for ML},
+  keywords  = {Machine Learning (cs.LG), FOS: Computer and information sciences},
+  publisher = {arXiv},
+  url       = {https://arxiv.org/abs/2112.08429},
+}
+
+@misc{tfonspark,
+  author= {Yahoo},
+  title = {TensorFlowOnSpark},
+  url = {https://github.com/yahoo/TensorFlowOnSpark},
+}
+
+@incollection{pytorch2019,
+title = {PyTorch: An Imperative Style, High-Performance Deep Learning Library},
+author = {Paszke, Adam and Gross, Sam and Massa, Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin, Zeming and Gimelshein, Natalia and Antiga, Luca and Desmaison, Alban and Kopf, Andreas and Yang, Edward and DeVito, Zachary and Raison, Martin and Tejani, Alykhan and Chilamkurthy, Sasank and Steiner, Benoit and Fang, Lu and Bai, Junjie and Chintala, Soumith},
+booktitle = {Advances in Neural Information Processing Systems 32},
+editor = {H. Wallach and H. Larochelle and A. Beygelzimer and F. d\textquotesingle Alch\'{e}-Buc and E. Fox and R. Garnett},
+pages = {8024--8035},
+year = {2019},
+publisher = {Curran Associates, Inc.},
+url = {http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-high-performance-deep-learning-library.pdf}
+}
+
+@inproceedings{deepspeed,
+author = {Rasley, Jeff and Rajbhandari, Samyam and Ruwase, Olatunji and He, Yuxiong},
+title = {DeepSpeed: System Optimizations Enable Training Deep Learning Models with Over 100 Billion Parameters},
+year = {2020},
+isbn = {9781450379984},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3394486.3406703},
+doi = {10.1145/3394486.3406703},
+abstract = {Explore new techniques in Microsoft's open source library called DeepSpeed, which advances large model training by improving scale, speed, cost, and usability, unlocking the ability to train 100-billion-parameter models. DeepSpeed is compatible with PyTorch. One piece of our library, called ZeRO, is a new parallelized optimizer that greatly reduces the resources needed for model and data parallelism while massively increasing the number of parameters that can be trained. Researchers have used these breakthroughs to create Turing Natural Language Generation (Turing-NLG), which at the time of its release was the largest publicly known language model at 17 billion parameters. In addition we will also go over our latest transformer kernel advancements that led the DeepSpeed team to achieve the world fastest BERT pretraining record.The Zero Redundancy Optimizer (ZeRO) is a novel memory optimization technology for large-scale distributed deep learning. ZeRO can train deep learning models with over 100 billion parameters on the current generation of GPU clusters at three to five times the throughput of the current best system. It also presents a clear path to training models with trillions of parameters, demonstrating an unprecedented leap in deep learning system technology.DeepSpeed brings state-of-the-art training techniques, such as ZeRO, optimized kernels, distributed training, mixed precision, and checkpointing, through lightweight APIs compatible with PyTorch. With just a few lines of code changes to your PyTorch model, you can leverage DeepSpeed to address underlying performance challenges and boost the speed and scale of your training.},
+booktitle = {Proceedings of the 26th ACM SIGKDD International Conference on Knowledge Discovery &amp; Data Mining},
+pages = {3505–3506},
+numpages = {2},
+keywords = {distributed deep learning, machine learning},
+location = {Virtual Event, CA, USA},
+series = {KDD '20}
+}

@@ -3,33 +3,71 @@ We need to survey some related work and describe them here.
 
 \subsection{Distributed DL frameworks}
 
-Many frameworks are developed to support distributed DL training.
+Horovod is the distributed training library for multiple
+DL framework, which our work utilizes to distribute single-GPU
+based TensorFlow programs.
+Aside Horovod, there are several frameworks and libraries that support
+distributed tranining for deep learning.
+TensorFlow offers an API for distributed training,
+namely {\tt tf.distribute.Strategy}. 
+The API provides several distributed training strategies;
+{\tt MirroredStrategy} and {\tt TPUStrategy} corresponds to 
+synchronous distributed training on multiple GPUs and TPUs,  
+{\tt ParameterSeverStrategy} corresponds to 
+data-parallel strategy using workers and a parameter server.
+The {\tt tf.distribute.Strategy} API can be used with Keras APIs
+to define distributed training code only with TensorFlow.  
 
-TensorFlow provides {\tt tf.distributed.Strategy} API to perform
-distributed training across GPUs.
- 
-Horovod is a multi-framework library for distributed training.
+TensorFlowOnSpark\cite{tfonspark} is a Python library that
+combines TensorFlow with Apache Spark and Hadoop to distribute
+the DL task on server clusters. 
+(TODO: expalin more on Spark and Hadoop)
 
-(TODO: find more distributed training frameworks.)
+DeepSpeed\cite{deepspeed} is Microsoft's distributed programming library
+built on top of PyTorch\cite{pytorch2019}.  
+DeepSpeed supports multiple distributed traininig methods and features,
+including model parallelism and pipeline parallelism. 
+(TODO: eplain more on deepspeed.)
 
+Ray\cite{???} is another distributed programming library for PyTorch. 
+(TODO: explian more Ray)
+
+% explain that none of dist.DL frameworks automatically transform
 None of these frameworks support automatic transformation from single-GPU
 based training to distributed training. 
+The users have to manually modify existing single-GPU-based models
+in accordance with the specific frameworks. 
 
-(TODO: explain that our work is different from using frameworks;
-it can automatically transform)
 
 \subsection{Code Transformation}
 
+% code transformation common usage - compile and optimization
 Code transformation is a technique which source codes are automatically
 transformed into another. The techinique is primarily used in compilers,
 for optimization process. 
 
-(TODO: find more use case of code transformation)
-
+% explain that our work is different from common semantic-preserving optmize
 Note that our approach is not a semantic-preserving code transformation.
+(TODO: explain that our tool is not semantic-preserving trans.)
 
-(TODO: explain that our's code transformation is different from
-compilers and optimization techniques)
+% code transformation for AD
+Automatic differentiation (AD) is one of the most popular application of
+code transformation (or program transformation) technique
+in the machine learning area.  
+AD is used to update the model parameters during the training process,
+resulting in the optimized model.
+Among many approaches, program transformation technique is one approach
+to enable AD in the programming language.
 
-Semantic-preserving code transformation for DL model codes should be
-further investigated.
+(TODO: add AD + program trans)
+
+% Code Transformation in Python
+There are several other works on Python program transformation.
+Loulergue and Phyilippe\cite{Loulergue2020} developed an
+transformation framework that automatically transforms PySke programs, 
+the python skeleton library for parallel programming.
+Haryono et al. \cite{mlcatchup} developed MLCatchUp,
+a tool that automatically updates deprecated APIs in Python machine learning
+programs. Reed et al. \cite{torchfx} developed torch.fx,
+a Python source-to-source transform framework designed to capture
+program structures in Python DL programs and transform them. 
