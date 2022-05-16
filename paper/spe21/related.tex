@@ -1,11 +1,11 @@
 \section{Related Work}\label{sec:related}
-We need to survey some related work and describe them here.
 
 \subsection{Distributed DL frameworks}
 
-Horovod is the distributed training library for multiple
-DL framework, which our work utilizes to distribute single-GPU
-based TensorFlow programs.
+In this work, Horovod library is used to distribute
+DL training codes.
+Horovod\cite{sergeev2018horovod} is one of the popular distributed training 
+library for multiple DL frameworks.
 Aside Horovod, there are several frameworks and libraries that support
 distributed tranining for deep learning.
 TensorFlow offers an API for distributed training,
@@ -21,49 +21,47 @@ to define distributed training code only with TensorFlow.
 TensorFlowOnSpark\cite{tfonspark} is a Python library that
 combines TensorFlow with Apache Spark and Hadoop to distribute
 the DL task on server clusters. 
-(TODO: expalin more on Spark and Hadoop)
-
 DeepSpeed\cite{deepspeed} is Microsoft's distributed programming library
 built on top of PyTorch\cite{pytorch2019}.  
 DeepSpeed supports multiple distributed traininig methods and features,
 including model parallelism and pipeline parallelism. 
-(TODO: eplain more on deepspeed.)
-
-Ray\cite{???} is another distributed programming library for PyTorch. 
-(TODO: explian more Ray)
 
 % explain that none of dist.DL frameworks automatically transform
 None of these frameworks support automatic transformation from single-GPU
 based training to distributed training. 
 The users have to manually modify existing single-GPU-based models
 in accordance with the specific frameworks. 
-
+In comparison, our work offers an automatic transformation from
+existing DL model to distributed DL model, which reduces
+programmer burden of manually modifying the training code
+in according to the library specification and use case.
 
 \subsection{Code Transformation}
 
 % code transformation common usage - compile and optimization
-Code transformation is a technique which source codes are automatically
-transformed into another. The techinique is primarily used in compilers,
-for optimization process. 
-
-% explain that our work is different from common semantic-preserving optmize
-Note that our approach is not a semantic-preserving code transformation.
-(TODO: explain that our tool is not semantic-preserving trans.)
-
-% code transformation for AD
-Automatic differentiation (AD) is one of the most popular application of
-code transformation (or program transformation) technique
-in the machine learning area.  
-AD is used to update the model parameters during the training process,
-resulting in the optimized model.
-Among many approaches, program transformation technique is one approach
-to enable AD in the programming language.
-
-(TODO: add AD + program trans)
+Code transformation, or program transformation,
+is technique that alters a \textit{source} code
+into a different \textit{target} code. 
+Code transformation is used in variety of area, although
+compilation and optimization is the primary application of
+the technique.
+According to Visser\cite{Visser2001}'s taxonomy, 
+code transformation can be classified into two: \textit{translation},
+where source and target programs are in differene langauge,
+and \textit{rephrasing}, where source and target programs are in
+same language.
+Our approach for automated distributed training is considered to be
+rephrasing transformation, considering it changes a Python code
+into another Python code. 
+In specific, our approach belongs to \textit{renovation} transformation
+according to Visser's taxonomy, considering that
+the transformation alters the behavior of the single-GPU-based
+training code into the distributed training.
 
 % Code Transformation in Python
-There are several other works on Python program transformation.
-Loulergue and Phyilippe\cite{Loulergue2020} developed an
+There are several other works on application of program transformation
+in Python and machine learning domain.
+Loulergue and Philippe\cite{Loulergue2020} developed an
 transformation framework that automatically transforms PySke programs, 
 the python skeleton library for parallel programming.
 Haryono et al. \cite{mlcatchup} developed MLCatchUp,
@@ -71,3 +69,7 @@ a tool that automatically updates deprecated APIs in Python machine learning
 programs. Reed et al. \cite{torchfx} developed torch.fx,
 a Python source-to-source transform framework designed to capture
 program structures in Python DL programs and transform them. 
+Compared to these works, our work specifically targets
+TensorFlow DL training codes written in Python,
+and provide concrete and correct transformation rules rather than
+only providing the framework.

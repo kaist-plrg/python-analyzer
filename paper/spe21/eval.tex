@@ -423,3 +423,18 @@ code is transformed. Our transformation tool do not target to search the
 optimal hyperparameters, although we do implement the guidelines from the
 official Horovod documents to scale learning rate and epoch numbers
 by number of the GPUs.  
+
+Although the automatically transformed model codes may need additional
+tuning, our transformation tool effectively reduces
+burdens of manually rewriting the training codes.
+By applying our tool, the users can quickly change the single-GPU-based
+models into the distributed model and initiate the tranining.
+During the training process, the user may monitor training-related measurements
+such as per-epoch loss and decide to tune the hyperparameters.
+From the transformed training code, the user is able to quickly locate the
+hyperparameter variables, which suffer none-or-minimal changes of their locations
+from the original code.
+Therefore, the users of our tool can quickly iterate the process of
+training, evaluating and tuning without rewriting the
+training code with manual investigation on the library documentations and
+the model code.
