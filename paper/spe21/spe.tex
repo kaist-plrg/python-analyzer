@@ -37,7 +37,23 @@
 %\presentaddress{This is sample for present address text this is sample for present address text}
 
 \abstract[Summary]{
-Describe the summary of this paper.
+Distributed training is one of the popular technique to reduce the training time by parallelizing
+the training workload over multiple GPUs.
+Until now, developers manually rewrite single-GPU-based models into
+distributed models, which is a time-consuming and labor-intensive task that also requires
+full understanding of the distribued training library APIs.
+In this end, we propose an \textit{automated code transformation for distributed training}.
+We formalize the code transformation rule as an function from AST to AST,
+using pattern matching to capture and modify target parts of the code.
+After manually inspecting the distributed training library document and code examples,
+we provide correct definitions for transformation rules for different patterns of
+TensorFlow model training codes.
+The transformation rules are implemented as an automatic code transformation
+tool.
+We evaluate our tool on 16 open-source TensorFlow ML models,
+which transformation succeed on 15 models.
+The evaluation results show that our tool significantly reduces
+the user's effort to distribute existing ML models.
 }
 
 \keywords{keyword1, keyword2, keyword3, keyword4}
