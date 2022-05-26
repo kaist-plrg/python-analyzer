@@ -1,7 +1,10 @@
 \section{Introduction}\label{sec:intro}
 
-Recent advancements in deep learning(DL) have opened the wide possibility of
+Recent advancements in deep learning have opened the wide possibility of
 applying artificial intelligence in various fields.
+Deep learning(DL) is a machine learning technique which uses
+several hidden layers of perceptrons. (TODO: cite sth and explain DL)
+
 One major factor to consider in DL development is training time.
 While training is an essential part of DL development,
 the process requires heavy computational workloads.
@@ -15,6 +18,7 @@ for convergence, the training process takes the longest time
 in the whole development process. This leads to the conclusion that
 reducing training time is the most efficient optimization according to
 Amdahl's law.
+(TODO: clarify? answer to the question)
 
 In one of the efforts to reduce training time, 
 researchers utilize \textit{distributed training}.
@@ -25,9 +29,11 @@ to spend less time in training while preserving accuracy.
 Using multiple GPUs or TPUs to train the model is already adopted
 in various works \cite{brown2020gpt-3} \cite{silver2017alphazero}
 \cite{zhang2019distrspeech} \cite{tian2020distrwebattack}.
+(TODO: explain each citation)
 As DL models are becoming more complex and training datasets are growing,
 the need for distributing the training process in DL research is inevitable.
 
+(TODO: more natural connection to "manual code rewriting" topic)
 Transforming an DL model for distributed training involves code rewriting.
 Until now, developers have manually rewritten the model codes.
 This is a time-consuming and labor-intensive task for developers.
@@ -50,10 +56,13 @@ The transformation software is evaluated by comparing against
 examples of distributed training model codes, 
 each including an original single-GPU-based model code 
 and a manually transformed distributed model code.
+(TODO: add explanation to tensorflow and horovod, and python)
 
 The contributions of this paper are as follows:
 
 \begin{itemize}
+  \item TODO: one more?
+
   \item We formalize the code transformation for distributed DL training
         of TensorFlow models. We formally define the code transformation
         as functions from AST to AST. After manually inspecting

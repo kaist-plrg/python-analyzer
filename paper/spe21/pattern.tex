@@ -2,11 +2,10 @@
 
 \subsection{TensorFlow ML Training API Patterns}
 
-\begin{figure}[t!]
+\begin{figure}[ht!]
 \centering
-  \begin{subfigure}[t]{0.4\textwidth}
+  \begin{subfigure}[b]{0.4\textwidth}
     \begin{lstlisting}[language=Python]
-# using low-level training API and loop
 for x, y in train_data.take(training_steps):
     with tf.GradientTape() as tape:
         pred = model(x, is_training=True)
@@ -17,16 +16,17 @@ for x, y in train_data.take(training_steps):
     pairs = zip(gradients, trainable_vars)
     optimizer.apply_gradients(pairs) 
     \end{lstlisting}
+    \caption{Using low-level training API}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[t]{0.45\textwidth}
+  \begin{subfigure}[b]{0.45\textwidth}
     \begin{lstlisting}[language=Python]
-# using high-level training API
 model.compile(
     optimizer = optimizer, 
     loss = loss_compute) 
 model.fit(train_data.take(training_steps))
     \end{lstlisting} 
+    \caption{Using high-level training API}
   \end{subfigure}
 
   \caption{TensorFlow model code example using two different API patterns}
@@ -46,6 +46,7 @@ invoke the model training process by two methods calls, {\tt compile} and
 {\tt fit}. The {\tt fit} method repeats the same process with the {\tt for}
 loop in line 2; it takes each training data from the set and
 applies the gradient to the model parameter.
+(TODO: update explanation to figure 6)
 
 While both code fragments train the model in the same way, 
 the code structures significantly differ.
