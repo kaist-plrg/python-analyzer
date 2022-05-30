@@ -3,22 +3,25 @@
 Recent advancements in deep learning have opened the wide possibility of
 applying artificial intelligence in various fields.
 Deep learning(DL) is a machine learning technique which uses
-several hidden layers of perceptrons. (TODO: cite sth and explain DL)
+several hidden layers of perceptrons.
+The word \textit{deep} comes from the fact that the DL models use
+lots of hidden layers.
+(TODO: examples of SOTA DL models)
 
-One major factor to consider in DL development is training time.
-While training is an essential part of DL development,
-the process requires heavy computational workloads.
-According to the analysis by S. Bianco et al. \cite{bianco2018benchmark},
-the majority of the image recognition models including ResNet, VGG, SENet, etc.
-require over 5 GFLOPs for a single forward propagation.
-The training process is a repetition of training steps until convergence,
-which are composed of a forward and backward propagation.
+Training is an essential part of DL development.
+In the training process, DL model parameters are updated to
+minimize the loss with respect to the training dataset.
+Gradient descent methods are usually used to update the
+parameters given the training example batch.
+Each step of the gradient descent is repeated until
+the loss converges to some low value.
+One major factor to consider in the trainig process is that
+the training requires heavy computational workloads.
 Considering that thousands of training data are fed into the model
 for convergence, the training process takes the longest time
 in the whole development process. This leads to the conclusion that
 reducing training time is the most efficient optimization according to
 Amdahl's law.
-(TODO: clarify? answer to the question)
 
 In one of the efforts to reduce training time, 
 researchers utilize \textit{distributed training}.
