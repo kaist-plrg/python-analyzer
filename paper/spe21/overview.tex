@@ -14,9 +14,9 @@ and code generator.
 
 (TODO: add paragraph to show big picture of the transformation)
 
-(TODO: write "what this module does" in front of each paragraph)
-
 \textbf{Parser}
+Parser is the module that parses input Python code package
+into the set of ASTs.
 We assume that the input single-GPU-based model is given as a Python code
 package that resides in a single file directory.
 Given the directory, the parser module first parses all Python code files
@@ -32,6 +32,9 @@ location and kind of the transformation target codes in the model
 and select the correct transformation rule for the given input model.
 
 \textbf{Class Hierarchy Analyzer}
+Class hierarchy analyzer module analyzes the class inheritance relation
+between user-defined classes and TensorFlow library classes and
+outputs the class hierarchy graph.
 During the API pattern analysis and AST transformation phase,
 the software need to identify subclass relationship between
 classes appearing in the code.
@@ -43,6 +46,9 @@ AST transformer modules. The details of the class hierarchy analyzer are
 described in section \ref{sec:cha}.
 
 \textbf{Training API Pattern Analyzer}
+Training API pattern analyzer module 
+indentifies the TensorFlow training APIs used in the training code AST
+and returns the training API pattern for the code. (TODO: clarify?)
 TensorFlow provides multiple APIs to define and invoke the training process.
 To correctly transform a single-GPU-based model training code into
 the distributed code, the transformation software must identify
@@ -53,8 +59,11 @@ the correct transformation rule. The details of the training API pattern
 analyzer are described in section \ref{sec:pattern}.
 
 \textbf{AST Transformer}
-The transformation software transforms the input AST into the output AST
-which corresponds to the distributed training code.
+AST transformer module applies the correct transformation to the
+training code AST to retain the distributed training code AST.
+Here, the "correct" transformation is the set of transformation rules
+appropriate for the given class hierarchy information and
+training API pattern of the input training code.
 We defined formal transformation rules which are composed of
 \textit{transform functions} from ASTs to ASTs.
 By applying the transform function to the input AST,
