@@ -36,9 +36,24 @@ in various works \cite{brown2020gpt-3} \cite{silver2017alphazero}
 As DL models are becoming more complex and training datasets are growing,
 the need for distributing the training process in DL research is inevitable.
 
-(TODO: more natural connection to "manual code rewriting" topic)
-Transforming an DL model for distributed training involves code rewriting.
-Until now, developers have manually rewritten the model codes.
+However, existing models cannot automatically acheive speedup
+running on distributed systems.
+The users of the DL model must rewrite the original model training
+code into distributed training code. 
+The distributed training codes identify available GPUs in the system,
+create separate processes for each GPU, and divide the training
+workload assign to each process.
+This way, the distributed training code is responsible of
+actually parallelizing the training process over multiple GPUs.
+In practice, developers use distributed training libraries or frameworks
+that can be used together with popular DL frameworks.  
+For example, Horovod\cite{sergeev2018horovod} is a popular
+distributed training library that supports multiple DL frameworks,
+including popular ones like TensorFlow\cite{tensorflow} 
+or PyTorch\cite{pytorch2019}.
+
+Until now, developers manually rewrote single-GPU-based models
+into distributed models.
 This is a time-consuming and labor-intensive task for developers.
 In addition, developers need to understand and locate 
 specific components involved in the model training.
