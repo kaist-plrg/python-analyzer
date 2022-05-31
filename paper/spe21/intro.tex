@@ -1,27 +1,59 @@
 \section{Introduction}\label{sec:intro}
 
-Recent advancements in deep learning have opened the wide possibility of
+Recent advancements in deep learning(DL) have opened the wide possibility of
 applying artificial intelligence in various fields.
-Deep learning(DL) is a machine learning technique which uses
-several hidden layers of perceptrons.
-The word \textit{deep} comes from the fact that the DL models use
-lots of hidden layers.
-(TODO: examples of SOTA DL models)
+LeCun et al.\cite{LeCun2015} defines deep learning as a
+type of machine learning technique that composes multiple
+abstraction layers to build up high-level representation from raw data. 
+Deep learning models typically employs a neural network to build a model.
+Neural networks are composed of independent layers of perceptrons,
+which get input signals from the previous layer then sends the
+output signal to the next layer.
+The first layer is the input layer, which gets an raw data as an input signal,
+and the last layer is the output layer, which returns the
+whole computation result of the network.
+Any other layers between the input layer and the output layer is 
+called hidden layers; the word \textit{deep} comes from the fact that
+the neural networks use lots of hidden layers so the model depth is high.
+Deep learning is applied on various artificial intelligence area;
+popular examples of DL models are
+VGG\cite{vggnet2014} and ResNet\cite{resnet2015} for image recognition 
+and BERT\cite{bert2018} and GPT-3\cite{gpt32020} for natural languag processing.
 
-Training is an essential part of DL development.
-In the training process, DL model parameters are updated to
-minimize the loss with respect to the training dataset.
-Gradient descent methods are usually used to update the
-parameters given the training example batch.
-Each step of the gradient descent is repeated until
-the loss converges to some low value.
-One major factor to consider in the trainig process is that
-the training requires heavy computational workloads.
-Considering that thousands of training data are fed into the model
-for convergence, the training process takes the longest time
-in the whole development process. This leads to the conclusion that
-reducing training time is the most efficient optimization according to
-Amdahl's law.
+Deep learning consists of two stages: the training stage and the inference stage.
+In the training stage, the hidden layer parameters are updated
+with respect to the training dataset so that the output from the output layer
+matches the answer in the dataset, in other words, the model learns
+to return correct output to the given input. 
+The training stage consists of multiple training steps.
+A training step in the stage consists of a \textit{forward propagation} and
+\textit{backward propagation}.
+The forward propagation feeds an input training batch to the
+network and computes the loss between the output and the answer.
+The backward propagation step computes the gradients of the model parameters
+and apply gradient descent to optimize the model.
+The training step is repeated against training batches
+until the accuracy of the model converges.
+In many of the cases, the training repeats multiple times over the entire 
+training dataset in order to gain better accuracy.  
+In the inference stage, a new data unseen to the model
+is given as an input to the model, a forward propagation returns an output
+and it is used as an prediction result for the data.
+Because the model \textit{learned} general task rules from the training
+dataset, the model can also return probably correct result for the
+unseen data.
+
+The training stage is the most essential part of DL model development.
+To generalize well on the unseen data,
+the training process repeats the training steps on the huge amount of
+training dataset.
+Repeating training step over large dataset requires enormous
+amount of computation time.
+According to the reports of You et al.\cite{imagenetraining2017},
+training ResNet-50 model with ImageNet benchmark dataset
+on a single NVIDIA M40 GPUI takes 14 days
+(The ImageNet benchmark\cite{imagenet2014} 
+contains 1.28 million training images). 
 
 In one of the efforts to reduce training time, 
 researchers utilize \textit{distributed training}.
@@ -29,31 +61,32 @@ Distributed training is a technique to parallelize the training computation
 workload over multiple GPUs.
 By taking advantage of parallelism, distributed training enables researchers
 to spend less time in training while preserving accuracy.
+Goyal et al.\cite{facebook2018} trained the ResNet-50 model on ImageNet
+in one hour with 256 GPUs, which is over 300 times faster than the
+single-GPU training result of You et al.\cite{imagenettraining2017}.
 Using multiple GPUs or TPUs to train the model is already adopted
-in various works \cite{brown2020gpt-3} \cite{silver2017alphazero}
+in various works.
+In training of GPT-3 language model\cite{gpt32020}, 
+According to\cite{Silver2017alphagozero}, the famous AlphaGo 
+was trained using 176 GPUs and 48 TPUs.
 \cite{zhang2019distrspeech} \cite{tian2020distrwebattack}.
 (TODO: explain each citation)
 As DL models are becoming more complex and training datasets are growing,
 the need for distributing the training process in DL research is inevitable.
 
-However, existing models cannot automatically acheive speedup
-running on distributed systems.
-The users of the DL model must rewrite the original model training
-code into distributed training code. 
-The distributed training codes identify available GPUs in the system,
-create separate processes for each GPU, and divide the training
-workload assign to each process.
-This way, the distributed training code is responsible of
-actually parallelizing the training process over multiple GPUs.
-In practice, developers use distributed training libraries or frameworks
-that can be used together with popular DL frameworks.  
-For example, Horovod\cite{sergeev2018horovod} is a popular
-distributed training library that supports multiple DL frameworks,
-including popular ones like TensorFlow\cite{tensorflow} 
-or PyTorch\cite{pytorch2019}.
-
-Until now, developers manually rewrote single-GPU-based models
-into distributed models.
+However, existing DL models are not automatically distributed
+by runnning in distributed systems with multiple GPUs.
+For distributed training of existing DL models,
+the training code should be modified into the distributed training code.
+The distributed training code contains additional implementation
+for recognizing GPUs in the system, spawning processes for each GPU,
+and assigning the training dataset into each process.
+Developers utilize distributed training libraries which can be
+added to existing DL training codes that are written in popular
+DL frameworks. For example, Horovod\cite{sergeev2018horovod} is a
+popular distributed training library for Python that supports multiple
+DL frameworks such as TensorFlow\cite{tensorflow} or PyTorch\cite{pytorch2019}.
+Until now, developers have manually rewritten the model codes.
 This is a time-consuming and labor-intensive task for developers.
 In addition, developers need to understand and locate 
 specific components involved in the model training.
