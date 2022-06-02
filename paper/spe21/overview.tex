@@ -13,7 +13,13 @@ and code generator.
   \label{sysarch}
 \end{figure}
 
-(TODO: add paragraph to show big picture of the transformation)
+To correctly transform TensorFlow DL model, it is important to select
+appropriate transformation rule for the type of the input training code.
+This requires identifying the TensorFlow APIs appear in the code and
+categorize them by their API patterns.
+We devised to analyze \textit{class hierarchy} and \textit{API pattern} 
+of the input training code and select appropriate transformation rule 
+according to the analysis results. 
 
 \textbf{Parser}
 Parser is the module that parses input Python code package
