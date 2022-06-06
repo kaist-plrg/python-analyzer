@@ -10,34 +10,28 @@ to define the Python abstract syntax.
 The syntax is composed of three syntactic components: expressions, statements,
 and top-level components.
 
-(TODO: erase unnecessary things ex. type iginore, decorator..)
-
 \begin{figure}[!ht]
 \begin{tabular}{lrll}
-  \nmodule & := & \mul{\nstmt} ~ \ntypignore & \desc{ModuleDef} \\
-  \nstmt & ::= & \decolist ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexpr)} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt} & \desc{FunDef} \\ 
-  & $|$ & \decolist ~ \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
-  & $|$ & \mul{\nexpr} ~ \oassign ~ \nexpr ~ \optypcomm & \desc{Assign} \\
-  & $|$ & \optypcomm ~ \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{ForLoop} \\
-  & $|$ & \kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{WhileLoop} \\
+  \nmodule & := & \mul{\nstmt}  \\
+  \nstmt & ::= & \kdef ~ \nid ~ \sparen{\nargs} & \desc{FunDef} \\ 
+  & $|$ & \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
+  & $|$ & \nexpr ~ \oassign ~ \nexpr & \desc{Assign} \\
+  & $|$ & \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} & \desc{ForLoop} \\
+  & $|$ & \kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} & \desc{WhileLoop} \\
   & $|$ & \kif ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{If} \\
-  & $|$ & \optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{With} \\
+  & $|$ & \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{With} \\
   & $|$ & \kimport ~ \mul{\nalias} & \desc{Import} \\
   & $|$ & \kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias} & \desc{ImportFrom} \\
   & $|$ & \nexpr & \desc{ExprStmt} \\
-\end{tabular}
 
-\begin{tabular}{lrll}
   \nexpr & ::= & \nexpr ~ \nboolop ~ \nexpr & \desc{BoolOp} \\
   & $|$ & \nexpr ~ \nbinop ~ \nexpr & \desc{BinaryOp} \\ 
   & $|$ & \nunop ~ \nexpr & \desc{UnaryOp} \\ 
   & $|$ & \lparen{\mul{\nexpr}} & \desc{List} \\ 
   & $|$ & \sparen{\mul{\nexpr}} & \desc{Tuple} \\ 
-  & $|$ & \nexpr ~ \mul{(\ncompop ~ \nexpr)} & \desc{CompOp} \\
   & $|$ & \nexpr ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} & \desc{Call} \\
   & $|$ & \nconstant & \desc{Constant} \\
   & $|$ & \nexpr {\tt .}\nid& \desc{Attribute} \\
-  & $|$ & \nexpr\lparen{\nexpr} & \desc{Subscript} \\
   & $|$ & \nid & \desc{Name} \\
 
   \nboolop & ::= & \oand ~ $|$ ~ \oor & \desc{BoolOperator} \\
@@ -49,9 +43,7 @@ and top-level components.
   \nkeyword & ::= & \op{\nid} \oassign \nexpr & \desc{Keyword} \\ 
   \nalias & ::= & \nid ~\mul{(.\nid)} \op{(\kas ~ \nid)} & \desc{Alias} \\
   \nwithitem & ::= & \nexpr ~ \op{(\kas ~ \nexpr)} & \desc{WithItem}\\
-\end{tabular}
 
-\begin{tabular}{lrll}
   \nconstant & ::= & \knone & \desc{NoneLiteral} \\
   & $|$ & \nint & \desc{IntLiteral} \\
   & $|$ & \nfloat & \desc{FloatLiteral} \\
