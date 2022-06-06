@@ -120,16 +120,4 @@ When a node in the submodule CHG is merged into the parent module CHG,
 the class qualified name of the node should be prefixed with the
 submodule name.
 
-\subsection{Implementation}
-We implemented the CHG merging algorithm that constructs a correct
-qualified name, and utilized it when the CHA produces the CHG for
-a Python package. 
-
-The CHA module produces a CHG for the model package and delivers it to
-other modules. Given the CHG, a module can compute whether a class is
-a subclass of another by finding the path in the graph.
-We implemented the CHG as a class and the path-finding algorithm as
-a method for the class. The path-finding algorithm is based on
-a recursive depth-first search.
-
 

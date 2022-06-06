@@ -184,13 +184,3 @@ model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
   \caption{Keras pattern code example}
 \end{figure}
 
-
-\subsection{Implementation}
-
-We implemented the training API using pattern matching.
-The training API patterns are implemented in the forms of pattern matching
-on the AST object. The ASTs are implemented as \textit{case classes}.
-Case classes in Scala are equipped with destructors(the method {\tt unapply}),
-so they can be used as patterns. 
-As a result, training API patterns can be directly converted into
-Scala pattern expressions.
