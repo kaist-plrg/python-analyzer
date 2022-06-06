@@ -1,8 +1,9 @@
 \section{Overview}
 
-We first provide an overview of the code transformation software.
-The overall software structure is illustrated in figure \ref{sysarch}.
-The software is composed of five modules: Python code parser,
+We first provide an overview of our approach.
+The structure of the code transformation tool is 
+illustrated in figure \ref{sysarch}.
+The tool is composed of five modules: Python code parser,
 class hierarchy analyzer, API pattern analyzer, AST transformer,
 and code generator.
 
@@ -13,13 +14,18 @@ and code generator.
   \label{sysarch}
 \end{figure}
 
-To correctly transform TensorFlow DL model, it is important to select
-appropriate transformation rule for the type of the input training code.
-This requires identifying the TensorFlow APIs appear in the code and
-categorize them by their API patterns.
-We devised to analyze \textit{class hierarchy} and \textit{API pattern} 
-of the input training code and select appropriate transformation rule 
-according to the analysis results. 
+To correctly transform TensorFlow DL models,
+it is important to apply appropriate transformation rules
+for different type of training codes.
+We identified that class inheritance information and
+the patterns of traning API usage is essential to 
+select the correct transformation rule. 
+In this end, our approach analyzes \textit{class hierarchy}
+and \textit{training API pattern} in the input training code.
+The transformer receives the input training code AST and
+additionally class hierarchy and API pattern information
+to select the correct set of transformation rules among the candidates
+and apply it to the input code AST.
 
 \textbf{Parser}
 Parser is the module that parses input Python code package
