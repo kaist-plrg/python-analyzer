@@ -1,27 +1,95 @@
 \section{Class hierarchy analysis}\label{sec:cha}
 
-\subsection{Class Hierarchy Analyzer}
+\subsection{Motivation}
 
-In TensorFlow model codes, \textit{user-defined classes} inherit
-TensorFlow library classes to reuse and extend training-related methods.
-The {\tt keras.layers.Layer} and {\tt keras.models.Model} classes 
-are typical examples of the case.
-The {\tt keras.layers.Layer} is a base class for
-layers that define parts of the ML model computation.
-Subclasses of the {\tt keras.layers.Layer} can extend
-the {\tt call} method to define the forward propagation
-and automatically support gradient updates.
-The {\tt keras.model.Model} is a base class for models.
-Subclasses of the {\tt keras.models.Model} can extend
-the {\tt call} method to define the model blocks
-and automatically support training-related methods
-such as {\tt fit} or {\tt save}. 
+To correctly transform TensorFlow DL model codes,
+one must identify the TensorFlow training APIs used in the training code.
+This includes creating and using instances of TensorFlow classes or
+calling methods of TensorFlow methods. 
+For instance, a developer can define a DL model by creating an instance of
+{\tt tf.keras.Sequential} class and train it by calling the
+{\tt fit} method on the model instance.
+Figure \ref{fig:cha:tfex} shows an example of using
+TensorFlow classes and methods.
 
 \begin{figure}[h]
-\lstinputlisting[language=Python]{subclass_ex.py}
+\begin{lstlisting}[language=Python]
+import tensorflow as tf
+import tensorflow.keras as keras
+
+model = keras.Sequential(...) # define a model
+model.fit() # train the model by calling 
+\end{lstlisting}
+  \caption{Training code example of using TensorFlow library class and method}
+  \label{fig:cha:tfex}
+\end{figure}
+
+In practice, developers may want to extend or modify original behaviors
+of TensorFlow library classes or methods.  
+Developers can define a new class that inherits TensorFlow library classes
+and override methods to extend their behaviors. 
+These \textit{user-defined training classes}
+should also be identified to prepare a correct transformation rule 
+for different implementations.  However, using only syntactic information 
+cannot fully identify user-defined training classes
+as different developers use different identifiers for naming classes.
+Figure \ref{fig:cha:ex} shows an instance of using the
+user-defined training class, the {\tt ResNet} class inheriting
+the {\tt keras.models.Model} class.
+The selection of the name {\tt ResNet} here is completely arbitrary;
+it can be any other name that cannot be fully recognized by
+pre-defined syntactic rules.
+Identifying the method name {\tt fit} is also not an correct method.
+Line 12 of figure \ref{fig:cha:ex} defines another class {\tt Something}
+that has a method {\tt fit} but is not related to the training.
+Using the method name to identify the traninig API will lead to
+incorrectly assuming that the instance {\tt something} in line 20
+is the TensorFlow model instance, hence resulting in incorrect transformation.
+
+\begin{figure}[h]
+  \begin{lstlisting}[language=Python]
+import tensorflow as tf
+import tensorflow.keras as keras
+
+# user-defined training class
+class ResNet(keras.models.Model): 
+    def __init__(self, layer_num, **kwargs):
+        pass
+    def call(self, inputs):
+        pass
+
+# arbitrary non-training class 
+class Something():
+    def fit(optimizer, y):
+        print("hello, world!") 
+
+if __name__ = '___main__': 
+    # actual DL model instance
+    model = ResNet(50)
+    # object not related to training
+    something = Something()
+
+    model.build(input_shape=(None,) + c.input_shape) 
+    optim = tf.keras.optimizers.SGD()
+
+    # training-related method call, which should be transformed
+    model.fit(optimizer=optim, train_data) 
+    # method call not related to the training  
+    something.fit(optimizer=optim, train_data)
+\end{lstlisting}
 \caption{Training code example of using a user-defined class}
 \label{fig:cha:ex}
 \end{figure}
+
+To solve this problem, we devised to pre-analyze the class inheritance
+relation between TensorFlow library classes and user-defined classes. 
+We utilize a \textit{class hierarchy analysis}, a type of static analysis
+that identifies   
+
+
+\subsection{Class Hierarchy Analyzer}
+
+
 
 Figure \ref{fig:cha:ex} illustrates an example of a training code
 using the user-defined class. 
@@ -34,34 +102,6 @@ the {\tt ResNet} instance can invoke the training process with
 {\tt model.fit}. The inherited model {\tt fit}
 automatically repeats the gradient descent with
 given model computation and training data. 
-
-To correctly transform the codes with user-defined classes,
-the subclass relationship between user-defined classes
-and TensorFlow classes should be known before the training API pattern analysis. 
-In figure \ref{fig:cha:ex}, for instance, 
-the fact that the {\tt ResNet} class
-is a subclass of the {keras.models.Model} is essential to identify
-that the code uses a high-level API in {\tt tf.keras} module. 
-Otherwise the function call {\tt model.fit} in line 14 would
-be recognized as an ordinary function call not related to the training pattern.
-
-\begin{figure}[h]
-\begin{lstlisting}[language=Python]
-class A:
-  pass
-
-class B(A): # inherits A
-  pass
-
-class C(B): # inherits B
-  pass
-
-c = C()
-isinstance(c, A) # returns True
-\end{lstlisting}
-\caption{Code example of Python class inheritance}
-\label{fig:cha:pythonex}
-\end{figure}
 
 The class hierarchy analyzer(CHA) module analyzes the
 subclass relationship between the 
@@ -99,25 +139,5 @@ in the argument position.
 The analyzer finds all {\tt class} statements from the module AST,
 adds the CHG node for the new class. The analyzer also adds an edge
 to the parent class node if the {\tt class} statement specifies an inheritance.
-
-After CHGs for all model code files are generated, 
-they are merged into one CHG.
-One caveat in the process is a correct translation of class names
-of submodules in the package.
-The Python packaging system is closely related to the file system.
-A package is specified by a directory; 
-the directory name is the package name, 
-and the Python code files in the directory are the modules included in the package.
-A package can include subpackages, which are specified
-by the subdirectories, and modules in the subpackages are called submodules.
-A module can access a module in the subpackage by a qualified name
-which prefixes describe the subpackage path to the target module.
-This means that the same class should be specified by different qualified
-names in perspectives of different subpackages.
-The analyzer should also take account of the qualified names
-in merging CHGs of the submodules. 
-When a node in the submodule CHG is merged into the parent module CHG,
-the class qualified name of the node should be prefixed with the
-submodule name.
 
 
