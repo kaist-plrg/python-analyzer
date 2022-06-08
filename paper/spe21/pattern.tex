@@ -156,15 +156,6 @@ If the body statements calls a {\tt run} methods of the {\tt MonitoredSession}
 instance, the analyzer concludes that the training code belongs to the
 MonitoredSession pattern.
 
-The {\tt tf.compat.v1.train.MonitoredSession} is used to handle initialization,
-recovery, and hooks in the training process\cite{monitoredsession}.
-Similar to the {\tt Session} instance, the {\tt run} method of
-{\tt MonitoredSession} instance is used to invoke the training computation.
-In addition, {\tt MonitoredSession} instances can automatically
-initialize and invoke methods of {\tt Hook} objects.
-The MonitoresSession pattern matches the constructor calls for the
-{\tt MonitoresSession} instance in the training code.
-
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
 with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
