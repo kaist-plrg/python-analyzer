@@ -137,7 +137,7 @@ with tf.Session() as sess:
 \end{figure}
 
 \textbf{MonitoredSession Pattern}
-The MonitoredSession pattern refors to TensorFlow 1.x training codes that
+The MonitoredSession pattern refers to TensorFlow 1.x training codes that
 uses the {\tt MonitoredSession} class instance to manually repeat
 the training computation in low-level manner.
 The pattern is same to the {\tt Session} pattern, except that the
@@ -168,13 +168,32 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
 
 
 \textbf{GradientTape Pattern}
-In TensorFlow 2.x, the computations are eagerly evaluated.
-Unlike in TensorFlow 1.x, developers do not need to explicitly invoke the computations
-with {\tt Session} or {\tt MonitoredSession} instances.
-Instead, TensorFlow 2.x training codes use {\tt tf.GradientTape} instances
-to record the forward pass operation and automatically compute the gradient.
-The GradientTape pattern matches the call expressions {\tt with} statements
-that construct {\tt GradientTape} instances.
+The GradientTape pattern refers to TensorFlow 2.x training codes that
+uses the {\tt GradientTape} class instnace tot manually repeat the 
+training computation in low-level manner.
+Figure \ref{fig:tapepattern} is a code example of GradientTape pattern.
+In line 2, the {\tt tf.GradientTape} instance is created with
+{\tt with} statement.
+The {\tt GradientTape} instance is an object that records operations
+occur inside the {\tt with} statement which itself was created. 
+It's main usage is similar to TensorFlow 1.x {\tt Session} and
+{\tt MonitoredSession} instance; however TensorFlow 2.x uses eager evaluation
+by default, so the {\tt GradientTape} instance can be only used for
+subset of training operation that its gradient requires to be computed.
+In line 7, the gradients of model parameters is retrieved with
+{\tt gradient} method on the {\tt GradientTape} instance.
+Finally in line 8, the {\tt Optimizer} instance applies gradient descent with
+{\tt apply\_gradients} method call.
+The {\tt Optimizer} class represents various optimization algorithms studied in 
+the DL domain.
+
+To identify a GradientTape pattern training code,
+the analyzer searches for a {\tt with} statement that creates a
+{\tt GradientTape} instance.
+The analyzer also searches for a statement that calls the {\tt apply\_gradients}
+method of {\tt Optimizer} instance.
+If both statements are found, the analyzer concludes that the code
+belongs to the GradientTape pattern.
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
@@ -187,28 +206,60 @@ for x, y in train_data.take(training_steps):
   gradients = g.gradient(loss, trainable_variables)
   optimizer.apply_gradients(zip(gradients, trainable_variables))
   \end{lstlisting}
+  \label{fig:tapepattern}
   \caption{GradientTape pattern code example}
 \end{figure}
 
 \textbf{Keras Pattern}
-Another common pattern to define the training process is to define
-the model with {\tt tf.keras} API and automatically train the model
-instance with {\tt fit} method.
-In this method, the models are subclasses of {\tt tf.keras.models.Model} class
-and inherits training-related method.
-The Keras pattern matches the call expressions that is invoking the {\tt fit}
-method of the subclass instances of {\tt tf.keras.models.Model}
-In the pattern matching process, the API pattern analyzer
-makes use of the CHG to identify subclass relationships. 
+The Keras pattern refers to TensorFlow 2.x training codes that uses
+the Keras library to define the model and invoke an automatic
+training process.
+The Keras library\cite{keras} is a layer-based DL library which is
+included in the TensorFlow platform.
+In Keras training codes, DL models are represeted as instances of
+subclass of {\tt tf.keras.models.Model} class.
+The {\tt Model} class provides several training-related methods.
+The {\tt compile} method allows developers to configure the training,
+such as selecting optimization algorithm or setting hyperparameters.
+The {\tt fit} method automatically trains the model with
+the training dataset given as the method arguments.
+These methods allow developers to abstract out the complex implementation
+details of the training process and quickly start training.
+
+Figure \ref{fig:keraspattern} is a code example of Keras pattern.
+Line 1 defines a {\tt ResNet} class that inherits the 
+{\tt tf.keras.models.Model} class. As mentioned earlier, the {\tt ResNet}
+class represents a new model definition.
+Implementation details of the {\tt ResNet} class is omitted from the 
+figure; developers may freely define or extend methods that conforms to the
+{\tt Model} class specification.
+Line 6 creates an instance of {\tt ResNet} class, and line 7
+calls the {\tt fit} method of the instance. 
+The {\tt fit} method call here corresponds to the start of the training process
+in the code example.
+
+To identify a Keras pattern training code, the analyzer searches for the
+{\tt Model.fit} method call. An important caveat here is to 
+detect only the {\tt fit} method of the {\tt tf.keras.models.Model} 
+subclass instances. The pattern analyzer make use of the class inheritance
+information received from the class hierarchy analyzer to search for
+the {\tt Model} subclass instances. In figure \ref{fig:keraspattern},
+for example, the analyzer uses the fact that the {\tt ResNet} class is
+a subclass of the {\tt Model} class to conclude that the {\tt model.fit}
+is the {\tt Model.fit} method, and finally conclude that the code
+belongs to Keras pattern.
+
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
+# model definition
 class ResNet(tf.keras.models.Model):
-  # model definition
+  def __init__(self, params):
+    ...
 
 model = ResNet([2, 2, 2], num_classes)
 model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
   \end{lstlisting}
+  \label{fig:keraspattern}
   \caption{Keras pattern code example}
 \end{figure}
-
