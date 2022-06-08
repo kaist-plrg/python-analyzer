@@ -36,20 +36,21 @@ model.fit(train_data.take(training_steps))
 TensorFlow provides various APIs to define the training process.
 The figure \ref{fig:pattern:ex01} illustrates two examples of using 
 different APIs for the model training.
-Line 2 to 10 uses low-level APIs to repeat training steps over the training
+Line 2 to 10 in the code \ref{fig:pattern:ex01}(a)  
+uses low-level APIs to repeat training steps over the training
 data set. Inside the {\tt for} loop, 
 the code uses the {\tt GradientTape} instance to record the loss computation,
 then uses the {\tt gradient} method and the {\tt apply\_gradient} method to
 back-propagate the gradient to the model parameters.
-In contrast, lines 13 and 14 use high-level APIs to automatically
+In contrast, lines 1 and 4 in the code \ref{fig:pattern:ex01}(b)
+uses high-level APIs to automatically
 invoke the model training process by two methods calls, {\tt compile} and
 {\tt fit}. The {\tt fit} method repeats the same process with the {\tt for}
-loop in line 2; it takes each training data from the set and
+loop in the code \ref{fig:pattern:ex01}(a); it takes each training data from the set and
 applies the gradient to the model parameter.
-(TODO: update explanation to figure 6)
 
-While both code fragments train the model in the same way, 
-the code structures significantly differ.
+While both code train the model in the same way, 
+the code structures are significantly different.
 Using high-level APIs simplifies the program,
 reducing additional codes that compute the prediction loss and apply gradients.
 Low-level APIs are verbose, however, developers can fully control
@@ -58,8 +59,8 @@ Developers can freely choose from different training code styles to
 take advantage of each way.
 
 To correctly transform the training codes, 
-the transformation software must transform different training APIs
-based on different transformation rules. 
+the tool must apply different transformation rule for different usages
+of training APIs.
 We implemented an \textit{API pattern analysis} that identifies
 the TensorFlow API usage with \textit{training API patterns} 
 Each training API pattern is a set of code patterns for AST,
@@ -74,7 +75,7 @@ is used to transform the training code.
 
 We manually inspected multiple TensorFlow training codes to identify
 common patterns of training-related API usage. 
-To this end, we defined four training API patterns
+We defined four training API patterns
 that effectively identify kinds of training APIs usage in the target code.
 Figure \ref{tab:patterns} briefly explains each training API pattern.
 Note that each pattern is assigned with different TensorFlow versions.
@@ -103,12 +104,27 @@ that use compatibility modules for TensorFlow version 1.x.
 We now explain each training API pattern with concrete code examples.
 
 \textbf{Session Pattern} 
-The {\tt tf.compat.v1.train.Session} instance provides methods to
-invoke computations on the computation graph.
-Developers use the {\tt run} method to run the optimization on the model,
-usually inside the {\tt for} loop to repeat the process with training data.
-The Session pattern matches call expressions that the function
-call expression is the method {\tt tensorflow.Session.run}.
+The Session pattern refers to TensorFlow 1.x training codes that
+uses the {\tt Session} class instance to manually repeat the training 
+computation in low-level manner.
+Figure \ref{fig:sessionpattern} is a training code example of 
+Session pattern.
+In line 1, an instance of {\tt tf.compat.v1.train.Session} class is 
+created with {\tt with} statement.
+The {\tt Session} instance is an object providing a link to 
+the TensorFlow runtime, equipped with methods related to the computation graph.
+As in line 3, the method {\tt run} is called to invoke the
+execution of computation on the pre-defined computation graph.
+In the training process, {\tt Session.run} method is repeated mutiple times
+so that the forward propagation of the training data and
+backward propagation of gradient is performed many times.
+
+To identify a Session pattern training code,
+the analyzer searches for a {\tt with} statement that creates a
+{\tt Session} instance.
+If the body statements of {\tt with} statement calls a 
+{\tt run} method of the {\tt Session} instance,
+the analyzer concludes that the training code belongs to the Session pattern.
 
 \begin{figure}[!ht]
 \begin{lstlisting}[language=Python]
@@ -117,9 +133,29 @@ with tf.Session() as sess:
       sess.run(optimizer, feed_dict=feed_dict)
 \end{lstlisting}
 \caption{Session pattern code example}
+\label{fig:sessionpattern}
 \end{figure}
 
 \textbf{MonitoredSession Pattern}
+The MonitoredSession pattern refors to TensorFlow 1.x training codes that
+uses the {\tt MonitoredSession} class instance to manually repeat
+the training computation in low-level manner.
+The pattern is same to the {\tt Session} pattern, except that the
+{\tt MonitoredSession} instance is used instead of the {\tt Session} instance.
+Figure \ref{fig:monsesspattern} is a code example of MonitoredSession pattern.
+In line 1, the {\tt MonitoredSession} class instance is created with
+the {\tt tf.traing.MonitoredTrainingSession} call inside {\tt with} statement
+(Note that the constructor has different name with the class).
+Similar to the Session pattern's case, line 3 calls the {\tt run} method of the
+{\tt MonitoredSession} instance to repeat the training computation.
+
+To identify a MoniotoredSession pattern training code,
+the analyzer searches for a {\tt with} statement that creates a
+{\tt MonitoredSession} instance.
+If the body statements calls a {\tt run} methods of the {\tt MonitoredSession}
+instance, the analyzer concludes that the training code belongs to the
+MonitoredSession pattern.
+
 The {\tt tf.compat.v1.train.MonitoredSession} is used to handle initialization,
 recovery, and hooks in the training process\cite{monitoredsession}.
 Similar to the {\tt Session} instance, the {\tt run} method of
@@ -135,6 +171,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     while not mon_sess.should_stop():
         mon_sess.run(train_op, feed_dict=feed_dict)
   \end{lstlisting}
+  \label{fig:monsesspattern}
   \caption{MonitoredSession pattern code example}
 \end{figure}
 
