@@ -35,7 +35,7 @@ model.fit(train_data.take(training_steps))
 
 TensorFlow provides various APIs to define the training process.
 The figure \ref{fig:pattern:ex01} illustrates two examples of using 
-different APIs for the model training.
+different training APIs.
 Line 2 to 10 in the code \ref{fig:pattern:ex01}(a)  
 uses low-level APIs to repeat training steps over the training
 data set. Inside the {\tt for} loop, 
@@ -55,10 +55,10 @@ Using high-level APIs simplifies the program,
 reducing additional codes that compute the prediction loss and apply gradients.
 Low-level APIs are verbose, however, developers can fully control
 the training process.
-Developers can freely choose from different training code styles to
+Developers can freely choose from different training APIs to
 take advantage of each way.
 
-To correctly transform the training codes, 
+To correctly transform the codes using different training APIs, 
 the tool must apply different transformation rule for different usages
 of training APIs.
 We implemented an \textit{API pattern analysis} that identifies
