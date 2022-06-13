@@ -85,22 +85,7 @@ The original code parses into a module AST with a list of 2 statements,
 an import statement and an assign statement, 
 as illustrated in the figure \ref{fig:trans:ast}. 
 
-\begin{figure}[h]
-\begin{lstlisting}[language=Scala]
-Module(List(
-  ImportStmt(Id('tensorflow'), Id('tf')),
-  AssignStmt(
-    Id('optimizer'), 
-    CallExpr(
-      Expr('tf.keras.optimizers.Adam'),
-      Args(Id('lr'))
-    )
-  )
-))
-\end{lstlisting}
-  \caption{The AST of the code in figure \ref{fig:trans:org}, represented in Scala object}
-  \label{fig:trans:ast}
-\end{figure}
+
 
 \begin{figure}[!ht]
 \begin{tabular}{lcl}
