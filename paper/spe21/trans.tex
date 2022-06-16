@@ -1,272 +1,87 @@
 \section{Code Transformation}\label{sec:trans}
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
-In this section, we describe the transformation rule that
-transforms single-GPU-based TensorFlow model codes into
-multi-GPU-based TensorFlow model codes.
-We informally understand code transformation rule as
-conditions to select the target code parts
-and methods to transform them into another.
-The methods include the addition, modification, and deletion of
-specific code parts.
-Currently, code transformation for distributed ML training
-is only described by a set of examples and informal explanations.
-To automate the code transformation process,
-we need to formally define the code transformation rule
-and ways to convert the definition into software implementation.
-We propose a formal definition of the code transformation rule
-for distributed ML training and implement the automatic code transformation
-software based on the formal definition.
+(TODO: Intro paragraph)
 
-Code transformation is formally defined as a pure function from AST to AST.
-We call this function a transform function.
-We may define multiple transform functions that act on different
-language constructs and use them to define other transform functions.
-For example, to transform a Python code into another,
-we define a transform function that takes Module AST and returns Module AST.
-Inside the Module transform function definition,
-we may use the statement transform function to transform statements
-that compose the Module AST.
+In this section, we describe the formalization of the transformation rule
+for distributed DL traininig with set of code examples and formal notions
+related to them.
+We informally understand the code transformation rule as methods to
+select the parts of codes to modify and construct new codes from them.
+To automate the code transformation process, we need to formalize the
+action of code transformation in a form that is implementable as a program. 
 
-Together with the AST parameter, transform functions take and return
-the environment parameter.
-Environment parameters are used to store specific identifiers
-and pass them to the other calls of the transform function.
-For example, the statement transform function frequently uses 
-the identifier bound to the TensorFlow module.
-The module name first appears from the import statement.
-The transform function call on the import statement stores
-the TensorFlow module name on the environment and returns it.
-Then the later function calls to other statements
-retrieve the TensorFlow module name from the environment parameter.
+* Whole picture of code example
+  - gradienttape pattern
+  - import tensorflow
+  - optim = optimzier.~~~
+  - optim.apply\_gradient  
 
-% explain transform function with example
+* ex 1. Adding horovod import
+  - show code example pair & rule
+  - explain where import statement should be added 
+  - explain using pattern matching  
 
-\begin{figure}[h]
-\begin{lstlisting}[language=Python]
+
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \begin{lstlisting}[language=Python]
 import tensorflow as tf
-optimizer = tf.keras.optimizers.Adam(lr)
-\end{lstlisting}
-  \caption{Original code example}
-  \label{fig:trans:org}
-\end{figure}
 
-\begin{figure}[h]
-\begin{lstlisting}[language=Python]
+dataset = ...
+model = ...
+optim = tf.optimizers.Adam(0.001) 
+
+for (x, y) in dataset.take(10000):
+  with tf.GradientTape() as tape:
+    pred = model(x)
+    loss_value = loss(y, pred) 
+
+  gradients = tape.gradient(loss_value, model.trainable_variables)
+  optim.apply_gradient(zip(gradients, model.trainable_variable)\end{lstlisting}
+    \caption{Original DL training code}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.48\textwidth}
+    \begin{lstlisting}[language=Python]
 import tensorflow as tf
-# import and init horovod module
 import horovod.tensorflow as hvd
-hvd_broadcast_done = False
-hvd.init()
-import tensorflow.keras as keras
 
-# scale the learning rate
-optimizer = tf.keras.optimizers.Adam(lr * hvd.size())
-# wrap the optimizer object
-optimizer = hvd.DistributedOptimizer(optimizer)
-\end{lstlisting}
-  \caption{Transformed code example}
-  \label{fig:trans:hvd}
+dataset = ...
+model = ...
+optim = tf.optimizers.Adam(0.001 * hvd.size()) 
+
+for (x, y) in dataset.take(10000):
+  with tf.GradientTape() as tape:
+    pred = model(x)
+    loss_value = loss(y, pred) 
+  tape = hvd.DistributedGradientTape(tape)
+
+  gradients = tape.gradient(loss_value, model.trainable_variables)
+  optim.apply_gradient(zip(gradients, model.trainable_variable)\end{lstlisting}
+    \caption{Distributed DL training code}
+  \end{subfigure}
+  \label{fig:trans:ex}
+  \caption{Code examples}
 \end{figure}
 
-We first describe how the transform function works by example.
-The above figures illustrate a pair of TensorFlow model codes
-before and after the transformation;
-the figure \ref{fig:trans:org} represents the original
-training code before the transformation and
-the figure \ref{fig:trans:org} represents the distributed
-training code after the transformatioin.
-Informally, three kinds of transformation occur in between;
-1) import and initialize the horovod module;
-2) scale the optimizer's learning rate by {\tt hvd.size()};
-3) Wrap the optimizer with {\tt hvd.DistributedOptimizer}.
-
-The original code parses into a module AST with a list of 2 statements,
-an import statement and an assign statement, 
-as illustrated in the figure \ref{fig:trans:ast}. 
-
+Figure \ref{fig:trans:ex} shows an example of the input single-GPU code and
+the coresponding transformed output distributed code. 
+Some unnecessary details of the codes are removed from the figure.
+There are three transformed code parts in the above example.
+First, a new import statement that imports {\tt horovod.tensorflow} modules
+is added in line 2. The statement is added right after the {\tt tensorflow} module
+import statement.
+Second, in line 6, an argument of the constructor function 
+{\tt tf.optimizers.Adam} is modified. The newly changed argument multiplies
+{\tt hvd.size()} onto the original argument.
+Finally, in line 12, a new statement that assigns the variable {\tt tape}
+is added. The assignment wraps the original {\tt GradientTape} object with
+the Horovod library function, {\tt hvd.DistributedGradientTape}.
+Except the above mentioned parts, the original code is not modified.     
 
 
-\begin{figure}[!ht]
-\begin{tabular}{lcl}
-  \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
-  & \kteq & \tsstmt{[\nstmtsubs{1}, \nstmtsubs{2}]}{\smodenvempty} \\
-
-  & \kteq & \ktlet ~ \mul{\nstmtsubs{1}}$'$, \smodenvsubs{1} ~ \kteq ~ 
-  \tstmt{\nstmtsubs{1}}{\smodenvempty} ~ \ktin \\
-
-  & & \ktlet ~ \mul{\nstmtsubs{2}}$'$, \smodenvsubs{2} ~ \kteq ~ 
-  \tstmt{\nstmtsubs{2}}{\smodenvsubs{1}} ~ \ktin \\
-
-  & & (\mul{\nstmtsubs{1}}$'$ \ktconl ~ \mul{\nstmtsubs{2}}$'$) \\ 
-\end{tabular}
-  \caption{Transform function evaluated on the module AST}
-  \label{fig:trans:ex_module}
-\end{figure}
-
-The figure \ref{fig:trans:ex_module} 
-describes how the module transform function 
-is evaluated on the example module AST.
-The module transform function, $\fkmodule$
-applies statement list transform function $\fksstmt$ to its statement list.
-Then $\fksstmt$ applies the statement transform function $\fkstmt$
-to each statement in the list.
-In addition, $\fksstmt$ passes the environment parameter $\sigma$
-from a $\fkstmt$ call to the next $\fkstmt$ call.
-
-The figure \ref{fig:trans:ex_stmt1} illustrates the evaluation of
-the transform function on \nstmtsubs{1}.
-The first $\fkstmt$ call receives the statement
-{\tt import tensorflow as tf} as an input.
-In part (a), the function first matches the input statement
-with the pattern $\kimport ~ \mul{\nalias}$.
-Transform functions use pattern matching to discriminate target ASTs
-by their syntactic structure.
-Part (b) specifies the pattern guard, which describes the detailed conditions
-on the content of the input.
-The pattern guard checks if the import statement
-is importing the TensorFlow module.
-In the process, the alias transform function $\fkalias$ is applied on the
-{\tt tensorflow as tf}.
-Note that $\fkalias$ also stores the module name {\tt tf}
-in the environment parameter as a form of mapping;
-later calls on the transform function can retrieve the
-TensorFlow module name from the returned environment, $\smodenvsubs{1}$.
-Finally, part (c) constructs the output statements
-and returns it with $\smodenvsubs{1}$.
-
-
-\begin{figure}[!ht]
-\begin{tabular}{rcll}
-  \tstmt{\nstmtsubs{1}}{\smodenvempty} & \kteq & 
-  \tstmt{{\tt import tensorflow as tf}}{\smodenvempty} & \\
-
-  & \kteq & \tstmt{\kimport ~ \mul{\nalias}}{\smodenvempty} & 
-  (a) Pattern matching the input \\
-
-  & & {\tt matching} ~ ( & \\
-  && \indent \kimport ~ \mul{\nalias} \kteq ~ 
-  \kimport ~ [{\tt tensorflow} \kas ~ {\tt tf}], & \\
-  && \indent \mul{\nalias} \kteq ~ [\naliassubs{1}], & \\ 
-  && \indent \naliassubs{1} \kteq ~ {\tt tensorflow} \kas ~ {\tt tf} ~ ) & \\
-
-  & \kteq & 
-  \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{[\naliassubs{1}]}{\smodenv} 
-  \ktin & 
-  (b) Check if the TensorFlow module imported \\
-  && \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ 
-  \kteq ~ [\tflow $\mapsto$ \nid] ~ \ktthen &\\ 
-  && ([\kimport ~ \naliassubs{1}, & \\
-  && {\tt import horovod.tensorflow as hvd}, & \\
-  && {\tt hvd\_broadcast\_done = False}, & \\
-  && {\tt hvd.init()}], \smodenvsubs{1}) & \\
-  
-  & \kteq &
-  ([\kimport ~ {\tt tensorflow} \kas ~ {\tt tf}, & 
-  (c) Construct output statements \\
-  && {\tt import horovod.tensorflow as hvd}, & \\
-  && {\tt hvd\_broadcast\_done = False}, & \\
-  && {\tt hvd.init()}], \smodenvsubs{1}) & \\
-
-  \kwith ~ \smodenvsubs{1} 
-  & \kteq & \talias{\naliassubs{1}}{\smodenvempty} & \\
-  & = & \talias{{\tt tensorflow} \kas ~ {\tt tf}}{\smodenvempty} & \\ 
-  & \kteq & \smodenvempty[\tflow $\mapsto$ {\tt tf}] & \\
-  & \kteq & [\tflow $\mapsto$ {\tt tf}] & \\
-\end{tabular}
-  \caption{Transform function evaluated on the first statement AST}
-  \label{fig:trans:ex_stmt1}
-\end{figure}
-
-\begin{figure}
-\begin{tabular}{rcll}
-  \tstmt{\nstmtsubs{2}}{\smodenvempty} & \kteq &
-  \tstmt{{\tt optimizer = tf.keras.optimizers.Adam(lr)}}{\smodenvsubs{1}} &\\
-  &\kteq&
-  \tstmt{\nidsubs{r} \oassign 
-  \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
-  \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-  \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenvsubs{1}} &\\
-  && {\tt matching} ~ ( 
-  \indent\indent\indent\indent\indent (a) Pattern matching the input &\\
-  && \indent \nidsubs{r} \kteq ~ {\tt optimizer}, &\\
-  && \indent \nexprsubs{1} = {\tt tf.keras.optimizers.Adam}, &\\
-  && \indent \nexprsubs{11}= {\tt lr}~) &\\
-
-  &\kteq& \ktif ~ \smodenvsubs{1}(\tflow) ~ \kteq ~ \nidsubs{t} ~ 
-  \indent\indent\indent\indent\indent
-  (b) Check if it calls {\tt tf.keras.optimizers.Adam} &\\ 
-  && \ktand ~ 
-  \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.keras.optimizers.Adam} ~ 
-  \ktthen& \\
-
-  && ([\nidsubs{r} \oassign \nexprsubs{1} 
-  \sparen{\nexprsubs{11} {\tt * hvd.size()} ~ ... ~ \nexprsubs{1n} 
-  ~\op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-  \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}], &\\
-  && \smodenvsubs{1}[\optmizer $\mapsto$ \nidsubs{r}])&\\
-  
-  &\kteq& 
-  ([{\tt optimizer = tf.keras.optimizers.Adam(lr * hvd.size())}], &\\   
-  && \smodenvsubs{1}[\optmizer $\mapsto$ \nidsubs{r}])
-  \indent\indent\indent\indent\indent
-  (c) Construct output statements &\\ 
-\end{tabular}
-  \caption{Transform function evaluated on the second statement AST}
-  \label{fig:trans:ex_stmt2}
-\end{figure}
-
-The figure \ref{fig:trans:ex_stmt2} illustrates the evaluation of
-the transform funcion on \nstmtsubs{2}.
-The second $\fkstmt$ receives the statement
-{\tt optimizer = tf.keras.optimizers.Adam(lr)} as an input.
-Part (a) pattern matches the input to the assign statement pattern
-with the right-hand side of the function call expression.
-Part (b) is a pattern guard that checks if
-the function call is {\tt tf.keras.optimizers.Adam}.
-Note that the guard refers to the environment parameter
-to check the TensorFlow module identifier.
-Because after the first $\fkstmt$ call,
-the environment parameter stores the TensorFlow module identifier {\tt tf},
-so the second $\fkstmt$ call can use the information to
-check if the function call is indeed a constructor for TensorFlow
-optimizer object.
-In part (c), the output statement is returned.
-As specified in the transform function definition, 
-the first argument expression is multiplied by {\tt hvd.size()}.
-
-\begin{figure}[!ht]
-\begin{tabular}{rcll}
-  \tmodule{[\nstmtsubs{1}, \nstmtsubs{2}] ~ \ntypignore} 
-  &\kteq& (\mul{\nstmtsubs{1}}$'$ \ktconl ~ \mul{\nstmtsubs{2}}$'$) &\\ 
-  &\kteq& 
-  [\kimport ~ {\tt tensorflow} \kas ~ {\tt tf}, &\\ 
-  && {\tt import horovod.tensorflow as hvd}, & \\
-  && {\tt hvd\_broadcast\_done = False}, & \\
-  && {\tt hvd.init()}, &\\
-  && {\tt optimizer = tf.keras.optimizers.Adam(lr * hvd.size())}] &\\   
-\end{tabular}
-  \caption{Transform function concatenating the resulting statements}
-  \label{fig:trans:ex_concat}
-\end{figure}
-
-Finally, the output statement lists are concatenated as specified in the
-$\fksstmt$, and the transformed module AST is constructed
-as illustrated on the figure \ref{fig:trans:ex_concat}.
-
-As described in the example, the transform functions are defined for
-each language construct. The functions are described in terms of
-pattern matching against the input AST; the matching patterns and 
-pattern guards select the target AST to transform, and
-the output AST is constructed with the matched variables.
-
-Each training API category defines a corresponding transform function.
-Given a training code of the category, the corresponding module AST transform
-function is applied to the target code AST with an empty environment parameter.
-In the following subsections, we describe the transform function for each
-training API category. The paper only explains important parts of the 
-definition; the full definition of the transform functions can be found
-in the supplementary material.
 
 \subsection{Description of Transform functions}
 
