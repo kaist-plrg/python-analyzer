@@ -1,27 +1,25 @@
 \section{Code Transformation}\label{sec:trans}
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
-(TODO: Intro paragraph)
-
-In this section, we describe the formalization of the transformation rule
+In this section, we describe formalization of the transformation rule
 for distributed DL traininig with set of code examples and formal notions
 related to them.
-We informally understand the code transformation rule as methods to
-select the parts of codes to modify and construct new codes from them.
-To automate the code transformation process, we need to formalize the
-action of code transformation in a form that is implementable as a program. 
-
-* Whole picture of code example
-  - gradienttape pattern
-  - import tensorflow
-  - optim = optimzier.~~~
-  - optim.apply\_gradient  
-
-* ex 1. Adding horovod import
-  - show code example pair & rule
-  - explain where import statement should be added 
-  - explain using pattern matching  
-
+There are two main points in design of the formalization.
+First, we informally understand the code transformation rule as methods to
+1) select the parts of codes to modify and 2) construct new code by reusing
+parts of the input code.
+To automate the transformation process, we need code transformation in a form 
+that is implements above actions as a program.
+Second, as mentioned earlier, to correctly transform tranining codes with different
+API patterns, we must apply different transformation rules.
+The formalization should also describe different transformation rules
+for different API patterns.
+In this end, we define a transformation rule for each API pattern as 
+a set of pure function that takes ASTs as input and returns ASTs as output.
+We call the function as \textit{transform function}.
+Each transform function is defined to get an AST of given type and return an AST
+of the same type. For instance, a transform function for statement,
+$\fkstmt$, takes a statement AST and return a statement AST.
 
 \begin{figure}[ht!]
   \centering
@@ -62,14 +60,14 @@ for (x, y) in dataset.take(10000):
   optim.apply_gradient(zip(gradients, model.trainable_variable)\end{lstlisting}
     \caption{Distributed DL training code}
   \end{subfigure}
-  \label{fig:trans:ex}
   \caption{Code examples}
+  \label{fig:trans:ex}
 \end{figure}
 
 Figure \ref{fig:trans:ex} shows an example of the input single-GPU code and
 the coresponding transformed output distributed code. 
-Some unnecessary details of the codes are removed from the figure.
-There are three transformed code parts in the above example.
+Some unnecessary details of the codes are removed from the codes.
+There are three transformed parts in the distributed training code.
 First, a new import statement that imports {\tt horovod.tensorflow} modules
 is added in line 2. The statement is added right after the {\tt tensorflow} module
 import statement.
@@ -81,9 +79,13 @@ is added. The assignment wraps the original {\tt GradientTape} object with
 the Horovod library function, {\tt hvd.DistributedGradientTape}.
 Except the above mentioned parts, the original code is not modified.     
 
+We proceed to formalize the transformation rule as set of pure functions
+that take ASTs as input and return ASTs as output.
 
 
 \subsection{Description of Transform functions}
+
+This section explains transform function each for training API pattern.  
 
 \subsubsection{Transform function for Session pattern}
 
