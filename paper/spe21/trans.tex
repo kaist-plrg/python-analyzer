@@ -69,19 +69,20 @@ the coresponding transformed output distributed code.
 Some unnecessary details of the codes are removed from the codes.
 There are three transformed parts in the distributed training code.
 First, a new import statement that imports {\tt horovod.tensorflow} modules
-is added in line 2. The statement is added right after the {\tt tensorflow} module
+is added in line 2. 
+The statement is added right after the original {\tt tensorflow} module
 import statement.
 Second, in line 6, an argument of the constructor function 
 {\tt tf.optimizers.Adam} is modified. The newly changed argument multiplies
 {\tt hvd.size()} onto the original argument.
-Finally, in line 12, a new statement that assigns the variable {\tt tape}
+Third, in line 12, a new statement that assigns the variable {\tt tape}
 is added. The assignment wraps the original {\tt GradientTape} object with
 the Horovod library function, {\tt hvd.DistributedGradientTape}.
 Except the above mentioned parts, the original code is not modified.     
 
-We proceed to formalize the transformation rule as set of pure functions
+We formalize the transformation rule as set of pure functions
 that take ASTs as input and return ASTs as output.
-
+For each training API pattern, we define  
 
 \subsection{Description of Transform functions}
 
@@ -89,16 +90,7 @@ This section explains transform function each for training API pattern.
 
 \subsubsection{Transform function for Session pattern}
 
-The training codes in Session pattern and MonitoredSesion pattern
-use legacy version of the TensorFlow 1.x library. 
-These legacy codes can be identified by specific import statement as below.
-
-\begin{figure}[h]
-\begin{lstlisting}[language=Python]
-import tensorflow.compat.v1 as tf
-\end{lstlisting}
-\caption{Import statements for using TensorFlow 1.x legacy module}
-\end{figure}
+To correctly transform the Session pattern codes into 
 
 Session pattern and MonitoredSesison pattern uses the following
 transform function to match the legacy import statement
