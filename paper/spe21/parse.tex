@@ -13,10 +13,12 @@ version of the Python abstract syntax.
 The Python languague is composed of three major components:
 modules, statements, and expressions.
 
-The top-level component of Python is a module, which is
-a sequence of statements.
-The module represents a program source code file,
-containing multiple definitions of functions or classes.
+The top-level component of Python is a module, 
+which is defined to be a statement.
+In practce, Python modules contains series of statements;
+this case is represented by statement sequence defined in our
+Python abstract syntax.
+In Python, multiple statements in the sequence are divided by newline. 
 
 Statements are parts of the code that changes the program state.
 For instance, assignment statement chanages the
@@ -31,7 +33,7 @@ and complex expressions such as operators, comprehension, and function calls.
 
 \begin{figure}[!ht]
 \begin{tabular}{lrll}
-  \nmodule & := & \mul{\nstmt}  \\
+  \nmodule & := & \nstmt  \\
   \nstmt & ::= & \kdef ~ \nid ~ \sparen{\nargs} ~ \kcolon ~ \mul{\nstmt} & \desc{FunDef} \\ 
   & $|$ & \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
   & $|$ & \nexpr ~ \oassign \nexpr & \desc{Assign} \\
@@ -42,6 +44,7 @@ and complex expressions such as operators, comprehension, and function calls.
   & $|$ & \kimport ~ \mul{\nalias} & \desc{Import} \\
   & $|$ & \kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias} & \desc{ImportFrom} \\
   & $|$ & \nexpr & \desc{ExprStmt} \\
+  & $|$ & \nstmt ~ {\tt \textbackslash n} ~ \nstmt  & \desc{Sequence} \\
 
   \nexpr & ::= & \nexpr ~ \nboolop ~ \nexpr & \desc{BoolOp} \\
   & $|$ & \nexpr ~ \nbinop ~ \nexpr & \desc{BinaryOp} \\ 

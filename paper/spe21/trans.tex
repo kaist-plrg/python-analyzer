@@ -86,63 +86,90 @@ For each training API pattern, we define
 
 \subsection{Description of Transform functions}
 
-This section explains transform function each for training API pattern.  
+As mentioned earlier, training codes of different API patterns
+require different transformation rules to correctly transform them.
+This section explains formal transform functions for each API patterns.
 
 \subsubsection{Transform function for Session pattern}
 
-To correctly transform the Session pattern codes into 
+The Session pattern codes use the {\tt Session} object to define the 
+computation environment.
+The {\tt Session} objects are usually defined by {\tt with} statements,
+and later used by calling the method {\tt Session.run}.
+By calling the {\tt Sesison.run} method, the TensorFlow runtime can initiate the 
+training computation on the computation graph.
 
-Session pattern and MonitoredSesison pattern uses the following
-transform function to match the legacy import statement
-and add the import statement for Horovod library.
+\begin{figure}[ht!]
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
 
-\begin{figure}[h]
-\noindent
-\begin{longtable}{l}
-  \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
-  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflowc $\mapsto$ \nid] ~ \ktthen \\
-  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
-  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
-  \inden\hspace{1em} {\tt hvd.init()}], \smodenvsubs{1})\\
-  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
-\end{longtable}
-\caption{Session pattern transform function: Importing Horovod}
+with tf.Session() as sess:
+    for step in range(num_epochs): 
+        sess.run(optimizer, feed_dict)
+    \end{lstlisting}
+    \caption{Original training code of Session pattern}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01 * hvd.size())
+optimizer = hvd.DistributedOptimizer(optimizer)
+
+with tf.Session() as sess:
+    for step in range(num_epochs): 
+        sess.run(optimizer, feed_dict)
+    \end{lstlisting}
+    \caption{Distributed training code of Session pattern}
+  \end{subfigure}
+  \caption{Code example of Session pattern training code}
+  \label{fig:trans:sessiontrans}
 \end{figure}
 
-The Session pattern codes use the {\tt Session} object to define the computation environment.
-The {\tt Session} objects are usually defined by {\tt With} statements,
-and later used by calling the method {\tt Session.run}.
-(TODO: add explanation)
+To correctly transform Session pattern trainig codes into corresponding
+distributed training codes, the {\tt Optimizer} instance must be modified.
+Figure \ref{fig:trans:sessiontrans} shows an pair of code examples
+illustrating the required transformation for Session pattern case.
+In line 1 of figure \ref{fig:trans:sessiontrans}(b),
+the {\tt learning\_rate} argument is scaled by {\tt hvd.size()}.
+Then the line 2 is added, which wraps the {\tt Optimizer} instance
+by designated Horovod API.
 
-The {\tt Optimizer} instances must be modified for distributed training.
-First, the learning rate is scaled by {\tt hvd.size()},
-and the optimizer instance is wrapped with {\tt hvd.DistributedOptimizer}.
-The following rule describes the part of the transform function that
-performs learning rate scaling and the wrapping.
-The function matches an assignment statement that assigns an
-instance of {\tt Optimizer} class, and modifies the learning rate argument
-given the the instance constructor. Then the rule appends the statement
-that wraps the {\tt Optimizer} instance with {\tt hvd.DistributedOptimizer}.
+The above transformation rule is formalized as shown in the figure 
+\ref{fig:trans:sessrule}. The transform function stated in the figure
+matches statements that assigns a evaluation result of function call expression
+on the right-hand side.
+If an assign statement is matched, the pattern guard checks if the
+callee function is the {\tt Optimizer} instance constructor function.
+Note that the pattern guard checks this by subclass relation between
+the function expression and {\tt tensorflow.keras.optimizers.Optimizer}.
+This way, the pattern guard can accept class constructors for {\tt Optimizer}
+instances, including both TensorFlow library and user-defined classes.
+
+The transform function proceeds to return a sequence of two statements;
+the first one is modified version of the input assign statement,
+and the second one is additional assign statement for wrapping the optimizer instance.
+The first statement modifies the original {\tt learning\_rate} argument
+by constructing a new expression, {\tt \nexprsubs{2i} * hvd.size()}.
+The transform function can easily construct new ASTs by using
+the pattern variables so that the part of the input statement can be conveniently
+referred. This is also true for building the second output statement, which
+reused the {\tt \nidsubs{r}} to construct a new assign statment.
 
 \begin{figure}[h]
 \noindent
 \begin{longtable}{l}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
 \inden \ktif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
   \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
   \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
-  {\tt * hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)}
-\nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm, \\
-  \inden\inden\inden{\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
-  \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+
 \end{longtable}
   \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
-  \label{fig:sess:opt}
+  \label{fig:trans:sessrule}
 \end{figure}
 
 
