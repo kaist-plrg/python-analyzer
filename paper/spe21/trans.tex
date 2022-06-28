@@ -92,12 +92,14 @@ This section explains formal transform functions for each API patterns.
 
 \subsubsection{Transform function for Session pattern}
 
-The Session pattern codes use the {\tt Session} object to define the 
-computation environment.
-The {\tt Session} objects are usually defined by {\tt with} statements,
-and later used by calling the method {\tt Session.run}.
-By calling the {\tt Sesison.run} method, the TensorFlow runtime can initiate the 
-training computation on the computation graph.
+To correctly transform Session pattern trainig codes into corresponding
+distributed training codes, the {\tt Optimizer} instance must be modified.
+Figure \ref{fig:trans:sessiontrans} shows an pair of code examples
+illustrating the required transformation for Session pattern case.
+In line 1 of figure \ref{fig:trans:sessiontrans}(b),
+the {\tt learning\_rate} argument is scaled by {\tt hvd.size()}.
+Then the line 2 is added, which wraps the {\tt Optimizer} instance
+by designated Horovod API.
 
 \begin{figure}[ht!]
   \begin{subfigure}[t]{0.45\textwidth}
@@ -126,16 +128,7 @@ with tf.Session() as sess:
   \label{fig:trans:sessiontrans}
 \end{figure}
 
-To correctly transform Session pattern trainig codes into corresponding
-distributed training codes, the {\tt Optimizer} instance must be modified.
-Figure \ref{fig:trans:sessiontrans} shows an pair of code examples
-illustrating the required transformation for Session pattern case.
-In line 1 of figure \ref{fig:trans:sessiontrans}(b),
-the {\tt learning\_rate} argument is scaled by {\tt hvd.size()}.
-Then the line 2 is added, which wraps the {\tt Optimizer} instance
-by designated Horovod API.
-
-The above transformation rule is formalized as shown in the figure 
+The above transformation is formalized as shown in the figure 
 \ref{fig:trans:sessrule}. The transform function stated in the figure
 matches statements that assigns a evaluation result of function call expression
 on the right-hand side.
@@ -166,21 +159,39 @@ reused the {\tt \nidsubs{r}} to construct a new assign statment.
   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm \\
   \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],
   \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
 \end{longtable}
   \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
   \label{fig:trans:sessrule}
 \end{figure}
 
-
 \subsubsection{Transform function for MonitoredSession pattern}
 
-The training codes matched in the MoniotoredSesion pattern uses the
-{\tt MonitoredSession} instance to define the training step and
-automatically repeat the step.  
-The transform function for MonitoredSession pattern uses same rules
-as the figure \ref{fig:sess:opt} to identify the optimizer instance
-and modify it.
+The MonitoredSession pattern codes use {\tt MonitoredSession} instances
+to initiate and automatically repeat the tranining process.
+To correctly transform MonitoredSession pattern training codes into the
+distributed training codes,
+
+\begin{figure}[ht!]
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
+    while not mon_sess.should_stop():
+        mon_sess.run()
+    \end{lstlisting}
+    \caption{Original training code of MonitoredSession pattern}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVariablesHook(0)) as mon_sess:
+    while not mon_sess.should_stop():
+        mon_sess.run()
+    \end{lstlisting}
+    \caption{Distributed training code of MonitoredSession pattern}
+  \end{subfigure}
+  \caption{Code example of MonitoredSession pattern training code}
+  \label{fig:trans:monsesstrans}
+\end{figure}
 
 The codes for MonitoreSession pattern additionally need to modify the
 {\tt StopAtStepHook} instance in order to scale down the number of
