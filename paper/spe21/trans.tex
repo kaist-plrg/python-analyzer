@@ -167,11 +167,29 @@ reused the {\tt \nidsubs{r}} to construct a new assign statment.
 \subsubsection{Transform function for MonitoredSession pattern}
 
 The MonitoredSession pattern codes use {\tt MonitoredSession} instances
-to initiate and automatically repeat the tranining process.
-To correctly transform MonitoredSession pattern training codes into the
-distributed training codes,
+to automatically repeat training steps.
+By default, a training step includes feeding an training data to the network,
+computing gradients, and optimize the network parameters.
+In addition the default actions, users can add \textit{hooks},
+a custom action that automatically executes for each training step.
+For example, a {\tt CheckpointSaverHook} instance can be added to
+save the model status into a file at each step.
+
+In distributed training with Horovod, one of the multiple training processes
+must broadcast the global variables states to every other processes so that
+they can synchronize the initial model states.
+To correctly transform MonitoredSession pattern training codes into
+distributed training codes, the {\tt MonitoredSession} instances should have
+variable broadcast hooks.
+As in figure \ref{fig:trans:monsesstrans}, for example,
+the correct transformation appends {\tt BroadcastGlobalVariablesHook} to the
+{\tt hooks} arguments.
+The {\tt hooks} keyword argument gets the hook list for the training steps;
+the transformed code adds the Horovod library hook that broadcases the
+global variable at the first training step.
 
 \begin{figure}[ht!]
+  \centering
   \begin{subfigure}[t]{0.45\textwidth}
     \begin{lstlisting}[language=Python]
 with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
@@ -193,45 +211,92 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
   \label{fig:trans:monsesstrans}
 \end{figure}
 
-The codes for MonitoreSession pattern additionally need to modify the
-{\tt StopAtStepHook} instance in order to scale down the number of
-training steps. The {\tt Hook} instances are given as an list argument of
-the {\tt MonitoredSesion} instance constructor.
-To modify the number of traning steps, the transform function
-identifies by expression that constructs the {\tt StopAtStepHook} instance
-and transform its {\tt last\_step} keyword argument.
+We formalize the transformation for MonitoredSession pattern as illustrated in
+figure \ref{fig:trans:monsessrule}. 
+The transform function matches \textit{with item}, an expression that is 
+assigned by the {\tt with} statement, which is a function call expression of
+the {\tt MonitoredSession} class constructor.
+Note that the pattern guard refers to the environment variable to
+get the identifier of TensorFlow 1.x compatability module.
+This ensures the transform function to correctly identify the
+{\tt MonitoredSession} class constructor from the TensorFlow module.   
 
-\begin{figure}[h]
+\begin{figure}[ht!]
  \noindent
-\begin{tabular}{l}
-  \texpr{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \ktif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.train.StopAtStepHook} ~ \ktthen \\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt last\_step} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt // hvd.size()}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}\\
-  \inden\inden \ktelse \\
-  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} {\tt // hvd.size()} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
-  \inden \ktelse ~ \texpr{\nexprsubs{1}}{\smodenv} \sparen{\texpr{\nexprsubs{11}}{\smodenv}  ... \texpr{\nexprsubs{1n}}{\smodenv} \\
-  \inden\inden \op{(\nidsubs{1} \oassign)} \texpr{\nexprsubs{21}}{\smodenv} ... \op{(\nidsubs{k} \oassign)} \texpr{\nexprsubs{2k}}{\smodenv}}\\
-\end{tabular}\\\vpar
+  \begin{tabular}{l}
+    \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
+                \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+                \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+    % monitored session
+    \inden \ktif ~ \smodenv(\tflowc) ~ \kteq ~ \nidsubs{t} ~ \ktand \\
+    \inden\inden \nexprsubs{1} ~ \kteq ~ 
+                {\tt \nidsubs{t}.train.MonitoredTrainingSession} ~ \ktthen \\
+    \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+    \inden\inden\inden(\nexprsubs{1} \sparen{\nexprsubs{11} ... 
+              \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
+    \inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
+    \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} }, \\
+    \inden\inden\inden\inden \smodenv[$\msess$ $\mapsto$ \kas]) \\
+  \end{tabular}\\\vpar
 \caption{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance}
+  \label{fig:trans:monsessrule}
 \end{figure}
 
 \subsubsection{Transform function for GradientTape pattern}
 
-In training codes matched in the GradientTape pattern,
-the {\tt GradientTape} instance is wrapped with
-{\tt hvd.DistributedGradientTape} function.
-The {\tt GradientTape} instances are created by {\tt with} statements
-in the training codes, which automatically invokes initialization
-and destruction functions before and after the {\tt with} statement scope.
-The transform function matches the {\tt with} statement that
-creates the {\tt GradientTape} instance and inserts the
-wrapping statement after it.
-Figure \ref{fig:trans:gtape} illustrates the transform function definition
-regarding the {\tt GradientTape} wrapping.
+To correctly transform GradientTape pattern training codes,
+the {\tt GradientTape} instance should be modified for
+distributed training environment.
+As shown in the figure \ref{fig:trans:gtapetrans}(b), line 8,
+the {\tt GradientTape} instance {\tt tape}
+is wrapped by {\tt DistributedGradientTape}.
+Additionally, in the distributed training code,
 
-\begin{figure}[h]
+
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+import tensorflow as tf
+
+with tf.GradientTape() as tape:
+    probs = model(images)
+    loss_value = loss(labels, probs)
+
+grads = tape.gradient(loss_value, model.trainable_variables)
+opt.apply_gradients(zip(grads, model.trainable_variables))
+    \end{lstlisting}
+    \caption{Original training code of GradientTape pattern}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.45\textwidth}
+    \begin{lstlisting}[language=Python]
+import tensorflow as tf
+import horovod.tensorflow as hvd
+hvd_broadcast_done = False
+
+with tf.GradientTape() as tape:
+    probs = model(images)
+    loss_value = loss(labels, probs)
+tape = hvd.DistributedGradientTape(tape)
+grads = tape.gradient(loss_value, model.trainable_variables)
+id_new = zip(grads, model.trainable_variables)
+opt.apply_gradients(id_new)
+
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+    hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
+    hvd.broadcast_variables(opt.variables(), root_rank=0, )
+    hvd_broadcast_done = True
+    \end{lstlisting}
+    \caption{Distributed training code of GradientTape pattern}
+  \end{subfigure}
+  \caption{Code example of GradientTape pattern training code}
+  \label{fig:trans:gtapetrans}
+\end{figure}
+
+
+\begin{figure}[ht!]
 \noindent
 \begin{tabular}{l}
   \tstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
@@ -243,69 +308,9 @@ regarding the {\tt GradientTape} wrapping.
   \inden \ktelse ~ ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
 \end{tabular}
   \caption{GradientTape pattern transform function: wrapping {\tt GradientTape} instance}
-  \label{fig:trans:gtape}
+  \label{fig:trans:gtaperule}
 \end{figure}
 
-In addition, the variable broadcast should be manually done with
-{\tt hvd.broadcast\_variables} function.
-Because the variable broadcast should be done exactly once at the start of the
-training, we utilize a global boolean variable {\tt hvd\_broadcast\_done}
-that tracks whether the broadcast is already performed or not.
-The variable {\tt hvd\_broadcast\_done} is declared within the Horovod
-initialization codes and initialized to {\tt False} as described in
-figure \ref{fig:trans:gtape2}.
-
-\begin{figure}[h]
-\begin{tabular}{l}
-  \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
-  \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
-  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid] ~ \ktthen \\
-  \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
-  \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \\
-  \inden\hspace{1em} {\tt hvd\_broadcast\_done} \oassign {\tt False}, \\
-  \inden\hspace{1em} {\tt hvd.init()}, \\
-  \inden\hspace{1em} {\tt gpus = \nid.config.experimental.list\_physical\_devices(`GPU')}, \\
-  \inden\hspace{1em} {\tt for gpu in gpus: \nid.config.experimental.set\_memory\_growth(gpu, True)},\\
-  \inden\hspace{1em} {\tt if gpus: \nid.config.experimental.set\_visible\_devices(gpus[hvd.local\_rank()], `GPU')}], \smodenvsubs{1})\\
-  \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
-\end{tabular}
-  \caption{GradientTape pattern transform function: initializing {\tt hvd\_broadcast\_done}}
-  \label{fig:trans:gtape2}
-\end{figure}
-
-The statements that perform the variable broadcast are inserted after
-the {\tt Optimizer} instance applies the training gradient.
-The corresponding transform function is described in figure \ref{fig:trans:gtape3}.
-The inserted codes check and modify the boolean value of 
-{\tt hvd\_broadcast\_done} to ensure that the variable broadcast
-happens only once.
-
-\begin{figure}[h]
-\begin{longtable}{l}
-  \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  % variable broadcasting
-  \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt grads\_and\_vars} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{2i},\\
-  \inden\inden\inden \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nidsubs{z} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
-  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
-  \inden\inden \ktelse \\
-  \inden\inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
-  \inden\inden\inden \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\\
-  \inden\inden\inden {\tt global hvd\_broadcast\_done}, \\
-  \inden\inden\inden {\tt if not hvd\_broadcast\_done:} [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden\inden {\tt hvd\_broadcast\_done = True} ]], \smodenv) \\
-\end{longtable}
-  \caption{GradientTape pattern transform fuinction: the variable broadcast}
-  \label{fig:trans:gtape3}
-\end{figure}
- 
 \subsubsection{Transform function for Keras pattern}
 
 In the training codes matching the Keras pattern,
@@ -316,7 +321,7 @@ The AST pattern guard tests that the given function expression is a subclass
 of {\tt tensorflow.keras.Model}, which corresponds to the class constructors
 of subclass instances of {\tt tensorflow.keras.Model} class.
 
-\begin{figure}[h]
+\begin{figure}[ht!]
 \begin{longtable}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
   \inden \ktelif ~ \nexprsubs{1} ~ \ktsubty ~ {\tt tensorflow.keras.Model} ~ \ktthen\\
@@ -335,7 +340,7 @@ method call and insert the callback object to the argument.
 Figure \ref{fig:trans:ker2} describes the transform function that
 adds the callback to the {\tt fit} function call expression.
 
-\begin{figure}[h]
+\begin{figure}[ht!]
 \begin{longtable}{l}
   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
   \inden \ktelif ~ \nidsubs{m} ~ \kteq ~ \smodenv(\tmodel) ~ \ktand ~ 
@@ -365,7 +370,7 @@ First, the learning rate parameter of the instance should be scaled by
 Figure \ref{fig:trans:ker3} describes the transform function modifying
 the {\tt Optimizer} instance.
 
-\begin{figure}[h]
+\begin{figure}[ht!]
 \begin{longtable}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \optypcomm}{\smodenv} = \\
   \inden \ktelif ~ \nexprsubs{1} \ktsubty ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
