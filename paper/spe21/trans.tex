@@ -245,13 +245,20 @@ This ensures the transform function to correctly identify the
 \subsubsection{Transform function for GradientTape pattern}
 
 To correctly transform GradientTape pattern training codes,
-the {\tt GradientTape} instance should be modified for
-distributed training environment.
+the {\tt GradientTape} instance should be modified for distributed training.
+Figure \ref{fig:trans:gtapetrans} illustrates the transformation of
+GradientTape pattern code to the distributed code.
 As shown in the figure \ref{fig:trans:gtapetrans}(b), line 8,
 the {\tt GradientTape} instance {\tt tape}
 is wrapped by {\tt DistributedGradientTape}.
-Additionally, in the distributed training code,
-
+In addition to modifying the {\tt GradientTape} instance,
+line 13 to 17 adds variable broadcasting codes in the distributed training
+code. Note that the variable {\tt hvd\_broadcast\_done} is initialized as 
+{\tt False} at line 3, 
+then set to {\tt True} at line 17 where the variable broadcasting is done. 
+We use the boolean variable {\tt hvd\_broadcast\_done} in GrdientTape pattern
+distributed training code to ensure that variable broadcasting occurs exactly
+once.
 
 \begin{figure}[ht!]
   \centering
@@ -295,21 +302,73 @@ if not hvd_broadcast_done:
   \label{fig:trans:gtapetrans}
 \end{figure}
 
+Figure \ref{fig:trans:gtaperule} illustrates a GradientTape pattern
+transform function.
+The function is responsible of wrapping the
+{\tt GradientTape} instance with the {\tt DistributedGradientTape} API.
+As illustrated in the figure, the function matches {\tt with} statements.
+The pattern \textit{with\_item} matches the pair of identifier and expression 
+that {\tt with} statement newly creates. 
+For example, the pattern matches a pair of the identifier {\tt tf} and the 
+expression {\tt tf.GradientTape()} when line 3 of figure 
+\ref{fig:trans:gtapetrans}(a) is given.
+In the second to fourth line, the function utilizes the environment variable  
+to check if the input {\tt with} statement creates the a new {\tt GradientTape}
+instance.
+If the statement does create a new {\tt GradientTape} instance,
+then the function appends a new statement that reassigns the identifier
+wrapped with the {\tt DistributedGraidentTape} API.
 
 \begin{figure}[ht!]
 \noindent
 \begin{tabular}{l}
-  \tstmt{\optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
-  \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+  \tstmt{\kwith ~ \nwithitem ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+  \inden \ktlet ~ \nwithitem$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\nwithitem}{\smodenv} \ktin \\
+  \inden \ktlet ~ \nstmt$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
   \inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\gtape $\mapsto$ \nid] ~ \ktthen\\
-  \inden\inden ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$, \\
+  \inden\inden ([\optypcomm ~ \kwith ~ \nwithitem$'$ ~ \kcolon ~ \mul{\nstmt}$'$, \\
   \inden\inden \nid ~ \oassign {\tt hvd.DistributedGradientTape(\nid)}], \smodenvsubs{2})\\
-  \inden \ktelse ~ ([\optypcomm ~ \kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+  \inden \ktelse ~ ([\kwith ~ \nwithitem$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
 \end{tabular}
   \caption{GradientTape pattern transform function: wrapping {\tt GradientTape} instance}
   \label{fig:trans:gtaperule}
 \end{figure}
+
+Figure \ref{fig:trans:gtaperule2} illustrates another GradientTape pattern
+transform function which is responsible of appending the variable broadcasting
+code. The function matches statements that assigns the value of function call
+results. Then the pattern guard checks if the called function is the
+{\tt apply\_gradients} method of the {\tt Optimizer} instance.
+Here, the guard retreives the name of the {\tt Optimizer} instance from the
+environment variable. 
+The transform function finally returns a fixed sequence of statements that
+performs the variable broadcast on the model and optimizer state variables.
+Note that we utilize the list comprehension to extract the second element
+of each pair in the list expression \nidsubs{z} as line 15 in figure
+\ref{fig:trans:gtapetrans}(b).
+
+\begin{figure}[ht!]
+\noindent
+\begin{tabular}{l}
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
+  \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
+  \inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
+  \inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
+  \inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} ,\\
+  \inden\inden {\tt if not hvd\_broadcast\_done:} \\ 
+  \inden\inden\inden [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
+  \inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
+  \inden\inden\inden {\tt hvd\_broadcast\_done = True} ]\\
+  \inden\inden ], \smodenv) \\
+
+
+\end{tabular}
+  \caption{GradientTape pattern transform function: adding variable broadcasting code}
+  \label{fig:trans:gtaperule2}
+\end{figure}
+
+
+
 
 \subsubsection{Transform function for Keras pattern}
 
