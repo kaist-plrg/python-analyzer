@@ -1,4 +1,6 @@
+\pagebreak
 \section{Code Transformation}\label{sec:trans}
+
 \subsection{Transformation Rule for Distributed TensorFlow ML model}
 
 In this section, we describe formalization of the transformation rule
@@ -6,20 +8,25 @@ for distributed DL traininig with set of code examples and formal notions
 related to them.
 There are two main points in design of the formalization.
 First, we informally understand the code transformation rule as methods to
-1) select the parts of codes to modify and 2) construct new code by reusing
-parts of the input code.
+\textit{select} the parts of codes to modify and \textit{construct} new code by 
+reusing parts of the selected code.
 To automate the transformation process, we need code transformation in a form 
-that is implements above actions as a program.
+that is implements above selection and construction.
 Second, as mentioned earlier, to correctly transform tranining codes with different
 API patterns, we must apply different transformation rules.
 The formalization should also describe different transformation rules
 for different API patterns.
-In this end, we define a transformation rule for each API pattern as 
-a set of pure function that takes ASTs as input and returns ASTs as output.
-We call the function as \textit{transform function}.
-Each transform function is defined to get an AST of given type and return an AST
-of the same type. For instance, a transform function for statement,
-$\fkstmt$, takes a statement AST and return a statement AST.
+
+In this end, we define the formal transformation rule as a set of
+function that takes ASTs as input and returns ASTs as output.
+We call these functions \textit{transform function}.
+We define a set of transform functions for each training API pattern,
+defining total of four sets transform functions.
+For the selection and construction of code parts,
+we use \textit{pattern matching} as an argument of the transform function;
+given an AST as input, the transform function will first match the
+input against the argument pattern, then only proceed to apply itself
+when the pattern matching is successful.
 
 \begin{figure}[ht!]
   \centering
@@ -80,9 +87,12 @@ is added. The assignment wraps the original {\tt GradientTape} object with
 the Horovod library function, {\tt hvd.DistributedGradientTape}.
 Except the above mentioned parts, the original code is not modified.     
 
-We formalize the transformation rule as set of pure functions
-that take ASTs as input and return ASTs as output.
-For each training API pattern, we define  
+
+
+
+
+
+
 
 \subsection{Description of Transform functions}
 
@@ -366,9 +376,6 @@ of each pair in the list expression \nidsubs{z} as line 15 in figure
   \caption{GradientTape pattern transform function: adding variable broadcasting code}
   \label{fig:trans:gtaperule2}
 \end{figure}
-
-
-
 
 \subsubsection{Transform function for Keras pattern}
 

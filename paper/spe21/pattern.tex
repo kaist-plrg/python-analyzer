@@ -250,7 +250,7 @@ is the {\tt Model.fit} method, and finally conclude that the code
 belongs to Keras pattern.
 
 
-\begin{figure}[!ht]
+\begin{figure}[ht!]
   \begin{lstlisting}[language=Python]
 # model definition
 class ResNet(tf.keras.models.Model):
@@ -260,6 +260,7 @@ class ResNet(tf.keras.models.Model):
 model = ResNet([2, 2, 2], num_classes)
 model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
   \end{lstlisting}
-  \label{fig:keraspattern}
+ 
   \caption{Keras pattern code example}
+  \label{fig:keraspattern}
 \end{figure}
