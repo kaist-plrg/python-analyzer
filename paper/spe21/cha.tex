@@ -68,13 +68,20 @@ to the {\tt fit} method call.
 To correctly modify the example code, the transformation must recognize the 
 the line 9 of \ref{fig:cha:tfex}(a) calls the {\tt fit} method which originates
 from the {\tt keras.Model} class.
+Without recognizing the inheritance relation between {\tt ResNet} and
+{\tt keras.Model}, the transformation module cannot correctly target and modify the
+method call in line 9.  
 
-
-To solve this problem, we devised to pre-analyze the class inheritance
-relation between TensorFlow library classes and user-defined classes. 
-We utilize a \textit{class hierarchy analysis}, a type of static analysis
-that identifies the inheritance relations between the classes appearing
-in the code.
-The class hierarchy analysis result stores the inheritance relation
-which is used in later stages of the transformation.
-
+To solve this problem, we analyze the class inheritance relation between
+user-defined classes and TensorFlow classes as a pre-analysis.
+\textit{Class hierarchy analysis} is a static analysis technique that identifies
+inheritance relation between classes appear in the code.
+By class hierarchy analysis on the input DL model code,
+we can precisely identify user-defined classes that inherits TensorFlow classes,
+and therefore precisely identify method calls directly related to the training process.
+In figure \ref{fig:cha:tfex}(a), for instance, 
+the class herarchy analyzer reads line 4 to conclude that the user class
+{\tt ResNet} is a subclass of {\tt keras.Model}.
+The analysis result is sent to the later transformation stage,
+which allows the transformation module to recognize the {\tt fit} method
+in line 9 is inherited from the superclass, {\tt keras.Model}.
