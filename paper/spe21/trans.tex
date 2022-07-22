@@ -1,7 +1,7 @@
 \pagebreak
 \section{Code Transformation}\label{sec:trans}
 
-\subsection{Transformation Rule for Distributed TensorFlow ML model}
+\subsection{Formalization of }
 
 In this section, we describe formalization of the transformation rule
 for distributed DL traininig with set of code examples and formal notions
@@ -71,10 +71,12 @@ for (x, y) in dataset.take(10000):
   \label{fig:trans:ex}
 \end{figure}
 
-Figure \ref{fig:trans:ex} shows an example of the input single-GPU code and
-the coresponding transformed output distributed code. 
-Some unnecessary details of the codes are removed from the codes.
-There are three transformed parts in the distributed training code.
+We describe examples of the transform function by illustrating the transform
+functions applied in the code example in figure \ref{fig:trans:ex}.
+Figure \ref{fig:trans:ex}(a) shows an example of the input single-GPU code and
+figure \ref{fig:trans:ex}(b) shows the coresponding distributed code. 
+Some unnecessary details of the codes are removed from the code.
+There are three main parts that are modified.
 First, a new import statement that imports {\tt horovod.tensorflow} modules
 is added in line 2. 
 The statement is added right after the original {\tt tensorflow} module
@@ -87,12 +89,97 @@ is added. The assignment wraps the original {\tt GradientTape} object with
 the Horovod library function, {\tt hvd.DistributedGradientTape}.
 Except the above mentioned parts, the original code is not modified.     
 
+\begin{figure}[ht!]
+  \centering
 
+  \begin{subfigure}[t]{0.48\textwidth}
+    \begin{lstlisting}[language=Python]
+import tensorflow as tf
+    \end{lstlisting}
+    \caption{Original DL training code: only TensorFlow module is imported.}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.48\textwidth}
+    \begin{lstlisting}[language=Python]
+import tensorflow as tf
+import horovod.tensorflow as hvd
+    \end{lstlisting}
+    \caption{Distributed DL training code: Horovod module import statement is added.}
+  \end{subfigure}
+  \caption{Code examples}
+  \label{fig:trans:ex01}
+\end{figure}
 
+Figure \ref{fig:trans:ex01} is the first transformed part of the code.
+The transform function takes an import statement as an input,
+identifies that the input statement imports the TensorFlow module,
+then outputs a list of two statements, which are the original input 
+import statement and the new import statement for the Horovod module. 
+The transform function should be able to recognize that the input import
+statement actually imports the TensorFlow module.
+To acheive this, the transform function utilzes the current transform context.
+The transform context stores set of important identifiers related to the
+training process; while transforming the code in figure \ref{fig:trans:ex01}(a),
+for instance, the identifier {\tt tf} for the TensorFlow
+module is stored after line 1, and the identifier {\tt optim}
+for the {\tt Optimizer} instance is stored after line 5.
+Transform function can compare the transfrom context before the input statement
+and just after the input statement to check whether a specific module
+is imported in the input statement.
 
+\begin{figure}[ht!]
+  \centering
+  \noindent
+  \begin{tabular}{l}
+   \typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}\\
+   \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
+    \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
+    \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid]\\ 
+    \inden\ktthen \\
+    \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
+    \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \smodenvsubs{1})\\
+    \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
+  \end{tabular}\\\vpar
+  \caption{Transform function: adding Horovod module import statement}
+  \label{fig:trans:fn01}
+\end{figure}
 
+Figure \ref{fig:trans:fn01} describes the transform function that applies the
+transform in figure \ref{fig:trans:ex01}. 
+The function specifies input argument with pattern that matches any import
+statement; thus the transformation only targets import statements.
+As explained earlier, the second and third lines
+compare $\smodenv$, the transform context
+before the input statement, with $\smodenvsubs{1}$, the transform context
+just after the input statement, to check if the input statement
+imports the TensorFlow module.
+Note that the transform function return the new transform context
+$\smodenvsubs{1}$ together with the statement list; this allows
+transform functions to propagate the transform context from a call
+to the next call.
 
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}[t]{0.48\textwidth}
+    \begin{lstlisting}[language=Python]
+optim = tf.optimizers.Adam(0.001)\end{lstlisting}
+    \caption{Original DL training code}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{0.48\textwidth}
+    \begin{lstlisting}[language=Python]
+optim = tf.optimizers.Adam(0.001 * hvd.size())\end{lstlisting}
+    \caption{Distributed DL training code}
+  \end{subfigure}
+  \caption{Code examples}
+  \label{fig:trans:ex02}
+\end{figure}
 
+Figure \ref{fig:trans:ex02} illustrates the second part of the transformed code.
+The assign statement in \ref{fig:trans:ex02}(a) is transformed to
+another assign statement in \ref{fig:trans:ex02}(b), where the argument for the
+constructor {\tt tf.optimizers.Adam} is multiplied by the expression
+{\tt hvd.size()}. 
 
 \subsection{Description of Transform functions}
 
