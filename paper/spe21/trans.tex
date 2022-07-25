@@ -67,9 +67,9 @@ for (x, y) in dataset.take(10000):
 We describe examples of the transform function by illustrating the transform
 functions applied in the code example in figure \ref{fig:trans:ex}.
 Figure \ref{fig:trans:ex}(a) shows an example of the input single-GPU code and
-figure \ref{fig:trans:ex}(b) shows the coresponding distributed code. 
+figure \ref{fig:trans:ex}(b) shows the corresponding distributed code. 
 Some unnecessary details of the codes are removed from the code.
-There are three main parts that are modified.
+There are three modified parts of the code. 
 First, a new import statement that imports {\tt horovod.tensorflow} modules
 is added in line 2. 
 The statement is added right after the original {\tt tensorflow} module
@@ -84,7 +84,6 @@ Except the above mentioned parts, the original code is not modified.
 
 \begin{figure}[ht!]
   \centering
-
   \begin{subfigure}[t]{0.48\textwidth}
     \begin{lstlisting}[language=Python]
 import tensorflow as tf
@@ -142,14 +141,18 @@ to the next call.
 \end{figure}
 
 Figure \ref{fig:trans:fn01} describes the transform function that applies the
-transform in figure \ref{fig:trans:ex01}. 
-The function specifies input argument with pattern that matches any import
-statement; thus the transformation only targets import statements.
+transformation in figure \ref{fig:trans:ex01}. 
+The function specifies an input argument with pattern that matches any import
+statements; thus the transformation only targets import statements.
 As explained earlier, the second and third lines
 compare $\smodenv$, the transform context
 before the input statement, with $\smodenvsubs{1}$, the transform context
 just after the input statement, to check if the input statement
 imports the TensorFlow module.
+If the input statement imports the TensorFlow module,
+the transform function proceeds to return a list of statements that
+includes the original input statement and the new import statement for
+the Horovod module.
 Note that the transform function return the new transform context
 $\smodenvsubs{1}$ together with the statement list; this allows the 
 transform context to be propagated between the transform function calls.
@@ -304,7 +307,10 @@ then returns it as an output in the fifth and seventh line.
 
 As mentioned earlier, training codes of different API patterns
 require different transformation rules to correctly transform them.
-This section explains formal transform functions for each API patterns.
+To apply different transformation rules for different API pattern codes,
+we defined sets of transform functions each for trainng API patterns.
+This section explains the core parts of the transform functions 
+for each API pattern.
 
 \subsubsection{Transform function for Session pattern}
 
@@ -380,7 +386,6 @@ reused the {\tt \nidsubs{r}} to construct a new assign statment.
   \label{fig:trans:sessrule}
 \end{figure}
 
-\pagebreak
 \subsubsection{Transform function for MonitoredSession pattern}
 
 The MonitoredSession pattern codes use {\tt MonitoredSession} instances
