@@ -36,21 +36,19 @@ model.fit(train_data.take(training_steps))
 TensorFlow provides various APIs to define the training process.
 The figure \ref{fig:pattern:ex01} illustrates two examples of using 
 different training APIs.
-Line 2 to 10 in the code \ref{fig:pattern:ex01}(a)  
+Lines 2 to 10 in the code \ref{fig:pattern:ex01}(a)  
 uses low-level APIs to repeat training steps over the training
 data set. Inside the {\tt for} loop, 
-the code uses the {\tt GradientTape} instance to record the loss computation,
+the {\tt GradientTape} instance records the operations,
 then uses the {\tt gradient} method and the {\tt apply\_gradient} method to
-back-propagate the gradient to the model parameters.
+optimize the model parameters.
 In contrast, lines 1 and 4 in the code \ref{fig:pattern:ex01}(b)
 uses high-level APIs to automatically
-invoke the model training process by two methods calls, {\tt compile} and
-{\tt fit}. The {\tt fit} method repeats the same process with the {\tt for}
-loop in the code \ref{fig:pattern:ex01}(a); it takes each training data from the set and
-applies the gradient to the model parameter.
-
-While both code train the model in the same way, 
-the code structures are significantly different.
+invoke the model training process. 
+The {\tt fit} method automatically repeats the training steps,
+which eliminates loops and manual operations from the written code.
+While both codes train the model in the same way, 
+their code structures are significantly different.
 Using high-level APIs simplifies the program,
 reducing additional codes that compute the prediction loss and apply gradients.
 Low-level APIs are verbose, however, developers can fully control
@@ -58,29 +56,24 @@ the training process.
 Developers can freely choose from different training APIs to
 take advantage of each way.
 
-To correctly transform the codes using different training APIs, 
-the tool must apply different transformation rule for different usages
-of training APIs.
-We implemented an \textit{API pattern analysis} that identifies
-the TensorFlow API usage with \textit{training API patterns} 
-Each training API pattern is a set of code patterns for AST,
-and code patterns are ASTs with
-special holes that are later matched with concrete value.
-When a code pattern is matched against a code AST,
-it succeeds with the holes matched with the AST subnodes
-or fails to match the given AST.
-The software matches a training API pattern to the target training code,
-and if the match succeeds, the corresponding transformation rule
-is used to transform the training code.
-
-We manually inspected multiple TensorFlow training codes to identify
-common patterns of training-related API usage. 
-We defined four training API patterns
-that effectively identify kinds of training APIs usage in the target code.
-Figure \ref{tab:patterns} briefly explains each training API pattern.
-Note that each pattern is assigned with different TensorFlow versions.
-The transformation software also supports legacy training codes
-that use compatibility modules for TensorFlow version 1.x.
+To correctly transform the codes using different TensorFlow APIs, 
+the tool must apply different transformation rules for different usages
+of the APIs.
+We manually inspected open-source TensorFlow DL models to identify
+common patterns of training-related API usage.
+In this end, we defined four training API patterns and 
+an \textit{API pattern analysis} that categorizes TensorFlow DL models
+into one of the four training API patterns.
+Training API patterns are sets of code patterns that can match
+parts of the DL model code using TensorFlow APIs.
+Figure \ref{tab:patterns} describe the training API patterns.
+When one of the API patterns is matched against an input model code,
+we can conclude whether the model belongs to the API pattern category or not. 
+Then we defined four different transformation rules for each training API
+pattern.
+Given an input model code, we match four training API patterns to the code
+to identify  which training API pattern the code uses and apply corresponding
+transformation rule to correctly transform the input code.
 
 \begin{figure}
   \centering
@@ -101,9 +94,23 @@ that use compatibility modules for TensorFlow version 1.x.
   \label{tab:patterns}
 \end{figure}
 
-We now explain each training API pattern with concrete code examples.
+\subsection{Explanation of the training API patterns}
 
-\textbf{Session Pattern} 
+In this section, we explain each training API pattern with
+concrete code examples and method to identify the pattern
+within a given input code.
+
+\subsubsection{Session Pattern}
+
+\begin{figure}[!ht]
+\begin{lstlisting}[language=Python]
+with tf.Session() as sess:
+    for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
+      sess.run(optimizer, feed_dict=feed_dict)
+\end{lstlisting}
+\caption{Session pattern code example}
+\label{fig:sessionpattern}
+\end{figure}
 The Session pattern refers to TensorFlow 1.x training codes that
 uses the {\tt Session} class instance to manually repeat the training 
 computation in low-level manner.
@@ -126,17 +133,18 @@ If the body statements of {\tt with} statement calls a
 {\tt run} method of the {\tt Session} instance,
 the analyzer concludes that the training code belongs to the Session pattern.
 
+\subsubsection{MonitoredSession Pattern}
+
 \begin{figure}[!ht]
-\begin{lstlisting}[language=Python]
-with tf.Session() as sess:
-    for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
-      sess.run(optimizer, feed_dict=feed_dict)
-\end{lstlisting}
-\caption{Session pattern code example}
-\label{fig:sessionpattern}
+  \begin{lstlisting}[language=Python]
+with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
+    while not mon_sess.should_stop():
+        mon_sess.run(train_op, feed_dict=feed_dict)
+  \end{lstlisting}
+  \caption{MonitoredSession pattern code example}
+  \label{fig:monsesspattern}
 \end{figure}
 
-\textbf{MonitoredSession Pattern}
 The MonitoredSession pattern refers to TensorFlow 1.x training codes that
 uses the {\tt MonitoredSession} class instance to manually repeat
 the training computation in low-level manner.
@@ -156,18 +164,26 @@ If the body statements calls a {\tt run} methods of the {\tt MonitoredSession}
 instance, the analyzer concludes that the training code belongs to the
 MonitoredSession pattern.
 
+
+\subsubsection{GradientTape Pattern}
+
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
-with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
-    while not mon_sess.should_stop():
-        mon_sess.run(train_op, feed_dict=feed_dict)
+for x, y in train_data.take(training_steps):
+  with tf.GradientTape() as g:
+    pred = conv_net(x)
+    loss = cross_entropy(pred, y)
+    
+  trainable_variables = list(weights.values()) + list(biases.values())
+  gradients = g.gradient(loss, trainable_variables)
+  optimizer.apply_gradients(zip(gradients, trainable_variables))
   \end{lstlisting}
-  \label{fig:monsesspattern}
-  \caption{MonitoredSession pattern code example}
+  \caption{GradientTape pattern code example}
+  \label{fig:tapepattern}
 \end{figure}
 
 
-\textbf{GradientTape Pattern}
+
 The GradientTape pattern refers to TensorFlow 2.x training codes that
 uses the {\tt GradientTape} class instnace tot manually repeat the 
 training computation in low-level manner.
@@ -195,22 +211,23 @@ method of {\tt Optimizer} instance.
 If both statements are found, the analyzer concludes that the code
 belongs to the GradientTape pattern.
 
-\begin{figure}[!ht]
+\subsubsection{Keras Pattern}
+
+\begin{figure}[ht!]
   \begin{lstlisting}[language=Python]
-for x, y in train_data.take(training_steps):
-  with tf.GradientTape() as g:
-    pred = conv_net(x)
-    loss = cross_entropy(pred, y)
-    
-  trainable_variables = list(weights.values()) + list(biases.values())
-  gradients = g.gradient(loss, trainable_variables)
-  optimizer.apply_gradients(zip(gradients, trainable_variables))
+# model definition
+class ResNet(tf.keras.models.Model):
+  def __init__(self, params):
+    ...
+
+model = ResNet([2, 2, 2], num_classes)
+model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
   \end{lstlisting}
-  \label{fig:tapepattern}
-  \caption{GradientTape pattern code example}
+ 
+  \caption{Keras pattern code example}
+  \label{fig:keraspattern}
 \end{figure}
 
-\textbf{Keras Pattern}
 The Keras pattern refers to TensorFlow 2.x training codes that uses
 the Keras library to define the model and invoke an automatic
 training process.
@@ -250,17 +267,4 @@ is the {\tt Model.fit} method, and finally conclude that the code
 belongs to Keras pattern.
 
 
-\begin{figure}[ht!]
-  \begin{lstlisting}[language=Python]
-# model definition
-class ResNet(tf.keras.models.Model):
-  def __init__(self, params):
-    ...
 
-model = ResNet([2, 2, 2], num_classes)
-model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
-  \end{lstlisting}
- 
-  \caption{Keras pattern code example}
-  \label{fig:keraspattern}
-\end{figure}
