@@ -21,7 +21,7 @@ trained without manually repeating the training steps.
 
 \begin{figure}[!ht]
   \centering
-  \begin{subfigure}[t]{0.48\textwidth}
+  \begin{subfigure}[t]{0.35\textwidth}
     \begin{lstlisting}[language=Python]
 from tensorflow import keras
 
@@ -34,8 +34,8 @@ model = ResNet([2,2,2])
 model.fit(x_train, y_train)\end{lstlisting}
     \caption{Single-GPU-based DL model example using an user-defined class}
   \end{subfigure}
-  \hspace{5mm}
-  \begin{subfigure}[t]{0.48\textwidth}
+  \hspace{3mm}
+  \begin{subfigure}[t]{0.6\textwidth}
     \begin{lstlisting}[language=Python]
 from tensorflow import keras
 import horovod.tensorflow.keras as hvd
@@ -60,8 +60,8 @@ model.fit(
 To correctly transform TensorFlow DL models into the distributed models,
 the transformation must recognize the user-defined classes that inherits
 TensorFlwo classes.
-Figure \ref{fig:cha:tfex}(b) is an example of modifying the \ref{fig:cha:tfex}(a)
-into a distributed model code.
+Figure \ref{fig:cha:tfex}(b) is an example of modifying the code in 
+\ref{fig:cha:tfex}(a) into a distributed model code.
 Line 9 of \ref{fig:cha:tfex}(a) is modified as line 10 to 13 of 
 \ref{fig:cha:tfex}(b). The modification adds a keyword argument {\tt callbacks}
 to the {\tt fit} method call. 
@@ -69,19 +69,20 @@ To correctly modify the example code, the transformation must recognize the
 the line 9 of \ref{fig:cha:tfex}(a) calls the {\tt fit} method which originates
 from the {\tt keras.Model} class.
 Without recognizing the inheritance relation between {\tt ResNet} and
-{\tt keras.Model}, the transformation module cannot correctly target and modify the
-method call in line 9.  
+{\tt keras.Model}, the transformation module cannot correctly recognize
+and modify the method call in line 9.  
 
-To solve this problem, we analyze the class inheritance relation between
-user-defined classes and TensorFlow classes as a pre-analysis.
+To solve this problem, we employ the class hierarchy analysis as a pre-analysis
+to analyze the class inheritance relation between user-defined classes
+and TensorFlow classes.
 \textit{Class hierarchy analysis} is a static analysis technique that identifies
 inheritance relation between classes appear in the code.
 By class hierarchy analysis on the input DL model code,
-we can precisely identify user-defined classes that inherits TensorFlow classes,
-and therefore precisely identify method calls directly related to the training process.
+we can identify user-defined classes that inherit TensorFlow classes,
+and therefore correctly identify training-related method calls.
 In figure \ref{fig:cha:tfex}(a), for instance, 
 the class herarchy analyzer reads line 4 to conclude that the user class
 {\tt ResNet} is a subclass of {\tt keras.Model}.
 The analysis result is sent to the later transformation stage,
-which allows the transformation module to recognize the {\tt fit} method
+which allows the transformation to recognize the {\tt fit} method
 target in line 9 is inherited from the superclass, {\tt keras.Model}.
