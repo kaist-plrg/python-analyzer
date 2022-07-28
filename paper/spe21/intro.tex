@@ -2,19 +2,19 @@
 
 Recent advancements in deep learning(DL) have opened the wide possibility of
 applying artificial intelligence in various fields.
-LeCun et al.\cite{LeCun2015} defines deep learning as a
+LeCun et al.\cite{LeCun2015} define deep learning as a
 type of machine learning technique that composes multiple
-abstraction layers to build up high-level representation from raw data. 
-Deep learning models typically employ neural networks to build models.
-Neural networks are composed of independent layers of perceptrons,
+abstraction layers to build up a high-level representation of raw data. 
+Deep learning developers use neural networks to build DL models.
+The neural networks are composed of independent layers of perceptrons,
 which get input signals from the previous layer then sends the
 output signal to the next layer.
 The first layer is the input layer, which gets an raw data as an input signal,
 and the last layer is the output layer, which returns the
 whole computation result of the network.
-Any other layers between the input layer and the output layer is 
+Any other layers between the input layer and the output layer are 
 called hidden layers; the word \textit{deep} comes from the fact that
-the neural networks use lots of hidden layers so the model depth is high.
+the neural networks use multiple hidden layers.
 In practice, developers use DL frameworks that support easier building of
 deep neural networks in high-level code, for example, using
 TensorFlow\cite{tensorflow} with Python programming language\cite{pythonref}.
@@ -22,26 +22,27 @@ Popular applications of DL are
 VGG\cite{vggnet2014} and ResNet\cite{resnet2015} for image recognition 
 and BERT\cite{bert2018} and GPT-3\cite{gpt32020} for natural language processing.
 
-Deep learning consists of two stages: the training stage and the inference stage.
+Deep learning development consists of two stages: 
+the training stage and the inference stage.
 In the training stage, the hidden layer parameters are updated
 with respect to the training dataset so that the output from the output layer
-matches the answer in the dataset, in other words, the model learns
-to return correct output to the given input. 
-The training stage consists of multiple training steps.
-A training step consists of a \textit{forward propagation} and
+matches the answer in the dataset. In other words, the model learns
+to return correct answer to the given training data. 
+The training stage repeats multiple training steps.
+A training step consists of a \textit{forward propagation} and 
 \textit{backward propagation}.
 The forward propagation feeds an input training batch to the
-network and computes the loss between the output and the answer.
-The backward propagation step computes the gradients of the model parameters
-and apply gradient descent to optimize the model.
-The training step is repeated until the accuracy of the model converges.
+network and computes the loss between the network output and the answer.
+The backward propagation computes the gradients of the model parameters
+and optimize them by applying gradient descent algorithm. 
+The training steps are repeated until the accuracy of the model converges.
 In many of the cases, the training repeats multiple times over the entire 
 training dataset in order to gain better accuracy.  
-In the inference stage, a new data unseen to the model
+In the inference stage, new data unseen to the model
 is given as an input to the model, a forward propagation returns an output
-and it is used as an prediction result for the data.
-Because the model \textit{learned} general patterns and rules from the training
-dataset, the model can also return probably correct result for the
+and it is used as prediction results for the data.
+Because the model \textit{learned} general patterns from the training
+dataset, the model probably returns correct results for the
 unseen data.
 
 The training stage is the most essential part of DL model development.
@@ -59,21 +60,22 @@ In one of the efforts to reduce training time,
 researchers utilize \textit{distributed training}.
 Distributed training is a technique to parallelize the training computation
 workload over multiple GPUs.
-By taking advantage of parallelism, distributed training enables researchers
+By taking advantage of parallelism, distributed training enables DL developers 
 to spend less time in training while preserving accuracy.
 Goyal et al.\cite{facebook2018} trained the ResNet-50 model on ImageNet
 in one hour with 256 GPUs, which is over 300 times faster than the
 single-GPU training result of You et al.\cite{imagenettraining2017}.
-Using multiple GPUs or TPUs to train the model is already adopted
-in previous works.
+Using multiple GPUs and hardwares to quickly train the DL model is 
+already adopted in previous works.
 Silver et al.\cite{Silver2017alphagozero} trained the famous AlphaGo 
 with 176 GPUs and 48 TPUs;
 Zhang et al.\cite{zhang2019distrspeech} used 16 GPUs to train
 a speech recognition model;
 Tian et al.\cite{tian2020distrwebattack} used 
 two GPUs to train a web attack detection model on edge devices.
-All these works used multiple GPUs to train complex DL model
-over large training dataset, which efficiently reduces training time.
+All these works used multiple GPUs and/or specialized hardwares 
+to train complex DL modelover large training dataset, 
+which efficiently reduces training time.
 As DL models are becoming more complex and training datasets are growing,
 the need for distributing the training process in DL research is inevitable.
 
@@ -99,19 +101,19 @@ which is a difficult challenge.
 In this paper, we propose an 
 \textit{automated code transformation for distributed training}.
 The transformation converts the single-GPU-based TensorFlow models
-into the multi-GPU-based models so that the model can be trained
-over a distributed system.
-Our target is to distribute TensorFlow DL models written in Python
-by modifying the training codes to use the Horovod library.
+into the multi-GPU-based models so that develoers can apply 
+distributed training.
+Our goal is to distribute TensorFlow DL models written in Python
+by modifying the training codes with the Horovod library.
 We manually inspected the Horovod library documentation and
-the code examples to formalize the code transformations required for
+the code examples to define the code transformations required for
 the distributed training. In this end, we identified four common patterns of
 TensorFlow DL training API usage and code transformation rules
 for each training API pattern. 
 We then formally define the code transformation from
 single-GPU-based training code to distributed training code.
 We implement the distributed training code transformation as a tool
-and perform transformation experiments with 17 open-source TensorFlow DL models. 
+and perform transformation experiments with 16 open-source TensorFlow DL models. 
 
 The contributions of this paper are as follows:
 
@@ -129,7 +131,7 @@ The contributions of this paper are as follows:
         by applying the transformation to TensorFlow example model codes.
 
   \item By evaluation, we show that distributed training of TensorFlow
-    model using Horovod distributed training library does not always
+    model using Horovod library does not always
     speed up. We provide further empricial evidence that the training
     hyperparameters can be adjusted to increase the training speed.
     While this implies that developers may have to further tune the
