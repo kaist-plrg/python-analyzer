@@ -37,23 +37,45 @@
 %\presentaddress{This is sample for present address text this is sample for present address text}
 
 \abstract[Summary]{
-Distributed training is one of the popular technique to reduce the training time by parallelizing
-the training workload over multiple GPUs.
-Until now, developers manually rewrite single-GPU-based models into
-distributed models, which is a time-consuming and labor-intensive task that also requires
-full understanding of the distribued training library APIs.
-In this end, we propose an \textit{automated code transformation for distributed training}.
-We formalize the code transformation rule as an function from AST to AST,
-using pattern matching to capture and modify target parts of the code.
-After manually inspecting the distributed training library document and code examples,
-we provide correct definitions for transformation rules for different patterns of
-TensorFlow model training codes.
-The transformation rules are implemented as an automatic code transformation
-tool.
-We evaluate our tool on 16 open-source TensorFlow ML models,
-which transformation succeed on 15 models.
-The evaluation results show that our tool significantly reduces
-the user's effort to distribute existing ML models.
+Distributed training of deep learning models reduces training time by
+parallelizing training workloads across multiple GPUs.
+%Distributed training is one of the popular technique to reduce the training time by parallelizing
+%the training workload over multiple GPUs.
+Distributed training frameworks, such as Horovod and RaySGD, support APIs and
+developers transform single-GPU models into multi-GPU models using the APIs to
+parallelize their training.
+However, the transformation is a time-consuming and a labor-intensive task,
+because it requires developers to read and understand documents and examples of
+the frameworks as well as manual efforts to rewrite code.
+%Until now, developers manually rewrite single-GPU-based models into
+%distributed models, which is a time-consuming and labor-intensive task that also requires
+%full understanding of the distribued training library APIs.
+
+In this paper, we propose an automated code transformation approach that
+transforms TensorFlow single-GPU models to multi-GPU models training on the
+Horovod framework.
+We closely inspect the Horovod document and code examples and identify four
+training patterns of TensorFlow deep learning models.
+Then, we formalize code transformation rules for each training pattern. 
+Using the formalized rules, we implement an automated code transformation tool
+that takes a TensorFlow single-GPU model written in Python and transforms it to
+a multi-GPU model training on Horovod.   
+Our evaluation shows that the tool transforms 15 out of 16 open-source
+TensorFlow deep learning models correctly.
+We believe that our approach significantly reduces manual efforts to
+parallelize trainig of existing single-GPU models.
+%In this end, we propose an \textit{automated code transformation for distributed training}.
+%We formalize the code transformation rule as an function from AST to AST,
+%using pattern matching to capture and modify target parts of the code.
+%After manually inspecting the distributed training library document and code examples,
+%we provide correct definitions for transformation rules for different patterns of
+%TensorFlow model training codes.
+%The transformation rules are implemented as an automatic code transformation
+%tool.
+%We evaluate our tool on 16 open-source TensorFlow ML models,
+%which transformation succeed on 15 models.
+%The evaluation results show that our tool significantly reduces
+%the user's effort to distribute existing ML models.
 }
 
 \keywords{machine learning, distributed training, code transformation, Python}
