@@ -1,9 +1,10 @@
 \section{Background}\label{sec:background}
 \subsection{TensorFlow ML Models}
 
-\textit{TensorFlow}\cite{tensorflow} is a machine learning platform library
+TensorFlow\cite{tensorflow} is a machine learning platform library
 developed in 2016 by Google Brains.
-The library provides high-level APIs to construct and train general ML models.
+The library provides high-level APIs to construct and 
+train general machine learning models.
 TensorFlow is based on the concept of a \textit{dataflow graph},
 which is an abstraction of the computations between
 multiple values.
@@ -16,7 +17,7 @@ A \textit{variable node} maintains a mutable buffer that can be read or modified
 This approach allows TensorFlow to define the model parameters
 and updating mechanism at the same time.
 TensorFlow also allows users to easily distribute model computation over
-various devices such as GPUs or TPUs.
+various devices such as GPUs or specialized hardwares.
 Each operation on the dataflow graph defines \textit{kernel},
 a low-level implementation of the computation.
 Because the dataflow graph explicitly specifies how
@@ -24,14 +25,14 @@ and where the sub-computation results should be sent and received,
 developers can easily assign each kernel to different devices and construct
 the whole computation from individual kernels and the dataflow graph.
 
-\begin{figure}
+\begin{figure}[ht!]
 \lstinputlisting[language=Python]
 {tensorflow1_mnist.py}
 \caption{TensorFlow 1 example code}
 \label{fig:back:tf1}
 \end{figure}
 
-We explain a typical form of TensorFlow ML model codes by an example.
+We explain a typical form of TensorFlow DL model code by an example.
 The figure \ref{fig:back:tf1} illustrates the TensorFlow model code for
 a simple neural network with 2 hidden layers.
 Typically, a TensorFlow ML code is divided into two parts.
@@ -51,10 +52,10 @@ and repeats the optimization by {\tt Session} API.
 
 In September 2019, TensorFlow version 2.0 was released\cite{tf2announce}.
 The main change in the new version is the eager execution feature.
-Eager execution allows developers to use Python native variables
+The eager execution feature allows developers to use Python native variables
 and functions to compute the result in real-time and define the
 dataflow graph at the same time.
-Explicit calls to Session.run are replaced by Python function calls,
+Explicit calls to TensorFlow APIs are replaced by Python function calls,
 and TensorFlow variables are replaced by function parameters.
 This way, developers can easily define model components and compose them. 
 In addition, TensorFlow 2.0 integrates Keras\cite{keras},
@@ -65,23 +66,23 @@ a deep learning library that provides high-level abstractions for layers.
 
 \textit{Distributed training} is a technique to boost efficiency in ML training
 by parallelizing computation workloads over multiple devices.
-Training an ML model is an expensive process that involves repetitive
+Training a DL model is an expensive process that involves repetitive
 arithmetic computation over multiple tensors,
-which can be accelerated by multicore devices such as GPU or TPU. 
-Distributed training takes advantage of multiple accelerator devices.
+which can be accelerated by specialized hardwares such as GPUs. 
+Distributed training takes advantage of parallelizing the compuation over
+multiple hardwares, typically using GPUs.
 The total training workload is divided into smaller, independent workloads
-so they can be assigned into multiple accelerator devices and
-processed simultaneously. 
+so they can be assigned into GPUs and processed simultaneously. 
 In recent years, several works proposed the application of distributed
 deep learning in various fields.
 
-There are two approaches to distributed ML training.
-In the \textit{model-parallel} approach, a large ML model is divided into 
-the separate unit of computations and assigned to different accelerators. 
-The whole model is pipelined over devices, so independent computations
+There are two approaches to distributed DL training.
+In the \textit{model-parallel} approach, a large DL model is divided into 
+the separate unit of computations and assigned to different GPUs. 
+The whole model is pipelined over the GPUs, so independent computations
 can overlap in time.
-In the \textit{data-parallel} approach, multiple instances of a small ML model
-are assigned to each device. The total training dataset is instead
+In the \textit{data-parallel} approach, multiple instances of a small DL model
+are assigned to each GPU. The total training dataset is instead
 divided into several smaller datasets then assigned to each device.
 accelerator. The training proceeds by simultaneously calculating gradients
 in each accelerators. Then the gradients are averaged before being 
@@ -98,12 +99,9 @@ Experimental results of the paper show that the performance linearly
 scales from 8-GPUs to 352 GPUs while achieving over 90\% of ideal performance.
 
 Inspired by Facebook's results, Uber Engineering developed a distributed DL
-training framework namely Horovod \cite{sergeev2018horovod}. It is published in
-2017 as a part of the DL toolkit for Michelangelo, an ML-as-a-service platform.
+training framework Horovod \cite{sergeev2018horovod}. 
 The main motivation of Horovod is to scale single-GPU DL model training
-into distributed model training. Similar to Facebook's approach,
-Horovod implements an allreduce algorithm in NCCL. NCCL is a collective communication
-library from NVIDIA, which provides various performant algorithms including
-allreduce. In addition, Horovod introduces a high-level API that enables
+into distributed model training using data-parallel approach. 
+Similar to Facebook's approach, Horovod implements an allreduce algorithm. 
+In addition, Horovod introduces a high-level API that enables
 the convenient use of distributed training.  
-
