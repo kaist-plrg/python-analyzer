@@ -131,19 +131,20 @@ two GPUs to train a web attack detection model on edge devices.
 
 However, tranforming existing DL models to multi-GPU models is a time-consuming
 and a labor-intensive task.
-Because DL models developed as single-GPU models training on a single GPU are
-not directly trainable on multiple GPUs, developers need to manually rewrite
-the single-GPU models into multi-GPU models with additional configurations in
-their training code to identify GPUs in the system, spawn processes for each
-GPU, and assign the trainig dataset into each process.
+DL models developed as single-GPU models training on a single GPU are not
+directly trainable on multiple GPUs. 
+Developers need to manually rewrite the single-GPU models into multi-GPU models
+with additional configurations in their training code to identify GPUs in the
+system, spawn processes for each GPU, and assign the trainig dataset into each
+process.
 Distributed training frameworks, such as Horovod~\cite{sergeev2018horovod} and
 Ray Train~\cite{raytrain}, reduce manual efforts by providing APIs for the
 distributed training without such complex configurations.
-Nevertheless, because there is no an automated way that trains single-GPU
-models on multiple GPUs without manual modifications, using the frameworks
-still requires additional works such as reading and understanding documents and
-code examples of the frameworks, and modifying the training code using their
-APIs.
+Nevertheless, training with the frameworks still requires additional works such
+as reading and understanding documents and code examples of the frameworks, and
+modifying the training code using their APIs.
+To the best of our knowledge, there is no an automated way that trains
+single-GPU models on multiple GPUs without manual modifications.
 
 
 %The distributed training code contains additional implementation for
