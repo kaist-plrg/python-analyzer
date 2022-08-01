@@ -25,7 +25,8 @@ previous layer and send output signals to the next layer.
 %In practice, developers use DL frameworks that support easier building of
 %deep neural networks in high-level code, for example, using
 %TensorFlow\cite{tensorflow} with Python programming language\cite{pythonref}.
-There are several DL frameworks, such as TensorFlow and PyTorch, that provide
+There are several DL frameworks, such as TensorFlow\cite{tensorflow} 
+and PyTorch\cite{pytorch2019}, that provide
 APIs to easily implement deep neural networks in general purpose high-level
 programming languages like Python.
 VGG\cite{vggnet2014} and ResNet\cite{resnet2015} for image recognition and
@@ -39,12 +40,12 @@ inference phase.
 %the training stage and the inference stage.
 The training phase improves the accuracy of DL models by adjusting their
 parameters via a forward and a backward propagation. 
-The forward propagation calculates answers of DL models for a trainig dataset
+The forward propagation calculates answers of DL models for a training dataset
 and computes an error rate of the answers, called {\it loss}.
 Then, the backward propagation estimates a model parameter gradient and adjusts
 parameters to reduce the loss using gradient descent algorithms.
-The trainig phase usually repeats the propagations multiple times over the
-entire trainig dataset for the better accuracy.
+The training phase usually repeats the propagations multiple times over the
+entire training dataset for the better accuracy.
 %In the training stage, the hidden layer parameters are updated
 %with respect to the training dataset so that the output from the output layer
 %matches the answer in the dataset. 
@@ -84,7 +85,7 @@ the training time.
 Since the distributed training parallelizes training workload across multiple
 GPUs, developers can train models in significantly less time than the single
 GPU training.
-Research in various fields utilizes the distributed training without lossing
+Research in various fields utilizes the distributed training without losing
 the accuracy of trained models.
 Goyal et al.\cite{facebook2018} trained the ResNet-50 model on the ImageNet
 benchmark in one hour with 256 GPUs, which is over 300 times faster than the
@@ -135,7 +136,7 @@ DL models developed as single-GPU models training on a single GPU are not
 directly trainable on multiple GPUs. 
 Developers need to manually rewrite the single-GPU models into multi-GPU models
 with additional configurations in their training code to identify GPUs in the
-system, spawn processes for each GPU, and assign the trainig dataset into each
+system, spawn processes for each GPU, and assign the training dataset into each
 process.
 Distributed training frameworks, such as Horovod~\cite{sergeev2018horovod} and
 Ray Train~\cite{raytrain}, reduce manual efforts by providing APIs for the
@@ -168,7 +169,7 @@ Horovod framework.
 %In this paper, we propose an \textit{automated code transformation for
 %distributed training}.
 The transformation converts the single-GPU-based TensorFlow models into the
-multi-GPU-based models so that develoers can apply distributed training.
+multi-GPU-based models so that developers can apply distributed training.
 Our goal is to distribute TensorFlow DL models written in Python by modifying
 the training codes with the Horovod library.
 We manually inspected the Horovod library documentation and the code examples
