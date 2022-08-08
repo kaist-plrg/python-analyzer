@@ -144,7 +144,7 @@ distributed training without such complex configurations.
 Nevertheless, training with the frameworks still requires additional works such
 as reading and understanding documents and code examples of the frameworks, and
 modifying the training code using their APIs.
-To the best of our knowledge, there is no an automated way that trains
+To the best of our knowledge, there is no automated ways that train
 single-GPU models on multiple GPUs without manual modifications.
 
 
@@ -168,40 +168,69 @@ TensorFlow models to multi-GPU models training on multiple GPUs with the
 Horovod framework.
 %In this paper, we propose an \textit{automated code transformation for
 %distributed training}.
-The transformation converts the single-GPU-based TensorFlow models into the
-multi-GPU-based models so that developers can apply distributed training.
-Our goal is to distribute TensorFlow DL models written in Python by modifying
-the training codes with the Horovod library.
-We manually inspected the Horovod library documentation and the code examples
-to define the code transformations required for the distributed training. In
-this end, we identified four common patterns of TensorFlow DL training API
-usage and code transformation rules for each training API pattern. 
-We then formally define the code transformation from single-GPU-based training
-code to distributed training code.
-We implement the distributed training code transformation as a tool and perform
-transformation experiments with 16 open-source TensorFlow DL models. 
+%The transformation converts the single-GPU-based TensorFlow models into the
+%multi-GPU-based models so that developers can apply distributed training.
+%Our goal is to distribute TensorFlow DL models written in Python by modifying
+%the training codes with the Horovod library.
+We closely inspected the Horovod library documentation and the code examples
+that describe code transformation required to train DL models on multiple GPUs.
+From the description, we identified four common training patterns used in
+TensorFlow DL models and code transformation required for each training
+pattern.
+Then, we formally defined transformation rules from single-GPU models to
+multi-GPU models.
+Based-on the formal rules, we implemented an automated model transformation
+tool for the distributed training.
+Our tool firstly analyzes an input single-GPU model to identify its training
+pattern and code locations on which modifications for the distributed training
+are required.
+It then applies the transformation rules for the identified training pattern to
+the single-GPU model, and produces a multi-GPU model as a result.
+In our evaluation, we show that our tool successfully transforms 15 out of 16
+open-source TensorFlow single-GPU models to multi-GPU models that train
+correctly on multiple GPUs.
+We also discuss the effects of the distributed training of the models in the
+evalution.
+
+
+%We manually inspected the Horovod library documentation and the code examples
+%to define the code transformations required for the distributed training. 
+%In this end, we identified four common patterns of TensorFlow DL training API
+%usage and code transformation rules for each training API pattern. 
+%We then formally define the code transformation from single-GPU-based training
+%code to distributed training code.
+%We implement the distributed training code transformation as a tool and perform
+%transformation experiments with 16 open-source TensorFlow DL models. 
 
 The contributions of this paper are as follows:
 
 \begin{itemize}
-  \item We formalize the code transformation for distributed DL training
-        of TensorFlow models. We formally define the code transformation
-        as functions from AST to AST. After manually inspecting
-        the Horovod documentation and code examples,
-        We provide transform function definitions for 
-        automatically transforming single-GPU model codes into
-        distributed DL model codes.
+  \item {\bf We formalize the code transformation rules for the distributed
+    training of TensorFlow models.} The formal rules allow developers to
+    understand the transformation in an explicit way rather than implicit code
+    examples, as well as provide a basis for automation. 
+    %We formally define the code transformation as functions from AST to AST. 
+    %After manually inspecting the Horovod documentation and code examples,
+    %We provide transform function definitions for automatically
+    %transforming single-GPU model codes into distributed DL model codes.
 
-  \item We present the distributed code transformation tool, which implements
-        the code transformation functions. We evaluate the tool's performance
-        by applying the transformation to TensorFlow example model codes.
+  \item {\bf We design and implement an automated model transformation tool for
+    the distributed training.} We show that our tool can reduce manual efforts
+    in the distributed training by automating the code transformation from
+    single-GPU models to multi-GPU models.
+    %We evaluate the tool's performance
+    %by applying the transformation to TensorFlow example model codes.
 
-  \item By evaluation, we show that distributed training of TensorFlow
-    model using Horovod library does not always
-    speed up. We provide further empricial evidence that the training
-    hyperparameters can be adjusted to increase the training speed.
-    While this implies that developers may have to further tune the
-    hyperparameters, our transformation tool allows quicker testing and
-    tuning for distributed training of existing DL model. 
-
+  \item {\bf We reveal that the distributed training often requires additional
+    hyperparameter tuning.} Our empirical evaluation shows that multi-GPU
+    models without newly tuned hyperparameters may perform worse in both the
+    training time and the inference precision than the corresponding single-GPU
+    models.
+    %By evaluation, we show that distributed training of TensorFlow model
+    %using Horovod library does not always speed up. 
+    %We provide further empricial evidence that the training hyperparameters can
+    %be adjusted to increase the training speed.
+    %While this implies that developers may have to further tune the
+    %hyperparameters, our transformation tool allows quicker testing and tuning
+    %for distributed training of existing DL model. 
 \end{itemize}
