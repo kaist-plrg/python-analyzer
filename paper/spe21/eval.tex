@@ -333,65 +333,37 @@ achieve the distributed training speedup.
 We provide an experimental evidence to this by
 training the distributed VGG-CIFAR10 model with
 different learning rates.
-Learning rate value of the original VGG-CIFAR10 model is 0.001.
-We altered this value to 0.0001, 0.00001, and 0.000001
+Learning rate value of the original VGG-CIFAR10 model is 0.001,
+We altered this value to 0.0001, 0.00001
 and compared the training loss changes over time.
 
 \begin{figure}[!ht]
   \centering
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{keras-cifar}
-    \caption{VGG-CIFAR10 model with lr=0.001 (default value)}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{cifar-1e4}
-    \caption{VGG-CIFAR10 model with lr=0.0001}
-  \end{subfigure} 
-  ~ 
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{cifar-1e5}
-    \caption{VGG-CIFAR10 model with lr=0.00001}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{cifar-1e6}
-    \caption{VGG-CIFAR10 model with lr=0.000001}
-  \end{subfigure}
+  \includegraphics[width=.7\textwidth]{lr-exp-graph}
 
   \caption{Distributed training experiments of VGG-CIFAR10 model with different learning rates.}
-  \begin{tabular}{r@{: }l r@{: }l}
-    X-axis & Time (seconds) & Y-axis & Loss value\\
-    Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
-  \end{tabular}
   \label{fig:eval:cifar10}
 \end{figure}
 
-Figure \ref{fig:Eval:cifar10} shows the loss value changes of training 
+Figure \ref{fig:eval:cifar10} shows the loss value changes of training 
 distributed VGG-CIFAR10 models with different learning rates.
+The distributed training with the original learning rate=0.001 does not show
+training speedup.
+However, when the learning rate is changed to 0.0001,
+the distributed training shows speedup compared to the single GPU training.
+Changing the learning rate to 0.00001 does not increases training speed
+compared to the single GPU training, but its speed is higher than
+the distributed training with the original learnin rate.
+By this experiment, we show that tuning the learning rate into right place 
+increases the distributed training speed.  
 
-The results show that the training speed difference between single-GPU and
-distributed training can differ according to the model hyperparameters
-such as the learning rate. The fact that various combinations of hyperparameters
-must be considered and experiement to reach optimal training speed is 
-well-known in ML community. This problem also applies to distributed training,
-where optimial hyperparameters should be re-searched after the training
-code is transformed. Our transformation tool do not target to search the 
-optimal hyperparameters, although we do implement the guidelines from the
-official Horovod documents to scale learning rate and epoch numbers
-by number of the GPUs.  
-
-Although the automatically transformed model codes may need additional
-tuning, our transformation tool effectively reduces
-burdens of manually rewriting the training codes.
-By applying our tool, the users can quickly change the single-GPU-based
-models into the distributed model and initiate the tranining.
-During the training process, the user may monitor training-related measurements
-such as per-epoch loss and decide to tune the hyperparameters.
-From the transformed training code, the user is able to quickly locate the
-hyperparameter variables, which suffer none-or-minimal changes of their locations
-from the original code.
-Therefore, the users of our tool can quickly iterate the process of
-training, evaluating and tuning without rewriting the
-training code with manual investigation on the library documentations and
-the model code.
+Our automated transformation approach reduces much friction and time between
+writing single GPU-based model and deploying the model in distributed system.
+The transformation tool quickly transforms the single GPU-based
+models into the distributed model and initiate the training process.
+Using the transformation tool, the model engineers can start the distributed
+training process without effort to rewrite the model codes. 
+Our transformation tool requires users to manually inspect the
+training speed and tune the hyperparameters.
+This is the minimal amount of effort which is always required for
+scaling and distributing DL models.
