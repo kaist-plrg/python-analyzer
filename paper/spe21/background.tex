@@ -1,60 +1,110 @@
 \section{Background}\label{sec:background}
-\subsection{TensorFlow ML Models}
+\subsection{TensorFlow Deep Learning Models}
 
-TensorFlow\cite{tensorflow} is a machine learning platform library
-developed in 2016 by Google Brains.
-The library provides high-level APIs to construct and 
-train general machine learning models.
-TensorFlow is based on the concept of a \textit{dataflow graph},
-which is an abstraction of the computations between
-multiple values.
-In dataflow graphs, nodes represent operations and
-edges represent the flow of tensors between the operations.
-One important innovation of TensorFlow
-is that the mutable states are also represented as operations
-within the dataflow graph. 
-A \textit{variable node} maintains a mutable buffer that can be read or modified.
-This approach allows TensorFlow to define the model parameters
-and updating mechanism at the same time.
-TensorFlow also allows users to easily distribute model computation over
-various devices such as GPUs or specialized hardwares.
-Each operation on the dataflow graph defines \textit{kernel},
-a low-level implementation of the computation.
-Because the dataflow graph explicitly specifies how
-and where the sub-computation results should be sent and received,
-developers can easily assign each kernel to different devices and construct
-the whole computation from individual kernels and the dataflow graph.
+TensorFlow\cite{tensorflow} is a machine learning platform developed by Google
+Brains in 2016.
+%The platform provides high-level APIs for the easy construction and training
+%of general machine learning models.
+The platform utilizes a kind of dataflow graphs, called {\it computation
+graphs}, to easily construct deep learning models.
+%TensorFlow is based on the concept of a \textit{dataflow graph}, which is an
+%abstraction of the computations between multiple values.
+In the computation graph, nodes represent operations and edges represent
+dataflows of {\it tensors} between the operations.
+%In dataflow graphs, nodes represent operations and edges represent the flow of
+%tensors between the operations.
+Some of the nodes, called {\it variable nodes}, maintain a mutable buffer that
+stores model parameters, such as learning rate and weights, being adjusted in
+the training phase.
+%One important innovation of TensorFlow is that the mutable states are also
+%represented as operations within the dataflow graph. 
+%A \textit{variable node} maintains a mutable buffer that can be read or
+%modified.  
+%This approach allows TensorFlow to define the model parameters and updating
+%mechanism at the same time.
+TensorFlow allows users to chose or define a loss function and an optimizer.
+After an iteration in training, the loss function calculates and passes loss to
+the optimizer, and the optimizer, then, modifies the parameters to reduce the
+loss in the next iterations.
+%TensorFlow also allows users to easily distribute model computation over
+%various devices such as GPUs or specialized hardwares.
+%Each operation on the dataflow graph defines \textit{kernel}, a low-level
+%implementation of the computation.
+%Because the dataflow graph explicitly specifies how and where the
+%sub-computation results should be sent and received, developers can easily
+%assign each kernel to different devices and construct the whole computation
+%from individual kernels and the dataflow graph.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
 {tensorflow1_mnist.py}
-\caption{TensorFlow 1 example code}
+  \caption{TensorFlow model example written in Python}
 \label{fig:back:tf1}
 \end{figure}
 
-We explain a typical form of TensorFlow DL model code by an example.
-The figure \ref{fig:back:tf1} illustrates the TensorFlow model code for
-a simple neural network with 2 hidden layers.
-Typically, a TensorFlow ML code is divided into two parts.
-In the first part, the model structure and training algorithm are defined.
-The model is defined by using API functions to construct the dataflow graph.
-Line 4 to 18 define the neural network structure,
-with the placeholders for input tensor {\tt x} and output tensor {\tt y}.
-The hidden layers are constructed with {\tt variables},
-which corresponds to mutable model parameters, weights, and biases.  
-Line 20 to 23 defines the training algorithm, 
-by defining loss function and optimization scheme.
-Optimization is also defined by using API functions to construct
-an Optimizer object, then assigning the target function.
-The second part invokes the actual training process
-In line 25 to 30, the TensorFlow runtime initializes the model parameters
-and repeats the optimization by {\tt Session} API. 
+%We explain a typical form of TensorFlow DL model code by an example.
+Figure~\ref{fig:back:tf1} illustrates a TensorFlow model example written in
+Python. 
+The {\tt tensorflow} Python module provides various APIs for deep learning
+model construction and training.
+%The figure \ref{fig:back:tf1} illustrates the TensorFlow model code for
+%a simple neural network with 2 hidden layers.
+%Typically, a TensorFlow ML code is divided into two part.
+%In the first part, the model structure and training algorithm are defined.
+%The model is defined by using API functions to construct the dataflow graph.
+%Line 4 to 18 define the neural network structure,
+%with the placeholders for input tensor {\tt x} and output tensor {\tt y}.
+Line 4 to 15 construct a computation graph with two placeholders for an input
+tensor {\tt x} and an output tensor {\tt y}.
+The graph contains two hidden layers, and each layer consists of two variable
+nodes for a weight and a bias.
+The {\tt matmul} and {\tt relu} are operation nodes that produce an output
+tensor by applying their operations to given input tensors.
+For example, the {\tt matmul} on line 10 takes two tensors from the placeholder
+{\tt x} and the variable node {\tt W\_1}, performs matrix multiplication on
+them, and generates a tensor as the operation result.
+%The hidden layers are constructed with {\tt variables},
+%which corresponds to mutable model parameters, weights, and biases.  
+Line 18 and 19 define a loss function and an optimizer respectively, which are
+used to adjust the weights and biases of the variable nodes in the training
+phase.
+%Line 20 to 23 defines the training algorithm, by defining loss function and
+%optimization scheme.
+%Optimization is also defined by using API functions to construct
+%an Optimizer object, then assigning the target function.
+On line 22 to 26, a loop, called {\tt training loop}, actually trains the model
+on a training set. 
+The loop repeatedly passes a batch of the training set to the model, executes
+the model to generate outputs, calculates loss, and optimizes the parameters of
+the variables nodes. 
+In the first version of TensorFlow, models can run only in a session that
+encapsulates an execution environment for the models.
+As shown on line 23 and 26, a session initializes all the variable nodes, and
+the model runs in the session to be trained.
 
-In September 2019, TensorFlow version 2.0 was released\cite{tf2announce}.
-The main change in the new version is the eager execution feature.
-The eager execution feature allows developers to use Python native variables
-and functions to compute the result in real-time and define the
-dataflow graph at the same time.
+%Before executing a model, it must be constructed completely and 
+%before its execution, and it, then, runs on the {\tt Session} that encapsulates
+%its execution environment. 
+%Models can execute only on a {\tt Session} object that encapsulates the
+%execution environment.
+
+%batch of the training set 
+%the model is trained with the loss function and the
+%optimizer, via 
+%The second part invokes the actual training process
+%In line 25 to 30, the TensorFlow runtime initializes the model parameters
+%and repeats the optimization by {\tt Session} API. 
+
+In September 2019, TensorFlow 2.0 was released\cite{tf2announce} with big
+changes in both model construction and execution.
+Unlike the first version, the new version no longer uses sessions and runs
+models at the same time as constructing them.
+The {\tt tensorflow} module provides different APIs for users to 
+%The main change in the new version is enhancement in both model construction
+%and deployment.
+%The eager execution feature allows developers to use Python native variables
+%and functions to compute the result in real-time and define the
+%dataflow graph at the same time.
 Explicit calls to TensorFlow APIs are replaced by Python function calls,
 and TensorFlow variables are replaced by function parameters.
 This way, developers can easily define model components and compose them. 
