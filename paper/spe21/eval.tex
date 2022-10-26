@@ -1,66 +1,36 @@
 \section{Evaluation}\label{sec:eval}
 
-We implemented the formal transformation rule for the distributed training
-as a software. We designed the software to be a standalone software, so 
-the ML developers can utilize the software regardless of their environment. 
-The software is written in Scala; the source code and released software
-is available at https://github.com/kaist-plrg/python-analyzer.
-
-To evaluate the automated transformation tool, we set up two research
-questions.
+To evaluate our approach, we set up two research questions as follows.
 
 \begin{itemize}
-\item RQ1. (Correctness) Does the tool correctly transform single-GPU based DL model codes into
-the corresponding distributed model codes?
+\item RQ1. (Correctness) Does the transformation rules 
+correctly transform single-GPU based model codes into
+the distributed model codes?
 
 \item RQ2. (Effectiveness) Does the automatic transformation result in speed-up 
 in distributed training compared to single-GPU training?
 \end{itemize}
 
-To answer these questions,  
-we designed two experiments: \textbf{transformation experiment} and
-\textbf{distributed training experiment}.
-The transformation experiment aims to answer the RQ1; it tests if the
-transformation tool correctly transforms the target model codes into
-the answer code.
-The distributed training experiment aims to answer the RQ2;
-it measures the training speed of single-GPU based model and its
-corresponding transformed distributed model and compare them.
-In this section, we describe the experiment setting,
-and discuss the results of the experiments and its implications.
+To answer these questions, we implemented an automated code transformation tool
+for TensorFlow DL model and experimented the tool against open-source
+TensorFlow DL models. The code transformation tool is written in Scala and
+is available at https://github.com/kaist-plrg/python-analyzer.
+For experiment target models, we gathered open-source TensorFlow DL model
+codes from three sources.
+The Hovorod library GitHub repository\cite{horovodgithub} provides
+example model codes. The TensorFlow model garden\cite{tfmodelgarden} is one of
+the official collections of TensorFlow machine learning models. 
+TensorFlow Examples by Americ Damien\cite{tfexmaplesdamien},
+CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github}, and
+TensorFlow 2.x Tutorials\cite{tf2tutogithub} are popular GitHub repositories
+that contain TensorFlow DL model codes.
+Among these sources, we collected total of 16 models that are eligible
+for the experiment.
+The experiment target models are listed in figure \ref{fig:eval:targets}. 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \pagebreak
-\subsection{Experiment Targets and Settings}
-
-We gathered open-source TensorFlow DL model codes as the experiment target.
-The full list of the experiment target models is described in the
-figure \ref{fig:eval:targets}.
-At first, we targetd the example model codes in the Horovod 
-Github\cite{horovodgithub}. Although the Horovod GitHub repository provides
-examples for various ML frameworks, we could only use two models based on the
-TensorFlow frameworks. As a result, we searched for other GitHub repositories
-that contain TensorFlow ML model codes.
-The TensorFlow model garden\cite{tfmodelgarden} is one of the official
-collections of ML models from TensorFlow.
-Other sources\cite{tfexamplesdamien}\cite{cifar10github}\cite{tf2tutogithub} are
-non-official ML examples that include various ML architectures.
-We selected targets with various ML architectures to show that
-our transformation tool works well regardless of the architecture types.
-
-After gathering the models, we selected valid experiment targets to be used. 
-We excluded some models from experiments to keep only trainable model codes. 
-For example, the CycleGAN model in the TensorFlow 2.x tutorials
-was unsuable because the training dataset was not accessible from the
-Internet. Additionally we modified some parts of the model in order to patch
-minor bugs in the code in training.
-Then, we manually rewrite each model code into distributed model codes using
-the Horovod library. The manually rewritten codes will be used as "answers" 
-for the transform experiment.
-For the case of Horovod GitHub example codes, which are distirbuted model
-codes from the start, we manually inspect the codes and eliminate
-Horovod library-related codes to rewrite them into single-GPU based
-models, and use them as the target codes.
-
 \begin{figure}[!ht]
   \begin{center}
   \begin{tabular}{c|c|l}
@@ -90,24 +60,23 @@ models, and use them as the target codes.
     \hline
   \end{tabular}
   \end{center}
-  \caption{List of the target Models}
+  \caption{List of the TensorFlow DL models used for the experiments}
   \label{fig:eval:targets}
 \end{figure}
 
-\subsection{Transformation Experiment}
 
-The transformation experiment aims to evaluate the correctness of the
-transformation tool. To measure the correctness, we pair up every
-target model codes with \textit{"answer"} codes. In specific,      
-each single-GPU based codes are considered as our \textit{target codes},
-and each target codes are paired with \textit{answer codes}, which are
-correct implementations of the distributed version of the target codes. 
-We manually paired each target model code with a corresponding answer codes.
-For target codes from the official Horovod example, each single-GPU based
-model codes are paired with the original Horovod model codes.     
-For other open-source model codes, we manually examined the training code
-file and modified it according to the Horovod document.
+\subsection{RQ1: Transformation Experiment}
 
+To answer the first research question,
+we conducted a transformation experiment.
+The transformation experiment evaluates whether the transformation tool
+correctly transforms single-GPU based models to distributed models.
+We specify the correctness of transfomation by pairing each model codes 
+with hand-crafted code of the distributed versions. 
+The models from the Horovod GitHub repository\cite{horovodgithub}
+come with corresponding distributed versions.
+For other models that do not come with distributed versions,
+we manually crafted their distributed implmentations.
 
 \begin{figure}[!ht]
   \begin{center}
@@ -137,12 +106,6 @@ file and modified it according to the Horovod document.
   \caption{Transformation experiment Result}
   \label{fig:eval:trans}
 \end{figure}
-
-The transformation experiment result is described in the 
-figure \ref{fig:eval:trans}. Among 16 targets, only one model failed to
-be correctly transformed. As shown in the figure \ref{fig:eval:trans},
-the SimpleCNN-GradientTape-1 model failed to be transformed into the
-distributed model.
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
@@ -178,6 +141,12 @@ for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):
   \label{fig:eval:simplecnn1}
 \end{figure}
 
+The transformation experiment result is described in the 
+figure \ref{fig:eval:trans}. Among 16 targets, only one model failed to
+be correctly transformed. As shown in the figure \ref{fig:eval:trans},
+the SimpleCNN-GradientTape-1 model failed to be transformed into the
+distributed model.
+
 We manually investigate the SimpleCNN-GradientTape-1 model code to 
 identify the cause of the transformation failure.
 The figure \ref{fig:eval:simplecnn1} illustrate the part of the training code
@@ -199,96 +168,26 @@ SimpleCNN-GradientTape-1 model fails to be correctly transformed.
 All other model codes include the {\tt Model} instance, 
 which is a common method to define the ML model in TensorFlow. 
 
-\subsection{Distributed Training Experiment}
 
-We compared the training speed between the original models and
-corresponding transformed model. 
-The target models of the distributed training experiment are 
-13 models that are using the TensorFlow 2.x APIs and correctly
-transformed in the previous experiment.
-We excluded the models using the legacy API of
-TensorFlow version 1.x because they do not suppor the TensorBoard library. 
 
+
+
+\subsection{RQ2: Distributed Training Experiment}
+
+To answer the second research question,
+we conducted a distributed training experiment that compares
+the training speed between the original models
+and corresponding transform models.
 To quantify the training speed, we measured the epoch loss during the training
 of each model.
-The loss value is a result value of the loss function which is computed
-at each epoch or step in the ML training process.
-In theory, the loss value derease over training time and converge
-to some low value.
-The training speed can be understood as the time required in the
-loss convergence.
-
-We measure the per-epoch loss during the traininig using
-TensorBoard library \cite{tensorboard}. 
-TensorBoard is a library that provides visualization and tools
-for ML experiments.
-We used the TensorBoard APIs to record the loss value every traininig epoch
-to gather the data and visualize in time-loss graph.
-
-The distributed training experiment is done as follows.
-First, a pair of the original ML model and the corresponding transformed model
-is prepared. For convenience, we refer to the original, single-GPU based model
-as \textbf{ORG} model, and the auto-transformed, distributed model as
-\textbf{HVD} model. To measure the epoch loss, we manually modify both  
-\textbf{ORG} and \textbf{HVD} training code to include the TensorBoard API. 
-In specific, we manually added following code frgaments in the training code to
-store the per-epoch loss into log files.
-The {\tt datetime} library is used to name the log files with
-the date and time of the experiment.
-For GradientTape pattern codes, the call
-{\tt tf.summary.scalar} is used every epoch to store the
-computed loss value as in the figure \ref{fig:eval:tapeboard}.
-For Keras pattern codes, the {\tt TensorBoard} callback instance is
-created and augmented to the original {\tt callbacks} argument
-of the {\tt Model.fit} method call as in the figure \ref{fig:eval:kerasboard}.
-
-\begin{figure}[!ht]
-  \begin{lstlisting}[language=Python]
-import datetime
-current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = 'logs/model_name/' + current_time + '/train'
-train_summary_writer = tf.summary.create_file_writer(train_log_dir)
-
-# main training loop
-for epoch in range(N): 
-  loss = ... # the original loss computation is unchanged
-  # tensorboard
-  with train_summary_writer.as_default():
-    tf.summary.scalar('loss', loss, step=epoch*250+step)
-  \end{lstlisting}
-  \caption{TensorBoard code fragement for GradientTape pattern codes}
-  \label{fig:eval:tapeboard}
-\end{figure}
-
-\begin{figure}[!ht]
-  \begin{lstlisting}[language=Python]
-import datetime
-current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-log_dir = 'logs/model_name/' + current_time + '/train'
-tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
-
-# train
-model.fit(... # the original arguments are unchanged
-              callbacks=[tensorboard_callback]) # tensorboard_callback is added
-  \end{lstlisting}
-  \caption{TensorBoard code fragement for Keras pattern codes}
-  \label{fig:eval:kerasboard}
-\end{figure}
-
-Second, we run the training of \textbf{ORG} model and
-\textbf{HVD} model. 
-We utilize the {\tt mpirun} command to execute both
-\textbf{ORG} and \textbf{HVD} training. 
-Using the Open MPI\cite{openmpiorg} to run Python ML scripts on GPUs is one of
-the recommended methods in the Horovod documentation\cite{horovodmpi}.
-The {\tt mpirun} command specifies the number of
-GPUs used for the training; 1 GPU is used for \textbf{ORG} model training  
-and 4 GPUs are used for \textbf{HVD} model training. 
-As mentioned earlier, the epoch loss is recorded and stored in the
-TensorBoard log file.
-After the training is done, the TensorBoard log file is used to plot the
-graph between time and epoch loss. 
-The server used for the training experiment is equipped with an
+Among 16 models used for the first experiment,
+we excluded two TensorFlow 1.x models (SimpleCNN-MonitoredSession,
+SimpleCNN-Session) and the SimpleCNN-GradientTape-1 model that failed to
+correctly be transformed.
+Thus, we targeted total 13 models for the distributed training experiment.
+We manually added the TensorBoard\cite{tensorboard} APIs to 
+record the loss value during the training. 
+The experiment server uses
 Intel Xeon CPU E5-2690 v4 @ 2.60GHz with 131GB memory and four 
 NVIDIA TITAN Xp GPUs.
 
@@ -367,75 +266,104 @@ NVIDIA TITAN Xp GPUs.
   \label{fig:eval:train}
 \end{figure}
 
-The results of the distributed traininig experiment 
-are shown in the figure \ref{fig:eval:train}.
-The lines represent the smoothed loss values;
-blue lines correspond to the \textbf{ORG} model training
-and the red lines correspond to the \textbf{HVD} model training.
-As shown in the figure, all of the training data show that
-the loss value decreases over time, meaning that the training
-process is valid.
 
-The distributed training experiment result show that the 8 out of 17 transformed
-models show speedup in distributed traininig. The result is rather surprising,
-considering that the distributed training itself is successfully executed
-without errors. To further investigate the factors that influence the
-training speed in the distributed training, 
-we performed additional distributed training of some models with
-different hyperparameters.
+\begin{figure}
+  \centering
+  \begin{tabular}{|l|r|r|r|}
+\hline
+                         & Single-GPU         & Distributed       & \\
+Model Name               &  training time (s) & training time (s) &  Speedup\\
+\hline
+LSTM-MNIST               & 78.675& 11.951& $\times$6.58\\
+SimpleCNN-GradientTape-2 & 3.192& 1.753& $\times$1.82\\
+VGG-CIFAR10              & 1060.296  & 1159.293  &$\times$0.91   \\
+Play-with-MNIST          & 148.101& 80.040& $\times$1.85\\
+Linear-Regression        & 0.607& 0.371& $\times$1.63\\
+Fashion-MNIST            & 110.274& 29.294& $\times$3.76\\
+CIFAR10-VGG16            & 1060.296& 1159.293& $\times$0.91\\
+Inception-network        & 956.261& 995.597& $\times$0.96\\
+RNN-Sentiment-Analysis   & 338.984& 451.985& $\times$0.74\\
+Stacked-LSTM-ColorBot    & 57.327 & -           & -   \\
+Auto-Encoder             & 567.230& 412.214& $\times$1.37\\
+Variational-Auto-Encoder & 1120.291& 699.777& $\times$1.60\\
+DCGAN                    & 2389.052& 828.428& $\times$2.88\\ 
+\hline
+  \end{tabular}
+  \caption{Training time and speedup between single GPU-based models and automatically transformed distributed models}
+  \label{fig:eval:traintime}
+\end{figure}
+
+The results of the distributed traininig experiment 
+are shown in figure \ref{fig:eval:train} and figure \ref{fig:eval:traintime}.
+Figure \ref{fig:eval:train} graphically describes the change of training loss
+of single GPU-based models and distributed models over time.
+The x-axis represent the time in seconds, and the y-axis represent
+the loss value number.
+The lines represent the loss values;
+blue lines correspond to the single GPU-based model training loss
+and the red lines correspond to the distributed model training loss.
+Figure \ref{fig:eval:traintime} show the training times required in
+single GPU-based models and distributed models.
+To define the training time, we first calculated the total reduction of
+loss by finding the maximum and minimum losses.
+We define that the training has completed when the loss decreased by
+95\% of the loss reduction amount, and the time up to that point
+was defined as the training time.
+The fourth column of figure \ref{fig:eval:traintime} 
+shows the relative speedup of the 
+distributed model training with respect to the single GPU-based model training.
+Note that the Stacked-LSTM-ColorBot model does not have distributed training
+time recorded. This is because the loss values after the first epoch
+are always higher that the initial loss value; thus the training time is
+undefined.
+
+As shown in the results in figure \ref{fig:eval:traintime},
+only 8 out of 13 distributed models show speedup. 
+Figure \ref{fig:eval:train} also shows that some models are erroneously trained.
+In figure \ref{fig:eval:train}(c), the distributed training of
+VGG-CIFAR10 model does not decrease the loss value.
+In figure \ref{fig:eval:train}(j), the distributed training of
+Stacked-LSTM-ColorBot model increases the loss value.
+In general, the experiment result implies that even if the transformation
+of the model code is successful, it does not guarantee
+increase in the training speed of the distributed models.
+
+We claim that training hyperparameters can be tuned to
+achieve the distributed training speedup.
+We provide an experimental evidence to this by
+training the distributed VGG-CIFAR10 model with
+different learning rates.
+Learning rate value of the original VGG-CIFAR10 model is 0.001,
+We altered this value to 0.0001, 0.00001
+and compared the training loss changes over time.
 
 \begin{figure}[!ht]
   \centering
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{keras-cifar}
-    \caption{VGG-CIFAR10 model with lr=0.001 (default value)}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{cifar-1e4}
-    \caption{VGG-CIFAR10 model with lr=0.0001}
-  \end{subfigure} 
-  ~ 
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{cifar-1e5}
-    \caption{VGG-CIFAR10 model with lr=0.00001}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{cifar-1e6}
-    \caption{VGG-CIFAR10 model with lr=0.000001}
-  \end{subfigure}
+  \includegraphics[width=.7\textwidth]{lr-exp-graph}
 
   \caption{Distributed training experiments of VGG-CIFAR10 model with different learning rates.}
-  \begin{tabular}{r@{: }l r@{: }l}
-    X-axis & Time (seconds) & Y-axis & Loss value\\
-    Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
-  \end{tabular}
+  \label{fig:eval:cifar10}
 \end{figure}
 
+Figure \ref{fig:eval:cifar10} shows the loss value changes of training 
+distributed VGG-CIFAR10 models with different learning rates.
+The distributed training with the original learning rate=0.001 does not show
+training speedup.
+However, when the learning rate is changed to 0.0001,
+the distributed training shows speedup compared to the single GPU training.
+Changing the learning rate to 0.00001 does not increases training speed
+compared to the single GPU training, but its speed is higher than
+the distributed training with the original learnin rate.
+By this experiment, we show that tuning the learning rate into right place 
+increases the distributed training speed.  
 
-The results show that the training speed difference between single-GPU and
-distributed training can differ according to the model hyperparameters
-such as the learning rate. The fact that various combinations of hyperparameters
-must be considered and experiement to reach optimal training speed is 
-well-known in ML community. This problem also applies to distributed training,
-where optimial hyperparameters should be re-searched after the training
-code is transformed. Our transformation tool do not target to search the 
-optimal hyperparameters, although we do implement the guidelines from the
-official Horovod documents to scale learning rate and epoch numbers
-by number of the GPUs.  
-
-Although the automatically transformed model codes may need additional
-tuning, our transformation tool effectively reduces
-burdens of manually rewriting the training codes.
-By applying our tool, the users can quickly change the single-GPU-based
-models into the distributed model and initiate the tranining.
-During the training process, the user may monitor training-related measurements
-such as per-epoch loss and decide to tune the hyperparameters.
-From the transformed training code, the user is able to quickly locate the
-hyperparameter variables, which suffer none-or-minimal changes of their locations
-from the original code.
-Therefore, the users of our tool can quickly iterate the process of
-training, evaluating and tuning without rewriting the
-training code with manual investigation on the library documentations and
-the model code.
+Our automated transformation approach reduces much friction and time between
+writing single GPU-based model and deploying the model in distributed system.
+The transformation tool quickly transforms the single GPU-based
+models into the distributed model and initiate the training process.
+Using the transformation tool, the model engineers can start the distributed
+training process without effort to rewrite the model codes. 
+Our transformation tool requires users to manually inspect the
+training speed and tune the hyperparameters.
+This is the minimal amount of effort which is always required for
+scaling and distributing DL models.
