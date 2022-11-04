@@ -1,4 +1,4 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 # 1. Construct a computation graph.
 x = tf.placeholder(tf.float32, [BATCH_SIZE, 784])
