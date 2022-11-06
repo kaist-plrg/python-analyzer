@@ -1,13 +1,27 @@
-import  tensorflow as tf
+import tensorflow as tf
 
-# todo: mnist example with tf2
-for step, (x,y) in enumerate(db):
+dataset = tf.data.Dataset.from_tensor_slices(..._
+dataset = dataset.repeat().shuffle(10000).batch(128)
+
+mnist_model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, [3, 3], activation='relu'),
+    tf.keras.layers.Conv2D(64, [3, 3], activation='relu'),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+    tf.keras.layers.Dropout(0.25),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+loss = tf.losses.SparseCategoricalCrossentropy()
+opt = tf.optimizers.Adam(0.001)
+
+# training loop
+for batch, (images, labels) in enumerate(dataset.take(10000 )):
     with tf.GradientTape() as tape:
-        x = tf.reshape(x, (-1, 28*28))
-        out = network(x)
-        y_onehot = tf.one_hot(y, depth=10)
-        loss = tf.square(out-y_onehot)
-        loss = tf.reduce_sum(loss) / 32
-    acc_meter.update_state(tf.argmax(out, axis=1), y)
-    grads = tape.gradient(loss, network.trainable_variables)
-    optimizer.apply_gradients(zip(grads, network.trainable_variables))
+        probs = mnist_model(images, training=True)
+        loss_value = loss(labels, probs)
+
+    grads = tape.gradient(loss_value, mnist_model.trainable_variables)
+    opt.apply_gradients(zip(grads, mnist_model.trainable_variables))

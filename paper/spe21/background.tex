@@ -10,8 +10,7 @@
 
 TensorFlow\cite{tensorflow} is a machine learning platform library
 developed by Google Brains.
-ML developers can define model structures by composing
-TensorFlow model APIs, and train the model with pre-defined training
+ML developers can use TensorFlow-provided APIs to 
 methods given by TensorFlow library.
 This section describes two representative forms of TensorFlow
 model codes, which are TensorFlow 1.x version format and 
@@ -24,18 +23,21 @@ TensorFlow 2.x version format.
 \label{fig:back:tf1}
 \end{figure}
 
+% 위 코드는 tf 1.x 버전 모델의 코드이다.
+% 1.x 버전의 코드에서는 모델의 구조를 Tensorflow API를 통해 정의한다.
+% 예를 들어 위 코드는 히든 레이어가 두개인 모델을 4~19번 줄에서 정의하고 있다.
+% 8-9번줄은 첫 번째 히든 레이어를,
+% 13-14번줄은 두 번째 히든 레이어를 정의하는데,
+% 이 때 각 히든 레이어의 weight와 bias를 정의하기 위해
+% tf.Variable이라는 API를 사용하고 있음을 알 수 있다.
+% 18-19번줄은 모델의 loss 계산 결과값과 optimization algorithm을 정의하고 있다.
+% 1.x 버전에서 모델을 훈련시키기 위해서는 Session API를 사용해서
+% 훈련 루프를 직접 작성한다.
 Figure~\ref{fig:back:tf1} illustrates an example of TensorFlow 1.x model.
 In TensorFlow 1.x version, developers use TensorFlow APIs to define model
 structures.
 In figure~\ref{fig:back:tf1}, for instance, the lines 4 to 15
 defines a neural network model with two hidden layers.
-
-
-The lines 4 to 15 construct a neural network model with two hidden layers. 
-Then lines 18 to 19 defines the loss function and optimizer which is required
-for the model training process.
-The lines 22 to 26 uses the {\tt tf.Session} API to initialize the
-model parameters and repeat the training process with training data batches.
  
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -43,6 +45,19 @@ model parameters and repeat the training process with training data batches.
   \caption{TensorFlow 2.x model example}
 \label{fig:back:tf2}
 \end{figure}
+
+% 위 코드는 tf 2.x 버전의 코드이다.
+% 2.x 버전에서는 모델 구조를 6~15줄과 같이 keras API를 사용하여
+% 간편하게 정의할 수 있다.
+% 예를 들어 위 코드에서는 keras의 Sequential API를 이용하여
+% 두 개의 convolutional 레이어와 두 개의 fully connected 레이어를
+% 순서대로 연결한 모델을 정의했다.
+% 이 모델을 훈련시키기 위해서 tf 2.x 모델에서는 GradientTape API를 사용한다.
+% 위 코드의 22번줄과 같이 with문을 이용하여 GradientTape 오브젝트를
+% 생성하면, 해당 with 문 내에서 실행되는 계산들에 대한 gradient를
+% 자동으로 계산할 수 있다.
+% 이렇게 자동으로 계산된 gradient를 26-27번줄에서 사용하여
+% 모델 파라미터를 gradient descent를 통해 최적화한다.
 
 Figure~\ref{fig:back:tf2} illustrates a TensorFlow 2.x model example.
 The main difference of Tensorflow 2.x with TensorFlow 1.x is eager evaluation.
@@ -53,42 +68,11 @@ This way, developers can easily define model components and compose them.
 In addition, TensorFlow 2.0 integrates Keras\cite{keras},
 a deep learning library that provides high-level abstractions for layers.
 
-\subsection{Distributed Training and Horovod Framework}
+\subsection{Horovod Distributed Training Framework}
 
-\textit{Distributed training} is a technique to boost efficiency in ML training
-by parallelizing computation workloads over multiple devices.
-Training a DL model is an expensive process that involves repetitive
-arithmetic computation over multiple tensors,
-which can be accelerated by specialized hardwares such as GPUs. 
-Distributed training takes advantage of parallelizing the compuation over
-multiple hardwares, typically using GPUs.
-The total training workload is divided into smaller, independent workloads
-so they can be assigned into GPUs and processed simultaneously. 
-In recent years, several works proposed the application of distributed
-deep learning in various fields.
-
-There are two approaches to distributed DL training.
-In the \textit{model-parallel} approach, a large DL model is divided into 
-the separate unit of computations and assigned to different GPUs. 
-The whole model is pipelined over the GPUs, so independent computations
-can overlap in time.
-In the \textit{data-parallel} approach, multiple instances of a small DL model
-are assigned to each GPU. The total training dataset is instead
-divided into several smaller datasets then assigned to each device.
-accelerator. The training proceeds by simultaneously calculating gradients
-in each accelerators. Then the gradients are averaged before being 
-applied to the model parameters.
-
-Facebook's experiment \cite{facebook2018} provides empirical evidence of
-the scalability of data-parallel distributed training. In the paper, 
-the halving/doubling-based allreduce algorithm is used to reduce the communication 
-cost of averaging gradients between the GPUs. 
-Allreduce algorithm eliminates the performance bottleneck of the traditional
-averaging algorithm by aggregating the average value through a series of
-point-to-point communication between GPUs. 
-Experimental results of the paper show that the performance linearly
-scales from 8-GPUs to 352 GPUs while achieving over 90\% of ideal performance.
-
+% Horovod는 기존 ml 모델을 분산 훈련 모델으로 변환하기 위한 라이브러리이다.
+% Horovod는 model-parallel 방식으로 ml 모델을 분산 훈련을 위한 모델로 바꾼다.
+% 
 Inspired by Facebook's results, Uber Engineering developed a distributed DL
 training framework Horovod \cite{sergeev2018horovod}. 
 The main motivation of Horovod is to scale single-GPU DL model training
