@@ -1,15 +1,21 @@
 \section{Background}\label{sec:background}
 \subsection{TensorFlow Deep Learning Models}
 
-This section describes three code examples of using TensorFlow library
-to construct a DL model and train it.
-The first example illustrates a TensorFlow 1.x version model
-which explicitly constructs a model and invoke the training process.
-The second example illustrates a TensorFlow 2.x version model
-which implicitly constructs a model and train it with automatic
-gradient computation.
-The final example illustrates a model written with Keras library,
-a layer-based deep neural network library included in TensorFlow.
+
+% Plan
+% explain typical form of tf model by code examples
+% will explain two categories
+% 1. tf 1.x version models
+% 2. tf 2.x version models
+
+TensorFlow\cite{tensorflow} is a machine learning platform library
+developed by Google Brains.
+ML developers can define model structures by composing
+TensorFlow model APIs, and train the model with pre-defined training
+methods given by TensorFlow library.
+This section describes two representative forms of TensorFlow
+model codes, which are TensorFlow 1.x version format and 
+TensorFlow 2.x version format.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -18,9 +24,13 @@ a layer-based deep neural network library included in TensorFlow.
 \label{fig:back:tf1}
 \end{figure}
 
-Figure~\ref{fig:back:tf1} illustrates a TensorFlow 1.x model example.
-In TensorFlow 1.x version, developers must first explicitly construct the model
-structure.
+Figure~\ref{fig:back:tf1} illustrates an example of TensorFlow 1.x model.
+In TensorFlow 1.x version, developers use TensorFlow APIs to define model
+structures.
+In figure~\ref{fig:back:tf1}, for instance, the lines 4 to 15
+defines a neural network model with two hidden layers.
+
+
 The lines 4 to 15 construct a neural network model with two hidden layers. 
 Then lines 18 to 19 defines the loss function and optimizer which is required
 for the model training process.
@@ -42,16 +52,6 @@ and TensorFlow variables are replaced by function parameters.
 This way, developers can easily define model components and compose them. 
 In addition, TensorFlow 2.0 integrates Keras\cite{keras},
 a deep learning library that provides high-level abstractions for layers.
-
-\begin{figure}[ht!]
-\lstinputlisting[language=Python]
-{tensorflow2_keras_ex.py}
-  \caption{Keras model example}
-\label{fig:back:keras}
-\end{figure}
-
-Figure~\ref{fig:back:keras} illustrates a Keras model example.
-Keras is a layer-based deep neural network library included in TensorFlow 2.x.
 
 \subsection{Distributed Training and Horovod Framework}
 
