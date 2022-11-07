@@ -1,8 +1,5 @@
 import tensorflow as tf
 
-dataset = tf.data.Dataset.from_tensor_slices(..._
-dataset = dataset.repeat().shuffle(10000).batch(128)
-
 mnist_model = tf.keras.Sequential([
     tf.keras.layers.Conv2D(32, [3, 3], activation='relu'),
     tf.keras.layers.Conv2D(64, [3, 3], activation='relu'),
@@ -13,12 +10,11 @@ mnist_model = tf.keras.Sequential([
     tf.keras.layers.Dropout(0.5),
     tf.keras.layers.Dense(10, activation='softmax')
 ])
-
 loss = tf.losses.SparseCategoricalCrossentropy()
+
 opt = tf.optimizers.Adam(0.001)
 
-# training loop
-for batch, (images, labels) in enumerate(dataset.take(10000 )):
+for batch, (images, labels) in enumerate(dataset.take(10000)):
     with tf.GradientTape() as tape:
         probs = mnist_model(images, training=True)
         loss_value = loss(labels, probs)
