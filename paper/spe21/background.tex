@@ -28,17 +28,16 @@ TensorFlow 2.x version form using automatic training methods.
 % 1.x 버전에서 모델을 훈련시키기 위해서는 Session API를 사용해서
 % 훈련 루프를 직접 작성한다.
 Figure~\ref{fig:back:tf1} is a code example of TensorFlow 1.x version model.
-In TensorFlow 1.x version models, developers first explicitly define
-the model structure with TensorFlow APIs.
-In figure \ref{fig:back:tf1}, for instance, lines 4 to 15 defines the model
+In TensorFlow 1.x version models, developers msut explicitly define
+the model structure and the training loop with TensorFlow APIs.
+In figure \ref{fig:back:tf1}, for instance, lines 3 to 15 defines the model
 structure of a neural network with two hidden layers.
 The code uses {\tt Variable} APIs to define weight and bias parameters of
 the hidden layers. This allows the TensorFlow 1.x runtime to
 optimize the model parameters later in the training process.
-After defining the model structure, developers then
-explicitly define the training process.
-The lines 21 to 26 describe how to define the training process in TensorFlow
-1.x models. The code first creates a {\tt Session} object,
+After defining the model structure, the lines 17 to 21
+manually defines the training loop for the model.
+The code first creates a {\tt Session} object,
 then repeats the training step by a loop and a {\tt run} method call to the
 trainer object. 
 
@@ -67,16 +66,17 @@ First, the TensorFlow 2.x version includes the Keras library, a layer-based
 DL library built on top of TensorFlow APIs.
 ML Developers can use Keras APIs to conveniently define the model structure.
 For instance, in figure~\ref{fig:back:tf2},
-lines 3 to 12 defines a sequential model with two convolutional layers and
+the lines 5 to 16 defines a sequential model with two convolutional layers and
 two densely-connected layers.
 Second, the 2.x version supports the eager evaluation feature, which allows
 developers to define the training process with Python syntax.
-The lines 17 to 23 show how developers use the eager evaluation feature
-to define the forward and back propagation. 
+The lines 18 to 24 show how developers use the eager evaluation feature
+to define the forward and back propagations. 
 The code creates a {\tt GradientTape} object, which records the gradients
 of the operations occur inside the {\tt with} statement.
-After the lines 18 to 20 computes the loss value,
-the code automatically optimizes the model parameters in the line 22 to 23.
+After computing the loss value,
+the code optimizes the model parameters by calling the 
+{\tt apply\_gradients} method in the lines 22 to 23.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -86,15 +86,18 @@ the code automatically optimizes the model parameters in the line 22 to 23.
 \end{figure}
 
 % todo: is this explanation necessary?
-In TensorFlow 2.x models, developers can also use pre-defined training
-methods. Figure~\ref{fig:back:tf2_keras} is a code example of using
-pre-defined method to train the model.
-The code defines the model same as the figure~\ref{fig:back:tf2}.
+Instead of manually writing training loops like~\ref{fig:back:tf2}, 
+developers can also use the pre-defined training methods in TensorFlow library. 
+Figure~\ref{fig:back:tf2_keras} is a code example of using
+TensorFlow-provided methods to automatically train the model.
+The code defines the model structure same as the figure~\ref{fig:back:tf2}.
 However, the code does not use {\tt GradientTape} object or manual loops to
 train the model.
-Instead, in the lines 17 to 18, the code calls {\tt compile} and {\tt fit}
+Instead, in the lines 16 to 17, the code calls {\tt compile} and {\tt fit}
 method to automatically train the model with 50 epochs and given training
 dataset.
+The methods are provided within the {\tt tf.keras.models.Model} class,
+which is a superclass of {\tt tf.keras.Sequential}.
 
 \subsection{Horovod Distributed Training Framework}
 
@@ -114,6 +117,7 @@ trained by same number of GPUs.
 Each GPU is responsible of forward propagation of a single model instance.
 Then, the gradients are averages over GPUs then used by gradient descent
 to optimize the model parameters. 
+
 The developers can use Horovod APIs to rewrite existing ML models into
 distributed models.
 Figure~\ref{fig:back:hvd} is an example of using Horovod library to convert
