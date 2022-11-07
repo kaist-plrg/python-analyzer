@@ -1,22 +1,17 @@
-import  tensorflow as tf
-from    tensorflow.keras import datasets, layers, optimizers, Sequential, metrics
+import tensorflow as tf
 
-db = tf.data.Dataset.from_tensor_slices((xs,ys))
-network = Sequential([layers.Dense(256, activation='relu'),
-                     layers.Dense(256, activation='relu'),
-                     layers.Dense(256, activation='relu'),
-                     layers.Dense(10)])
-network.build(input_shape=(None, 28*28))
-optimizer = optimizers.SGD(learning_rate=0.01)
-acc_meter = metrics.Accuracy()
+dataset = ...
 
-for step, (x,y) in enumerate(db):
-    with tf.GradientTape() as tape:
-        x = tf.reshape(x, (-1, 28*28))
-        out = network(x)
-        y_onehot = tf.one_hot(y, depth=10)
-        loss = tf.square(out-y_onehot)
-        loss = tf.reduce_sum(loss) / 32
-    acc_meter.update_state(tf.argmax(out, axis=1), y)
-    grads = tape.gradient(loss, network.trainable_variables)
-    optimizer.apply_gradients(zip(grads, network.trainable_variables))
+model = tf.keras.Sequential([
+    tf.keras.layers.Conv2D(32, [3, 3], activation='relu'),
+    tf.keras.layers.Conv2D(64, [3, 3], activation='relu'),
+    tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+    tf.keras.layers.Dropout(0.25),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.5),
+    tf.keras.layers.Dense(10, activation='softmax')
+])
+
+model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.fit(dataset, epochs=50)
