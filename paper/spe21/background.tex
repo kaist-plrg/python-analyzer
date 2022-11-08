@@ -18,27 +18,32 @@ and TensorFlow 2.x version form using manual loops.
 
 Figure~\ref{fig:back:tf1} is a code example of TensorFlow 1.x version model.
 In TensorFlow 1.x version models, developers msut explicitly define
-the model structure and the training loop with TensorFlow APIs.
-In figure \ref{fig:back:tf1}, for instance, lines 3 to 15 defines the model
+the model structure, the optimization algorithm, and the training loop 
+with low-level TensorFlow APIs.
+First, the lines 3 to 14 defines the model
 structure of a neural network with two hidden layers.
 The lines 3 and 4 first creates placeholder variables for input and output
 tensors of the model. The placeholder variables explicitly define the
-input and output vector dimensions of the model.
+input and output vector dimensions of the model, and later will
+be replaced with actual vector values of input data.
 The lines 6 to 8 defines the first hidden dense layer.
 The code uses {\tt Variable} APIs to define weight and bias parameters of
-the dense layer. This allows the TensorFlow runtime to later modify the
-layer parameters according to the gradient descent optimization.
-Then, the line 8 defines the compuation of the first layer,
-which involves a multiplication, an addition, and a ReLU activation.
+the dense layer. This allows the gradient descent algorithm to 
+later modify the parameters in training process. 
+Then, the line 8 defines the computation of the first layer.
+The layer multiplies an input vector {\tt x} and a weight matrix
+{\tt W\_1}, add a bias vector {\tt b\_1}, and apply the ReLU activation
+function.
 Similarly, the lines 10 to 12 defines the second hidden layer parameters
 and computation.
 The line 14 defines the final output and the loss of the model by
 applying softmax function across the second hidden layer output and
 computing the cross entropy. 
-The line 15 defines an optimizer for the model.
-The optimizer implmenets a gradient descent for the model,
-which involves automatically computing the gradient for the model operations
-and optimizing the model parameters according to each gradient..
+The line 15 defines an optimization algorithm for the model training with
+the optimizer object.
+The optimizer object is an abstraction of an optimization algorithm,
+which includes automatically computing the gradients of the model output loss 
+and modifying the model parameters according to the gradients.
 After defining the model structure and optimizer, the lines 17 to 21
 manually defines the training loop for the model.
 The code first creates a {\tt Session} object via {\tt with} statement.
@@ -47,7 +52,7 @@ via various methods of {\tt Session} object.
 Developers can use {\tt Session.run} method to invoke a computation.
 The lines 19 to 21, for instance, uses an {\tt for} loop and
 a call to {\tt Session.run} method to repeatedly invoke a
-training computation defined in the line 15.
+optimization algorithm defined in the line 15.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
