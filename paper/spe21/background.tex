@@ -56,35 +56,28 @@ training computation defined in the line 15.
 \label{fig:back:tf2}
 \end{figure}
 
-% 위 코드는 tf 2.x 버전의 코드이다.
-% 2.x 버전에서는 모델 구조를 6~15줄과 같이 keras API를 사용하여
-% 간편하게 정의할 수 있다.
-% 예를 들어 위 코드에서는 keras의 Sequential API를 이용하여
-% 두 개의 convolutional 레이어와 두 개의 fully connected 레이어를
-% 순서대로 연결한 모델을 정의했다.
-% 이 모델을 훈련시키기 위해서 tf 2.x 모델에서는 GradientTape API를 사용한다.
-% 위 코드의 22번줄과 같이 with문을 이용하여 GradientTape 오브젝트를
-% 생성하면, 해당 with 문 내에서 실행되는 계산들에 대한 gradient를
-% 자동으로 계산할 수 있다.
-% 이렇게 자동으로 계산된 gradient를 26-27번줄에서 사용하여
-% 모델 파라미터를 gradient descent를 통해 최적화한다.
 Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x version model.
 Compared to the 1.x version, TensorFlow 2.x version has two differences.
 First, the TensorFlow 2.x version includes the Keras library, a layer-based
 DL library built on top of TensorFlow APIs.
 ML Developers can use Keras APIs to conveniently define the model structure.
 For instance, in figure~\ref{fig:back:tf2},
-the lines 5 to 16 defines a sequential model with two convolutional layers and
+the lines 5 to 8 defines a sequential model with two convolutional layers and
 two densely-connected layers.
+Using the Keras APIs effectively reduces burden of manually building the neural
+network layers and simplify the model code.
 Second, the 2.x version supports the eager evaluation feature, which allows
 developers to define the training process with Python syntax.
-The lines 18 to 24 show how developers use the eager evaluation feature
+The lines 12 to 18 show how developers use the eager evaluation feature
 to define the forward and back propagations. 
-The code creates a {\tt GradientTape} object, which records the gradients
-of the operations occur inside the {\tt with} statement.
-After computing the loss value,
-the code optimizes the model parameters by calling the 
-{\tt apply\_gradients} method in the lines 22 to 23.
+The code creates a {\tt GradientTape} object, which records the operations
+happen inside the {\tt with} statement body.
+After the {\tt with} statement, the lines 17 and 18 refer to the 
+{\tt GradientTape} object to automatically compute the gradients 
+for the model parameters and optimizer them accordingly.
+The optimizer provides {\tt apply\_gradients} methods that optimizes 
+the model parameters by gradient descent algorithm. 
+
 \subsection{Horovod Distributed Training Framework}
 
 \begin{figure}
