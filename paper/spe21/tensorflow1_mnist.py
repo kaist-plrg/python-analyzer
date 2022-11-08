@@ -12,7 +12,7 @@ b_2 = tf.Variable(tf.zeros([10]))
 layer_2 = tf.matmul(layer_1, W_2) + b_2
 
 loss = tf.nn.softmax_cross_entropy_with_logits(layer_2, y)
-train_op = tf.train.AdagradOptimizer(0.01).minimize(loss)
+train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
 
 with tf.Session() as sess:
   sess.run(tf.initialize_all_variables())

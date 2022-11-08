@@ -6,9 +6,8 @@ developed by Google Brains.
 ML developers can use TensorFlow-provided APIs to 
 methods given by TensorFlow library.
 This section describes three representative forms of TensorFlow
-model codes, which are TensorFlow 1.x version form, 
-TensorFlow 2.x version form using manual loops and
-TensorFlow 2.x version form using automatic training methods.
+model codes, which are TensorFlow 1.x version form 
+and TensorFlow 2.x version form using manual loops.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -17,29 +16,38 @@ TensorFlow 2.x version form using automatic training methods.
 \label{fig:back:tf1}
 \end{figure}
 
-% 위 코드는 tf 1.x 버전 모델의 코드이다.
-% 1.x 버전의 코드에서는 모델의 구조를 Tensorflow API를 통해 정의한다.
-% 예를 들어 위 코드는 히든 레이어가 두개인 모델을 4~19번 줄에서 정의하고 있다.
-% 8-9번줄은 첫 번째 히든 레이어를,
-% 13-14번줄은 두 번째 히든 레이어를 정의하는데,
-% 이 때 각 히든 레이어의 weight와 bias를 정의하기 위해
-% tf.Variable이라는 API를 사용하고 있음을 알 수 있다.
-% 18-19번줄은 모델의 loss 계산 결과값과 optimization algorithm을 정의하고 있다.
-% 1.x 버전에서 모델을 훈련시키기 위해서는 Session API를 사용해서
-% 훈련 루프를 직접 작성한다.
 Figure~\ref{fig:back:tf1} is a code example of TensorFlow 1.x version model.
 In TensorFlow 1.x version models, developers msut explicitly define
 the model structure and the training loop with TensorFlow APIs.
 In figure \ref{fig:back:tf1}, for instance, lines 3 to 15 defines the model
 structure of a neural network with two hidden layers.
+The lines 3 and 4 first creates placeholder variables for input and output
+tensors of the model. The placeholder variables explicitly define the
+input and output vector dimensions of the model.
+The lines 6 to 8 defines the first hidden dense layer.
 The code uses {\tt Variable} APIs to define weight and bias parameters of
-the hidden layers. This allows the TensorFlow 1.x runtime to
-optimize the model parameters later in the training process.
-After defining the model structure, the lines 17 to 21
+the dense layer. This allows the TensorFlow runtime to later modify the
+layer parameters according to the gradient descent optimization.
+Then, the line 8 defines the compuation of the first layer,
+which involves a multiplication, an addition, and a ReLU activation.
+Similarly, the lines 10 to 12 defines the second hidden layer parameters
+and computation.
+The line 14 defines the final output and the loss of the model by
+applying softmax function across the second hidden layer output and
+computing the cross entropy. 
+The line 15 defines an optimizer for the model.
+The optimizer implmenets a gradient descent for the model,
+which involves automatically computing the gradient for the model operations
+and optimizing the model parameters according to each gradient..
+After defining the model structure and optimizer, the lines 17 to 21
 manually defines the training loop for the model.
-The code first creates a {\tt Session} object,
-then repeats the training step by a loop and a {\tt run} method call to the
-trainer object. 
+The code first creates a {\tt Session} object via {\tt with} statement.
+The model code can access and control the TensorFlow runtime execution
+via various methods of {\tt Session} object.
+Developers can use {\tt Session.run} method to invoke a computation.
+The lines 19 to 21, for instance, uses an {\tt for} loop and
+a call to {\tt Session.run} method to repeatedly invoke a
+training computation defined in the line 15.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -77,28 +85,6 @@ of the operations occur inside the {\tt with} statement.
 After computing the loss value,
 the code optimizes the model parameters by calling the 
 {\tt apply\_gradients} method in the lines 22 to 23.
-
-\begin{figure}[ht!]
-\lstinputlisting[language=Python]
-{tensorflow2_keras_ex.py}
-  \caption{TensorFlow 2.x model training with Keras API example}
-\label{fig:back:tf2_keras}
-\end{figure}
-
-% todo: is this explanation necessary?
-Instead of manually writing training loops like~\ref{fig:back:tf2}, 
-developers can also use the pre-defined training methods in TensorFlow library. 
-Figure~\ref{fig:back:tf2_keras} is a code example of using
-TensorFlow-provided methods to automatically train the model.
-The code defines the model structure same as the figure~\ref{fig:back:tf2}.
-However, the code does not use {\tt GradientTape} object or manual loops to
-train the model.
-Instead, in the lines 16 to 17, the code calls {\tt compile} and {\tt fit}
-method to automatically train the model with 50 epochs and given training
-dataset.
-The methods are provided within the {\tt tf.keras.models.Model} class,
-which is a superclass of {\tt tf.keras.Sequential}.
-
 \subsection{Horovod Distributed Training Framework}
 
 \begin{figure}
