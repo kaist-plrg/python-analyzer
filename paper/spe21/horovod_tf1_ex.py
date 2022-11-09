@@ -1,4 +1,10 @@
 import tensorflow.compat.v1 as tf
+import horovod.tensorflow as hvd
+
+hvd.init()
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+config.gpu_options.visible_device_list = str(hvd.local_rank())
 
 dataset = ...
 
@@ -14,9 +20,10 @@ b_2 = tf.Variable(tf.zeros([10]))
 layer_2 = tf.nn.softmax(tf.matmul(layer_1, W_2) + b_2)
 
 loss = -tf.reduce_sum(y * tf.log(layer_2), 1) # Categorical cross entropy 
-train_op = tf.train.AdamOptimizer(0.001).minimize(loss)
+train_op = hvd.DistributedOptimizer(tf.train.AdamOptimizer(0.001 * hvd.size())).minimize(loss)
 
 with tf.Session() as sess:
   sess.run(tf.global_variables_initializer())
-  for images, labels in dataset.take(10000): 
+  sess.run(hvd.broadcast_global_variables(root_rank=0))
+  for images, labels in dataset.take(10000 // hvd.size()): 
     sess.run(train_op, {x: images, y: labels})

@@ -6,12 +6,13 @@ model = tf.keras.Sequential([
     tf.keras.layers.Dense(100, activation='relu'),
     tf.keras.layers.Dense(10, activation='softmax')
 ])
-loss = tf.losses.SparseCategoricalCrossentropy()
+
+loss = tf.losses.CategoricalCrossentropy()
 opt = tf.optimizers.Adam(0.001)
 
-for batch, (images, labels) in enumerate(dataset.take(10000)):
+for images, labels in dataset.take(10000):
     with tf.GradientTape() as tape:
-        probs = model(images, training=True)
+        probs = model(images)
         loss_value = loss(labels, probs)
 
     grads = tape.gradient(loss_value, model.trainable_variables)
