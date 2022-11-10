@@ -110,28 +110,75 @@ optimization.
 \label{fig:back:tf2}
 \end{figure}
 
-% tf 1.x 의 각 부분 (모델 ㅁ부분 / running 부분)과 매칭시켜서 설명)
-Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x version model.
-Compared to the 1.x version, TensorFlow 2.x version has two differences.
-First, the TensorFlow 2.x version includes the Keras library, a layer-based
-DL library built on top of TensorFlow APIs.
-ML Developers can use Keras APIs to conveniently define the model structure.
-For instance, in figure~\ref{fig:back:tf2},
-the lines 5 to 8 defines a sequential model with two convolutional layers and
-two densely-connected layers.
-Using the Keras APIs effectively reduces burden of manually building the neural
-network layers and simplify the model code.
-Second, the 2.x version supports the eager evaluation feature, which allows
-developers to define the training process with Python syntax.
-The lines 12 to 18 show how developers use the eager evaluation feature
-to define the forward and back propagations. 
-The code creates a {\tt GradientTape} object, which records the operations
-happen inside the {\tt with} statement body.
-After the {\tt with} statement, the lines 17 and 18 refer to the 
-{\tt GradientTape} object to automatically compute the gradients 
-for the model parameters and optimizer them accordingly.
-The optimizer provides {\tt apply\_gradients} methods that optimizes 
-the model parameters by gradient descent algorithm. 
+
+% new
+Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x model.
+The code defines the same model with~\ref{fig:back:tf1},
+a neural network model for image classification with two hidden dense layers.
+The developers using TensorFlow 2.x must define the model structure and
+the training loop using TensorFlow APIs.
+Compared to TensorFlow 1.x, using TensorFlow 2.x APIs hides unnecessary details
+and make the code compact.
+
+The lines 5 to 11 first define the model structure.
+First, the lines 5 to 8 use the Keras library APIs to define the neural
+network model with two hidden dense layers.
+Keras is a layer-based deep learning model library included in TensorFlow 2.x.
+Using Keras APIs allows devleopers to conveniently define the model
+structure without explicitly stating the operations between the layers.
+The lines 6 and 7 defines the first and second hidden dense layers
+with the {\tt Dense} API.
+The first argument specifies the size of output vector.
+Given the output vector size, the {\tt Dense} API will automatically create
+the weight matrix and the bias vector parameters according to the size of 
+the previous layer.
+The second argument specifices the activation function of the layer,
+where the name of the activation function is given as a string. 
+The hidden layers are then composed into a linear sequential model
+by the {\tt Sequential} API in the line 5.
+Compared to TensorFlow 1.x models, using Keras APIs in TensorFlow 2.x model
+reduces programmer's burden of explicitly defining the operations inside
+the model components.
+The lines 10 and 11 define the loss of the model output and
+the optimizer object for the model training.
+The line 10 uses the {\tt CategoricalCrossentropy} API to 
+define the loss function.
+The line 11 uses the {\tt Adam} API to define the optimizer object.
+This optimizer object is equal to the {\tt AdamOptimizer} in the TensorFlow
+1.x model.
+However, the usage of the optimizer object is different in two TensorFlow
+versions.
+In TensorFlow 1.x, the optimizer object is mainly used to define the
+training operation {\tt train\_op}, which will be later used as an argument
+for the {\tt sess.run} method.
+In TensorFlow 2.x, the optimizer object contains methods such as
+{\tt apply\_gradients} that is responsible of acutal modification 
+
+After the model structure, loss function and optimizer is defined,
+the lines 13 to 19 define the training loop for the model.
+The training loop starts with the {\tt for} loop that iterates over the dataset
+and takes a batch of training images and answer labels.
+The line 14 creates a new {\tt GradientTape} object by {\tt with} statement.
+When a {\tt GradientTape} object is created by {\tt with} statement,
+the operations that happen inside the {\tt with} statement body will
+have their gradients recorded by the {\tt GradientTape} object.
+The lines 15 and 16 define the forward propagation stage in a single
+training step.
+Note that in TensorFlow 2.x, the model objects created with Keras API can be
+used like a Python function.
+Thus, the line 15 computes the output vector of the model when the
+training image is given as an input.
+The line 16 computes the cross entropy loss between the model output and
+the answer label, as defined in the line 10.
+The lines 18 and 19 then optimizes the model parameters by gradient descent. 
+The {\tt model.trainable\_variable} method returns the list of 
+TensorFlow variables of the model parameters,
+and the {\tt tape.gradient} method returns the list of
+gradients for model parameters automatically computed against the
+loss value.
+The line 19 finally calls the {\tt apply\_gradients} method of the optimizer
+object to optimize the model parameters according to gradient descent algorithm.
+
 
 \subsection{Horovod Distributed Training Framework}
 
