@@ -16,6 +16,93 @@ and TensorFlow 2.x version form using manual loops.
 \label{fig:back:tf1}
 \end{figure}
 
+% new
+Figure~\ref{fig:back:tf1} is a code example of a TensorFlow 1.x model.
+The code defines a neural network model with two hidden dense layers,
+which classifies an input image of 784 pixels into one of the 10 classes.
+To define a neural network model in TensorFlow 1.x, 
+developers must explicitly define the model structure,
+the operations between the model components, 
+and the training loop with low-level TensorFlow APIs.
+
+First, the lines 5 to 17 defines the model structure and manually build up
+computational relationship between the model components.
+The lines 5 and 6 first create placeholder variables {\tt x} and {\tt y},
+which are the placeholders for the input image vectors 
+and the answer label vectors of training data.
+The placeholder variables only specify the vector size of the input images
+and the labels; they will be replaced with actual values during the training
+process. 
+The lines 8 to 10 defines the first hidden dense layer, which outputs a
+vector of length 100.
+A dense layer is parametrized by a weight matrix and a bias vector.
+The size of the weight matrix is (the size of the input vector) by 
+(the size of the first layer output vector), and the size of the bias vector
+is equal to the size of the first layer output vector.
+The line 8 uses the {\tt random\_uniform} API to create a random weight matrix of
+size 784 by 100, and the line 9 uses the {\tt zero} API to create a zero-vector
+of size 100.
+Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
+{\tt Variable} API.
+The {\tt Variable} API creates a TensorFlow variable that can be later modified
+and optimized during the runtime.
+Thus, the lines 8 and 9 create weight and bias parameters for the first
+hidden layer which have correct sizes and are modifiable during the 
+training process.
+The line 10 manually defines the operations of the first hidden layer. 
+The operations multiply the input vector {\tt x} and the weight matrix 
+{\tt W\_1}, add the bias vector {\tt b\_1}, then applies the ReLU activation
+function.
+In TensorFlow 1.x, developers have to explicitly specify the model parameters
+and operations between them as the lines 8 to 10.
+% todo: next line 뭔가 여기 들어가기 어색함
+Note that these lines does not actually compute them.
+The lines 12 to 14 defines the second hidden dense layer that outputs a
+vector of length 10.
+Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
+and the bias vector parameter for the second hidden layer.
+Then the line 14 defines the operations of the second hidden layer,
+which multiply the first hidden layer output {\tt layer\_1} and
+the weight {\tt W\_2}, add the bias vector {\tt b\_2}, and apply the
+Softmax activation function.
+For the final part of the model definition,
+the lines 16 and 17 defines how to compute the loss and optimize the model
+parameters.
+The line 16 defines the loss between the model output {\tt layer\_2} and
+the answer label {\tt y}, with categorial cross entropy function.9.
+The line 17 defines the optimization algorithm for the model.
+The line first calls the {\tt AdamOptimizer} constructor
+function to create an optimizer object that abstracts the
+Adam gradient descent algorithm.
+Then the {\tt minimize} method defines an operation that updates the
+{\tt Variable} values to minimize the first argument.
+Thus, the line defines the operation of a single training step,
+which optimizes the model parameters via gradient descent with respect to
+the loss value.
+
+After the model structure and operations are defined, 
+the lines 19 to 22 define the training loop.
+The training loop iterates over the training dataset to feed the training
+input images and labels to the model and optimize the model parameters via
+gradient descent.
+The line 19 first creates a {\tt Session} object.
+The {\tt Session} object provides the {\tt run} method that can invoke
+computation of TensorFlow operations.
+The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
+The variables that should be initialized
+include the model parameters in the lines 8 to 13, and
+internal state variables of the optimizer which are implicitly introduced
+when the optimizer object is created.
+The line 20 refers to the TensorFlow global variables to access and initialize
+all of the model parameter variables and the optimizer internal variables.
+After the variables are initialized, the line 21 uses the {\tt for} loop
+to iterate over the dataset and get training batches of the images and the
+labels. Finally, the line 22 calls the {\tt run} method to
+invoke computation of the training operation {\tt train\_op},
+which repeatedly optimizes the model parameters by the gradient descent
+optimization.
+
+% old
 Figure~\ref{fig:back:tf1} is a code example of TensorFlow 1.x version model.
 In TensorFlow 1.x version models, developers msut explicitly define
 the model structure, the optimization algorithm, and the training loop 
