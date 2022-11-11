@@ -197,14 +197,58 @@ to optimize the model parameters.
 \label{fig:back:hvd1} 
 \end{figure}
 
+%todo: paragraph 나누는 기준 좀 고민
+% p1 : figure intro, explain initialization + gpu pinning
 Figure~\ref{fig:back:hvd1} is a code example of using Horovod to distribute
 the TensorFlow 1.x model in~\ref{fig:back:tf1}.
-The line 4 first initializes the Horovo configuration.
-The lines 6 to 8 creates the same number of processes with GPUs in the system,
+To explain the Horovod library,
+we will point out the differene between the original TensorFlow 1.x code in
+the figure \ref{fig:back:tf1} and the figure \ref{fig:Back:hvd1}
+The line 4 first initializes the Horovod configuration.
+The lines 6 to 8 create the same number of processes with GPUs in the system,
 and pins each GPU per process. 
-The GPU pinning process ensures that the training workloads of multiple
-model instances are equally parallelized over multiple GPUs.
+The GPU pinning is a process where each GPU in the system is assignd to a single 
+training process.
+This is done by refering to the local rank of the process 
+by the {\tt local\_rank} API.
+This ensures the model training workload is equally distributed over
+every GPUs in the system.
 
+% p2: explain optimizer
+The line 24 defines the training operation, which is a distributed version
+of the gradient descent algorithm.
+Compare to the line 17 in the figure~\ref{fig:back:tf1},
+the line 24 makes two changes to the optimizer object.
+First, the learning rate argument is multiplied by {\tt hvd.size()}.
+According to the Horovod library document,
+the learning rate of the new distributed optimizer 
+should be scaled by the number of GPUs for efficient distributed training.
+To acheive the scaling, the line 24 calls the {\tt hvd.size()} method to
+get the total number of processes that Horovod has created,
+which is equal to the number of GPUs.
+Second, the optimizer object is wrapped with the Horovod library API,
+{\tt DistributedOptimizer}.
+The {\tt DistributedOptimizer} API converts the single GPU-based optimizer 
+object to distributed optimizer, which averages the loss gradients across the
+training processes before applying the gradient descent optimization.
+Thus, wrapping the optimzier with {\tt DistributedOptimizer} API is necessary
+for correct distributed training of the model.
+
+% p3: explain variable broadcast
+The line 28 broadcasts the model and optimizer variables across the training
+processes.
+The variable broadcasting is a process where the TensorFlow 
+variable values in different training processes are synchronized into
+the same single value.
+According to the Horovod library documentation, the variable broadcasting
+should occur exactly once during the training process,
+right after the TensorFlow variables are initialized.
+In TensorFlow 1.x, the variable broadcasting is done in the line 28,
+which is right after the line 27 that initializes the TensorFlow variables,
+and right before the line 29 that starts the training loop.
+Note that the {\tt broadcast\_global\_variables} API broadcasts every
+TensorFlow variables including the model variables and the optimizer
+variables.
 
 \begin{figure}[ht!]
  \lstinputlisting[language=Python]
@@ -212,4 +256,5 @@ model instances are equally parallelized over multiple GPUs.
   \caption{Horovod distributed model example}
 \label{fig:back:hvd2} 
 \end{figure}
+
 
