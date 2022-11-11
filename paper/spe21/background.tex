@@ -5,9 +5,12 @@ TensorFlow\cite{tensorflow} is a machine learning platform library
 developed by Google Brains.
 ML developers can use TensorFlow-provided APIs to 
 methods given by TensorFlow library.
-This section describes three representative forms of TensorFlow
-model codes, which are TensorFlow 1.x version form 
-and TensorFlow 2.x version form using manual loops.
+This section describes two representative forms of TensorFlow
+model codes, which are the TensorFlow 1.x version model 
+in the figure~\ref{fig:back:tf1} and TensorFlow 2.x version model in the figure
+\ref{fig:back:tf2}.
+Both model defines a neural network model with two hidden dense layers,
+which classifies an input image of 784 pixels into one of the 10 classes.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -16,14 +19,11 @@ and TensorFlow 2.x version form using manual loops.
 \label{fig:back:tf1}
 \end{figure}
 
-% new
 Figure~\ref{fig:back:tf1} is a code example of a TensorFlow 1.x model.
-The code defines a neural network model with two hidden dense layers,
-which classifies an input image of 784 pixels into one of the 10 classes.
 To define a neural network model in TensorFlow 1.x, 
-developers must explicitly define the model structure,
-the operations between the model components, 
-and the training loop with low-level TensorFlow APIs.
+developers must explicitly define the model structure
+and the operations between the layers, 
+and manually start the training loop with low-level TensorFlow APIs.
 
 First, the lines 5 to 17 defines the model structure and manually build up
 computational relationship between the model components.
@@ -35,69 +35,77 @@ and the labels; they will be replaced with actual values during the training
 process. 
 The lines 8 to 10 defines the first hidden dense layer, which outputs a
 vector of length 100.
+%todo: elaborate
 A dense layer is parametrized by a weight matrix and a bias vector.
 The size of the weight matrix is (the size of the input vector) by 
 (the size of the first layer output vector), and the size of the bias vector
 is equal to the size of the first layer output vector.
-The line 8 uses the {\tt random\_uniform} API to create a random weight matrix of
-size 784 by 100, and the line 9 uses the {\tt zero} API to create a zero-vector
-of size 100.
+The line 8 uses the {\tt random\_uniform} API to create 
+a random weight matrix of size 784 by 100, 
+and the line 9 uses the {\tt zero} API to create a zero-vector of size 100.
 Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
 {\tt Variable} API.
 The {\tt Variable} API creates a TensorFlow variable that can be later modified
 and optimized during the runtime.
+It is usually used to define a model parameter, 
+which value is changed during the training process.
 Thus, the lines 8 and 9 create weight and bias parameters for the first
 hidden layer which have correct sizes and are modifiable during the 
 training process.
 The line 10 manually defines the operations of the first hidden layer. 
-The operations multiply the input vector {\tt x} and the weight matrix 
-{\tt W\_1}, add the bias vector {\tt b\_1}, then applies the ReLU activation
+It multiplies the input vector {\tt x} and the weight matrix 
+{\tt W\_1}, adds the bias vector {\tt b\_1}, then applies the ReLU activation
 function.
 In TensorFlow 1.x, developers have to explicitly specify the model parameters
 and operations between them as the lines 8 to 10.
-% todo: next line 뭔가 여기 들어가기 어색함
-Note that these lines does not actually compute them.
+Note that these lines does not actually compute the operations,
+but only define the operations that will be computed during the training.
 The lines 12 to 14 defines the second hidden dense layer that outputs a
 vector of length 10.
 Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
 and the bias vector parameter for the second hidden layer.
 Then the line 14 defines the operations of the second hidden layer,
-which multiply the first hidden layer output {\tt layer\_1} and
-the weight {\tt W\_2}, add the bias vector {\tt b\_2}, and apply the
+which multiplies the first hidden layer output {\tt layer\_1} and
+the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and applies the
 Softmax activation function.
-For the final part of the model definition,
-the lines 16 and 17 defines how to compute the loss and optimize the model
+As shown in the lines 5 to 14, developers must explicitly define
+the model components and oprations between them.
+
+The lines 16 and 17 defines how to compute the loss and optimize the model
 parameters.
-The line 16 defines the loss between the model output {\tt layer\_2} and
-the answer label {\tt y}, with categorial cross entropy function.9.
-The line 17 defines the optimization algorithm for the model.
+The line 16 defines the loss function between the model output {\tt layer\_2} 
+and the answer label {\tt y}, with categorial cross entropy function.
+The line 17 defines the optimization operation for the model.
 The line first calls the {\tt AdamOptimizer} constructor
-function to create an optimizer object that abstracts the
-Adam gradient descent algorithm.
-Then the {\tt minimize} method defines an operation that updates the
+function to create an optimizer object.
+The optimizer object in TensorFlow is an abstraction of various gradient
+descent algorithms.
+For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
+algorithm. % todo: cite Adam g.d.
+Then the {\tt minimize} method defines the training operation that updates the
 {\tt Variable} values to minimize the first argument.
 Thus, the line defines the operation of a single training step,
 which optimizes the model parameters via gradient descent with respect to
 the loss value.
 
-After the model structure and operations are defined, 
-the lines 19 to 22 define the training loop.
+After the model structure and training operations are defined, 
+the lines 19 to 22 start and execute the training loop.
 The training loop iterates over the training dataset to feed the training
-input images and labels to the model and optimize the model parameters via
-gradient descent.
+images and labels to the model and optimize the model parameters. 
 The line 19 first creates a {\tt Session} object.
 The {\tt Session} object provides the {\tt run} method that can invoke
 computation of TensorFlow operations.
 The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
 The variables that should be initialized
-include the model parameters in the lines 8 to 13, and
+include the model parameter variables and
 internal state variables of the optimizer which are implicitly introduced
 when the optimizer object is created.
 The line 20 refers to the TensorFlow global variables to access and initialize
-all of the model parameter variables and the optimizer internal variables.
+all of the model parameter variables and the optimizer internal variables
+at once.
 After the variables are initialized, the line 21 uses the {\tt for} loop
-to iterate over the dataset and get training batches of the images and the
-labels. Finally, the line 22 calls the {\tt run} method to
+to iterate over the dataset and get training batches. 
+Finally, the line 22 calls the {\tt run} method to
 invoke computation of the training operation {\tt train\_op},
 which repeatedly optimizes the model parameters by the gradient descent
 optimization.
@@ -110,39 +118,37 @@ optimization.
 \label{fig:back:tf2}
 \end{figure}
 
-
 % new
 Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x model.
-The code defines the same model with~\ref{fig:back:tf1},
-a neural network model for image classification with two hidden dense layers.
-The developers using TensorFlow 2.x must define the model structure and
-the training loop using TensorFlow APIs.
+The developers using TensorFlow 2.x define the model structure and
+the training loop. 
 Compared to TensorFlow 1.x, using TensorFlow 2.x APIs hides unnecessary details
 and make the code compact.
 
 The lines 5 to 11 first define the model structure.
 First, the lines 5 to 8 use the Keras library APIs to define the neural
 network model with two hidden dense layers.
+%todo: cite keras
 Keras is a layer-based deep learning model library included in TensorFlow 2.x.
-Using Keras APIs allows devleopers to conveniently define the model
-structure without explicitly stating the operations between the layers.
 The lines 6 and 7 defines the first and second hidden dense layers
 with the {\tt Dense} API.
 The first argument specifies the size of output vector.
 Given the output vector size, the {\tt Dense} API will automatically create
 the weight matrix and the bias vector parameters according to the size of 
 the previous layer.
-The second argument specifices the activation function of the layer,
+The second argument of the {\tt Dense} API 
+specifies the activation function of the layer,
 where the name of the activation function is given as a string. 
 The hidden layers are then composed into a linear sequential model
 by the {\tt Sequential} API in the line 5.
-Compared to TensorFlow 1.x models, using Keras APIs in TensorFlow 2.x model
-reduces programmer's burden of explicitly defining the operations inside
+Compared to TensorFlow 1.x models, building the model with Keras APIs
+reduces the developer's burden of explicitly defining the operations between 
 the model components.
+
 The lines 10 and 11 define the loss of the model output and
 the optimizer object for the model training.
 The line 10 uses the {\tt CategoricalCrossentropy} API to 
-define the loss function.
+define the loss function between the model output and the answer label.
 The line 11 uses the {\tt Adam} API to define the optimizer object.
 This optimizer object is equal to the {\tt AdamOptimizer} in the TensorFlow
 1.x model.
@@ -150,26 +156,25 @@ However, the usage of the optimizer object is different in two TensorFlow
 versions.
 In TensorFlow 1.x, the optimizer object is mainly used to define the
 training operation {\tt train\_op}, which will be later used as an argument
-for the {\tt sess.run} method.
-In TensorFlow 2.x, the optimizer object contains methods such as
-{\tt apply\_gradients} that is responsible of acutal modification 
+for the {\tt Session.run} method.
+In TensorFlow 2.x, the optimizer object is used to directly call the methods 
+that eagerly executes the computation.
 
-After the model structure, loss function and optimizer is defined,
-the lines 13 to 19 define the training loop for the model.
+the lines 13 to 19 starts the training loop.
 The training loop starts with the {\tt for} loop that iterates over the dataset
-and takes a batch of training images and answer labels.
+and takes batches of training images and answer labels.
 The line 14 creates a new {\tt GradientTape} object by {\tt with} statement.
 When a {\tt GradientTape} object is created by {\tt with} statement,
-the operations that happen inside the {\tt with} statement body will
-have their gradients recorded by the {\tt GradientTape} object.
+it will record the gradients of the operations computed inside the {\tt with}
+statement body.
 The lines 15 and 16 define the forward propagation stage in a single
 training step.
-Note that in TensorFlow 2.x, the model objects created with Keras API can be
-used like a Python function.
+Note that in TensorFlow 2.x, the model object created with the Keras APIs can be
+used like a Python function as in the line 15.
 Thus, the line 15 computes the output vector of the model when the
-training image is given as an input.
-The line 16 computes the cross entropy loss between the model output and
-the answer label, as defined in the line 10.
+training image is given as an input,
+and the line 16 computes the cross entropy loss between the model output and
+the answer label.
 The lines 18 and 19 then optimizes the model parameters by gradient descent. 
 The {\tt model.trainable\_variable} method returns the list of 
 TensorFlow variables of the model parameters,
@@ -189,6 +194,13 @@ trained by same number of GPUs.
 Each GPU is responsible of forward propagation of a single model instance.
 Then, the gradients are averages over GPUs then used by gradient descent
 to optimize the model parameters. 
+To explain how to distribute existing TensorFlow models with Horovod library,
+we provide the code examples of ditributing 
+the TensorFlow 1.x model in the figure~\ref{fig:back:tf1} and the TensorFlow
+2.x model in the figure~\ref{fig:back:tf2}.
+We focus on explaining the difference between the original model codes in
+the figures~\ref{fig:back:tf1}, \ref{fig:back:tf2} and the distributed 
+model codes in the following paragraphs.
 
 \begin{figure}[ht!]
  \lstinputlisting[language=Python]
@@ -201,9 +213,6 @@ to optimize the model parameters.
 % p1 : figure intro, explain initialization + gpu pinning
 Figure~\ref{fig:back:hvd1} is a code example of using Horovod to distribute
 the TensorFlow 1.x model in~\ref{fig:back:tf1}.
-To explain the Horovod library,
-we will point out the differene between the original TensorFlow 1.x code in
-the figure \ref{fig:back:tf1} and the figure \ref{fig:Back:hvd1}
 The line 4 first initializes the Horovod configuration.
 The lines 6 to 8 create the same number of processes with GPUs in the system,
 and pins each GPU per process. 
@@ -215,22 +224,22 @@ This ensures the model training workload is equally distributed over
 every GPUs in the system.
 
 % p2: explain optimizer
-The line 24 defines the training operation, which is a distributed version
-of the gradient descent algorithm.
-Compare to the line 17 in the figure~\ref{fig:back:tf1},
+The line 24 defines the training operation, 
+which is a distributed version of the gradient descent algorithm.
+Compared to the line 17 in the figure~\ref{fig:back:tf1},
 the line 24 makes two changes to the optimizer object.
 First, the learning rate argument is multiplied by {\tt hvd.size()}.
 According to the Horovod library document,
 the learning rate of the new distributed optimizer 
 should be scaled by the number of GPUs for efficient distributed training.
-To acheive the scaling, the line 24 calls the {\tt hvd.size()} method to
+To acheive this, the line 24 calls the {\tt hvd.size()} method to
 get the total number of processes that Horovod has created,
 which is equal to the number of GPUs.
 Second, the optimizer object is wrapped with the Horovod library API,
 {\tt DistributedOptimizer}.
 The {\tt DistributedOptimizer} API converts the single GPU-based optimizer 
 object to distributed optimizer, which averages the loss gradients across the
-training processes before applying the gradient descent optimization.
+training processes before applying the gradient descent.
 Thus, wrapping the optimzier with {\tt DistributedOptimizer} API is necessary
 for correct distributed training of the model.
 
@@ -239,10 +248,10 @@ The line 28 broadcasts the model and optimizer variables across the training
 processes.
 The variable broadcasting is a process where the TensorFlow 
 variable values in different training processes are synchronized into
-the same single value.
+the same value.
 According to the Horovod library documentation, the variable broadcasting
 should occur exactly once during the training process,
-right after the TensorFlow variables are initialized.
+right after the variables are initialized.
 In TensorFlow 1.x, the variable broadcasting is done in the line 28,
 which is right after the line 27 that initializes the TensorFlow variables,
 and right before the line 29 that starts the training loop.
@@ -285,7 +294,7 @@ the learning rate argument of the optimizer object
 should be scaled by {\tt hvd.size()} for efficient distributed training. 
 
 % p3 : dataset length
-The line 21 starts the training loop with the {\tt for} loop.
+The line 21 starts the training loop with the {\tt for} statement.
 As mentioned before, the number of training data batches can be
 scaled down by the number of GPUs.
 To implement this, the {\tt for} loop in the line 21
@@ -296,23 +305,26 @@ Inside the training loop,
 the line 26 wraps the original {\tt GradientTape} object with the Horovod API  
 {\tt DistributedGradientTape}.
 The {\tt DistributedGradientTape} API is similar
-to the {\tt DistributedOptimizer} API in distributed version of TensorFlow 1.x
-model; the loss gradients will be averaged across the training processes when
-using {\tt DistributedGradientTape} API before the gradient descent is applied
-to the model parameters.
+to the {\tt DistributedOptimizer} API in distributed TensorFlow 1.x model; 
+the loss gradients will be averaged across the training processes 
+before the gradient descent is applied to the model parameters.
+Thus, wrapping the {\tt GradientTape} object with the 
+{\tt DistributedGradientTape} API is necessary for correct distributed training
+of the model.
 
 % p5. broadcast
 Finally, the lines 31 to 34 broadcasts the model and optimzier variables
-across the training variables.
+across the training processes.
 As mentioned before, the variable broadcasting should occur exactly once,
 right after the variables are initialized.
 To ensure the variable broadcasting occur only during the first training step,
-the line 31 uses a global boolean variable {\tt hvd\_broadcast\_done},
+the line 31 uses the global boolean variable {\tt hvd\_broadcast\_done},
 then changes the value in the line 34 after the broadcasting is done.
-Also note that the broadcasting code is written right after the line 29,
+Also note that the broadcasting code is placed right after the line 29,
 where the optimizer method {\tt apply\_gradient} is finishied.
 In TensorFlow 2.x, the variables are not explicitly initialized,
-but rather implicitly initialized during the computation.
+but rather implicitly initialized during the first computation involving the
+variable.
 To ensure that the variable broadcasting happen after the optimizer
 variables are initialized, the variable broadcasting codes are placed
 after the first gradient descent algorithm is finished, thus the optimizer
