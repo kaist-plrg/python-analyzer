@@ -182,10 +182,6 @@ object to optimize the model parameters according to gradient descent algorithm.
 
 \subsection{Horovod Distributed Training Framework}
 
-
-
-% Horovod는 기존 ml 모델을 분산 훈련 모델으로 변환하기 위한 라이브러리이다.
-% Horovod는 model-parallel 방식으로 ml 모델을 분산 훈련을 위한 모델로 바꾼다.
 Horovod is a Python library for distributed training of TensorFlow models.
 The library adopts model-parallel approach of distributed training;
 in model-parallel approach, multiple instances of models are simultaneously
@@ -203,6 +199,12 @@ to optimize the model parameters.
 
 Figure~\ref{fig:back:hvd1} is a code example of using Horovod to distribute
 the TensorFlow 1.x model in~\ref{fig:back:tf1}.
+The line 4 first initializes the Horovo configuration.
+The lines 6 to 8 creates the same number of processes with GPUs in the system,
+and pins each GPU per process. 
+The GPU pinning process ensures that the training workloads of multiple
+model instances are equally parallelized over multiple GPUs.
+
 
 \begin{figure}[ht!]
  \lstinputlisting[language=Python]
@@ -211,20 +213,3 @@ the TensorFlow 1.x model in~\ref{fig:back:tf1}.
 \label{fig:back:hvd2} 
 \end{figure}
 
-
-The developers can use Horovod APIs to rewrite existing ML models into
-distributed models.
-Figure~\ref{fig:back:hvd} is an example of using Horovod library to convert
-the model in~\ref{fig:back:tf2} into a distributed model.
-After importing the Horovod module, the line 5 first initializes the
-Horovod process. 
-The lines 7 to 11 recognizes GPUs in the system, and pins each GPU to
-a dedicated process.
-The codes defines a model structure and training process same as the original
-code in~\ref{fig:back:tf2}.
-The line 31 wraps the {\tt GradientTape} object with a dedicated 
-Horovod API so that the gradients in multiples processes are averaged.
-The lines 36 to 38 is responsible of variable broadcast, a procedure which
-synchronizes the initial model parameters across multiple processes.
-The variable broadcast should occur exactly once at the first iteration of
-the training loop.
