@@ -257,4 +257,12 @@ variables.
 \label{fig:back:hvd2} 
 \end{figure}
 
-
+% todo: detailed expl of gpu pinning also for 1.x?
+% todo : detailed xpl of "memory growth" for gpu pininng
+% p1: init & gpu pinning
+Figure~\ref{fig:back:hvd2} is a code example of using Horovod to distribute
+the TensorFlow 2.x model in~\ref{fig:back:tf2}.
+The lines 4 and 5 initializes the horovod configuration and a boolean variable
+{\tt hvd\_broadcast\_done}.
+The lines 7 to 11 is the GPU pinning code for TensorFlow 2.x. 
+The lines 7 first gets the list of GPUs in the system.
