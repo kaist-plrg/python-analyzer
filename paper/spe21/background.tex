@@ -250,6 +250,16 @@ Note that the {\tt broadcast\_global\_variables} API broadcasts every
 TensorFlow variables including the model variables and the optimizer
 variables.
 
+% p4 : dataset length scale
+Finally, the line 29 starts the training loop.
+% todo : GPUs 갯수 만큼 batch를 한꺼번에 학습하므로, batch 갯수는 그만큼 줄어도 된다는 걸 rephrase
+According to the Horovod library documentation, the number of training data
+batches can be scaled down by the number of GPUs as the same number of
+the batches are distributedly trained in one step.
+Thus, the line 29 divides the number of batches taken from the dataset
+by the number of the GPUs, {\tt hvd.size()}.
+
+
 \begin{figure}[ht!]
  \lstinputlisting[language=Python]
 {horovod_ex.py}
@@ -265,4 +275,45 @@ the TensorFlow 2.x model in~\ref{fig:back:tf2}.
 The lines 4 and 5 initializes the horovod configuration and a boolean variable
 {\tt hvd\_broadcast\_done}.
 The lines 7 to 11 is the GPU pinning code for TensorFlow 2.x. 
-The lines 7 first gets the list of GPUs in the system.
+The line 7 first gets the list of GPUs in the system.
+The line 11 pin the GPU to the process, using the local rank of the process.
+
+% p2 : optimizer lr
+The line 19 defines the optimizer object.
+As in the optimizer of figure \ref{fig:back:hvd1}, 
+the learning rate argument of the optimizer object 
+should be scaled by {\tt hvd.size()} for efficient distributed training. 
+
+% p3 : dataset length
+The line 21 starts the training loop with the {\tt for} loop.
+As mentioned before, the number of training data batches can be
+scaled down by the number of GPUs.
+To implement this, the {\tt for} loop in the line 21
+divides the number of batches taken from the dataset by {\tt hvd.size()}.
+
+% p4 : tape
+Inside the training loop,
+the line 26 wraps the original {\tt GradientTape} object with the Horovod API  
+{\tt DistributedGradientTape}.
+The {\tt DistributedGradientTape} API is similar
+to the {\tt DistributedOptimizer} API in distributed version of TensorFlow 1.x
+model; the loss gradients will be averaged across the training processes when
+using {\tt DistributedGradientTape} API before the gradient descent is applied
+to the model parameters.
+
+% p5. broadcast
+Finally, the lines 31 to 34 broadcasts the model and optimzier variables
+across the training variables.
+As mentioned before, the variable broadcasting should occur exactly once,
+right after the variables are initialized.
+To ensure the variable broadcasting occur only during the first training step,
+the line 31 uses a global boolean variable {\tt hvd\_broadcast\_done},
+then changes the value in the line 34 after the broadcasting is done.
+Also note that the broadcasting code is written right after the line 29,
+where the optimizer method {\tt apply\_gradient} is finishied.
+In TensorFlow 2.x, the variables are not explicitly initialized,
+but rather implicitly initialized during the computation.
+To ensure that the variable broadcasting happen after the optimizer
+variables are initialized, the variable broadcasting codes are placed
+after the first gradient descent algorithm is finished, thus the optimizer
+variables are already initialized.
