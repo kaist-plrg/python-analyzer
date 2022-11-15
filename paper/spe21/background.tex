@@ -56,8 +56,6 @@ The line 10 manually defines the operations of the first hidden layer.
 It multiplies the input vector {\tt x} and the weight matrix 
 {\tt W\_1}, adds the bias vector {\tt b\_1}, then applies the ReLU activation
 function.
-In TensorFlow 1.x, developers have to explicitly specify the model parameters
-and operations between them as the lines 8 to 10.
 Note that these lines does not actually compute the operations,
 but only define the operations that will be computed during the training.
 The lines 12 to 14 defines the second hidden dense layer that outputs a
@@ -75,7 +73,7 @@ The lines 16 and 17 defines how to compute the loss and optimize the model
 parameters.
 The line 16 defines the loss function between the model output {\tt layer\_2} 
 and the answer label {\tt y}, with categorial cross entropy function.
-The line 17 defines the optimization operation for the model.
+The line 17 defines the training operation for the model.
 The line first calls the {\tt AdamOptimizer} constructor
 function to create an optimizer object.
 The optimizer object in TensorFlow is an abstraction of various gradient
@@ -83,28 +81,30 @@ descent algorithms.
 For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
 algorithm. % todo: cite Adam g.d.
 Then the {\tt minimize} method defines the training operation that updates the
-{\tt Variable} values to minimize the first argument.
+{\tt Variable} values via the gradient descent with respect
+to the first argument value.
 Thus, the line defines the operation of a single training step,
 which optimizes the model parameters via gradient descent with respect to
 the loss value.
 
 After the model structure and training operations are defined, 
-the lines 19 to 22 start and execute the training loop.
+the lines 19 to 22 execute the training loop.
 The training loop iterates over the training dataset to feed the training
 images and labels to the model and optimize the model parameters. 
 The line 19 first creates a {\tt Session} object.
 The {\tt Session} object provides the {\tt run} method that can invoke
 computation of TensorFlow operations.
 The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
-The variables that should be initialized
-include the model parameter variables and
-internal state variables of the optimizer which are implicitly introduced
-when the optimizer object is created.
+Before the training computation starts,
+the TensorFlow variables in the model and the optimizer should be initialized.
+Note that the optimizer object implicitly introduces the internal variables.
 The line 20 refers to the TensorFlow global variables to access and initialize
 all of the model parameter variables and the optimizer internal variables
 at once.
 After the variables are initialized, the line 21 uses the {\tt for} loop
 to iterate over the dataset and get training batches. 
+The number of training batches is specified by the {\tt take} API of the
+dataset object.
 Finally, the line 22 calls the {\tt run} method to
 invoke computation of the training operation {\tt train\_op},
 which repeatedly optimizes the model parameters by the gradient descent
@@ -122,8 +122,6 @@ optimization.
 Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x model.
 The developers using TensorFlow 2.x define the model structure and
 the training loop. 
-Compared to TensorFlow 1.x, using TensorFlow 2.x APIs hides unnecessary details
-and make the code compact.
 
 The lines 5 to 11 first define the model structure.
 First, the lines 5 to 8 use the Keras library APIs to define the neural
@@ -160,9 +158,11 @@ for the {\tt Session.run} method.
 In TensorFlow 2.x, the optimizer object is used to directly call the methods 
 that eagerly executes the computation.
 
-the lines 13 to 19 starts the training loop.
+The lines 13 to 19 starts the training loop.
 The training loop starts with the {\tt for} loop that iterates over the dataset
 and takes batches of training images and answer labels.
+Similar to the TensorFlow 1.x model,
+the line 13 uses the {\tt take} API to specify the number of batches.
 The line 14 creates a new {\tt GradientTape} object by {\tt with} statement.
 When a {\tt GradientTape} object is created by {\tt with} statement,
 it will record the gradients of the operations computed inside the {\tt with}
@@ -185,13 +185,14 @@ The line 19 finally calls the {\tt apply\_gradients} method of the optimizer
 object to optimize the model parameters according to gradient descent algorithm.
 
 
-\subsection{Horovod Distributed Training Framework}
+\subsection{Horovod Distributed Training Library}
 
 Horovod is a Python library for distributed training of TensorFlow models.
-The library adopts model-parallel approach of distributed training;
-in model-parallel approach, multiple instances of models are simultaneously
-trained by same number of GPUs.
-Each GPU is responsible of forward propagation of a single model instance.
+The library adopts model-parallel approach of distributed training.
+The model-parallel approach creates multiple instances of the model,
+which will be trained alltogether with multiple GPUs.
+Each GPU is responsible of forward propagation of a single model instance;
+thus the number of the model instnaces is equal to the number of GPUs.
 Then, the gradients are averages over GPUs then used by gradient descent
 to optimize the model parameters. 
 To explain how to distribute existing TensorFlow models with Horovod library,
@@ -216,23 +217,23 @@ the TensorFlow 1.x model in~\ref{fig:back:tf1}.
 The line 4 first initializes the Horovod configuration.
 The lines 6 to 8 create the same number of processes with GPUs in the system,
 and pins each GPU per process. 
-The GPU pinning is a process where each GPU in the system is assignd to a single 
-training process.
+The GPU pinning is a process where each GPU in the system is assigned to a 
+single training process.
 This is done by refering to the local rank of the process 
 by the {\tt local\_rank} API.
 This ensures the model training workload is equally distributed over
 every GPUs in the system.
 
 % p2: explain optimizer
-The line 24 defines the training operation, 
+The line 23 defines the training operation, 
 which is a distributed version of the gradient descent algorithm.
 Compared to the line 17 in the figure~\ref{fig:back:tf1},
-the line 24 makes two changes to the optimizer object.
+the line 23 makes two changes to the optimizer object.
 First, the learning rate argument is multiplied by {\tt hvd.size()}.
 According to the Horovod library document,
 the learning rate of the new distributed optimizer 
 should be scaled by the number of GPUs for efficient distributed training.
-To acheive this, the line 24 calls the {\tt hvd.size()} method to
+To acheive this, the line 23 calls the {\tt hvd.size()} method to
 get the total number of processes that Horovod has created,
 which is equal to the number of GPUs.
 Second, the optimizer object is wrapped with the Horovod library API,
@@ -244,7 +245,7 @@ Thus, wrapping the optimzier with {\tt DistributedOptimizer} API is necessary
 for correct distributed training of the model.
 
 % p3: explain variable broadcast
-The line 28 broadcasts the model and optimizer variables across the training
+The line 27 broadcasts the model and optimizer variables across the training
 processes.
 The variable broadcasting is a process where the TensorFlow 
 variable values in different training processes are synchronized into
@@ -252,16 +253,15 @@ the same value.
 According to the Horovod library documentation, the variable broadcasting
 should occur exactly once during the training process,
 right after the variables are initialized.
-In TensorFlow 1.x, the variable broadcasting is done in the line 28,
-which is right after the line 27 that initializes the TensorFlow variables,
-and right before the line 29 that starts the training loop.
+In TensorFlow 1.x, the variable broadcasting is done in the line 27,
+which is right after the line 26 that initializes the TensorFlow variables,
+and right before the line 28 that starts the training loop.
 Note that the {\tt broadcast\_global\_variables} API broadcasts every
 TensorFlow variables including the model variables and the optimizer
 variables.
 
 % p4 : dataset length scale
-Finally, the line 29 starts the training loop.
-% todo : GPUs 갯수 만큼 batch를 한꺼번에 학습하므로, batch 갯수는 그만큼 줄어도 된다는 걸 rephrase
+Finally, the line 28 starts the training loop.
 According to the Horovod library documentation, the number of training data
 batches can be scaled down by the number of GPUs as the same number of
 the batches are distributedly trained in one step.
@@ -283,7 +283,7 @@ Figure~\ref{fig:back:hvd2} is a code example of using Horovod to distribute
 the TensorFlow 2.x model in~\ref{fig:back:tf2}.
 The lines 4 and 5 initializes the horovod configuration and a boolean variable
 {\tt hvd\_broadcast\_done}.
-The lines 7 to 11 is the GPU pinning code for TensorFlow 2.x. 
+The lines 7 to 11 are the GPU pinning code for TensorFlow 2.x. 
 The line 7 first gets the list of GPUs in the system.
 The line 11 pin the GPU to the process, using the local rank of the process.
 
@@ -313,7 +313,7 @@ Thus, wrapping the {\tt GradientTape} object with the
 of the model.
 
 % p5. broadcast
-Finally, the lines 31 to 34 broadcasts the model and optimzier variables
+Finally, the lines 31 to 34 broadcasts the model and optimizer variables
 across the training processes.
 As mentioned before, the variable broadcasting should occur exactly once,
 right after the variables are initialized.
@@ -321,11 +321,11 @@ To ensure the variable broadcasting occur only during the first training step,
 the line 31 uses the global boolean variable {\tt hvd\_broadcast\_done},
 then changes the value in the line 34 after the broadcasting is done.
 Also note that the broadcasting code is placed right after the line 29,
-where the optimizer method {\tt apply\_gradient} is finishied.
+where the optimizer method {\tt apply\_gradient} is finished.
 In TensorFlow 2.x, the variables are not explicitly initialized,
 but rather implicitly initialized during the first computation involving the
 variable.
 To ensure that the variable broadcasting happen after the optimizer
 variables are initialized, the variable broadcasting codes are placed
-after the first gradient descent algorithm is finished, thus the optimizer
+after the first gradient descent step is finished, thus the optimizer
 variables are already initialized.
