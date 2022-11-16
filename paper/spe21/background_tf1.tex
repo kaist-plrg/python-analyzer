@@ -1,0 +1,112 @@
+%TensorFlow\cite{tensorflow} is a machine learning platform library developed by
+%Google Brain.
+%ML developers can use TensorFlow-provided APIs to methods given by TensorFlow
+%library.
+This section describes two different forms of TensorFlow DL models written in
+Python.
+
+which are the TensorFlow 1.x version model 
+in the figure~\ref{fig:back:tf1} and TensorFlow 2.x version model in the figure
+\ref{fig:back:tf2}.
+Both model defines a neural network model with two hidden dense layers,
+which classifies an input image of 784 pixels into one of the 10 classes.
+
+\begin{figure}[ht!]
+\lstinputlisting[language=Python]
+{tensorflow1_mnist.py}
+  \caption{TensorFlow 1.x model example}
+\label{fig:back:tf1}
+\end{figure}
+
+Figure~\ref{fig:back:tf1} is a code example of a TensorFlow 1.x model.
+To define a neural network model in TensorFlow 1.x, 
+developers must explicitly define the model structure
+and the operations between the layers, 
+and manually start the training loop with low-level TensorFlow APIs.
+
+First, the lines 5 to 17 defines the model structure and manually build up
+computational relationship between the model components.
+The lines 5 and 6 first create placeholder variables {\tt x} and {\tt y},
+which are the placeholders for the input image vectors 
+and the answer label vectors of training data.
+The placeholder variables only specify the vector size of the input images
+and the labels; they will be replaced with actual values during the training
+process. 
+The lines 8 to 10 defines the first hidden dense layer, which outputs a
+vector of length 100.
+%todo: elaborate
+A dense layer is parametrized by a weight matrix and a bias vector.
+The size of the weight matrix is (the size of the input vector) by 
+(the size of the first layer output vector), and the size of the bias vector
+is equal to the size of the first layer output vector.
+The line 8 uses the {\tt random\_uniform} API to create 
+a random weight matrix of size 784 by 100, 
+and the line 9 uses the {\tt zero} API to create a zero-vector of size 100.
+Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
+{\tt Variable} API.
+The {\tt Variable} API creates a TensorFlow variable that can be later modified
+and optimized during the runtime.
+It is usually used to define a model parameter, 
+which value is changed during the training process.
+Thus, the lines 8 and 9 create weight and bias parameters for the first
+hidden layer which have correct sizes and are modifiable during the 
+training process.
+The line 10 manually defines the operations of the first hidden layer. 
+It multiplies the input vector {\tt x} and the weight matrix 
+{\tt W\_1}, adds the bias vector {\tt b\_1}, then applies the ReLU activation
+function.
+Note that these lines does not actually compute the operations,
+but only define the operations that will be computed during the training.
+The lines 12 to 14 defines the second hidden dense layer that outputs a
+vector of length 10.
+Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
+and the bias vector parameter for the second hidden layer.
+Then the line 14 defines the operations of the second hidden layer,
+which multiplies the first hidden layer output {\tt layer\_1} and
+the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and applies the
+Softmax activation function.
+As shown in the lines 5 to 14, developers must explicitly define
+the model components and oprations between them.
+
+The lines 16 and 17 defines how to compute the loss and optimize the model
+parameters.
+The line 16 defines the loss function between the model output {\tt layer\_2} 
+and the answer label {\tt y}, with categorial cross entropy function.
+The line 17 defines the training operation for the model.
+The line first calls the {\tt AdamOptimizer} constructor
+function to create an optimizer object.
+The optimizer object in TensorFlow is an abstraction of various gradient
+descent algorithms.
+For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
+algorithm. % todo: cite Adam g.d.
+Then the {\tt minimize} method defines the training operation that updates the
+{\tt Variable} values via the gradient descent with respect
+to the first argument value.
+Thus, the line defines the operation of a single training step,
+which optimizes the model parameters via gradient descent with respect to
+the loss value.
+
+After the model structure and training operations are defined, 
+the lines 19 to 22 execute the training loop.
+The training loop iterates over the training dataset to feed the training
+images and labels to the model and optimize the model parameters. 
+The line 19 first creates a {\tt Session} object.
+The {\tt Session} object provides the {\tt run} method that can invoke
+computation of TensorFlow operations.
+The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
+Before the training computation starts,
+the TensorFlow variables in the model and the optimizer should be initialized.
+Note that the optimizer object implicitly introduces the internal variables.
+The line 20 refers to the TensorFlow global variables to access and initialize
+all of the model parameter variables and the optimizer internal variables
+at once.
+After the variables are initialized, the line 21 uses the {\tt for} loop
+to iterate over the dataset and get training batches. 
+The number of training batches is specified by the {\tt take} API of the
+dataset object.
+Finally, the line 22 calls the {\tt run} method to
+invoke computation of the training operation {\tt train\_op},
+which repeatedly optimizes the model parameters by the gradient descent
+optimization.
+
+
