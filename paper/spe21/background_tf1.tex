@@ -1,15 +1,38 @@
-%TensorFlow\cite{tensorflow} is a machine learning platform library developed by
-%Google Brain.
-%ML developers can use TensorFlow-provided APIs to methods given by TensorFlow
-%library.
+\begin{figure}[ht!]
+\includegraphics[width=\textwidth]{mnist_model.pdf}
+  \caption{The neural network with a hidden layer and an output layer}
+\label{fig:back:model}
+\end{figure}
+
 This section describes two different forms of TensorFlow DL models written in
 Python.
+Currently, TensorFlow library is available in two major versions.
+The first version is TensorFlow 1.x published in 2016.
+TensorFlow 1.x provides APIs for defining tensor variables and
+operations between them which can be used to manually define the DL model
+and the training loop.
+The second version is TensorFlow 2.x published in 2019.
+TensorFlow 2.x adds ther eager evaluation feature,
+which allows developers to use plain Python syntax to define the model
+computation and the training process.
+In addition, TensorFlow 2.x includes Keras library, 
+a layer-based deep learning model library that provides convenient APIs.
+As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
+significantly differ in their forms. 
 
-which are the TensorFlow 1.x version model 
-in the figure~\ref{fig:back:tf1} and TensorFlow 2.x version model in the figure
-\ref{fig:back:tf2}.
-Both model defines a neural network model with two hidden dense layers,
-which classifies an input image of 784 pixels into one of the 10 classes.
+We describe TensorFlow 1.x and 2.x versions with code examples that define
+the same DL model structure and the training process.
+The model defined in the code examples is a neural network model illustrated
+in the figure \ref{fig:back:model}.
+The model will get an input image and classify it into one of ten
+output classes.
+The input layer is a vector of length 784, which represents the input image
+of 784 pixels.
+The output layer is a vector of length 10, and each vector element represents 
+the probability of classifying the input image into the corresponding class.
+The model has one hidden layer of length 100. 
+
+
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
