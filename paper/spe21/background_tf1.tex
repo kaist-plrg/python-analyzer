@@ -9,10 +9,11 @@ Python.
 Currently, TensorFlow library is available in two major versions.
 The first version is TensorFlow 1.x published in 2016.
 TensorFlow 1.x provides APIs for defining tensor variables and
-operations between them which can be used to manually define the DL model
-and the training loop.
+operations between them.
+Developers manually define the model structure, the model computation
+and training process using the TensorFlow 1.x APIs.
 The second version is TensorFlow 2.x published in 2019.
-TensorFlow 2.x adds ther eager evaluation feature,
+TensorFlow 2.x adds the eager evaluation feature,
 which allows developers to use plain Python syntax to define the model
 computation and the training process.
 In addition, TensorFlow 2.x includes Keras library, 
@@ -28,10 +29,32 @@ The model will get an input image and classify it into one of ten
 output classes.
 The input layer is a vector of length 784, which represents the input image
 of 784 pixels.
+The hidden layer is a vector of length 100.
 The output layer is a vector of length 10, and each vector element represents 
 the probability of classifying the input image into the corresponding class.
-The model has one hidden layer of length 100. 
 
+The model layers are densely connected, which means that
+the layer value is computed by the linear transformation parametrized by
+the weight matrix and the bias vector and the non-linear activation function.
+For instance, the hidden layer is parametrized by the weight matrix
+$W_1$ of size (784, 100) and the bias vector $b_1$ of length 100.
+The hidden layer is computed by first multiplying the input layer vector
+with the weight matrix $W_1$, adding the bias vector $b_1$, and finally applying
+the ReLU activation function to the result.
+The output layer is parametrized by the weight matrix $W_2$ of size (100, 10)
+and the bias vector $b_2$ of length 10.
+The output layer is computed by first multiplying the hidden layer vector
+with the weight matrix $W_2$, adding the bias vector $b_2$, and finally applying
+the Softmax activation function to the result.
+
+To train the model, the model parameters are optimized by gradient descent
+algorithm. The gradient descent algorithm is an iterative optimization algorithm
+that computes the gradients of model parameters to update their values toward
+local minimum of the loss function.
+Here, the loss function computes the distance between the model output for
+a training input and corresponding answer label.
+Thus, approaching the local minumum of the loss function means that the
+model is trained to return output similar to the correct answer.
 
 
 \begin{figure}[ht!]
