@@ -31,10 +31,11 @@ The input layer is a vector of length 784, which represents the input image
 of 784 pixels.
 The hidden layer is a vector of length 100.
 The output layer is a vector of length 10, and each vector element represents 
-the probability of classifying the input image into the corresponding class.
+the probability of the input image classified as the corresponding class. 
 
+% todo: rephrase? how do we explain dense layer?
 The model layers are densely connected, which means that
-the layer value is computed by the linear transformation parametrized by
+the layers are computed by the linear transformation parametrized by
 the weight matrix and the bias vector and the non-linear activation function.
 For instance, the hidden layer is parametrized by the weight matrix
 $W_1$ of size (784, 100) and the bias vector $b_1$ of length 100.
@@ -47,15 +48,14 @@ The output layer is computed by first multiplying the hidden layer vector
 with the weight matrix $W_2$, adding the bias vector $b_2$, and finally applying
 the Softmax activation function to the result.
 
-To train the model, the model parameters are optimized by gradient descent
-algorithm. The gradient descent algorithm is an iterative optimization algorithm
+The model is trained by the gradient descent algorithm against the trianing
+dataset. The gradient descent algorithm is an iterative optimization algorithm
 that computes the gradients of model parameters to update their values toward
 local minimum of the loss function.
 Here, the loss function computes the distance between the model output for
 a training input and corresponding answer label.
 Thus, approaching the local minumum of the loss function means that the
 model is trained to return output similar to the correct answer.
-
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -78,81 +78,65 @@ and the answer label vectors of training data.
 The placeholder variables only specify the vector size of the input images
 and the labels; they will be replaced with actual values during the training
 process. 
-The lines 8 to 10 defines the first hidden dense layer, which outputs a
-vector of length 100.
-%todo: elaborate
-A dense layer is parametrized by a weight matrix and a bias vector.
-The size of the weight matrix is (the size of the input vector) by 
-(the size of the first layer output vector), and the size of the bias vector
-is equal to the size of the first layer output vector.
+The lines 8 to 10 defines the hidden layer.
 The line 8 uses the {\tt random\_uniform} API to create 
 a random weight matrix of size 784 by 100, 
 and the line 9 uses the {\tt zero} API to create a zero-vector of size 100.
 Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
 {\tt Variable} API.
 The {\tt Variable} API creates a TensorFlow variable that can be later modified
-and optimized during the runtime.
-It is usually used to define a model parameter, 
-which value is changed during the training process.
-Thus, the lines 8 and 9 create weight and bias parameters for the first
+and optimized during the runtime. It is usually used to define a model 
+parameter, whose value is changed during the training process.
+Thus, the lines 8 and 9 create weight and bias parameters for the
 hidden layer which have correct sizes and are modifiable during the 
 training process.
-The line 10 manually defines the operations of the first hidden layer. 
-It multiplies the input vector {\tt x} and the weight matrix 
-{\tt W\_1}, adds the bias vector {\tt b\_1}, then applies the ReLU activation
-function.
+The line 10 manually defines the operations of the hidden layer. 
 Note that these lines does not actually compute the operations,
 but only define the operations that will be computed during the training.
-The lines 12 to 14 defines the second hidden dense layer that outputs a
-vector of length 10.
+The lines 12 to 14 define the output layer.
 Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
-and the bias vector parameter for the second hidden layer.
-Then the line 14 defines the operations of the second hidden layer,
-which multiplies the first hidden layer output {\tt layer\_1} and
+and the bias vector parameter for the output layer.
+Then the line 14 defines the operations of the output layer,
+which multiplies the hidden layer output {\tt layer\_1} and
 the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and applies the
 Softmax activation function.
 As shown in the lines 5 to 14, developers must explicitly define
-the model components and oprations between them.
+the model components and oprations between them in TensorFlow 1.x model.
 
-The lines 16 and 17 defines how to compute the loss and optimize the model
-parameters.
+The lines 16 and 17 defines the loss function and the training operation. 
 The line 16 defines the loss function between the model output {\tt layer\_2} 
-and the answer label {\tt y}, with categorial cross entropy function.
+and the answer label {\tt y} with categorial cross entropy function.
 The line 17 defines the training operation for the model.
 The line first calls the {\tt AdamOptimizer} constructor
 function to create an optimizer object.
-The optimizer object in TensorFlow is an abstraction of various gradient
+The optimizer object in TensorFlow is an abstraction of the gradient
 descent algorithms.
 For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
 algorithm. % todo: cite Adam g.d.
 Then the {\tt minimize} method defines the training operation that updates the
-{\tt Variable} values via the gradient descent with respect
-to the first argument value.
-Thus, the line defines the operation of a single training step,
-which optimizes the model parameters via gradient descent with respect to
-the loss value.
+TensorFlow variables via the gradient descent on the first argument.
+Thus, the line 17 defines the operation of a single training step,
+which optimizes the model parameters via gradient descent to the loss gradient.
 
-After the model structure and training operations are defined, 
-the lines 19 to 22 execute the training loop.
-The training loop iterates over the training dataset to feed the training
-images and labels to the model and optimize the model parameters. 
+The lines 19 to 22 execute the training loop. 
 The line 19 first creates a {\tt Session} object.
 The {\tt Session} object provides the {\tt run} method that can invoke
 computation of TensorFlow operations.
 The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
 Before the training computation starts,
 the TensorFlow variables in the model and the optimizer should be initialized.
-Note that the optimizer object implicitly introduces the internal variables.
-The line 20 refers to the TensorFlow global variables to access and initialize
+Note that the optimizer object implicitly introduces the variables which is
+used for the internal computation.
+The line 20 refers to the TensorFlow global variables to initialize
 all of the model parameter variables and the optimizer internal variables
 at once.
 After the variables are initialized, the line 21 uses the {\tt for} loop
-to iterate over the dataset and get training batches. 
-The number of training batches is specified by the {\tt take} API of the
+to iterate over the dataset and get training input data. 
+The number of training data is specified by the {\tt take} API of the
 dataset object.
 Finally, the line 22 calls the {\tt run} method to
 invoke computation of the training operation {\tt train\_op},
-which repeatedly optimizes the model parameters by the gradient descent
-optimization.
+which repeatedly optimizes the model parameters by the trianing operation
+defined in the line 17.
 
 
