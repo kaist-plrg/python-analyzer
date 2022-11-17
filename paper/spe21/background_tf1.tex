@@ -22,21 +22,24 @@ As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
 significantly differ in their forms. 
 
 We describe TensorFlow 1.x and 2.x versions with code examples that define
-the same DL model structure and the training process.
+the same model and its training process.
 The model defined in the code examples is a neural network model illustrated
 in the figure \ref{fig:back:model}.
 The model will get an input image and classify it into one of ten
 output classes.
+ 
+The model structure is defined in terms of layers and operation between them.
+The model in the figure \ref{fig:back:model} has three layers;
+the input layer, the hidden layer, and the output layer.
 The input layer is a vector of length 784, which represents the input image
 of 784 pixels.
 The hidden layer is a vector of length 100.
 The output layer is a vector of length 10, and each vector element represents 
-the probability of the input image classified as the corresponding class. 
-
-% todo: rephrase? how do we explain dense layer?
-The model layers are densely connected, which means that
-the layers are computed by the linear transformation parametrized by
-the weight matrix and the bias vector and the non-linear activation function.
+the probability of the input image classified as the corresponding class.
+The layers are densely connected, which means that
+the layer outputs are computed by the linear transformation parametrized by
+the weight matrices and the bias vectors, 
+and the non-linear activation functionss. 
 For instance, the hidden layer is parametrized by the weight matrix
 $W_1$ of size (784, 100) and the bias vector $b_1$ of length 100.
 The hidden layer is computed by first multiplying the input layer vector
@@ -47,6 +50,9 @@ and the bias vector $b_2$ of length 10.
 The output layer is computed by first multiplying the hidden layer vector
 with the weight matrix $W_2$, adding the bias vector $b_2$, and finally applying
 the Softmax activation function to the result.
+The weight matrices and the bias vectors are called the model parameters 
+as their values are updated during the training process 
+to optimize the model output.
 
 The model is trained by the gradient descent algorithm against the trianing
 dataset. The gradient descent algorithm is an iterative optimization algorithm
