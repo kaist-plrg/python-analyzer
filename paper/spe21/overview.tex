@@ -1,12 +1,5 @@
 \section{Overview}
 
-We provide an overview of our automated transformation approach.
-The structure of the code transformation tool is 
-illustrated in figure \ref{sysarch}.
-The tool is composed of five modules: Python code parser,
-class hierarchy analyzer, API pattern analyzer, AST transformer,
-and code generator.
-
 \begin{figure}[ht!]
   \centering
   \includegraphics[width=0.5\textwidth]{tool-arch.pdf}
@@ -14,7 +7,21 @@ and code generator.
   automated transformation for distributed training}
   \label{sysarch}
 \end{figure}
-  
+ 
+We propose the code transformation-based approach 
+for automated distributed training of existing TensorFlow DL models.
+As explained in the previous sections, distributing TensorFlow DL models
+with Horovod library requires adding and rewriting portion of codes. 
+To ease the burden of manually rewriting the model,
+we utilize the code transformation technique to automatically transform the
+TensorFlow DL models into the distributed models.
+The overall structure of our approach is illustrated in figure \ref{sysarch}.
+Our approach is composed of five stages: Python code parser,
+class hierarchy analyzer, API pattern identifier, AST transformer,
+and code generator.
+% todo: change all "api pattern analyzer" to "api pattern identifier" in
+% whole paper
+ 
 To correctly transform TensorFlow DL models,
 it is important to apply appropriate transformation rules
 for different type of training codes.
