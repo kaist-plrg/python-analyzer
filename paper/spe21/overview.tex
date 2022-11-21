@@ -1,4 +1,35 @@
 \section{Overview}
+ 
+% main topic sentence for each paragraph
+
+% 우리는 코드 변환을 기반을 기존의 모델을 자동으로 분산화하는 기법을 제안한다.
+We propose the code transformation-based approach 
+for automated distributed training of TensorFlow DL models.
+As explained in the previous section, distributing TensorFlow DL models
+with Horovod library requires adding and editing the origianl codes.
+Currently, the developers must fully understand the model codes and
+manually rewrite the model codes.
+This also includes understanding the Horovod library usage by reading
+the library documentation and code exmaples.
+To ease the burden of the rewriting process, 
+we utilize the code transformation technique to automatically rewrite the
+input TensorFlow model code with Horovod library APIs.
+
+% 기존의 모델에 적용하는 코드 변환 규칙을 정의하기 위해 horovod 라이브러리 문서와
+% 코드 예제를 검토했다. 그 결과로 TF 모델을 4가지로 분류하고 각 분류에 맞는
+% 변환 규칙을 정의할 수 있었다.
+To define the code transformation rule for distributing TensorFlow DL models,
+we manually inspected the Horovod library documentation and code examples.
+In this end, we identified four categories of TensorFlow DL models.
+We define four \textit{training API patterns}, which are common code patterns of 
+TensorFlow APIs appearing in the TensorFlow DL model.
+To categorize the TensorFlow DL models into one of the four paterns, 
+we implemented the training API pattern identifier. 
+In this process, we identified that the pattern identifier must know the  
+class inheritance relationship between TensorFlow library classes and
+user-defined classes.
+To solve this problem, we also implemented the class hierarchy analyzer to
+retrive the class inheritance information of the TensorFlow DL models.
 
 \begin{figure}[ht!]
   \centering
@@ -7,33 +38,16 @@
   automated transformation for distributed training}
   \label{sysarch}
 \end{figure}
- 
-We propose the code transformation-based approach 
-for automated distributed training of existing TensorFlow DL models.
-As explained in the previous sections, distributing TensorFlow DL models
-with Horovod library requires adding and rewriting portion of codes. 
-To ease the burden of manually rewriting the model,
-we utilize the code transformation technique to automatically transform the
-TensorFlow DL models into the distributed models.
-The overall structure of our approach is illustrated in figure \ref{sysarch}.
-Our approach is composed of five stages: Python code parser,
-class hierarchy analyzer, API pattern identifier, AST transformer,
-and code generator.
-% todo: change all "api pattern analyzer" to "api pattern identifier" in
-% whole paper
- 
-To correctly transform TensorFlow DL models,
-it is important to apply appropriate transformation rules
-for different type of training codes.
-We identified that class inheritance information and
-the patterns of traning API usage is essential to 
-select the correct transformation rule. 
-In this end, our approach analyzes \textit{class hierarchy}
-and \textit{training API pattern} in the input training code.
-The transformer receives the input training code AST and
-additionally class hierarchy and API pattern information
-to select the correct set of transformation rules among the candidates
-and apply it to the input code AST.
+
+% 우리 기법은 입력으로 주어진 TF 모델에서 먼저 API 패턴을 인식하고
+% 해당 패턴에 맞는 코드 변환 규칙을 적용하는 방식으로 작동한다.
+% 이를 위해 설계한 우리 기법의 overview는 피규어와 같다...
+Our approach first analyzes the class hierarchy of the input model then
+identify the training API pattern of the model.
+Then the code transformer selects the correct transformation rule according
+to the training API pattern then applies the rule to get the distributed
+model as an output.
+Figure \ref{sysarch} illustrates the overview of our appraoch.
 
 \textbf{Parser}
 Parser is the module that parses input Python code package
