@@ -50,7 +50,7 @@ model as an output.
 Figure \ref{sysarch} illustrates the overview of our appraoch.
 
 \textbf{Parser}
-Parser is the module that parses input Python code package
+Parser parses input Python code package
 into the set of ASTs.
 We assume that the input single-GPU-based model is given as a Python code
 package that resides in a single file directory.
@@ -59,46 +59,30 @@ in the package to ASTs.
 The Python abstract syntax and details on the parser implementation
 are described in section \ref{sec:pysyn}.
 
-Before the ASTs are transformed, the software performs two analyses, 
-which are \textit{class hierarchy analysis} and 
-\textit{API pattern analysis}.
-These analyses provide necessary information to identify the
-location and kind of the transformation target codes in the model
-and select the correct transformation rule for the given input model.
-
 \textbf{Class Hierarchy Analyzer}
-Class hierarchy analyzer module analyzes the class inheritance relation
+Class hierarchy analyzer analyzes the class inheritance relation
 between user-defined classes and TensorFlow library classes and
 outputs the class hierarchy graph.
-During the API pattern analysis and AST transformation phase,
-the software need to identify subclass relationship between
-classes appearing in the code.
-To support this, we implemented the class hierarchy analysis
+We implemented the class hierarchy analysis
 for Python codes as the class hierarchy analyzer module.
-The class hierarchy analyzer module produces the class hierarchy graph
+The class hierarchy analyzer produces the class hierarchy graph
 for the model package and returns it to the API pattern analyzer and 
 AST transformer modules. The details of the class hierarchy analyzer are
 described in section \ref{sec:cha}.
 
-\textbf{Training API Pattern Analyzer}
-Training API pattern analyzer module 
+\textbf{Training API Pattern Identifier}
+Training API pattern identifier 
 indentifies the TensorFlow training APIs used in the training code AST
-and returns the training API pattern for the code. (TODO: clarify?)
-TensorFlow provides multiple APIs to define and invoke the training process.
-To correctly transform a single-GPU-based model training code into
-the distributed code, the transformation software must identify
-training APIs used in the code and select the appropriate transformation rule.
-The training API pattern analyzer matches the \textit{training API pattern}
-against the input training codes to categorize them and select
-the correct transformation rule. The details of the training API pattern
-analyzer are described in section \ref{sec:pattern}.
+and returns the training API pattern for the code.
+The details of the training API pattern identifier described 
+in section \ref{sec:pattern}.
 
 \textbf{AST Transformer}
 AST transformer module applies the correct transformation to the
 training code AST to retain the distributed training code AST.
-Here, the "correct" transformation is the set of transformation rules
-appropriate for the given class hierarchy information and
-training API pattern of the input training code.
+To select the correct transformation rule,
+the AST transformer utlizes the class hierarchy information and
+the training API pattern informatino.
 We defined formal transformation rules which are composed of
 \textit{transform functions} from ASTs to ASTs.
 By applying the transform function to the input AST,
