@@ -23,13 +23,13 @@ we manually inspected the Horovod library documentation and code examples.
 In this end, we identified four categories of TensorFlow DL models.
 We define four \textit{training API patterns}, which are common code patterns of 
 TensorFlow APIs appearing in the TensorFlow DL model.
-To categorize the TensorFlow DL models into one of the four paterns, 
+To categorize the TensorFlow DL models into one of the four patterns, 
 we implemented the training API pattern identifier. 
 In this process, we identified that the pattern identifier must know the  
 class inheritance relationship between TensorFlow library classes and
 user-defined classes.
 To solve this problem, we also implemented the class hierarchy analyzer to
-retrive the class inheritance information of the TensorFlow DL models.
+retrieve the class inheritance information of the TensorFlow DL model.
 
 \begin{figure}[ht!]
   \centering
@@ -42,12 +42,14 @@ retrive the class inheritance information of the TensorFlow DL models.
 % 우리 기법은 입력으로 주어진 TF 모델에서 먼저 API 패턴을 인식하고
 % 해당 패턴에 맞는 코드 변환 규칙을 적용하는 방식으로 작동한다.
 % 이를 위해 설계한 우리 기법의 overview는 피규어와 같다...
-Our approach first analyzes the class hierarchy of the input model then
-identify the training API pattern of the model.
-Then the code transformer selects the correct transformation rule according
-to the training API pattern then applies the rule to get the distributed
-model as an output.
 Figure \ref{sysarch} illustrates the overview of our appraoch.
+We first parse the input TensorFlow model code into AST format for machine
+processing.
+Then we first analyze the class hierarchy of the input model then identify
+the training API pattern of the model.
+Finally the AST transformer selects the transformation rule according to the
+training API pattern information then apply the rule to get the distributed
+model as an output.
 
 \textbf{Parser}
 Parser parses input Python code package
