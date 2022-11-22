@@ -37,12 +37,12 @@ The hidden layer is a vector of length 100.
 The output layer is a vector of length 10, and each vector element represents 
 the probability of the input image classified as the corresponding class.
 The layers are densely connected, which means that
-the layer outputs are computed by the linear transformation parametrized by
+the layer outputs are computed by the linear transformation with 
 the weight matrices and the bias vectors, 
 and the non-linear activation functionss. 
-For instance, the hidden layer is parametrized by the weight matrix
+The hidden layer is parametrized by the weight matrix
 $W_1$ of size (784, 100) and the bias vector $b_1$ of length 100.
-The hidden layer is computed by first multiplying the input layer vector
+The hidden layer is computed by first multiplying the input layer vector $x$
 with the weight matrix $W_1$, adding the bias vector $b_1$, and finally applying
 the ReLU activation function to the result.
 The output layer is parametrized by the weight matrix $W_2$ of size (100, 10)
@@ -51,10 +51,9 @@ The output layer is computed by first multiplying the hidden layer vector
 with the weight matrix $W_2$, adding the bias vector $b_2$, and finally applying
 the Softmax activation function to the result.
 The weight matrices and the bias vectors are called the model parameters 
-as their values are updated during the training process 
-to optimize the model output.
+as their values are updated during the training process.
 
-The model is trained by the gradient descent algorithm against the trianing
+The model is trained by the gradient descent algorithm against the training
 dataset. The gradient descent algorithm is an iterative optimization algorithm
 that computes the gradients of model parameters to update their values toward
 local minimum of the loss function.
@@ -77,13 +76,13 @@ and the operations between the layers,
 and manually start the training loop with low-level TensorFlow APIs.
 
 First, the lines 5 to 17 defines the model structure and manually build up
-computational relationship between the model components.
+computations between the model components.
 The lines 5 and 6 first create placeholder variables {\tt x} and {\tt y},
 which are the placeholders for the input image vectors 
 and the answer label vectors of training data.
 The placeholder variables only specify the vector size of the input images
-and the labels; they will be replaced with actual values during the training
-process. 
+and the labels; they will be replaced with actual values of the training
+data during the training process. 
 The lines 8 to 10 defines the hidden layer.
 The line 8 uses the {\tt random\_uniform} API to create 
 a random weight matrix of size 784 by 100, 
@@ -91,13 +90,13 @@ and the line 9 uses the {\tt zero} API to create a zero-vector of size 100.
 Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
 {\tt Variable} API.
 The {\tt Variable} API creates a TensorFlow variable that can be later modified
-and optimized during the runtime. It is usually used to define a model 
+during the runtime. It is usually used to define a model 
 parameter, whose value is changed during the training process.
-Thus, the lines 8 and 9 create weight and bias parameters for the
+Thus, the lines 8 and 9 create the weight and bias parameters for the
 hidden layer which have correct sizes and are modifiable during the 
 training process.
 The line 10 manually defines the operations of the hidden layer. 
-Note that these lines does not actually compute the operations,
+Note that the line does not actually compute the operations,
 but only define the operations that will be computed during the training.
 The lines 12 to 14 define the output layer.
 Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
@@ -144,5 +143,3 @@ Finally, the line 22 calls the {\tt run} method to
 invoke computation of the training operation {\tt train\_op},
 which repeatedly optimizes the model parameters by the trianing operation
 defined in the line 17.
-
-
