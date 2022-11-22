@@ -43,13 +43,13 @@ retrieve the class inheritance information of the TensorFlow DL model.
 % 해당 패턴에 맞는 코드 변환 규칙을 적용하는 방식으로 작동한다.
 % 이를 위해 설계한 우리 기법의 overview는 피규어와 같다...
 Figure \ref{sysarch} illustrates the overview of our appraoch.
-We first parse the input TensorFlow model code into AST format for machine
-processing.
-Then we first analyze the class hierarchy of the input model then identify
-the training API pattern of the model.
-Finally the AST transformer selects the transformation rule according to the
-training API pattern information then apply the rule to get the distributed
-model as an output.
+We first analyze the class hierarchy of the input TensorFlow model
+to produce the class inheritance information.
+Then the training API pattern identifier uses the inheritance information to
+identify the API pattern of the input model.
+Finally, the AST transformer selects the correct transformation rule
+according to the training API pattern then apply the rule to get the 
+distributed model as an output.
 
 \textbf{Parser}
 Parser parses input Python code package
