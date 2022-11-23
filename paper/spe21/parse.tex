@@ -2,32 +2,37 @@
 \subsection{Python Abstract Syntax}
 
 We formalized the abstract syntax of the Python programming language.
-For the reference, we refered to the full grammar specification in
-Python Language Reference \cite{pythonref}. 
-We manually examined the grammar specification 
-to define the Python abstract syntax for our approach.
-The figure \ref{fig:parse:abssyntax} illustrates the simplified
-version of the Python abstract syntax we defined.
-The Python languague is composed of three major components:
-modules, statements, and expressions.
+We manually examined the grammar specification in 
+Python Language Reference \cite{pythonref} to define the Python 
+abstract syntax for our approach. The figure \ref{fig:parse:abssyntax} 
+illustrates the simplified version of the Python abstract syntax.
+The three major components of the Python syntax are modules, statements, and
+expressions.
 
-The top-level component of Python is a module, 
-which is defined to be a statement.
-In practce, Python modules contains series of statements;
-this case is represented by statement sequence defined in our
-Python abstract syntax.
-In Python, multiple statements in the sequence are divided by newline. 
+The top-level component of Python is a module.
+The module represents a single Python file, which includes multiple
+class and function definitions.
+In the abstract syntax, the modules is defined to be a statement,
+which will be a sequence of multiple statements in most cases.
 
-Statements are parts of the code that changes the program state.
-For instance, assignment statement chanages the
-value stored in the variable, and if-else statement changes
+Statements are syntactic components that define program components and actions.
+In Python, statements are used in two major cases.
+First, Python statements define the sequence of actions that changes the
+program state. Assignment statements create variables or update the
+value stored in the variable. If-else, for, and while statements change
 the control flow of the program.
-In addition to the basic imperative statements,
+Second, Python statements define the classes and functions.
+The {\tt class} statement defines a new class with a class name and the
+class methods. 
+The {\tt def} statement defines a new funciton with a funciton name, the 
+argument, and the body statements.
 
-Expressions are parts of the code that evaluates a value.
-Python has composite types of a tuple, list, set, map, and custom classes.
-The expression syntax defines ways to build up values
-and complex expressions such as operators, comprehension, and function calls. 
+Expressions are parts of the code that evaluate to values.
+For instance, list and tuple expressions evlauate to the new list and tuple
+objects. Expressions also include operator expressions, which evaluates to
+the resulting value of the operator.
+Expressions are used as part of statements, such as assign statements or
+control flow statements.
 
 \begin{figure}[!ht]
 \begin{tabular}{lrll}
