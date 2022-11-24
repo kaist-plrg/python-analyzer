@@ -8,26 +8,26 @@ for automated distributed training of TensorFlow DL models.
 As explained in the previous section, distributing TensorFlow DL models
 with Horovod library requires adding and editing the origianl codes.
 Currently, the developers must fully understand the model codes and
-manually rewrite the model codes.
+manually rewrite them.
 This also includes understanding the Horovod library usage by reading
 the library documentation and code exmaples.
 To ease the burden of the rewriting process, 
 we utilize the code transformation technique to automatically rewrite the
-input TensorFlow model code with Horovod library APIs.
+input TensorFlow model code with Horovod library.
 
 % 기존의 모델에 적용하는 코드 변환 규칙을 정의하기 위해 horovod 라이브러리 문서와
 % 코드 예제를 검토했다. 그 결과로 TF 모델을 4가지로 분류하고 각 분류에 맞는
 % 변환 규칙을 정의할 수 있었다.
-To define the code transformation rule for distributing TensorFlow DL models,
+To define the code transformation rule for TensorFlow DL models,
 we manually inspected the Horovod library documentation and code examples.
 In this end, we identified four categories of TensorFlow DL models.
 We define four \textit{training API patterns}, which are common code patterns of 
-TensorFlow APIs appearing in the TensorFlow DL model.
+TensorFlow APIs appearing in each category of the TensorFlow DL models.
 To categorize the TensorFlow DL models into one of the four patterns, 
 we implemented the training API pattern identifier. 
-In this process, we identified that the pattern identifier must know the  
-class inheritance relationship between TensorFlow library classes and
-user-defined classes.
+In this process, we identified that the training API pattern identifier 
+must know the class inheritance relationship between TensorFlow library 
+classes and user-defined classes.
 To solve this problem, we also implemented the class hierarchy analyzer to
 retrieve the class inheritance information of the TensorFlow DL model.
 
@@ -46,47 +46,41 @@ Figure \ref{sysarch} illustrates the overview of our appraoch.
 We first analyze the class hierarchy of the input TensorFlow model
 to produce the class inheritance information.
 Then the training API pattern identifier uses the inheritance information to
-identify the API pattern of the input model.
+identify the training API pattern of the input model.
 Finally, the AST transformer selects the correct transformation rule
 according to the training API pattern then apply the rule to get the 
 distributed model as an output.
 
 \textbf{Parser}
-Parser parses input Python code package
-into the set of ASTs.
-We assume that the input single-GPU-based model is given as a Python code
-package that resides in a single file directory.
+Parser parses the input TensorFlow model codes into the ASTs.
+We assume that the input model is given as a Python code
+package in a single file directory.
 Given the directory, the parser module first parses all Python code files
 in the package to ASTs.
-The Python abstract syntax and details on the parser implementation
-are described in section \ref{sec:pysyn}.
+The section~\ref{sec:pysyn} describes the Python abstract syntax.
 
 \textbf{Class Hierarchy Analyzer}
-Class hierarchy analyzer analyzes the class inheritance relation
-between user-defined classes and TensorFlow library classes and
-outputs the class hierarchy graph.
-We implemented the class hierarchy analysis
-for Python codes as the class hierarchy analyzer module.
+Class hierarchy analyzer analyzes the class inheritance relationship
+between user-defined classes and TensorFlow library classes.
 The class hierarchy analyzer produces the class hierarchy graph
-for the model package and returns it to the API pattern analyzer and 
-AST transformer modules. The details of the class hierarchy analyzer are
-described in section \ref{sec:cha}.
+which summarizes the class inheritance relationship of the input model.
+The section~\ref{sec:cha} descrbies the details of the class hierarchy analyzer.
 
 \textbf{Training API Pattern Identifier}
-Training API pattern identifier 
-indentifies the TensorFlow training APIs used in the training code AST
-and returns the training API pattern for the code.
-The details of the training API pattern identifier described 
-in section \ref{sec:pattern}.
+Training API pattern identifier uses the model AST and class inheritance 
+information to recognize the TensorFlow APIs used in the training code and 
+idenfity the training API pattern for the model.
+The section~\ref{sec:pattern} describes the details of the training API pattern
+identifier.
 
 \textbf{AST Transformer}
 AST transformer module applies the correct transformation to the
-training code AST to retain the distributed training code AST.
+input model AST to produce the distributed training model AST.
 To select the correct transformation rule,
-the AST transformer utlizes the class hierarchy information and
-the training API pattern informatino.
-We defined formal transformation rules which are composed of
-\textit{transform functions} from ASTs to ASTs.
-By applying the transform function to the input AST,
-the AST transformer module outputs the transformed AST as an output.
-The details of the AST transformer is described in section \ref{sec:trans}.
+the AST transformer utlizes the class inheritance information and
+the training API pattern information.
+We define the formal transformation rules which are composed of
+the transform functions from ASTs to ASTs.
+By applying the transform function to the input model AST,
+the AST transformer produces the transformed AST as an output.
+The section~\ref{sec:trans} describes the detailes of the AST transformer.
