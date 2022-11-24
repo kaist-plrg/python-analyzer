@@ -1,21 +1,23 @@
-\section{Python Abstract Syntax and Parser}\label{sec:pysyn}
+\section{Python Abstract Syntax}\label{sec:pysyn}
 \subsection{Python Abstract Syntax}
 
-We formalized the abstract syntax of the Python programming language.
-We manually examined the grammar specification in 
-Python Language Reference \cite{pythonref} to define the Python 
-abstract syntax for our approach. The figure \ref{fig:parse:abssyntax} 
+We define the abstract syntax of the Python programming language.
+To do this, we manually examined the grammar specification in 
+Python Language Reference \cite{pythonref}.
+The figure \ref{fig:parse:abssyntax} 
 illustrates the simplified version of the Python abstract syntax.
 The three major components of the Python syntax are modules, statements, and
 expressions.
 
 The top-level component of Python is a module.
 The module represents a single Python file, which includes multiple
-class and function definitions.
-In the abstract syntax, the modules is defined to be a statement,
+class definitions and function definitions.
+In the abstract syntax, the module is defined to be a statement,
 which will be a sequence of multiple statements in most cases.
 
-Statements are syntactic components that define program components and actions.
+% todo: rephrase?
+% stmt는 등의 프로그램 구성품과 그 행동을 정의한다.
+Statements define the program components and their actions. 
 In Python, statements are used in two major cases.
 First, Python statements define the sequence of actions that changes the
 program state. Assignment statements create variables or update the
@@ -84,4 +86,5 @@ control flow statements.
   \label{fig:parse:abssyntax}
 \end{figure}
 
-
+% todo : delete pagebrak
+\pagebreak
