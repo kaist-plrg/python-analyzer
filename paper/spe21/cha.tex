@@ -1,9 +1,9 @@
 \section{Class hierarchy analysis}\label{sec:cha}
 
-When developing TensorFlow DL models, user-defined classes can
-inherit TensorFlow library classes. 
-This allows developers to extend the methods and behaviors of TensorFlow
-library classes without directly modifying the library codes. 
+This section explains the necessity of class hierarchy analysis for correct
+transformation of the TensorFlow models.
+In TensorFlow, the user-defined classes can inherit TensorFlow library classes
+to extend the methods and behaviours of them without modifying the library codes. 
 Figure \ref{fig:cha:tfex}(a) shows an example of TensorFlow DL model
 code using an user-defined class.
 In line 4, the newly defined class {\tt ResNet} inherits the TensorFlow

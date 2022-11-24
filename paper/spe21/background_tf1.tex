@@ -22,13 +22,14 @@ As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
 significantly differ in their forms. 
 
 We describe TensorFlow 1.x and 2.x versions with code examples that define
-the same model and its training process.
-The model defined in the code examples is a neural network model illustrated
+the same model and the same training process.
+The code examples define the neural network model illustrated
 in the figure \ref{fig:back:model}.
-The model will get an input image and classify it into one of ten
+The model will get an input image of 784 pixels and classify it into one of ten
 output classes.
  
 The model structure is defined in terms of layers and operation between them.
+The layers are tensors of real values, which represent the signals and data.
 The model in the figure \ref{fig:back:model} has three layers;
 the input layer, the hidden layer, and the output layer.
 The input layer is a vector of length 784, which represents the input image
@@ -47,7 +48,7 @@ with the weight matrix $W_1$, adding the bias vector $b_1$, and finally applying
 the ReLU activation function to the result.
 The output layer is parametrized by the weight matrix $W_2$ of size (100, 10)
 and the bias vector $b_2$ of length 10.
-The output layer is computed by first multiplying the hidden layer vector
+The output layer is computed by first multiplying the hidden layer vector $h$
 with the weight matrix $W_2$, adding the bias vector $b_2$, and finally applying
 the Softmax activation function to the result.
 The weight matrices and the bias vectors are called the model parameters 
@@ -61,6 +62,7 @@ Here, the loss function computes the distance between the model output for
 a training input and corresponding answer label.
 Thus, approaching the local minumum of the loss function means that the
 model is trained to return output similar to the correct answer.
+
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]

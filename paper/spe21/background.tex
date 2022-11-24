@@ -18,21 +18,18 @@ loop.
 The lines 5 to 11 first define the model structure.
 First, the lines 5 to 8 use the Keras library APIs to define the neural
 network model with a hidden layer and an output layer.
-%todo: cite keras
-Keras is a layer-based deep learning model library included in TensorFlow 2.x.
-The lines 6 and 7 defines the dense layers with the {\tt Dense} API.
-The first argument specifies the size of output vector.
+Keras~\cite{keras} is a layer-based deep learning model library included in 
+TensorFlow 2.x. The lines 6 and 7 defines the dense layers with the {\tt Dense} 
+API. The first argument specifies the size of output vector.
 Given the output vector size, the {\tt Dense} API will automatically create
 the weight matrix and the bias vector parameters according to the size of 
-the previous layer.
-The second argument of the {\tt Dense} API 
+the previous layer. The second argument of the {\tt Dense} API 
 specifies the activation function of the layer,
 where the name of the activation function is given as a string. 
 The layers are then composed into a linear sequential model
 by the {\tt Sequential} API in the line 5.
-Compared to TensorFlow 1.x models, building the model with Keras APIs
-reduces the developer's burden of explicitly defining the operations between 
-the model components.
+Compared to TensorFlow 1.x models, developers do not have to explicitly
+define the computation between the layers in TensorFlow 2.x.
 
 The lines 10 and 11 define the loss of the model output and
 the optimizer object for the model training.
@@ -43,11 +40,11 @@ This optimizer object is equal to the {\tt AdamOptimizer} object in the
 TensorFlow 1.x model.
 However, the usage of the optimizer object is different in two TensorFlow
 versions.
-In TensorFlow 1.x, the optimizer object is mainly used to define the
-training operation {\tt train\_op}, which will be later used as an argument
-for the {\tt Session.run} method.
+In TensorFlow 1.x, the optimizer object is used to define the
+training operation {\tt train\_op}, which is later used as an argument
+for the {\tt Session.run} method to explicitly trigger the training step.
 In TensorFlow 2.x, the optimizer object is used to directly call the methods 
-that eagerly executes the gradient descent.
+that eagerly executes the gradient descent algorithm against the training input. 
 
 The lines 13 to 19 starts the training loop.
 The training loop starts with the {\tt for} loop that iterates over the dataset
@@ -56,15 +53,15 @@ Similar to the TensorFlow 1.x model,
 the line 13 uses the {\tt take} API to specify the number of batches.
 The line 14 creates a new {\tt GradientTape} object by {\tt with} statement.
 When a {\tt GradientTape} object is created by {\tt with} statement,
-it will record the gradients of the operations computed inside the {\tt with}
+it will record the gradients of the operations inside the {\tt with}
 statement body.
 The lines 15 and 16 define the forward propagation stage in a single
 training step.
 Note that in TensorFlow 2.x, the model object created with the Keras APIs can be
 used like a Python function as in the line 15.
 Thus, the line 15 computes the output vector of the model when the
-training image is given as an input,
-and the line 16 computes the cross entropy loss between the model output and
+training image is given as an input.
+The line 16 computes the cross entropy loss between the model output and
 the answer label.
 The lines 18 and 19 then optimizes the model parameters by gradient descent. 
 The {\tt model.trainable\_variable} method returns the list of 
@@ -78,16 +75,23 @@ object to optimize the model parameters according to gradient descent algorithm.
 
 \subsection{Horovod Distributed Training Library}
 
-Horovod is a Python library for distributed training of TensorFlow models.
-The library adopts model-parallel approach of distributed training.
-The model-parallel approach creates multiple instances of the model,
-which will be trained alltogether with multiple GPUs.
-Each GPU is responsible of forward propagation of a single model instance;
-thus the number of the model instances is equal to the number of GPUs.
-Then, the gradients are averaged over GPUs to beused by gradient descent
-to optimize the model parameters. 
-To explain how to distribute existing TensorFlow models with Horovod library,
-we provide the code examples of ditributing 
+Horovod~\cite{sergeev2018horovod} is a Python library for distributed training 
+of TensorFlow models. The library adopts model-parallel approach of distributed 
+training. 
+In model-parallel distributed training, multiple instances of the DL model
+are created, and each GPU takes responsibility of computing a single model
+instance computation. % <- todo: rephrase?
+Note that this means that the number of the model instances 
+is equal to the number of GPUs.
+In training process, each model instance gets a training batch and computes the
+loss value. Then the gradients are averaged across the GPUs to synchronize the
+model states. The gradient descent algorithm updates the model parameters by
+the averaged gradients.
+By the model-parallel distributed training, developers can take advantage of
+parallelism to train their DL model in shorter time.
+
+To explain how to rewrite single-GPU TensorFlow models into the distributed 
+models with Horovod library, we provide the code examples of ditributing 
 the TensorFlow 1.x model in the figure~\ref{fig:back:tf1} and the TensorFlow
 2.x model in the figure~\ref{fig:back:tf2}.
 We focus on explaining the difference between the original model codes in
