@@ -15,11 +15,11 @@ Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x model.
 The developers using TensorFlow 2.x define the model structure and the training
 loop. 
 
-The lines 5 to 11 first define the model structure.
+The lines 5 to 8 define the model structure.
 First, the lines 5 to 8 use the Keras library APIs to define the neural
 network model with a hidden layer and an output layer.
 Keras~\cite{keras} is a layer-based deep learning model library included in 
-TensorFlow 2.x. The lines 6 and 7 defines the dense layers with the {\tt Dense} 
+TensorFlow 2.x. The lines 6 and 7 define the dense layers with the {\tt Dense} 
 API. The first argument specifies the size of output vector.
 Given the output vector size, the {\tt Dense} API will automatically create
 the weight matrix and the bias vector parameters according to the size of 
@@ -34,7 +34,7 @@ define the computation between the layers in TensorFlow 2.x.
 The lines 10 and 11 define the loss of the model output and
 the optimizer object for the model training.
 The line 10 uses the {\tt CategoricalCrossentropy} API to 
-define the loss function between the model output and the answer label.
+define the loss function.
 The line 11 uses the {\tt Adam} API to define the optimizer object.
 This optimizer object is equal to the {\tt AdamOptimizer} object in the 
 TensorFlow 1.x model.
@@ -59,8 +59,7 @@ The lines 15 and 16 define the forward propagation stage in a single
 training step.
 Note that in TensorFlow 2.x, the model object created with the Keras APIs can be
 used like a Python function as in the line 15.
-Thus, the line 15 computes the output vector of the model when the
-training image is given as an input.
+Thus, the line 15 computes the model output for the input training batch. 
 The line 16 computes the cross entropy loss between the model output and
 the answer label.
 The lines 18 and 19 then optimizes the model parameters by gradient descent. 
