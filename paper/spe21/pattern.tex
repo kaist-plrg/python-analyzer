@@ -1,6 +1,7 @@
-\section{Training API Pattern Analysis}\label{sec:pattern}
+\pagebreak
+\section{Training API Pattern Identification}\label{sec:pattern}
 
-\subsection{TensorFlow ML Training API Patterns}
+\subsection{Training API Patterns of TensorFlow DL Models}
 
 \begin{figure}[ht!]
 \centering
@@ -33,72 +34,86 @@ model.fit(train_data.take(training_steps))
   \label{fig:pattern:ex01}
 \end{figure}
 
-TensorFlow provides various APIs to define the training process.
-The figure \ref{fig:pattern:ex01} illustrates two examples of using 
-different training APIs.
-Lines 2 to 10 in the code \ref{fig:pattern:ex01}(a)  
-uses low-level APIs to repeat training steps over the training
-data set. Inside the {\tt for} loop, 
-the {\tt GradientTape} instance records the operations,
-then uses the {\tt gradient} method and the {\tt apply\_gradient} method to
-optimize the model parameters.
-In contrast, lines 1 and 4 in the code \ref{fig:pattern:ex01}(b)
-uses high-level APIs to automatically
-invoke the model training process. 
-The {\tt fit} method automatically repeats the training steps,
-which eliminates loops and manual operations from the written code.
-While both codes train the model in the same way, 
-their code structures are significantly different.
-Using high-level APIs simplifies the program,
-reducing additional codes that compute the prediction loss and apply gradients.
-Low-level APIs are verbose, however, developers can fully control
-the training process.
-Developers can freely choose from different training APIs to
-take advantage of each way.
+% tf 모델을 바르게 변환하기 위해서는,  서로 다른 훈련 api를 사용하느 ㄴ모델을
+% 분류하고, 각 분류의 모델에 다른 변환을 적용할 필요가 있다.
+To correctly transform the TensorFlow DL models,
+we need to categorize the models that use different training TensorFlow training
+APIs and apply different transformation rules 
+to the models in different categories.
+In TensorFlow models, developers can use different APIs to define the 
+model structure and training process.
+The figure \ref{fig:pattern:ex01} illustrates the example of using 
+different APIs to define the training process.
+The lines 2 to 10 in \ref{fig:pattern:ex01}(a)  
+explicitly repeats the training steps by using the {\tt for} loop
+and the {\tt GradientTape} instance.
+In contrast, the lines 1 and 4 in \ref{fig:pattern:ex01}(b)
+uses the Keras library API {\tt fit} to invoke the training process.
+While both codes train the model in the same way, they use different training 
+APIs in different patterns.
+As their API usages are significantly different, we need to apply different
+transformation rule for them.
 
-To correctly transform the codes using different TensorFlow APIs, 
-the tool must apply different transformation rules for different usages
-of the APIs.
-We manually inspected open-source TensorFlow DL models to identify
-common patterns of training-related API usage.
-In this end, we defined four training API patterns and 
-an \textit{API pattern analysis} that categorizes TensorFlow DL models
-into one of the four training API patterns.
-Training API patterns are sets of code patterns that can match
-parts of the DL model code using TensorFlow APIs.
-Figure \ref{tab:patterns} describe the training API patterns.
-When one of the API patterns is matched against an input model code,
-we can conclude whether the model belongs to the API pattern category or not. 
-Then we defined four different transformation rules for each training API
-pattern.
-Given an input model code, we match four training API patterns to the code
-to identify  which training API pattern the code uses and apply corresponding
-transformation rule to correctly transform the input code.
+% 서로 다은 훈련 api를 사용하는 모델을 분류하기 위해서 우리는 4개의
+% training api pattern을 정의햇다.
+To categorize the TensorFlow DL models by their training API usage,
+we manually inspected open-source TensorFlow models and
+defined four \textit{training API patterns} that categorizes them.
+The training API patterns are the code patterns of TensorFlow APIs 
+that commonly appear in the same categories of the models.
+For instance, the models in the same category with the figure
+\ref{fig:pattern:ex01}(a) use the {\tt with} statements that create the
+{\tt GradientTape} objects.
+We patternize such common API usages into the training API patterns and
+utilize to categorize the TensorFlow DL models.
 
-\begin{figure}
+\begin{figure}[ht!]
   \centering
   \begin{tabular}{|c|c|l|}
     \hline
     TF version & Pattern name & Explanation \\
     \hline
-    1.x & Session & Low-level training API using {\tt Session} instance\\
+    1.x & Session & 
+	  The models using {\tt Session} APIs to invoke training operations\\
     \hline
-    1.x & MonitoredSession & Low-level training API using {\tt MonitoresSession} instance \\
+    1.x & MonitoredSession & 
+	  The models using {\tt MonitoresSession} APIs to invoke 
+	  training operations.\\
     \hline
-    2.x & GradientTape & Low-level training API using {\tt GradientTape} instance\\
+    2.x & GradientTape & 
+	  The models using {\tt GradientTape} API to explicitly 
+	  repeat the training step.\\
     \hline
-    2.x & Keras & High-level training API using {\tt fit} method of {\tt keras.models.Model} instance\\
+    2.x & Keras & 
+	  The models using {\tt keras.Model} class to define the model
+	  and the {\tt fit} methods to train the model.\\
     \hline
   \end{tabular}
   \caption{Training API patterns}
   \label{tab:patterns}
 \end{figure}
 
+% 우리가 정의한 4가지의 api pattern은 피규어의 표와 같다. 
+Figure \ref{tab:patterns} describes the four training API patterns.
+The Session pattern and the MonitoredSession pattern categorizes the
+TensorFlow 1.x models. The GradientTape pattern and the Keras pattern
+categorizes the TensorFlow 2.x models.
+Based on the training API patterns,
+we implement the \textit{training API pattern identifier} to
+categorize the input model.
+The training API pattern identifier matches each training API pattern
+against the input model codes. 
+If the code successfully matches in exactly one pattern,
+the training API pattern identifier categorizes the input model into
+the corresponding pattern.
+If the code fails to match a pattern or is matched into more than one patterns,
+the training API pattern identifier raises exception that the input model
+cannot be automatically transformed by our approach.
+
 \subsection{Explanation of the training API patterns}
 
-In this section, we explain each training API pattern with
-concrete code examples and method to identify the pattern
-within a given input code.
+In this section, we explain the training API patterns and how
+the training API pattern identifier identifies each training API pattern.
 
 \subsubsection{Session Pattern}
 
