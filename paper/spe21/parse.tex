@@ -1,9 +1,9 @@
 \section{Python Abstract Syntax}\label{sec:pysyn}
-\subsection{Python Abstract Syntax}
 
-We define the abstract syntax of the Python programming language.
-To do this, we manually examined the grammar specification in 
-Python Language Reference \cite{pythonref}.
+To build the Python parser and ASTs for our transformation approach,
+we define the abstract syntax of the Python programming language.
+We manually examined the grammar specification in 
+Python Language Reference \cite{pythonref} to define the formal grammar.
 The figure \ref{fig:parse:abssyntax} 
 illustrates the simplified version of the Python abstract syntax.
 The three major components of the Python syntax are modules, statements, and
@@ -26,13 +26,13 @@ the control flow of the program.
 Second, Python statements define the classes and functions.
 The {\tt class} statement defines a new class with a class name and the
 class methods. 
-The {\tt def} statement defines a new funciton with a funciton name, the 
+The {\tt def} statement defines a new function with a function name, the 
 argument, and the body statements.
 
 Expressions are parts of the code that evaluate to values.
 For instance, list and tuple expressions evlauate to the new list and tuple
 objects. Expressions also include operator expressions, which evaluates to
-the resulting value of the operator.
+the resulting value of the operation on the operands.
 Expressions are used as part of statements, such as assign statements or
 control flow statements.
 
