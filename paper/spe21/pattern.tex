@@ -5,7 +5,7 @@
 
 \begin{figure}[ht!]
 \centering
-  \begin{subfigure}[b]{0.4\textwidth}
+  \begin{subfigure}[b]{\textwidth}
     \begin{lstlisting}[language=Python]
 for x, y in train_data.take(training_steps):
     with tf.GradientTape() as tape:
@@ -20,7 +20,7 @@ for x, y in train_data.take(training_steps):
     \caption{Using low-level training API}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[b]{0.45\textwidth}
+  \begin{subfigure}[b]{\textwidth}
     \begin{lstlisting}[language=Python]
 model.compile(
     optimizer = optimizer, 
@@ -37,9 +37,8 @@ model.fit(train_data.take(training_steps))
 % tf 모델을 바르게 변환하기 위해서는,  서로 다른 훈련 api를 사용하느 ㄴ모델을
 % 분류하고, 각 분류의 모델에 다른 변환을 적용할 필요가 있다.
 To correctly transform the TensorFlow DL models,
-we need to categorize the models that use different training TensorFlow training
-APIs and apply different transformation rules 
-to the models in different categories.
+we need to categorize the models that use different TensorFlow training
+APIs and apply different transformation rules to different categories.
 In TensorFlow models, developers can use different APIs to define the 
 model structure and training process.
 The figure \ref{fig:pattern:ex01} illustrates the example of using 
@@ -48,7 +47,7 @@ The lines 2 to 10 in \ref{fig:pattern:ex01}(a)
 explicitly repeats the training steps by using the {\tt for} loop
 and the {\tt GradientTape} instance.
 In contrast, the lines 1 and 4 in \ref{fig:pattern:ex01}(b)
-uses the Keras library API {\tt fit} to invoke the training process.
+use the Keras library API {\tt fit} to invoke the training process.
 While both codes train the model in the same way, they use different training 
 APIs in different patterns.
 As their API usages are significantly different, we need to apply different
@@ -74,19 +73,19 @@ utilize to categorize the TensorFlow DL models.
     TF version & Pattern name & Explanation \\
     \hline
     1.x & Session & 
-	  The models using {\tt Session} APIs to invoke training operations\\
+	  The models using the {\tt Session} API to invoke training operations\\
     \hline
     1.x & MonitoredSession & 
-	  The models using {\tt MonitoresSession} APIs to invoke 
+	  The models using the {\tt MonitoresSession} API to invoke 
 	  training operations.\\
     \hline
     2.x & GradientTape & 
-	  The models using {\tt GradientTape} API to explicitly 
+	  The models using the {\tt GradientTape} API to explicitly 
 	  repeat the training step.\\
     \hline
     2.x & Keras & 
 	  The models using {\tt keras.Model} class to define the model
-	  and the {\tt fit} methods to train the model.\\
+	  and the {\tt fit} API to train the model.\\
     \hline
   \end{tabular}
   \caption{Training API patterns}
@@ -110,6 +109,8 @@ If the code fails to match a pattern or is matched into more than one patterns,
 the training API pattern identifier raises exception that the input model
 cannot be automatically transformed by our approach.
 
+
+
 \subsection{Explanation of the training API patterns}
 
 In this section, we explain the training API patterns and how
@@ -120,39 +121,39 @@ the training API pattern identifier identifies each training API pattern.
 \begin{figure}[!ht]
 \begin{lstlisting}[language=Python]
 with tf.Session() as sess:
-    for step in xrange(int(num_epochs * train_size) // BATCH_SIZE):
-      sess.run(optimizer, feed_dict=feed_dict)
+    for images, labels in dataset.take(10000):
+        sess.run(train_op, {x: images, y: labels})
 \end{lstlisting}
 \caption{Session pattern code example}
 \label{fig:sessionpattern}
 \end{figure}
-The Session pattern refers to TensorFlow 1.x training codes that
-uses the {\tt Session} class instance to manually repeat the training 
-computation in low-level manner.
-Figure \ref{fig:sessionpattern} is a training code example of 
-Session pattern.
-In line 1, an instance of {\tt tf.compat.v1.train.Session} class is 
-created with {\tt with} statement.
-The {\tt Session} instance is an object providing a link to 
-the TensorFlow runtime, equipped with methods related to the computation graph.
-As in line 3, the method {\tt run} is called to invoke the
-execution of computation on the pre-defined computation graph.
-In the training process, {\tt Session.run} method is repeated mutiple times
-so that the forward propagation of the training data and
-backward propagation of gradient is performed many times.
 
-To identify a Session pattern training code,
-the analyzer searches for a {\tt with} statement that creates a
-{\tt Session} instance.
-If the body statements of {\tt with} statement calls a 
+The Session pattern categorizes the TensorFlow 1.x models that
+use the {\tt Session} class instance to manually invoke the training 
+computation. Figure \ref{fig:sessionpattern} is a code example of the Session 
+pattern. In line 1, the {\tt with} statment creates the {\tt Session}
+class instance. In the line 3, the {\tt run} method is called to invoke 
+the training computation. 
+In the {\tt with} statement body, the {\tt run} method can be called multiple
+time to invoke computation of arbitrary TensorFlow operations.
+In practice, developers use {\tt while} or {\tt for} loops to repeatedly call
+the {\tt run} methods to trigger the training step on multiple training batches,
+as the line 2 in the figure \ref{fig:sessionpattern}.
+
+To identify the Session pattern model, the identifier 
+searches for a {\tt with} statement that creates the {\tt Session} instance.
+If the body statements of the {\tt with} statement call the 
 {\tt run} method of the {\tt Session} instance,
-the analyzer concludes that the training code belongs to the Session pattern.
+the identifier categorizes the input model as the Session pattern. 
+
 
 \subsubsection{MonitoredSession Pattern}
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
-with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
+summary_hook = SummarySaverHook(...)
+
+with MonitoredTrainingSession(hooks=[summary_hook]) as mon_sess:
     while not mon_sess.should_stop():
         mon_sess.run(train_op, feed_dict=feed_dict)
   \end{lstlisting}
@@ -160,126 +161,99 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
   \label{fig:monsesspattern}
 \end{figure}
 
-The MonitoredSession pattern refers to TensorFlow 1.x training codes that
-uses the {\tt MonitoredSession} class instance to manually repeat
-the training computation in low-level manner.
-The pattern is same to the {\tt Session} pattern, except that the
-{\tt MonitoredSession} instance is used instead of the {\tt Session} instance.
-Figure \ref{fig:monsesspattern} is a code example of MonitoredSession pattern.
-In line 1, the {\tt MonitoredSession} class instance is created with
-the {\tt tf.traing.MonitoredTrainingSession} call inside {\tt with} statement
-(Note that the constructor has different name with the class).
-Similar to the Session pattern's case, line 3 calls the {\tt run} method of the
-{\tt MonitoredSession} instance to repeat the training computation.
+The MonitoredSession pattern categorizes TensorFlow 1.x models that
+use the {\tt MonitoredSession} class instance to manually invoke the 
+training computation.
+Figure \ref{fig:monsesspattern} is a code example of the MonitoredSession 
+pattern.
+In the line 3, the {\tt with} statement creates the {\tt MonitoredSession}
+class instance with the {\tt MonitoredTrainingSession} API.
+The line 5 calls the {\tt run} method of the {\tt MonitoredSession} instance 
+to invoke the training computation.
+The {\tt MonitoredSession} class is used similar to the {\tt Session class};
+the {\tt run} method invokes the computation of TensorFlow operations.
+The difference is that developers can add the \textit{hooks} to the
+{\tt MonitoredSession} instance. The hooks are actions that automatically 
+executed upon specific conditions. 
+For instance, the line 3 adds the {\tt SummarySaverHook} to the
+{\tt MonitoredSession} instance upon creation.
+The {\tt SummarySaverHook} automatcially saves the model summary 
+after every {\tt run} method call is finished.
 
-To identify a MoniotoredSession pattern training code,
-the analyzer searches for a {\tt with} statement that creates a
-{\tt MonitoredSession} instance.
-If the body statements calls a {\tt run} methods of the {\tt MonitoredSession}
-instance, the analyzer concludes that the training code belongs to the
-MonitoredSession pattern.
+To identify the MonitoredSession pattern training code,
+the identifier searches for a {\tt with} statement that creates a
+{\tt MonitoredSession} instance by {\tt MonitoredTrainingSession} API.
+If the body statements of the {\tt with} statement call the {\tt run} methods 
+of the {\tt MonitoredSession} instance, 
+the identifier categorizes the input model as the MonitoredSession pattern. 
 
 
 \subsubsection{GradientTape Pattern}
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
-for x, y in train_data.take(training_steps):
-  with tf.GradientTape() as g:
-    pred = conv_net(x)
-    loss = cross_entropy(pred, y)
-    
-  trainable_variables = list(weights.values()) + list(biases.values())
-  gradients = g.gradient(loss, trainable_variables)
-  optimizer.apply_gradients(zip(gradients, trainable_variables))
+optim = tf.optimizers.Adam(0.001)
+
+for images, labels in dataset.take(10000):
+    with tf.GradientTape() as tape:
+        probs = model(images)
+        loss_value = loss(labels, probs)
+
+    grads = tape.gradient(loss_value, model.trainable_variables)
+    optim.apply_gradients(zip(grads, model.trainable_variables))
   \end{lstlisting}
   \caption{GradientTape pattern code example}
   \label{fig:tapepattern}
 \end{figure}
 
 
+The GradientTape pattern categorizes TensorFlow 2.x models that
+use the {\tt GradientTape} class instance to manually invoke training 
+computations. Figure \ref{fig:tapepattern} is a code example of 
+GradientTape pattern.
+In line 3, the {\tt with} statement creates the {\tt GradientTape} class
+instance. 
+After the {\tt with} statement, the line 8 calls the {\tt gradient} method
+to retreive the recorded gradients of the model.
+The line 9 calles the {\tt apply\_gradients} methods of the {\tt Optimizer}
+class instance to finally update the model parameters.
 
-The GradientTape pattern refers to TensorFlow 2.x training codes that
-uses the {\tt GradientTape} class instnace tot manually repeat the 
-training computation in low-level manner.
-Figure \ref{fig:tapepattern} is a code example of GradientTape pattern.
-In line 2, the {\tt tf.GradientTape} instance is created with
-{\tt with} statement.
-The {\tt GradientTape} instance is an object that records operations
-occur inside the {\tt with} statement which itself was created. 
-It's main usage is similar to TensorFlow 1.x {\tt Session} and
-{\tt MonitoredSession} instance; however TensorFlow 2.x uses eager evaluation
-by default, so the {\tt GradientTape} instance can be only used for
-subset of training operation that its gradient requires to be computed.
-In line 7, the gradients of model parameters is retrieved with
-{\tt gradient} method on the {\tt GradientTape} instance.
-Finally in line 8, the {\tt Optimizer} instance applies gradient descent with
-{\tt apply\_gradients} method call.
-The {\tt Optimizer} class represents various optimization algorithms studied in 
-the DL domain.
-
-To identify a GradientTape pattern training code,
-the analyzer searches for a {\tt with} statement that creates a
+To identify a GradientTape pattern model,
+the identifier searches for the {\tt with} statement that creates a
 {\tt GradientTape} instance.
-The analyzer also searches for a statement that calls the {\tt apply\_gradients}
-method of {\tt Optimizer} instance.
-If both statements are found, the analyzer concludes that the code
-belongs to the GradientTape pattern.
+The identifier also searches for the {\tt Optimizer} instance 
+{\tt apply\_gradients} method call.
+If identifier finds both of the statements, the identifer categorizes the
+model as the GradientTape pattern.
+
 
 \subsubsection{Keras Pattern}
 
 \begin{figure}[ht!]
   \begin{lstlisting}[language=Python]
-# model definition
-class ResNet(tf.keras.models.Model):
-  def __init__(self, params):
-    ...
+class ResNet(keras.Model):
+    def __init__(self, params):
+        ...
 
 model = ResNet([2, 2, 2], num_classes)
-model.fit(x_train, y_train_ohe, batch_size=batch_size, epochs=epochs,
-  \end{lstlisting}
+model.fit(dataset, epochs=50)\end{lstlisting}
  
   \caption{Keras pattern code example}
   \label{fig:keraspattern}
 \end{figure}
 
-The Keras pattern refers to TensorFlow 2.x training codes that uses
-the Keras library to define the model and invoke an automatic
-training process.
-The Keras library\cite{keras} is a layer-based DL library which is
-included in the TensorFlow platform.
-In Keras training codes, DL models are represeted as instances of
-subclass of {\tt tf.keras.models.Model} class.
-The {\tt Model} class provides several training-related methods.
-The {\tt compile} method allows developers to configure the training,
-such as selecting optimization algorithm or setting hyperparameters.
-The {\tt fit} method automatically trains the model with
-the training dataset given as the method arguments.
-These methods allow developers to abstract out the complex implementation
-details of the training process and quickly start training.
-
+The Keras pattern categorizes TensorFlow 2.x models that use
+the {\tt keras.Model} class method {\tt fit} to train the model. 
 Figure \ref{fig:keraspattern} is a code example of Keras pattern.
-Line 1 defines a {\tt ResNet} class that inherits the 
-{\tt tf.keras.models.Model} class. As mentioned earlier, the {\tt ResNet}
-class represents a new model definition.
-Implementation details of the {\tt ResNet} class is omitted from the 
-figure; developers may freely define or extend methods that conforms to the
-{\tt Model} class specification.
-Line 6 creates an instance of {\tt ResNet} class, and line 7
-calls the {\tt fit} method of the instance. 
-The {\tt fit} method call here corresponds to the start of the training process
-in the code example.
+The line 1 defines the {\tt ResNet} class that inherits the 
+{\tt keras.Model} class. 
+The line 5 creates the {\tt ResNet} class instance.
+The line 6 calls the {\tt fit} method to train the model.
+Note that the {\tt fit} method is inherited from the {\tt keras.Model} class.
 
-To identify a Keras pattern training code, the analyzer searches for the
-{\tt Model.fit} method call. An important caveat here is to 
-detect only the {\tt fit} method of the {\tt tf.keras.models.Model} 
-subclass instances. The pattern analyzer make use of the class inheritance
-information received from the class hierarchy analyzer to search for
-the {\tt Model} subclass instances. In figure \ref{fig:keraspattern},
-for example, the analyzer uses the fact that the {\tt ResNet} class is
-a subclass of the {\tt Model} class to conclude that the {\tt model.fit}
-is the {\tt Model.fit} method, and finally conclude that the code
-belongs to Keras pattern.
-
-
-
+To identify a Keras pattern model, the identifer searches for the
+{\tt Model.fit} method call. The training API pattern identifier utilizes the
+class inheritance information provides by the class hierarchy analyzer to
+recognize subclasses of the {\tt keras.Model} class and their instances.
+If identifier find the {\tt fit} method call of the {\tt keras.Model} subclass
+instance, the identifier categorizes the model as the Keras pattern.
