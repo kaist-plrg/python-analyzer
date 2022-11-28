@@ -79,11 +79,12 @@ to update the model parameters, thus approaching to the minumum loss.
 Figure~\ref{fig:back:tf1} is a code example of a TensorFlow 1.x model.
 To define a neural network model in TensorFlow 1.x, 
 developers must explicitly define the model structure
-and the operations between the layers, 
-and manually start the training loop with low-level TensorFlow APIs.
+and the operations between the layers. 
+The developers also must manually start the training loop by explicitly
+accessing the TensorFlow runtime with dedicated APIs.
 
-First, the lines 5 to 17 defines the model structure and manually build up
-computations between the model components.
+First, the lines 5 to 14 define the model structure and manually build up
+operaitons between the model layers.
 The lines 5 and 6 first create placeholder variables {\tt x} and {\tt y},
 which are the placeholders for the input image vectors 
 and the answer label vectors of training data.
@@ -105,6 +106,7 @@ training process.
 The line 10 manually defines the operations of the hidden layer. 
 Note that the line does not actually compute the operations,
 but only define the operations that will be computed during the training.
+
 The lines 12 to 14 define the output layer.
 Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
 and the bias vector parameter for the output layer.
@@ -121,7 +123,7 @@ and the answer label {\tt y} with categorial cross entropy function.
 The line 17 defines the training operation for the model.
 The line first calls the {\tt AdamOptimizer} constructor
 function to create an optimizer object.
-The optimizer object in TensorFlow is an abstraction of the gradient
+The optimizer objects in TensorFlow are abstractions of the gradient
 descent algorithms.
 For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
 algorithm. % todo: cite Adam g.d.
@@ -137,7 +139,7 @@ computation of TensorFlow operations.
 The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
 Before the training computation starts,
 the TensorFlow variables in the model and the optimizer should be initialized.
-Note that the optimizer object implicitly introduces the variables which is
+Note that the optimizer object implicitly introduces the variables which are 
 used for the internal computation.
 The line 20 refers to the TensorFlow global variables to initialize
 all of the model parameter variables and the optimizer internal variables
@@ -147,6 +149,4 @@ to iterate over the dataset and get training input data.
 The number of training data is specified by the {\tt take} API of the
 dataset object.
 Finally, the line 22 calls the {\tt run} method to
-invoke computation of the training operation {\tt train\_op},
-which repeatedly optimizes the model parameters by the trianing operation
-defined in the line 17.
+invoke computation of the training operation {\tt train\_op}.
