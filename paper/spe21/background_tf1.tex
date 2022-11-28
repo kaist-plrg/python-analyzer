@@ -10,12 +10,12 @@ Currently, TensorFlow library is available in two major versions.
 The first version is TensorFlow 1.x published in 2016.
 TensorFlow 1.x provides APIs for defining tensor variables and
 operations between them.
-Developers manually define the model structure, the model computation
+Developers manually define the model structure, the model operations 
 and training process using the TensorFlow 1.x APIs.
 The second version is TensorFlow 2.x published in 2019.
 TensorFlow 2.x adds the eager evaluation feature,
 which allows developers to use plain Python syntax to define the model
-computation and the training process.
+operations and the training process.
 In addition, TensorFlow 2.x includes Keras library, 
 a layer-based deep learning model library that provides convenient APIs.
 As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
@@ -36,11 +36,11 @@ The input layer is a vector of length 784, which represents the input image
 of 784 pixels.
 The hidden layer is a vector of length 100.
 The output layer is a vector of length 10, and each vector element represents 
-the probability of the input image classified as the corresponding class.
+the probability of the input image classified into the corresponding class.
 The layers are densely connected, which means that
 the layer outputs are computed by the linear transformation with 
 the weight matrices and the bias vectors, 
-and the non-linear activation functionss. 
+and the non-linear activation functions. 
 The hidden layer is parametrized by the weight matrix
 $W_1$ of size (784, 100) and the bias vector $b_1$ of length 100.
 The hidden layer is computed by first multiplying the input layer vector $x$
@@ -54,15 +54,20 @@ the Softmax activation function to the result.
 The weight matrices and the bias vectors are called the model parameters 
 as their values are updated during the training process.
 
-The model is trained by the gradient descent algorithm against the training
-dataset. The gradient descent algorithm is an iterative optimization algorithm
+The model is trained by the gradient descent algorithm. 
+The gradient descent algorithm is an iterative optimization algorithm
 that computes the gradients of model parameters to update their values toward
 local minimum of the loss function.
-Here, the loss function computes the distance between the model output for
-a training input and corresponding answer label.
+The loss function defines the metric of the difference between the model 
+output and answer label.
 Thus, approaching the local minumum of the loss function means that the
-model is trained to return output similar to the correct answer.
-
+the gradient descent trains the model to return the output similar to the
+correct answer.
+In DL model training, the gradient descent is repeated against several
+training batches. Given a training input batch, the algorithm first computes
+the model loss with forward propagation then computes the gradients of the
+model parameters with backpropagation. The algorithm applies the gradients
+to update the model parameters, thus approaching to the minumum loss.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
