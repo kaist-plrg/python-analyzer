@@ -83,14 +83,14 @@ instance computation. % <- todo: rephrase?
 Note that this means that the number of the model instances 
 is equal to the number of GPUs.
 In training process, each model instance gets a training batch and computes the
-loss value. Then the gradients are averaged across the GPUs to synchronize the
-model states. The gradient descent algorithm updates the model parameters by
+loss value. Then the loss gradients are averaged across the GPUs to synchronize 
+the model states. The gradient descent algorithm updates the model parameters by
 the averaged gradients.
 By the model-parallel distributed training, developers can take advantage of
 parallelism to train their DL model in shorter time.
 
 To explain how to rewrite single-GPU TensorFlow models into the distributed 
-models with Horovod library, we provide the code examples of ditributing 
+models with Horovod library, we provide the code examples of distributing 
 the TensorFlow 1.x model in the figure~\ref{fig:back:tf1} and the TensorFlow
 2.x model in the figure~\ref{fig:back:tf2}.
 We focus on explaining the difference between the original model codes in
@@ -109,14 +109,13 @@ model codes in the following paragraphs.
 Figure~\ref{fig:back:hvd1} is a code example of using Horovod to distribute
 the TensorFlow 1.x model in~\ref{fig:back:tf1}.
 The line 4 first initializes the Horovod configuration.
-The lines 6 to 8 create the same number of processes with GPUs in the system,
+The lines 5 to 7 create the same number of processes with GPUs in the system,
 and pins each GPU per process. 
 The GPU pinning is a process where each GPU in the system is assigned to a 
 single training process.
 This is done by refering to the local rank of the process 
 by the {\tt local\_rank} API.
-This ensures the model training workload is equally distributed over
-the GPUs.
+This ensures that each model instance is trained by a single dedicated GPU.
 
 % p2: explain optimizer
 The line 23 defines the training operation, 
@@ -134,7 +133,7 @@ Second, the optimizer object is wrapped with the Horovod library API,
 {\tt DistributedOptimizer}.
 The {\tt DistributedOptimizer} API converts the single GPU-based optimizer 
 object to distributed optimizer, which averages the loss gradients across the
-training processes before applying the gradient descent.
+training processes.
 Thus, wrapping the optimizer with {\tt DistributedOptimizer} API is necessary
 for correct distributed training of the model.
 
@@ -203,7 +202,7 @@ to the {\tt DistributedOptimizer} API in distributed TensorFlow 1.x model;
 the loss gradients will be averaged across the training processes 
 before the gradient descent.
 Thus, wrapping the {\tt GradientTape} object with the 
-{\tt DistributedGradientTape} API is necessary for correct distributed training
+{\tt DistributedGradientTape} API is necessary for correct training
 of the model.
 
 % p5. broadcast
