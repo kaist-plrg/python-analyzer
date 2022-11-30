@@ -2,30 +2,84 @@
 
 \subsection{Formalization of the Transformation Rules}
 
-In this section, we describe formalization of the transformation rule
-for distributed DL traininig with set of code examples and formal notions
-related to them.
-There are two main points in design of the formalization.
-First, we informally understand the code transformation rule as methods to
-\textit{select} the parts of codes to modify and \textit{construct} new code by 
-reusing parts of the selected code.
-To automate the transformation process, we need code transformation in a form 
-that is implements above selection and construction.
-Second, as mentioned earlier, to correctly transform tranining codes with different
-API patterns, we must apply different transformation rules.
-The formalization should also describe different transformation rules
-for different API patterns.
+% old
+% In this section, we describe formalization of the transformation rule
+% for distributed DL traininig with set of code examples and formal notions
+% related to them.
+% There are two main points in design of the formalization.
+% First, we informally understand the code transformation rule as methods to
+% \textit{select} the parts of codes to modify and \textit{construct} new code by 
+% reusing parts of the selected code.
+% To automate the transformation process, we need code transformation in a form 
+% that is implements above selection and construction.
+% Second, as mentioned earlier, to correctly transform tranining codes with different
+% API patterns, we must apply different transformation rules.
+% The formalization should also describe different transformation rules
+% for different API patterns.
+% 
+% In this end, we define the formal transformation rule as a set of
+% function that takes ASTs as input and returns ASTs as output.
+% We call these functions as \textit{transform functions}.
+% We define a set of transform functions for each training API pattern,
+% defining total of four sets transform functions.
+% For the selection and construction of code parts,
+% we use \textit{pattern matching} as an argument of the transform function;
+% given an AST as input, the transform function will first match the
+% input against the argument pattern, then only proceed to apply itself
+% when the pattern matching is successful.
 
-In this end, we define the formal transformation rule as a set of
-function that takes ASTs as input and returns ASTs as output.
-We call these functions as \textit{transform functions}.
-We define a set of transform functions for each training API pattern,
-defining total of four sets transform functions.
-For the selection and construction of code parts,
-we use \textit{pattern matching} as an argument of the transform function;
-given an AST as input, the transform function will first match the
-input against the argument pattern, then only proceed to apply itself
-when the pattern matching is successful.
+% todo: graphical issue in this figure image
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{transfn_expl.pdf}
+    \caption{Explanation of Transform Function Description}
+    \label{fig:trans:fnexpl}
+\end{figure}
+
+% new
+We formalize the transformation rule as \textit{transform functions}.
+% F : (AST, ctx) -> (AST, ctx)
+Transform functions are the pure functions that takes an input AST and
+returns the output ASTs.
+% AST expl
+The input AST corresponds to the input single-GPU model,
+and the output AST corresponds to the transformed multi-GPU model.
+% transform context expl
+However, the transform functions cannot utilize the contextual information
+by only getting ASTs as inputs.
+For instance, the transform function inserts method call statements for
+{\tt Optimizer} or {\tt GradientTape} instance.
+Without knowing the instance name that appeared in previous function calls,
+the transform function cannot add the correct code for the method call.
+To solve this problem, the transform functions gets and returns
+the \textit{transform context} objects as inputs and outputs.
+The transform context is a finite mapping from strings to identifiers, which
+context stores arbitrary identifiers from the code and propagate them to the 
+next function calls.
+When transform functions are sequentially applied to sequence of ASTs, 
+the output transform context from the previous call is given as the input
+to the next tranform function call.
+By this method, the tranform functions can utilize contextual information
+during transformation.
+
+% transform function format expl
+We describe the transform function in terms of the formal notation illustrated
+in the figure~\ref{fig:trans:fnexpl}.
+The figure~\ref{fig:trans:fnexpl} describes the part of transform function that
+takes an {\tt import} statement AST as an input and returns the list of 
+two {\tt import} statements as the output.
+The function uses the AST pattern in the input parameter position.
+The input AST pattern means that the function only applies the function body
+to the ASTs that matches the pattern. 
+The function also takes the transform context $\smodenv$ as an input.
+Given the inputs, the function body specifies the output AST and the output
+transform context.
+We use complex expressions such as LET-IN or IF-THEN-ELSE to 
+check and specify conditions to return different outputs.
+In the figure~\ref{fig:trans:tnexpl}, for instance, 
+the function body uses IF-THEN-ELSE expression to check if the {\tt import}
+statement imports the {\tt tensorflow} module and return different
+results according to the condition.
 
 \begin{figure}[ht!]
   \centering
@@ -64,20 +118,16 @@ for (x, y) in dataset.take(10000):
   \label{fig:trans:ex}
 \end{figure}
 
-We describe examples of the transform function by illustrating the transform
-functions applied in the code example in figure \ref{fig:trans:ex}.
-Figure \ref{fig:trans:ex}(a) shows an example of the input single-GPU code and
-figure \ref{fig:trans:ex}(b) shows the corresponding distributed code. 
-Some unnecessary details of the codes are removed from the code.
+We explain the details on the transform functions by code example in
+the figure \ref{fig:trans:ex}. The figure is the pair of single-GPU model
+and the corresponding multi-GPU model.
 There are three modified parts of the code. 
-First, a new import statement that imports {\tt horovod.tensorflow} modules
-is added in line 2. 
-The statement is added right after the original {\tt tensorflow} module
-import statement.
-Second, in line 6, an argument of the constructor function 
-{\tt tf.optimizers.Adam} is modified. The newly changed argument multiplies
-{\tt hvd.size()} onto the original argument.
-Third, in line 12, a new statement that assigns the variable {\tt tape}
+First, an import statement for the Horovod module is added in the line 2. 
+The statement is added right after the {\tt tensorflow} module import statement.
+Second, in the line 6, the argument of the {\tt Optimizer} instance constructor
+is modified. The new argument expression multiplies {\tt hvd.size()} 
+onto the original argument expression.
+Third, in the line 12, the statement that assigns the variable {\tt tape}
 is added. The assignment wraps the original {\tt GradientTape} object with
 the Horovod library function, {\tt hvd.DistributedGradientTape}.
 Except the above mentioned parts, the original code is not modified.     
@@ -100,62 +150,46 @@ import horovod.tensorflow as hvd\end{lstlisting}
   \label{fig:trans:ex01}
 \end{figure}
 
-Figure \ref{fig:trans:ex01} is the first transformed part of the code.
-The transform function takes an import statement as an input,
-identifies that the input statement imports the TensorFlow module,
-then outputs a list of two statements, which are the original input 
-import statement and the new import statement for the Horovod module. 
-The transform function should be able to recognize that the input import
-statement actually imports the TensorFlow module.
-To acheive this, the transform function utilzes the current transform context given
-as an input.
-The \textit{transform context} stores information 
-which will be used in later transform function call.  
-While transforming the code in figure \ref{fig:trans:ex01}(a),
-for instance, the identifier {\tt tf} for the TensorFlow
-module is stored after line 1, and the identifier {\tt optim}
-for the {\tt Optimizer} instance is stored after line 5.
-Then, transform function can compare the transfrom context before the input statement
-and just after the input statement to check whether a specific module
-is imported in the input statement.
-finally, by returning the modified transform context with the output statement,
-transform function can propagate the transform context from a call
-to the next call.
-
 \begin{figure}[ht!]
   \centering
   \noindent
   \begin{tabular}{l}
-   \typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}\\
+   %\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}\\
    \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
     \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
     \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid]\\ 
     \inden\ktthen \\
-    \inden\hspace{1em} ([\kimport ~ \mul{\nalias}, \\
-    \inden\hspace{1em} \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}, \smodenvsubs{1})\\
+    \inden\hspace{1em} ([\kimport ~ \mul{\nalias},
+	  \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}], \smodenvsubs{1})\\
     \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
   \end{tabular}\\\vpar
   \caption{Transform function: adding Horovod module import statement}
   \label{fig:trans:fn01}
 \end{figure}
 
-Figure \ref{fig:trans:fn01} describes the transform function that applies the
-transformation in figure \ref{fig:trans:ex01}. 
-The function specifies an input argument with pattern that matches any import
-statements; thus the transformation only targets import statements.
-As explained earlier, the second and third lines
+
+Figure \ref{fig:trans:ex01} is the first transformed part of the code, and
+the figure \ref{fig:trans:fn01} describe the transform function that
+applies the transformation in the figure \ref{fig:trans:ex01}.
+The input AST pattern matches the {\tt import} statements; 
+The transform function should identify the input statement that imports 
+the TensorFlow module, then outputs the list of two statements, 
+which are the original input import statement and the new import statement 
+for the Horovod module. 
+The transform function should be able to recognize that the input import
+statement actually imports the TensorFlow module.
+To acheive this, the transform function utilzes the transform context.
+The second and third lines of the figure~\ref{fig:trans:fn01}
 compare $\smodenv$, the transform context
 before the input statement, with $\smodenvsubs{1}$, the transform context
 just after the input statement, to check if the input statement
-imports the TensorFlow module.
-If the input statement imports the TensorFlow module,
-the transform function proceeds to return a list of statements that
-includes the original input statement and the new import statement for
-the Horovod module.
-Note that the transform function return the new transform context
-$\smodenvsubs{1}$ together with the statement list; this allows the 
-transform context to be propagated between the transform function calls.
+imports the TensorFlow module.  
+If the difference between $\smodenv$ and $\smodenvsubs{1}$ includes the
+{\tt tensorflow} module identifier,
+then the transform function adds the {\tt horovod.tensorflow} {\tt import} 
+statement to the output AST.
 
+\pagebreak
 \begin{figure}[ht!]
   \centering
   \begin{subfigure}[t]{0.48\textwidth}
@@ -172,24 +206,6 @@ optim = tf.optimizers.Adam(0.001 * hvd.size())\end{lstlisting}
   \caption{Code examples}
   \label{fig:trans:ex02}
 \end{figure}
-
-Figure \ref{fig:trans:ex02} illustrates the second part of the transformed code.
-The assign statement in \ref{fig:trans:ex02}(a) is transformed to
-another assign statement in \ref{fig:trans:ex02}(b), where the argument for the
-constructor {\tt tf.optimizers.Adam} is multiplied by the expression
-{\tt hvd.size()}. 
-To apply this transformation, the transform function must first recognize a
-assign statement that creates an {\tt Optimizer} instance.
-One caveat here is that the {\tt Optimizer} instance can be 
-created by not only TensorFlow library APIs, but also
-user-defined class constructors. We utilize the class inheritance information to
-recognize the constructors that creates any subclasses of the {\tt Optimizer}
-class. 
-After identifying the assign statement and the constructor, 
-the transform function modifies the argument expression of the
-constructor call.
-The transform function would take the original argument expression,
-then create a new expression that multiplies {\tt hvd.size()}
 
 \begin{figure}[ht!]
   \centering
@@ -210,23 +226,30 @@ then create a new expression that multiplies {\tt hvd.size()}
   \label{fig:trans:fn02}
 \end{figure}
 
-Figure \ref{fig:trans:fn02} describes the transform function responsible of
-the transformation in figure \ref{fig:trans:ex02}.
-The transform function matches any assign statements that assigns the
-result of function call expression at the right side.
-Then, in the second line, the transform funciton tests if the function
-expression \nexprsubs{1} refers to the constructor of a subclass of the
-{\tt Optimizer} class.
-Here, the subclass predicate \ktsubtysubs{\smodenv} utilizes the transform 
-context $\smodenv$ to identify user-defined class constructors and their 
-inheritance information.
-If the function \nexprsubs{1} is indeed a constructor for a subclass of the
-{\tt Optimizer} class, the transform function modifies the 
-first argument expression of the function call.
-As shown in the fourth line of the transform function, the  
-transform function changes the first argument \nexprsubs{11}
-into $\nexprsubs{11} {\tt * hvd.size()}$, which scales the original
-learning rate argument by the expression {\tt hvd.size()}.
+
+The figure \ref{fig:trans:ex02} illustrates the second part of the transformed 
+code, and the figure \ref{fig:trans:fn02} describes the transform function 
+that applies the transformation in figure \ref{fig:trans:ex02}.
+The learning rate argument for the {\tt Optimizer} class constructor is 
+multiplied by the expression {\tt hvd.size()}. 
+To apply the transformation, the transform function must first recognize a
+assign statement that creates an {\tt Optimizer} instance.
+One caveat here is that the {\tt Optimizer} instance can be 
+created by not only TensorFlow library APIs, but also
+user-defined class constructors. We utilize the class inheritance information to
+recognize the constructors that creates any subclasses of the {\tt Optimizer}
+class. 
+After identifying the {\tt Optimizer} class assign statement, 
+the transform function modifies the argument expression of the
+constructor call.
+The transform function would take the original argument expression,
+then create a new expression that multiplies {\tt hvd.size()}
+To modify the argument expression, the function body utilizes the AST pattern
+variable $\nexprsubs{11}$ in the input AST pattern.
+The pattern variable $\nexprsubs{11}$ will match {\tt 0.001} in the figure
+\ref{fig:trans:ex02}(a).
+In the output AST, the modified argument expression 
+$\nexprsubs{11} {\tt * hvd.size()}$ will expand to {\tt 0.001 * hvd.size()}.
 
 \begin{figure}[ht!]
   \centering
@@ -252,21 +275,6 @@ for (x, y) in dataset.take(10000):
   \label{fig:trans:ex03}
 \end{figure}
 
-Figure \ref{fig:trans:ex03} is the third transformed part of the code.
-To apply this transformation, the transform function must first identify
-a with statement that creates a new {\tt GradientTape} instance. 
-Similar to the first transformation example, 
-the transform function utilizes the transform context to recognize a
-with statement that creates a new {\tt GradientTape} instnace. 
-The transform function compares the input transform context with the 
-transform context just after processing the with statement to check
-whether the input with statement creates a {\tt GradientTape} instance.
-Then, the transform function adds a new assign statement after the 
-with statement, which wraps the variable with a
-{\tt DistributedGradientTape} Horovod API.
-One caveat here is to also transform the statements inside the with
-statement.  
- 
 \begin{figure}[ht!]
   \centering
   \begin{tabular}{l}
@@ -283,444 +291,20 @@ statement.
   \label{fig:trans:fn03}
 \end{figure}
 
-Figure \ref{fig:trans:fn03} describes the transform function responsible of the
-transformation of figure \ref{fig:trans:ex03}.
-The transform function matches any {\tt with} statements.
-Then, the transform function first apply transform function to the
-variable assignment part and statement body part of the input {\tt with}
-statement in the second and third line.
-Specifically, in the second line, the transform function
-extracts a new transform context $\smodenvsubs{1}$.
-The transform context $\smodenvsubs{1}$ stores information about  
-objects newly created by the {\tt with} statement.
-The transform function utilize this in the fourth line to 
-check whether the input {\tt with} statement creates
-a new {\tt GradientTape} object.
-If the new {\tt GradientTape} object is created,
-the transform function returns a list of statements that adds the
-assign statement after the {\tt with} statement as in the sixth line.
-Also, the transform function modifies the body statements of the {\tt with} 
-statement by recursively applying the \fkstmt function 
-then returns it as an output in the fifth and seventh line.
+Figure \ref{fig:trans:ex03} is the third transformed part of the code, and
+the figure \ref{fig:trans:fn03} describes the transform function responsible 
+of the transformation of figure \ref{fig:trans:ex03}.
+The new assign statement is added after the {\tt with} statement body end.
+To apply this transformation, the transform function must first identify
+a with statement that creates a new {\tt GradientTape} instance. 
+The transform function utilizes the transform context to recognize a
+with statement that creates a new {\tt GradientTape} instance. 
+The transform function compares the input transform context with the 
+transform context just after processing the with statement to check
+whether the input with statement creates a {\tt GradientTape} instance.
+Then, the transform function adds a new assign statement after the 
+with statement, which wraps the variable with a
+{\tt DistributedGradientTape} Horovod API.
 
-\subsection{Description of Transform functions}
-
-As mentioned earlier, different API patterns of the codes
-require different transformation rules to correctly transform them.
-To apply different transformation rules for different API pattern codes,
-we defined sets of transform functions each for trainng API patterns.
-This section explains the core parts of the transform functions 
-for each API pattern.
-
-\subsubsection{Transform function for Session pattern}
-
-To correctly transform Session pattern trainig codes into corresponding
-distributed training codes, the {\tt Optimizer} instance must be modified.
-Figure \ref{fig:trans:sessiontrans} shows a pair of code examples
-illustrating the required transformation for Session pattern case.
-In line 1 of figure \ref{fig:trans:sessiontrans}(b),
-the {\tt learning\_rate} argument is scaled by {\tt hvd.size()}.
-One caveat here is to identify the correct position of the {\tt learning\_rate}
-argument which can be used as both keyword and positional argument.
-The {\tt learning\_rate} argument can be specified by the keyword shown as
-figure \ref{fig:trans:sessiontrans}, or also specified as the first
-positional argument.
-The transform function should be able to transform both of the cases.
-After modifying the function argument,
-the transformation adds a new statementd that wraps the {\tt Optimizer} instance
-by designated Horovod API, {\tt DistributedOptimizer}.
-
-\begin{figure}[ht!]
-  \begin{subfigure}[t]{0.45\textwidth}
-    \begin{lstlisting}[language=Python]
-optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
-
-with tf.Session() as sess:
-    for step in range(num_epochs): 
-        sess.run(optimizer, feed_dict)
-    \end{lstlisting}
-    \caption{Original training code of Session pattern}
-  \end{subfigure}
-  \hspace{5mm}
-  \begin{subfigure}[t]{0.45\textwidth}
-    \begin{lstlisting}[language=Python]
-optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01 * hvd.size())
-optimizer = hvd.DistributedOptimizer(optimizer)
-
-with tf.Session() as sess:
-    for step in range(num_epochs): 
-        sess.run(optimizer, feed_dict)
-    \end{lstlisting}
-    \caption{Distributed training code of Session pattern}
-  \end{subfigure}
-  \caption{Code example of Session pattern training code}
-  \label{fig:trans:sessiontrans}
-\end{figure}
-
-The above transformation is formalized as figure 
-\ref{fig:trans:sessrule}. The transform function 
-matches assign statements that assign a result of function call expression
-on the right-hand side.
-If an assign statement is matched, the pattern guard checks if the
-callee function is the {\tt Optimizer} instance constructor function.
-The pattern guard uses the subclass predicate \ktsubtysubs{\smodenv}
-to identify any expression that constructs the subclass of the TensorFlow
-{\tt Optimizer} class including user-defined classes.
-
-The third line of the transform function uses a branch to distinguish 
-whether the {\tt learning\_rate} argument is given as a keyword argument or not. 
-When the argument is given as a keyword argument,
-the transform function modifies the corresponding keyword argument expression
-as shown in the true branch in fourth line.
-When the argument is not given as a keyword argument,
-the transform function assumes that the first positional argument
-is the {\tt learning\_rate} argument and modifies it
-as shown in the eighth line.
-In either case, the transform function additionally returns a new
-assign statement that wraps the {\tt Optimizer} with
-{\tt hvd.DistributedOptimizer}.
-
-\begin{figure}[ht!]
-\noindent
-\begin{longtable}{l}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
-  \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}
-  ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
-  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
-  \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}
-  ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
-  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
-  \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
-\end{longtable}
-  \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
-  \label{fig:trans:sessrule}
-\end{figure}
-
-\subsubsection{Transform function for MonitoredSession pattern}
-
-The MonitoredSession pattern codes use {\tt MonitoredSession} instances
-to manually repeat training steps.
-The {\tt MonitoredSesion} instances are similar to {\tt Session} instances,
-but they provide better convenient methods.
-In addition, users can add \textit{hooks},
-objects that represent custom actions and automatically executes 
-for each training step.
-For example, a {\tt CheckpointSaverHook} object is a hook that automatically 
-stores the current state of the model during a training step. 
-
-To correctly transform the MonitoredSesion pattern codes,
-a hook for the variable broadcasting should be added to the
-{\tt MonitoredSession} object.
-The variable broacasting is a process that occurs exactly once in
-distributed training with Horovod,
-which synchronizes the initial states of global variables across multiple
-training processes.
-This process ensures that training processes each GPUs share same initial
-model state before the training starts. 
-As in figure \ref{fig:trans:monsesstrans}, for example,
-the correct transformation appends {\tt BroadcastGlobalVariablesHook} to the
-{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
-The {\tt hooks} keyword argument gets the hook list for the training steps;
-the transformed code in figure \ref{fig:trans:monsesstrans}
-(b) additionally assigns the Horovod library hook that applies
-the variable broadcasting in the first training step.
-
-\begin{figure}[ht!]
-  \centering
-  \begin{subfigure}[t]{0.45\textwidth}
-    \begin{lstlisting}[language=Python]
-with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
-    while not mon_sess.should_stop():
-        mon_sess.run()
-    \end{lstlisting}
-    \caption{Original training code of MonitoredSession pattern}
-  \end{subfigure}
-  \hspace{5mm}
-  \begin{subfigure}[t]{0.45\textwidth}
-    \begin{lstlisting}[language=Python]
-with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVariablesHook(0)) as mon_sess:
-    while not mon_sess.should_stop():
-        mon_sess.run()
-    \end{lstlisting}
-    \caption{Distributed training code of MonitoredSession pattern}
-  \end{subfigure}
-  \caption{Code example of MonitoredSession pattern training code}
-  \label{fig:trans:monsesstrans}
-\end{figure}
-
-Figure \ref{fig:trans:monsessrule} formalizes the transform functions for
-MonitoredSession pattern.
-The first transform function matches any with statements and transform their
-with items. The \textit{with items} are syntactic constructs that 
-pairs the identifier and expression assigned by the with statement.
-The transform function \fkwwithitem in the second line is a 
-transform function that applies transformations to each with item.
-The first transform function returns a new with statement with transformed
-with items and body statement.
-
-The second transform function in the figure transforms the with item.
-The function matches any with items that assign the result of function
-call expression.
-Then the second line checks if the called function is a constructor
-of the subclass of the {\tt MonitoredSession} class.
-For instance, the {\tt MonitoredTrainingSession} method call in
-figure \ref{fig:trans:monsess} creates the {\tt MonitoredSession} instance, so
-the transform function will proceed to modify the call expression. 
-The transform function searches for the {\tt hooks} keyword argument
-and appends the {\tt BroadcastGlobalVariablesHook} object to the
-argument.
-   
-
-\begin{figure}[ht!]
- \noindent
-  \begin{tabular}{l}
-    \typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)} \\
-    \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-    \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
-    \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
-
-    \inden ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
-  \end{tabular}\\
-
-  \begin{tabular}{l}
-    \typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)}  \\
-    \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
-                \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} {\tt as} \nidsubs{as} }{\smodenv} = \\
-
-    \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} {\tt tensorflow.train.MonitoredSession} ~ \ktthen \\
-    \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-    \inden\inden\inden(\nexprsubs{1} \sparen{\nexprsubs{11} ... 
-              \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
-    \inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
-    \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} }, \\
-    \inden\inden\inden\inden \smodenv[ \msess $\mapsto$ \nidsubs{as}]) \\
-  \end{tabular}\\\vpar
-\caption{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance}
-  \label{fig:trans:monsessrule}
-\end{figure}
-
-\subsubsection{Transform function for GradientTape pattern}
-
-To correctly transform GradientTape pattern training codes,
-the {\tt GradientTape} instance should be modified for distributed training.
-Figure \ref{fig:trans:gtapetrans} illustrates the transformation of
-GradientTape pattern code to the corresponding distributed code.
-As shown in the figure \ref{fig:trans:gtapetrans}(b), line 8,
-the {\tt GradientTape} instance {\tt tape}
-is wrapped by {\tt DistributedGradientTape}, a Horovod library API.
-In addition to modifying the {\tt GradientTape} instance,
-line 13 to 17 adds the variable broadcasting code after the
-{\tt apply\_gradients} method call.
-Note that the variable {\tt hvd\_broadcast\_done} is initialized as 
-{\tt False} at line 3, 
-then set to {\tt True} at line 17 where the variable broadcasting is done. 
-We use the boolean variable {\tt hvd\_broadcast\_done} in GrdientTape pattern
-distributed training code to ensure that variable broadcasting occurs exactly
-once.
-
-\begin{figure}[ht!]
-  \centering
-  \begin{subfigure}[t]{0.45\textwidth}
-    \begin{lstlisting}[language=Python]
-import tensorflow as tf
-
-with tf.GradientTape() as tape:
-    probs = model(images)
-    loss_value = loss(labels, probs)
-
-grads = tape.gradient(loss_value, model.trainable_variables)
-opt.apply_gradients(zip(grads, model.trainable_variables))
-    \end{lstlisting}
-    \caption{Original training code of GradientTape pattern}
-  \end{subfigure}
-  \hspace{5mm}
-  \begin{subfigure}[t]{0.45\textwidth}
-    \begin{lstlisting}[language=Python]
-import tensorflow as tf
-import horovod.tensorflow as hvd
-hvd_broadcast_done = False
-
-with tf.GradientTape() as tape:
-    probs = model(images)
-    loss_value = loss(labels, probs)
-tape = hvd.DistributedGradientTape(tape)
-grads = tape.gradient(loss_value, model.trainable_variables)
-id_new = zip(grads, model.trainable_variables)
-opt.apply_gradients(id_new)
-
-global hvd_broadcast_done
-if not hvd_broadcast_done:
-    hvd.broadcast_variables([x[1] for x in id_new], root_rank=0, )
-    hvd.broadcast_variables(opt.variables(), root_rank=0, )
-    hvd_broadcast_done = True
-    \end{lstlisting}
-    \caption{Distributed training code of GradientTape pattern}
-  \end{subfigure}
-  \caption{Code example of GradientTape pattern training code}
-  \label{fig:trans:gtapetrans}
-\end{figure}
-
-Figure \ref{fig:trans:gtaperule} illustrates a transform function which belongs
-to the set of transform functions 
-for GradientTape pattern.
-The function is responsible of wrapping the
-{\tt GradientTape} instance with the {\tt DistributedGradientTape} call.
-The transform function matches any with statements that,
-then compares the transform contexts in second to fourth line to check
-if the input with statement assigns a new {\tt GradientTape} instance.
-The transform function returns a list of statements that adds a
-new assign statment after the input statement.
-
-\begin{figure}[ht!]
-\noindent
-\begin{tabular}{l}
-  \tstmt{\kwith ~ \nwithitem ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-  \inden \ktlet ~ \nwithitem$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\nwithitem}{\smodenv} \ktin \\
-  \inden \ktlet ~ \nstmt$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
-  \inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\gtape $\mapsto$ \nid] ~ \ktthen\\
-  \inden\inden ([\optypcomm ~ \kwith ~ \nwithitem$'$ ~ \kcolon ~ \mul{\nstmt}$'$, \\
-  \inden\inden \nid ~ \oassign {\tt hvd.DistributedGradientTape(\nid)}], \smodenvsubs{2})\\
-  \inden \ktelse ~ ([\kwith ~ \nwithitem$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
-\end{tabular}
-  \caption{GradientTape pattern transform function: wrapping {\tt GradientTape} instance}
-  \label{fig:trans:gtaperule}
-\end{figure}
-
-Figure \ref{fig:trans:gtaperule2} illustrates another GradientTape pattern
-transform function which is responsible of appending the variable broadcasting
-code after the {\tt apply\_gradients} method call.
-The function matches assign  statements that assigns a function call
-result. Then the pattern guard checks if the called function is the
-{\tt apply\_gradients} method of the {\tt Optimizer} instance.
-Note that the function utilizes the tranform context \smodenv to
-retreive the identifier of {\tt Optimizer} variable. 
-The transform function finally returns a list of statements that
-performs the variable broadcasting on the model and optimizer state variables.
-
-\begin{figure}[ht!]
-\noindent
-\begin{tabular}{l}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
-  \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
-  \inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
-  \inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
-  \inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} ,\\
-  \inden\inden {\tt if not hvd\_broadcast\_done:} \\ 
-  \inden\inden\inden [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
-  \inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
-  \inden\inden\inden {\tt hvd\_broadcast\_done = True} ]\\
-  \inden\inden ], \smodenv) \\
-\end{tabular}
-  \caption{GradientTape pattern transform function: adding variable broadcasting code}
-  \label{fig:trans:gtaperule2}
-\end{figure}
-
-
-\subsubsection{Transform function for Keras pattern}
-
-To correctly transform the Keras pattern codes,
-the transform function must first recognize the Keras library's {\tt Model} 
-class instance,
-which defines a DL model structure and provides training-related methods.
-The transform function utilizes the transform context to identify
-the subclass constructors of the {\tt Model}.
-For instance, in the input code example of figure \ref{fig:trans:keras}(a),
-line 1 defines the {\tt ResNet} class inheriting the {\tt Model} class. 
-When an {\tt ResNet} class instance is created and stored in the {\tt model}
-variable in the line 5, the transform function stores the variable identier
-in the transform context.
-Then the transform function should add the variable broadcasting callback to
-the {\tt fit} method call argument so that the broadcasting process can be
-executed at the beginning of the ditributed training.
-The callback objects are similar to the hooks for the {\tt MonitoredSession} 
-class; it defines an action that automatically repeats each training step.
-The transform function must recognize that the call expression
-contains the {\tt callbacks} keyword argument then append the
-{\tt BroadcastGlobalVariablesCallback} on the original argument expression,
-or add the keyword argument as shown in the figure \ref{fig:trans:keras}(b).
-
-\begin{figure}[ht!]
-  \begin{subfigure}[t]{0.45\textwidth}
-  \begin{lstlisting}[language=Python]
-class ResNet(keras.Model):
-    def __init__(self, block_list):
-        ...
-
-model = ResNet([2, 2, 2])
-
-model.fit(x_train, y_train)
-  \end{lstlisting}
-  \caption{Original code}
-  \end{subfigure}
-  \hspace{3mm}
-  \begin{subfigure}[t]{0.45\textwidth}
-  \begin{lstlisting}[language=Python]
-class ResNet(keras.Model):
-    def __init__(self, block_list):
-        ...
-
-model = ResNet([2, 2, 2])
-
-callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)
-model.fit(x_train, y_train,
-          callbacks=callbacks)
-  \end{lstlisting}
-    \caption{Distributed code}
-  \end{subfigure}
-  \caption{Code transformation example: Keras Pattern}
-  \label{fig:trans:keras}
-\end{figure}
-
-
-Figure \ref{fig:trans:kerasrule} describes the transform function 
-for the Keras pattern.
-The transform function matches expression statements which its expression
-is the function call. 
-Then the pattern guard in the second line checks if the function expression
-is the {\tt fit} method of the {\tt Model} subclass instance.
-The if branch in the third line checks if the method call already has
-the {\tt callbacks} keyword argument or not.
-If the keyword argument exists, the transform function returns the list of 
-three statements in the true branch. The first and second statements
-creates a temporary varaible {\tt callbacks} which will be later
-used as the argument in the third statement.
-Note the the second statement appends the original
-callbacks to the {\tt callbacks} variable only when the {\tt hvd.rank()} 
-is zero; this prevents multiple processes from repeating redundant callbacks
-for same training step, and makes only one process repeats the original
-callbacks.
-If the keyword argument does not exist in the input call expression,
-the transform function adds the {\tt callback} argument
-as shown in the figure \ref{fig:trans:keras}(b).
-
-
-\begin{figure}[ht!]
-\centering
-\begin{longtable}{l}
-  \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \ktif ~ \nidsubs{m} ~ \kteq ~ \smodenv({\tmodel}) ~ \ktand ~ 
-          \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
-  \inden\inden\inden ([{\tt callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
-  \inden\inden\inden ~ {\tt if hvd.rank() == 0: callbacks.append(\nexprsubs{2i})}, \\
-  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} ... \nexprsubs{1n}}
-                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                              \nidsubs{i} \oassign {\tt callbacks} ... 
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([{\tt callbacks = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
-  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11}... \nexprsubs{1n}}
-                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} ~ 
-                              {\tt callbacks \oassign callbacks} {\tt )}], \smodenv) \\
-\end{longtable}
-  \caption{Transform function for the Keras pattern}
-  \label{fig:trans:kerasrule}
-\end{figure}
+% next subsection
+\input{trans_patterns}
