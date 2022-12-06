@@ -257,3 +257,80 @@ class inheritance information provides by the class hierarchy analyzer to
 recognize subclasses of the {\tt keras.Model} class and their instances.
 If identifier find the {\tt fit} method call of the {\tt keras.Model} subclass
 instance, the identifier categorizes the model as the Keras pattern.
+
+\subsection{Training API Pattern Identifier Pseudocode}
+
+
+\algblockdefx{Match}{EndMatch}{\textbf{Match}}{}
+\algblockdefx{Case}{EndCase}{\textbf{case}}{}
+\algtext*{EndMatch}
+\algtext*{EndCase}
+
+\algblockdefx{Enum}{EndEnum}{\textbf{Enum}}{}
+\algtext*{EndEnum}
+
+\begin{algorithm}
+  \caption{Training API pattern lattice}
+  \begin{algorithmic}[1]
+    \Enum~Pattern
+    \State Top
+    \State SessionPattern 
+    \State MonitoredSessionPattern
+    \State GradientTapePattern
+    \State KerasPattern
+    \State Bot
+    \EndEnum
+    
+    \Function{Union}{$x$, $y$} \Comment{Union of two Patterns, x $\cup$ y}
+    \Match~($x$, $y$)~\textbf{with:}
+      \Case~(Bot, $p$) | ($p$, Bot): $p$ \EndCase
+      \Case~\_: Top \EndCase
+
+    \EndMatch 
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+  \caption{Training API pattern identifier}\label{tapa}
+  \begin{algorithmic}[1]
+    \Function{IdentifyPattern}{$AST$}
+    \Match~$AST$~\textbf{with:}
+
+      \Case~{\tt with Session() as}~$name$~{\tt :}~$body$
+        \If{$body$~includes~$name${\tt.run()}}
+          SessionPattern
+        \EndIf
+      \EndCase
+
+      \Case~{\tt with MonitoredTrainingSession() as}~$name$~{\tt :}~$body$
+        \If{$body$~includes~$name${\tt.run()}}
+          MonitoredSessionPattern
+        \EndIf
+      \EndCase
+
+      \Case~{\tt with GradientTape() as}~$name$~{\tt :}~$body$
+        \If{$AST$.parent~includes~$name${\tt.apply\_gradients()}}
+          GradientTapePattern
+        \EndIf
+      \EndCase
+
+      \Case~$model${\tt.fit(...)}
+        \If{$model$.class~isSubclassOf~{\tt keras.Model}}
+          KerasPattern
+        \EndIf
+      \EndCase
+
+      \Case~\_
+        \If{$AST$.isSimpleStatement}
+          Bot 
+        \Else
+          \State \textbf{Let} childrenPatterns \textbf{=} $AST$.childrenStatements.map(s => IdentifyPattern(s))
+          \State childrenPatterns.fold((p1, p2) => p1 $\cup$ p2) 
+        \EndIf
+      \EndCase
+
+    \EndMatch
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
