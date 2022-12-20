@@ -6,20 +6,34 @@
 
 This section describes two different forms of TensorFlow DL models written in
 Python.
-Currently, TensorFlow library is available in two major versions.
-The first version is TensorFlow 1.x published in 2016.
-TensorFlow 1.x provides APIs for defining tensor variables and
-operations between them.
-Developers manually define the model structure, the model operations 
-and training process using the TensorFlow 1.x APIs.
-The second version is TensorFlow 2.x published in 2019.
-TensorFlow 2.x adds the eager evaluation feature,
-which allows developers to use plain Python syntax to define the model
-operations and the training process.
-In addition, TensorFlow 2.x includes Keras library, 
-a layer-based deep learning model library that provides convenient APIs.
-As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
-significantly differ in their forms. 
+TensorFlow provides two major version libraries, TensorFlow 1.x published in
+2016 and TensorFlow 2.x published in 2019. 
+DL models are significantly differ in their forms depending on which library
+they use. 
+On TensorFlow 1.x, neural networks are manually constructed as computational
+graphs using tensor variables and operations, and the networks are lazily
+executed for both their training and inference on an encapsulated environment,
+called {\it session}.
+%The first version is TensorFlow 1.x published in 2016.
+%TensorFlow 1.x provides APIs for defining tensor variables and operations
+%between them.
+%Developers manually define the model structure, the model operations 
+%and training process using the TensorFlow 1.x APIs.
+%On TensorFlow 1.x, developers need to manually define model structures, model
+%operations, and their training process using APIs for defining tensor variables
+%and operations between them.
+%The second version is TensorFlow 2.x published in 2019.
+On the other hand, TensorFlow 2.x supports the eager execution by which all
+tensor operations are executed as they occur in code. 
+With the eager execution feature, developers do not need to construct
+computational graphs and use encapsulated environments anymore.
+%developers to use plain Python syntax to define the model
+%operations and the training process.
+In addition, TensorFlow 2.x integrates with the Keras library, a layer-based
+deep learning model library that provides a convenient interface to construct
+neural networks.
+%As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
+%significantly differ in their forms. 
 
 We describe TensorFlow 1.x and 2.x versions with code examples that define
 the same model and the same training process.
