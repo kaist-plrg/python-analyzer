@@ -59,7 +59,7 @@ size 100 $\times$ 10 and the bias vector $b_2$ of length 10.
 The vector of the output layer is computed by first multiplying the hidden
 layer vector $h$ with the weight matrix $W_2$, adding the bias vector $b_2$,
 and finally applying the Softmax activation function that converts the ten data
-as a probability distribution of the ten categories.
+to a probability distribution of the ten categories.
 The weight matrices and the bias vectors in the network are model parameters,
 and the training phase adjusts the model parameters again and again to classify
 input images correctly.
@@ -120,20 +120,20 @@ input images correctly.
 %The weight matrices and the bias vectors are called the model parameters 
 %as their values are updated during the training process.
 
-The model is trained by the gradient descent algorithm. 
-The gradient descent algorithm is an iterative optimization algorithm
-that computes the gradients of model parameters to update their values toward
-local minimum of the loss function.
-The loss function defines the metric of the difference between the model 
-output and answer label.
-Thus, approaching the local minumum of the loss function means that the
-the gradient descent trains the model to return the output similar to the
-correct answer.
-In DL model training, the gradient descent is repeated against several
-training batches. Given a training input batch, the algorithm first computes
-the model loss with forward propagation then computes the gradients of the
-model parameters with backpropagation. The algorithm applies the gradients
-to update the model parameters, thus approaching to the minumum loss.
+%The model is trained by the gradient descent algorithm. 
+%The gradient descent algorithm is an iterative optimization algorithm
+%that computes the gradients of model parameters to update their values toward
+%local minimum of the loss function.
+%The loss function defines the metric of the difference between the model 
+%output and answer label.
+%Thus, approaching the local minumum of the loss function means that the
+%the gradient descent trains the model to return the output similar to the
+%correct answer.
+%In DL model training, the gradient descent is repeated against several
+%training batches. Given a training input batch, the algorithm first computes
+%the model loss with forward propagation then computes the gradients of the
+%model parameters with backpropagation. The algorithm applies the gradients
+%to update the model parameters, thus approaching to the minumum loss.
 
 \begin{figure}[ht!]
 \lstinputlisting[language=Python]
@@ -142,77 +142,114 @@ to update the model parameters, thus approaching to the minumum loss.
 \label{fig:back:tf1}
 \end{figure}
 
-Figure~\ref{fig:back:tf1} is a code example of a TensorFlow 1.x model.
-To define a neural network model in TensorFlow 1.x, 
-developers must explicitly define the model structure
-and the operations between the layers. 
-The developers also must manually start the training loop by explicitly
-accessing the TensorFlow runtime with dedicated APIs.
-
-First, the lines 5 to 14 define the model structure and manually build up
-operaitons between the model layers.
-The lines 5 and 6 first create placeholder variables {\tt x} and {\tt y},
-which are the placeholders for the input image vectors 
-and the answer label vectors of training data.
-The placeholder variables only specify the vector size of the input images
-and the labels; they will be replaced with actual values of the training
-data during the training process. 
-The lines 8 to 10 defines the hidden layer.
-The line 8 uses the {\tt random\_uniform} API to create 
-a random weight matrix of size 784 by 100, 
-and the line 9 uses the {\tt zero} API to create a zero-vector of size 100.
-Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
-{\tt Variable} API.
-The {\tt Variable} API creates a TensorFlow variable that can be later modified
-during the runtime. It is usually used to define a model 
-parameter, whose value is changed during the training process.
-Thus, the lines 8 and 9 create the weight and bias parameters for the
-hidden layer which have correct sizes and are modifiable during the 
-training process.
-The line 10 manually defines the operations of the hidden layer. 
-Note that the line does not actually compute the operations,
-but only define the operations that will be computed during the training.
-
+Figure~\ref{fig:back:tf1} is a TensorFlow 1.x model for the example neural
+network with the gradient descent training algorithm.
+First, the lines 5 to 14 define the network structure and the operations
+between the layers.
+The lines 5 and 6 first create two placeholder variables, {\tt x} and {\tt y},
+where {\tt x} is a vector storing the pixel data of an input image, and {\tt y}
+is a vector storing the answer for the classification of the input image. 
+The lines 8 to 10 define the hidden layer.
+The line 8 creates a randomly initialized weight matrix {\tt W\_1}, and the
+line 9 creates a zero-initialized bias vector {\tt b\_1}.
+Then, the matrix and the bias vector are wrapped with the {\tt Variable} API.
+The {\tt Variable} API creates a model parameter of which internal values are
+modifiable during the training process.
+The line 10 defines the operation of the hidden layer. It first multiplies the
+input vector {\tt x} with the weight matrix {\tt W\_1}, then adds the bias {\tt
+b\_1}, and finally applies the {\tt relu} activation fuction. 
+Note that the line does not actually perform the operation but only defines how
+the input data mutates into the hidden layer's data during executing the
+network.
 The lines 12 to 14 define the output layer.
-Similar to the lines 8 and 9, the lines 12 and 13 define the weight matrix
-and the bias vector parameter for the output layer.
-Then the line 14 defines the operations of the output layer,
-which multiplies the hidden layer output {\tt layer\_1} and
-the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and applies the
-Softmax activation function.
-As shown in the lines 5 to 14, developers must explicitly define
-the model components and oprations between them in TensorFlow 1.x model.
+Similar to the lines 8 and 9, the lines 12 and 13 define a randomly-initialized
+weight matrix {\tt W\_2}, and a zero-initialized bias vector {\tt b\_2}, as
+model parameters of the output layer.
+Then, the line 14 defines the operation that
+multiplies the hidden layer output with
+the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and finally applies the
+{\tt softmax} activation function.
 
-The lines 16 and 17 defines the loss function and the training operation. 
-The line 16 defines the loss function between the model output {\tt layer\_2} 
-and the answer label {\tt y} with categorial cross entropy function.
-The line 17 defines the training operation for the model.
-The line first calls the {\tt AdamOptimizer} constructor
-function to create an optimizer object.
-The optimizer objects in TensorFlow are abstractions of the gradient
-descent algorithms.
-For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
-algorithm. % todo: cite Adam g.d.
-Then the {\tt minimize} method defines the training operation that updates the
-TensorFlow variables via the gradient descent on the first argument.
-Thus, the line 17 defines the operation of a single training step,
-which optimizes the model parameters via gradient descent to the loss gradient.
 
-The lines 19 to 22 execute the training loop. 
-The line 19 first creates a {\tt Session} object.
-The {\tt Session} object provides the {\tt run} method that can invoke
-computation of TensorFlow operations.
-The line 20 uses the {\tt run} method to initialize the TensorFlow variables.
-Before the training computation starts,
-the TensorFlow variables in the model and the optimizer should be initialized.
-Note that the optimizer object implicitly introduces the variables which are 
-used for the internal computation.
-The line 20 refers to the TensorFlow global variables to initialize
-all of the model parameter variables and the optimizer internal variables
-at once.
-After the variables are initialized, the line 21 uses the {\tt for} loop
-to iterate over the dataset and get training input data. 
-The number of training data is specified by the {\tt take} API of the
-dataset object.
-Finally, the line 22 calls the {\tt run} method to
-invoke computation of the training operation {\tt train\_op}.
+%As shown in the lines 5 to 14, developers must explicitly define
+%the model components and oprations between them in TensorFlow 1.x model.
+
+%Since the placeholder variables only specify the vector size of the input images
+%and the labels; they will be replaced with actual values of the training
+%data during the training process. 
+
+%To define a neural network model in TensorFlow 1.x, 
+%developers must explicitly define the model structure
+%and the operations between the layers. 
+%The developers also must manually start the training loop by explicitly
+%accessing the TensorFlow runtime with dedicated APIs.
+
+%The lines 8 to 10 defines the hidden layer.
+%The line 8 uses the {\tt random\_uniform} API to create 
+%a random weight matrix of size 784 by 100, 
+%and the line 9 uses the {\tt zero} API to create a zero-vector of size 100.
+%Then, the lines 8 and 9 wrap the weight matrix and the bias vector with
+%{\tt Variable} API.
+%The {\tt Variable} API creates a TensorFlow variable that can be later modified
+%during the runtime. It is usually used to define a model 
+%parameter, whose value is changed during the training process.
+%Thus, the lines 8 and 9 create the weight and bias parameters for the
+%hidden layer which have correct sizes and are modifiable during the 
+%training process.
+%The line 10 manually defines the operations of the hidden layer. 
+%Note that the line does not actually compute the operations,
+%but only define the operations that will be computed during the training.
+
+After constructing the neural network, the code defines the training algorithm
+on the lines 16 and 17.
+The line 16 defines the categorical cross entropy loss function that
+quantifies the degree of difference between the output data of {\tt layer\_2}
+and the answer {\tt y}.
+The line 17, then, creates an object of the {\tt AdamOptimizer} that is an
+implementation of the Adam gradient descent algorithm~\cite{kingma2014adam}.
+The {\tt minimize} method of the object generates a training operation that
+updates model parameters using the Adam gradient descent alogrithm to minimize
+the loss calculated by the loss function.
+
+%The lines 16 and 17 defines the loss function and the training operation. 
+%The line 16 defines the loss function between the model output {\tt layer\_2} 
+%and the answer label {\tt y} with categorial cross entropy function.
+%The line 17 defines the training operation for the model.
+%The line first calls the {\tt AdamOptimizer} constructor
+%function to create an optimizer object.
+%The optimizer objects in TensorFlow are abstractions of the gradient
+%descent algorithms.
+%For instance, the {\tt AdamOptimizer} abstracts a Adam gradient descent
+%algorithm. % todo: cite Adam g.d.
+%Then the {\tt minimize} method defines the training operation that updates the
+%TensorFlow variables via the gradient descent on the first argument.
+%Thus, the line 17 defines the operation of a single training step,
+%which optimizes the model parameters via gradient descent to the loss gradient.
+
+The lines 19 to 22 train the constructed neural network on a session.
+The line 19 creates a {\tt Session} object that provides an encapsulated
+environment storing model parameters.
+%that provides the {\tt run} method to execute the network's operations in an
+%encapsulated environment.
+%The line 20 calls the {\tt run} method with a global variable initializer
+%to initialize model parameters of the network.
+The line 20 calls the {\tt run} method of the object with a global variable
+initializer to initialize all the model paramters of the network in the
+encapsulated environment.
+%The {\tt Session} object provides the {\tt run} method that can invoke
+%computation of TensorFlow operations.
+%Before the training computation starts,
+%the TensorFlow variables in the model and the optimizer should be initialized.
+%Note that the optimizer object implicitly introduces the variables which are 
+%used for the internal computation.
+%After the variables are initialized, the line 21 uses the {\tt for} loop
+%to iterate over the dataset and get training input data. 
+Then, the lines 21 and 22 actually train the network in a loop that executes
+the trainig operation {\tt train\_op} with the input data {\tt x} and {\tt y}
+by iterating over the ten thousand input dataset obtained from {\tt
+dataset.take(10000)}.
+
+%The number of training data is specified by the {\tt take} API of the
+%dataset object.
+%Finally, the line 22 calls the {\tt run} method to
+%invoke computation of the training operation {\tt train\_op}.
