@@ -11,7 +11,13 @@
 \input{macro}
 \usepackage{url}
 \usepackage[T1]{fontenc}
-\lstset{upquote=true}
+\lstdefinestyle{mpython}{
+  language=Python,
+  upquote=true,
+  morekeywords={with,as},
+  emphstyle=\color{blue},
+  emph={True,False},
+}
 
 \begin{document}
 
