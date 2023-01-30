@@ -38,8 +38,8 @@ model.fit(train_data.take(training_steps))
 % 분류하고, 각 분류의 모델에 다른 변환을 적용할 필요가 있다.
 In TensorFlow models, developers can use different APIs to define the 
 model structure and training process.
-The figure \ref{fig:pattern:ex01} illustrates the example of using 
-different APIs to define the training process.
+The figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that
+use different APIs to define the training process.
 The lines 2 to 10 in \ref{fig:pattern:ex01}(a)  
 explicitly repeats the training steps by using the {\tt for} loop
 and the {\tt GradientTape} instance.
@@ -47,8 +47,8 @@ In contrast, the lines 1 and 4 in \ref{fig:pattern:ex01}(b)
 use the Keras library API {\tt fit} to invoke the training process.
 While both codes train the model in the same way, they use different training 
 APIs in different patterns.
-As their API usages are significantly different, we need to apply different
-transformation rule for them.
+As their API usages are significantly different, our transformation approach
+need to apply different transformation rules.
 
 \begin{figure}[ht!]
   \centering
@@ -166,15 +166,12 @@ In the line 3, the {\tt with} statement creates the {\tt MonitoredSession}
 class instance with the {\tt MonitoredTrainingSession} API.
 The line 5 calls the {\tt run} method of the {\tt MonitoredSession} instance 
 to invoke the training computation.
-The {\tt MonitoredSession} class is used similar to the {\tt Session class};
-the {\tt run} method invokes the computation of TensorFlow operations.
-The difference is that developers can add the \textit{hooks} to the
+Developers can add the \textit{hooks} to the
 {\tt MonitoredSession} instance. The hooks are actions that automatically 
 executed upon specific conditions. 
 For instance, the line 3 adds the {\tt SummarySaverHook} to the
-{\tt MonitoredSession} instance upon creation.
-The {\tt SummarySaverHook} automatcially saves the model summary 
-after every {\tt run} method call is finished.
+{\tt MonitoredSession}, a hook which automatcially saves the model summary 
+after every {\tt run} method call.
 
 To identify the MonitoredSession pattern training code,
 the identifier searches for a {\tt with} statement that creates a
@@ -211,7 +208,7 @@ In line 3, the {\tt with} statement creates the {\tt GradientTape} class
 instance. 
 After the {\tt with} statement, the line 8 calls the {\tt gradient} method
 to retreive the recorded gradients of the model.
-The line 9 calles the {\tt apply\_gradients} methods of the {\tt Optimizer}
+The line 9 calls the {\tt apply\_gradients} methods of the {\tt Optimizer}
 class instance to finally update the model parameters.
 
 To identify a GradientTape pattern model,
@@ -254,10 +251,34 @@ recognize subclasses of the {\tt keras.Model} class and their instances.
 If identifier find the {\tt fit} method call of the {\tt keras.Model} subclass
 instance, the identifier categorizes the model as the Keras pattern.
 
-\subsection{Training API Pattern Identifier Pseudocode}
+\subsection{Training API Pattern Identifier}
 
-The training API pattern identifier 
-\ref{fig:pattern:algo1}
+We implemented the training API pattern identifier, which classifies the
+input TensorFlow model into one of the four patterns.
+The training API pattern identifier scans through the input model AST,
+detects statements that match one of the four traning API patterns.
+One caveat here is that the input model can no statements or multiple statements
+that match the training API patterns.
+In these cases, the identifier must notify user that the
+input model is not available for automatic transformation.
+To implement this, we define a flat lattice structure composed of four 
+training API patterns and the top and bottom elements.
+The lattice structure is described in figure \ref{fig:pattern:lattice}.
+The training api pattern identifier returns one of the six elements of
+the lattice. The bottom element means that the input model does not have
+statements that matches with the training API patterns.
+The top elements means that the input model has statements that matches with
+more than one of the training API patterns.
+In both cases, the input model is not available for the automatic 
+transformation, resulting in abortion of the tranformation process.
+
+\begin{figure}[ht!]
+  \centering
+  \includegraphics[width=0.7\textwidth]{lattice.pdf}
+  \caption{The flat lattice structure of four traininig API patterns}
+  \label{fig:pattern:lattice}
+\end{figure}
+
 
 % TODO put algorithm blocks inside the figure env.
 % algo related macro
@@ -270,28 +291,28 @@ The training API pattern identifier
 \algtext*{EndEnum}
 
 % lattice
-\begin{algorithm}[ht!]
-  \caption{Training API pattern lattice}
-  \begin{algorithmic}[1]
-    \Enum~Pattern
-    \State Top
-    \State SessionPattern 
-    \State MonitoredSessionPattern
-    \State GradientTapePattern
-    \State KerasPattern
-    \State Bot
-    \EndEnum
-    
-    \Function{Union}{$x$, $y$} \Comment{Union of two Patterns, x $\cup$ y}
-    \Match~($x$, $y$)~\textbf{with:}
-      \Case~(Bot, $p$) | ($p$, Bot): $p$ \EndCase
-      \Case~\_: Top \EndCase
-
-    \EndMatch 
-    \EndFunction
-  \end{algorithmic}
-  \label{fig:pattern:algo1}
-\end{algorithm}
+% \begin{algorithm}[ht!]
+%   \caption{Training API pattern lattice}
+%   \begin{algorithmic}[1]
+%     \Enum~Pattern
+%     \State Top
+%     \State SessionPattern 
+%     \State MonitoredSessionPattern
+%     \State GradientTapePattern
+%     \State KerasPattern
+%     \State Bot
+%     \EndEnum
+%     
+%     \Function{Union}{$x$, $y$} \Comment{Union of two Patterns, x $\cup$ y}
+%     \Match~($x$, $y$)~\textbf{with:}
+%       \Case~(Bot, $p$) | ($p$, Bot): $p$ \EndCase
+%       \Case~\_: Top \EndCase
+% 
+%     \EndMatch 
+%     \EndFunction
+%   \end{algorithmic}
+%   \label{fig:pattern:algo1}
+% \end{algorithm}
 
 % pseudocode
 \begin{algorithm}
@@ -337,3 +358,34 @@ The training API pattern identifier
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
+
+Figure \ref{???} is the pseudocode of the training API pattern identifier.
+The function {\tt IdentifyPattern} gets and input AST and returns a training
+API pattern lattice element.
+The algorithm first matches the statement with four training API patterns.
+Lines 3 and 4 match if the input AST is a {\tt with} statement that
+creates a {\tt Session} instance and call the {\tt run} method in the body.
+If the match succeeds, the algorithm returns Session pattern.
+Lines 5 and 6 match if the input AST is a {\tt with} statement that
+creates a {\tt MonitoredSession} instance and call the {\tt run} method in the
+body.
+If the match succeeds, the algorithm returns MonitoredSession pattern.
+Line 7 matches if the input AST is a {\tt with} statement that
+creates a {\tt GradientTape} instance.
+Line 8 then matches if the parent AST has a child statement that calls the
+{\tt apply\_gradients} method of the {\tt GradientTape} instance.
+If both matches succeed, the algorithm returns GradientTape pattern.
+Line 9 and 10 matches if the input AST is a statement that calls
+the {\tt fit} method of a subclass of {\tt keras.Model}. 
+If the match succeeds, the algorithm returns Keras pattern.
+
+Lines 11 to 15 describe the cases where the input AST does not match with 
+one of the four training API patterns.
+If the input AST is a simple statement, which does not have child ASTs,
+the algorithm returns the bottom element.
+Else, the algorithm recursively identifies the pattern of the child ASTs
+then return the join of the results.
+If the child ASTs are matched with multiple training API patterns, 
+the algorithm will return the top element.
+
+\pagebreak
