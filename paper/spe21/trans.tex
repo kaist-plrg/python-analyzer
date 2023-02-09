@@ -11,19 +11,14 @@
 \end{figure}
 
 % new
-We formalize the transformation rule as \textit{transform functions}.
-Transform functions are the pure functions that takes an input AST and
-returns the output ASTs.
-By applying the transform function to the single-GPU model AST,
-we can get the transformed multi-GPU model AST.
-% todo: better connection here?
-However, the transform functions cannot utilize the contextual information
-by only getting ASTs as inputs.
-For instance, the transform function that inserts the {\tt Optimizer} class 
-method call uses the variable identifier for the instance,
-which should be retrieved from the previous statements in the context.
-To solve this problem, the transform functions get and return
-the \textit{transform context} objects as inputs and outputs.
+We present the formalization of the transformation rules in terms of
+\textit{trasnform functions}.
+Transform functions are the pure functions from ASTs to ASTs.
+By applying the transform function to AST of the input single-GPU model,
+we can get the AST of the transformed multi-GPU model.
+Transform functions also receive and return objects called \textit{transform
+context} in order to utilize the contextual information during the 
+transformation process.
 The transform context is a finite mapping from strings to identifiers, which
 stores arbitrary identifiers from the code and propagate them to the 
 next transform function.
@@ -31,9 +26,11 @@ When transform functions are sequentially applied to sequence of ASTs,
 the output transform context from the previous call is given as the input
 to the next tranform function call.
 By this method, the transform functions can utilize contextual information
-during transformation and propagate the context to next transform functions.
+outside of their input AST and propagate some contextual information from
+their input AST to next transform function calls.
 
 % transform function format expl
+% 이 파트를 어떻게 효과적으로 설명해야할지 확신이 안드는 상태
 We describe the transform function as the collection of the partial transform
 function. 
 The figure~\ref{fig:trans:fnexpl} illustrates an example of the
@@ -91,17 +88,18 @@ for (x, y) in dataset.take(10000):
   \label{fig:trans:ex}
 \end{figure}
 
-We explain the details on the transform functions by code example in
-the figure \ref{fig:trans:ex}. The figure is the pair of single-GPU model
-and the corresponding multi-GPU model.
+We explain how transform functions are defined to transform the DL model codes
+in the example in figure \ref{fig:trans:ex}.
+Figure \ref{fig:trans:ex} is an example of single-GPU model code and
+the corresponding distributed model code.
 There are three transformed parts of the code. 
-First, an import statement for the Horovod module is added in the line 2. 
+First, an import statement for the {\tt horovod} module is added in the line 2. 
 The statement is added right after the {\tt tensorflow} module import statement.
 Second, in the line 6, the argument of the {\tt Optimizer} instance constructor
 is modified. The new argument expression multiplies {\tt hvd.size()} 
 to the original argument expression.
-Third, in the line 12, the statement that assigns the variable {\tt tape}
-is added. The assignment wraps the original {\tt GradientTape} object with
+Third, in the line 12, an assign statement is added. 
+The assignment wraps the original {\tt GradientTape} object with
 the Horovod library function, {\tt hvd.DistributedGradientTape}.
 
 \begin{figure}[ht!]
@@ -146,21 +144,19 @@ import horovod.tensorflow as hvd\end{lstlisting}
 \end{figure}
 
 
-Figure \ref{fig:trans:ex01} describes the first transformed part of the code
-and the partial transform function responsible of the transformation.
-The input AST pattern matches the {\tt import} statements. 
-The transform function should be able to recognize that the input import
-statement imports the TensorFlow module.
-To acheive this, the transform function utilzes the transform context.
+Figure \ref{fig:trans:ex01} describes the partial transform function that
+transforms the first part of the code.
+The input AST pattern matches an import statement that imports the
+{\tt tensorflow} module.
 The line 2 in the figure~\ref{fig:trans:ex01:fn} first computes the
-$\smodenvsubs{1}$, which is the transfom context that includes the aliases
-importes by the input statement.
+$\smodenvsubs{1}$, which is the transfom context that includes the modules 
+imported by the input statement.
 Then the line 3 compute the difference between $\smodenvsubs{1}$ 
 and the input transform context $\smodenv$.
 If the difference includes the new entry for string {\tt "tensor\_flow"},
-it means that the {\tt import} statement imports the TensorFlow module.
-In this case, the transform function adds the Horovod module {\tt import} 
-statement to the output AST.
+it means that the import statement imports the {\tt tensorFlow} module.
+In this case, the transform function adds the {\tt horovod} module import 
+statement after the original statement.
 
 \pagebreak
 \begin{figure}[ht!]
@@ -202,20 +198,20 @@ statement to the output AST.
     \label{fig:trans:ex02}
 \end{figure}
 
-
-The figure \ref{fig:trans:ex02} illustrates the second part of the transformed 
-code, and the figure \ref{fig:trans:fn02} describes the transform function 
-that applies the transformation in figure \ref{fig:trans:ex02}.
+Figure \ref{fig:trans:ex02} the transform function that transformed the second
+part of the code.
 The learning rate argument for the {\tt Optimizer} class constructor is 
 multiplied by the expression {\tt hvd.size()}. 
 To apply the transformation, the transform function must first recognize a
 assign statement that creates an {\tt Optimizer} instance.
 One caveat here is that the {\tt Optimizer} instance can be 
 created by not only TensorFlow library APIs, but also
-user-defined class constructors. We utilize the class inheritance information to
-recognize the constructors that creates any subclasses of the {\tt Optimizer}
-class. 
-After identifying the {\tt Optimizer} class assign statement, 
+user-defined class constructors. 
+The transform function utilizes the class inheritance information
+generated by the class hierarchy analyzer to recognize the user-defined
+constructors for {\tt Optimizer} subclasses.
+
+After identifying the {\tt Optimizer} instance assign statement, 
 the transform function modifies the argument expression of the
 constructor call.
 The transform function would take the original argument expression,
@@ -267,14 +263,13 @@ for (x, y) in dataset.take(10000):
   \label{fig:trans:fn03}
 \end{figure}
 
-Figure \ref{fig:trans:ex03} is the third transformed part of the code, and
-the figure \ref{fig:trans:fn03} describes the transform function responsible 
-of the transformation of figure \ref{fig:trans:ex03}.
-The new assign statement is added after the {\tt with} statement body end.
+Figure \ref{fig:trans:ex03} describes the transform function that transforms
+the third part of the code.
+An assign statement is added after the {\tt with} statement body end.
 To apply this transformation, the transform function must first identify
-a with statement that creates a new {\tt GradientTape} instance. 
-The transform function utilizes the transform context to recognize a
-with statement that creates a new {\tt GradientTape} instance. 
+a with statement that creates a {\tt GradientTape} instance. 
+The transform function utilizes the transform context to recognize whether a
+with statement creates a new {\tt GradientTape} instance or not. 
 The transform function compares the input transform context with the 
 transform context just after processing the with statement to check
 whether the input with statement creates a {\tt GradientTape} instance.
