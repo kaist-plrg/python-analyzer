@@ -4,26 +4,9 @@ As mentioned earlier, different API patterns of the codes
 require different transformation rules to correctly transform them.
 To apply different transformation rules for different API pattern codes,
 we defined sets of transform functions each for trainng API patterns.
-This section explains the core parts of the transform functions 
-for each API pattern.
+This section explains the transform functions defined for each API patterns.
 
 \subsubsection{Transform function for Session pattern}
-
-To correctly transform Session pattern trainig codes into corresponding
-distributed training codes, the {\tt Optimizer} instance must be modified.
-Figure \ref{fig:trans:sessiontrans} shows a pair of code examples
-illustrating the required transformation for Session pattern case.
-In line 1 of figure \ref{fig:trans:sessiontrans}(b),
-the {\tt learning\_rate} argument is scaled by {\tt hvd.size()}.
-One caveat here is to identify the correct position of the {\tt learning\_rate}
-argument which can be used as both keyword and positional argument.
-The {\tt learning\_rate} argument can be specified by the keyword shown as
-figure \ref{fig:trans:sessiontrans}, or also specified as the first
-positional argument.
-The transform function should be able to transform both of the cases.
-After modifying the function argument,
-the transformation adds a new statementd that wraps the {\tt Optimizer} instance
-by designated Horovod API, {\tt DistributedOptimizer}.
 
 \begin{figure}[ht!]
   \begin{subfigure}[t]{0.45\textwidth}
@@ -52,31 +35,18 @@ with tf.Session() as sess:
   \label{fig:trans:sessiontrans}
 \end{figure}
 
-The above transformation is formalized as figure 
-\ref{fig:trans:sessrule}. The transform function 
-matches assign statements that assign a result of function call expression
-on the right-hand side.
-If an assign statement is matched, the pattern guard checks if the
-callee function is the {\tt Optimizer} instance constructor function.
-The pattern guard uses the subclass predicate \ktsubtysubs{\smodenv}
-to identify any expression that constructs the subclass of the TensorFlow
-{\tt Optimizer} class including user-defined classes.
-
-The third line of the transform function uses a branch to distinguish 
-whether the {\tt learning\_rate} argument is given as a keyword argument or not. 
-When the argument is given as a keyword argument,
-the transform function modifies the corresponding keyword argument expression
-as shown in the true branch in fourth line.
-When the argument is not given as a keyword argument,
-the transform function assumes that the first positional argument
-is the {\tt learning\_rate} argument and modifies it
-as shown in the eighth line.
-In either case, the transform function additionally returns a new
-assign statement that wraps the {\tt Optimizer} with
-{\tt hvd.DistributedOptimizer}.
-
-% todo: remove pagebreak
-\pagebreak
+To correctly transform Session pattern training codes into distributed 
+training codes, the {\tt Optimizer} instance must be modified.
+Figure \ref{fig:trans:sessiontrans} shows a pair of code examples
+illustrating the required transformation for Session pattern case.
+In line 1 of figure \ref{fig:trans:sessiontrans}(b),
+the learning rate argument is scaled by {\tt hvd.size()}.
+The learning rate can be specified by keyword argument {\tt learning\_rate}
+as the figure \ref{fig:trans:sessiontrans},
+or by the first positional argument.
+The transform function should be able to transform both of the cases.
+The transformation also adds a new statementd that wraps the 
+{\tt Optimizer} instance by {\tt DistributedOptimizer}.
 
 \begin{figure}[ht!]
 \noindent
@@ -100,34 +70,33 @@ assign statement that wraps the {\tt Optimizer} with
   \label{fig:trans:sessrule}
 \end{figure}
 
+
+Figure \ref{fig:trans:sessrule} formalizes the Sesison pattern transform 
+function. The transform function 
+matches assign statements that assign a result of function call expression.
+If an assign statement is matched, the pattern guard checks if the
+callee function is the {\tt Optimizer} instance constructor function.
+The pattern guard uses the subclass predicate \ktsubtysubs{\smodenv}
+to identify any expression that constructs the subclass of the TensorFlow
+{\tt Optimizer} class including user-defined classes.
+
+The third line of the transform function uses a branch to distinguish 
+whether the {\tt learning\_rate} argument is given as a keyword argument or not. 
+When the argument is given as a keyword argument,
+the transform function modifies the corresponding keyword argument expression
+as shown in the true branch in fourth line.
+When the argument is not given as a keyword argument,
+the transform function assumes that the first positional argument
+is the {\tt learning\_rate} argument and modifies it
+as shown in the eighth line.
+In either case, the transform function additionally returns a new
+assign statement that wraps the {\tt Optimizer} with
+{\tt hvd.DistributedOptimizer}.
+
+% todo: remove pagebreak
+\pagebreak
+
 \subsubsection{Transform function for MonitoredSession pattern}
-
-The MonitoredSession pattern codes use {\tt MonitoredSession} instances
-to manually repeat training steps.
-The {\tt MonitoredSesion} instances are similar to {\tt Session} instances,
-but they provide better convenient methods.
-In addition, users can add \textit{hooks},
-objects that represent custom actions and automatically executes 
-for each training step.
-For example, a {\tt CheckpointSaverHook} object is a hook that automatically 
-stores the current state of the model during a training step. 
-
-To correctly transform the MonitoredSesion pattern codes,
-a hook for the variable broadcasting should be added to the
-{\tt MonitoredSession} object.
-The variable broacasting is a process that occurs exactly once in
-distributed training with Horovod,
-which synchronizes the initial states of global variables across multiple
-training processes.
-This process ensures that training processes each GPUs share same initial
-model state before the training starts. 
-As in figure \ref{fig:trans:monsesstrans}, for example,
-the correct transformation appends {\tt BroadcastGlobalVariablesHook} to the
-{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
-The {\tt hooks} keyword argument gets the hook list for the training steps;
-the transformed code in figure \ref{fig:trans:monsesstrans}
-(b) additionally assigns the Horovod library hook that applies
-the variable broadcasting in the first training step.
 
 \begin{figure}[ht!]
   \centering
@@ -152,28 +121,15 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
   \label{fig:trans:monsesstrans}
 \end{figure}
 
-Figure \ref{fig:trans:monsessrule} formalizes the transform functions for
-MonitoredSession pattern.
-The first transform function matches any with statements and transform their
-with items. The \textit{with items} are syntactic constructs that 
-pairs the identifier and expression assigned by the with statement.
-The transform function \fkwwithitem in the second line is a 
-transform function that applies transformations to each with item.
-The first transform function returns a new with statement with transformed
-with items and body statement.
 
-The second transform function in the figure transforms the with item.
-The function matches any with items that assign the result of function
-call expression.
-Then the second line checks if the called function is a constructor
-of the subclass of the {\tt MonitoredSession} class.
-For instance, the {\tt MonitoredTrainingSession} method call in
-figure \ref{fig:trans:monsess} creates the {\tt MonitoredSession} instance, so
-the transform function will proceed to modify the call expression. 
-The transform function searches for the {\tt hooks} keyword argument
-and appends the {\tt BroadcastGlobalVariablesHook} object to the
-argument.
-   
+Figure \ref{fig:trans:monsesstrans} describes an example of transforming
+a MonitoredSession pattern model.
+To correctly transform the MonitoredSesion pattern codes,
+a hook for the variable broadcasting should be added to the
+{\tt MonitoredSession} object. 
+As in figure \ref{fig:trans:monsesstrans}, for example,
+the transformation appends {\tt BroadcastGlobalVariablesHook} to the
+{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
 
 \begin{figure}[ht!]
  \noindent
@@ -204,24 +160,27 @@ argument.
   \label{fig:trans:monsessrule}
 \end{figure}
 
-\subsubsection{Transform function for GradientTape pattern}
+Figure \ref{fig:trans:monsessrule} formalizes the transform functions for
+MonitoredSession pattern.
+The first transform function matches {\tt with} statements and transform
+the {\tt with\_item}, a syntactic component representing 
+a variable and an expression being assigned.
+The transform function \fkwwithitem in the second line is a 
+transform function that applies transformations to each {\tt with\_item}.
+The first transform function returns a new {\tt with} statement 
+that assigns the transformed {\tt with\_items}.
 
-To correctly transform GradientTape pattern training codes,
-the {\tt GradientTape} instance should be modified for distributed training.
-Figure \ref{fig:trans:gtapetrans} illustrates the transformation of
-GradientTape pattern code to the corresponding distributed code.
-As shown in the figure \ref{fig:trans:gtapetrans}(b), line 8,
-the {\tt GradientTape} instance {\tt tape}
-is wrapped by {\tt DistributedGradientTape}, a Horovod library API.
-In addition to modifying the {\tt GradientTape} instance,
-line 13 to 17 adds the variable broadcasting code after the
-{\tt apply\_gradients} method call.
-Note that the variable {\tt hvd\_broadcast\_done} is initialized as 
-{\tt False} at line 3, 
-then set to {\tt True} at line 17 where the variable broadcasting is done. 
-We use the boolean variable {\tt hvd\_broadcast\_done} in GrdientTape pattern
-distributed training code to ensure that variable broadcasting occurs exactly
-once.
+The second transform function in the figure transforms the {\tt with\_item}.
+The function matches {\tt with\_items} that assignes a function call result.
+Then the second line checks if the function is a constructor
+of the subclass of the {\tt MonitoredSession} class. 
+The transform function appends the {\tt BroadcastGlobalVariablesHook} object 
+to the {\tt hooks} argument.
+   
+
+\pagebreak
+
+\subsubsection{Transform function for GradientTape pattern}
 
 \begin{figure}[ht!]
   \centering
@@ -265,16 +224,25 @@ if not hvd_broadcast_done:
   \label{fig:trans:gtapetrans}
 \end{figure}
 
-Figure \ref{fig:trans:gtaperule} illustrates a transform function which belongs
-to the set of transform functions 
-for GradientTape pattern.
-The function is responsible of wrapping the
-{\tt GradientTape} instance with the {\tt DistributedGradientTape} call.
-The transform function matches any with statements that,
-then compares the transform contexts in second to fourth line to check
-if the input with statement assigns a new {\tt GradientTape} instance.
-The transform function returns a list of statements that adds a
-new assign statment after the input statement.
+
+Figure \ref{fig:trans:gtapetrans} illustrates the transformation of
+GradientTape pattern code to the corresponding distributed code.
+To correctly transform GradientTape pattern training codes,
+the {\tt GradientTape} instance should be modified for distributed training.
+As shown in line 8, figure \ref{fig:trans:gtapetrans}(b),
+the {\tt GradientTape} instance {\tt tape}
+is wrapped by a Horovod library API {\tt DistributedGradientTape}.
+In addition to modifying the {\tt GradientTape} instance,
+lines 13 to 17 add the variable broadcasting code after the
+{\tt apply\_gradients} method call.
+Note that the variable {\tt hvd\_broadcast\_done} is initialized as 
+{\tt False} at line 3. 
+Then line 17 sets the variable to {\tt True}, after the variable broadcasting
+is done.
+We use the boolean variable {\tt hvd\_broadcast\_done} in GrdientTape pattern
+model to ensure that variable broadcasting occurs exactly once.
+
+\pagebreak
 
 \begin{figure}[ht!]
 \noindent
@@ -291,16 +259,15 @@ new assign statment after the input statement.
   \label{fig:trans:gtaperule}
 \end{figure}
 
-Figure \ref{fig:trans:gtaperule2} illustrates another GradientTape pattern
-transform function which is responsible of appending the variable broadcasting
-code after the {\tt apply\_gradients} method call.
-The function matches assign  statements that assigns a function call
-result. Then the pattern guard checks if the called function is the
-{\tt apply\_gradients} method of the {\tt Optimizer} instance.
-Note that the function utilizes the tranform context \smodenv to
-retreive the identifier of {\tt Optimizer} variable. 
-The transform function finally returns a list of statements that
-performs the variable broadcasting on the model and optimizer state variables.
+Figure \ref{fig:trans:gtaperule} formalizes the partial transform function
+that warps the {\tt GradientTape} instance with {\tt DistributedGradientTape}.
+The transform function matches {\tt with} statements,
+then compares the transform contexts to check
+if the input with statement assigns a new {\tt GradientTape} instance.
+The transform function adds a new assign statment, 
+$\nid ~ \oassign {\tt hvd.DistributedGradientTape(\nid)}$ after the original
+statement.
+
 
 \begin{figure}[ht!]
 \noindent
@@ -320,29 +287,19 @@ performs the variable broadcasting on the model and optimizer state variables.
   \label{fig:trans:gtaperule2}
 \end{figure}
 
+Figure \ref{fig:trans:gtaperule2} formalizes the partial transform function
+that appends the variable broadcasting code after the 
+{\tt apply\_gradients} method call.
+The function matches assign statements that assigns a function call
+result. Then the pattern guard checks if the called function is the
+{\tt apply\_gradients} method of the {\tt Optimizer} instance.
+Note that the function utilizes the tranform context \smodenv to
+retreive the identifier of {\tt Optimizer} variable. 
+The transform function adds the variable broadcasting code.
+
+\pagebreak
 
 \subsubsection{Transform function for Keras pattern}
-
-To correctly transform the Keras pattern codes,
-the transform function must first recognize the Keras library's {\tt Model} 
-class instance,
-which defines a DL model structure and provides training-related methods.
-The transform function utilizes the transform context to identify
-the subclass constructors of the {\tt Model}.
-For instance, in the input code example of figure \ref{fig:trans:keras}(a),
-line 1 defines the {\tt ResNet} class inheriting the {\tt Model} class. 
-When an {\tt ResNet} class instance is created and stored in the {\tt model}
-variable in the line 5, the transform function stores the variable identier
-in the transform context.
-Then the transform function should add the variable broadcasting callback to
-the {\tt fit} method call argument so that the broadcasting process can be
-executed at the beginning of the ditributed training.
-The callback objects are similar to the hooks for the {\tt MonitoredSession} 
-class; it defines an action that automatically repeats each training step.
-The transform function must recognize that the call expression
-contains the {\tt callbacks} keyword argument then append the
-{\tt BroadcastGlobalVariablesCallback} on the original argument expression,
-or add the keyword argument as shown in the figure \ref{fig:trans:keras}(b).
 
 \begin{figure}[ht!]
   \begin{subfigure}[t]{0.45\textwidth}
@@ -377,27 +334,17 @@ model.fit(x_train, y_train,
 \end{figure}
 
 
-Figure \ref{fig:trans:kerasrule} describes the transform function 
-for the Keras pattern.
-The transform function matches expression statements which its expression
-is the function call. 
-Then the pattern guard in the second line checks if the function expression
-is the {\tt fit} method of the {\tt Model} subclass instance.
-The if branch in the third line checks if the method call already has
-the {\tt callbacks} keyword argument or not.
-If the keyword argument exists, the transform function returns the list of 
-three statements in the true branch. The first and second statements
-creates a temporary varaible {\tt callbacks} which will be later
-used as the argument in the third statement.
-Note the the second statement appends the original
-callbacks to the {\tt callbacks} variable only when the {\tt hvd.rank()} 
-is zero; this prevents multiple processes from repeating redundant callbacks
-for same training step, and makes only one process repeats the original
-callbacks.
-If the keyword argument does not exist in the input call expression,
-the transform function adds the {\tt callback} argument
-as shown in the figure \ref{fig:trans:keras}(b).
-
+Figure \ref{fig:trans:keras} illustrates an example of Keras pattern model
+codes.
+To correctly transform the Keras pattern codes,
+the transform function must first recognize the Keras library's {\tt Model} 
+class instance, including the user-define classes.
+Then the transform function should add the variable broadcasting callback to
+the {\tt fit} method call argument.
+The transform function must recognize that the call expression
+contains the {\tt callbacks} keyword argument then append the
+{\tt BroadcastGlobalVariablesCallback} on the original argument expression,
+or add the keyword argument as shown in the figure \ref{fig:trans:keras}(b).
 
 \begin{figure}[ht!]
 \centering
@@ -422,3 +369,28 @@ as shown in the figure \ref{fig:trans:keras}(b).
   \caption{Transform function for the Keras pattern}
   \label{fig:trans:kerasrule}
 \end{figure}
+
+Figure \ref{fig:trans:kerasrule} formalizes the transform function 
+for the Keras pattern.
+The transform function matches function call statements. 
+Then the pattern guard in the second line checks if the function expression
+is the {\tt fit} method of the {\tt Model} subclass.
+The branch in the third line checks if the method call already has
+the {\tt callbacks} keyword argument or not.
+If the keyword argument exists, the transform function returns the list of 
+three statements in the true branch. The first and second statements
+creates a temporary varaible {\tt callbacks} which will be later
+used as the argument in the third statement.
+Note the the second statement appends the original
+callbacks to the {\tt callbacks} variable only when the {\tt hvd.rank()} 
+is zero; this prevents multiple processes from repeating redundant callbacks
+for same training step, and makes only one process repeats the original
+callbacks.
+If the keyword argument does not exist in the input call expression,
+the transform function adds the {\tt callback} argument
+as shown in the figure \ref{fig:trans:keras}(b).
+
+\pagebreak
+
+
+
