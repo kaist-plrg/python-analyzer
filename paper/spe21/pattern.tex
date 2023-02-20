@@ -6,7 +6,7 @@
 \begin{figure}[ht!]
 \centering
   \begin{subfigure}[b]{\textwidth}
-    \begin{lstlisting}[language=Python]
+    \begin{lstlisting}[style=mpython]
 for x, y in train_data.take(training_steps):
     with tf.GradientTape() as tape:
         pred = model(x, is_training=True)
@@ -21,7 +21,7 @@ for x, y in train_data.take(training_steps):
   \end{subfigure}
   \hspace{5mm}
   \begin{subfigure}[b]{\textwidth}
-    \begin{lstlisting}[language=Python]
+    \begin{lstlisting}[style=mpython]
 model.compile(
     optimizer = optimizer, 
     loss = loss_compute) 
