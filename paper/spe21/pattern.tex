@@ -15,8 +15,7 @@ for x, y in train_data.take(training_steps):
     trainable_vars = model.trainable_variables
     gradients = tape.gradient(loss, trainable_vars)
     pairs = zip(gradients, trainable_vars)
-    optimizer.apply_gradients(pairs) 
-    \end{lstlisting}
+    optimizer.apply_gradients(pairs)\end{lstlisting}
     \caption{Using low-level training API}
   \end{subfigure}
   \hspace{5mm}
@@ -25,8 +24,7 @@ for x, y in train_data.take(training_steps):
 model.compile(
     optimizer = optimizer, 
     loss = loss_compute) 
-model.fit(train_data.take(training_steps))
-    \end{lstlisting} 
+model.fit(train_data.take(training_steps))\end{lstlisting} 
     \caption{Using high-level training API}
   \end{subfigure}
 
@@ -36,61 +34,99 @@ model.fit(train_data.take(training_steps))
 
 % tf 모델을 바르게 변환하기 위해서는,  서로 다른 훈련 api를 사용하느 ㄴ모델을
 % 분류하고, 각 분류의 모델에 다른 변환을 적용할 필요가 있다.
-In TensorFlow models, developers can use different APIs to define the 
-model structure and training process.
-The figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that
-use different APIs to define the training process.
-The lines 2 to 10 in \ref{fig:pattern:ex01}(a)  
-explicitly repeats the training steps by using the {\tt for} loop
-and the {\tt GradientTape} instance.
-In contrast, the lines 1 and 4 in \ref{fig:pattern:ex01}(b)
-use the Keras library API {\tt fit} to invoke the training process.
-While both codes train the model in the same way, they use different training 
+TensorFlow offers multiple APIs for defining the structure of the model and the
+training process. 
+These APIs include low-level APIs such as {\tt tf.GradientTape} and high-level
+APIs such as {\tt tf.keras.Model}.
+The choice of API depends on the complexity of the model and the specific
+requirements of the project.
+Figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that use
+different APIs to define the training process. 
+The lines 2 to 10 in \ref{fig:pattern:ex01}(a) explicitly repeat the training
+steps by using the {\tt for} loop and the {\tt GradientTape} instance. 
+On the other hand, the lines 1 and 4 in \ref{fig:pattern:ex01}(b) use the Keras
+library APIs, {\tt compile} and {\tt fit}, to set a training methodology of the
+model and invoke the training process. 
+While both codes train the model in the same way, they use different training
 APIs in different patterns.
-As their API usages are significantly different, our transformation approach
-need to apply different transformation rules.
 
-\begin{figure}[ht!]
+Our transformation approach needs to apply different transformation rules based
+on the API usage in the TensorFlow model. 
+Inspecting the Horovod documentation and open-source TensorFlow models
+manually, we define four categories of training API patterns that require
+different transformation rules. 
+The training API patterns are the code patterns of TensorFlow API calls that
+commonly appear in the models belonging to the same categories.
+For instance, models in the {GradientTape} category commonly use a {\tt with}
+statement to create a {\tt GradientTape} object, as illustrated in
+Figure~\ref{fig:pattern:ex01}(a).
+We patternize such common API usages, and our tool identifies the training API
+patterns of given models automatically to choose appropriate transformation
+rules for the models.
+
+Table~\ref{tab:patterns} represents the four training API patterns. 
+The first column shows a TensorFlow version on which models are built, and the
+second and the third columns show a training API pattern name and its
+description, respectively.
+From Section~\ref{sec:session} to Section~\ref{sec:keras}, we provide a
+detailed description of each pattern, and we also present an algorithm that
+categorizes models into the categories in Section~\ref{sec:ident}.
+
+%In TensorFlow models, developers can use different APIs to define the 
+%model structure and training process.
+%The figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that
+%use different APIs to define the training process.
+%The lines 2 to 10 in \ref{fig:pattern:ex01}(a)  
+%explicitly repeats the training steps by using the {\tt for} loop
+%and the {\tt GradientTape} instance.
+%In contrast, the lines 1 and 4 in \ref{fig:pattern:ex01}(b) use the Keras
+%library APIs, {\tt compile} and {\tt fit}, to set a training methodology of the
+%model and invoke the training process.
+%While both codes train the model in the same way, they use different training 
+%APIs in different patterns.
+%As their API usages are significantly different, our transformation approach
+%need to apply different transformation rules.
+
+\begin{table}[ht!]
   \centering
   \begin{tabular}{|c|c|l|}
     \hline
-    TF version & Pattern name & Explanation \\
+    TF version & API Pattern & Description \\
     \hline
     1.x & Session & 
-	  The models using the {\tt Session} API to invoke training operations\\
+	  Using the {\tt Session} API to invoke training operations\\
     \hline
     1.x & MonitoredSession & 
-	  The models using the {\tt MonitoresSession} API to invoke 
-	  training operations.\\
+      Using the {\tt MonitoresSession} API to invoke training operations.\\
     \hline
     2.x & GradientTape & 
-	  The models using the {\tt GradientTape} API to explicitly 
-	  repeat the training step.\\
+      Using the {\tt GradientTape} API to explicitly repeat the training
+      step.\\
     \hline
     2.x & Keras & 
-	  The models using {\tt keras.Model} class to define the model
-	  and the {\tt fit} API to train the model.\\
+      Using {\tt keras.Model} class to define the model and the {\tt fit} API
+      to train the model.\\
     \hline
   \end{tabular}
-  \caption{Training API patterns}
+  \caption{Four types of training API patterns}
   \label{tab:patterns}
-\end{figure}
+\end{table}
 
 % 서로 다은 훈련 api를 사용하는 모델을 분류하기 위해서 우리는 4개의
 % training api pattern을 정의햇다.
-To categorize the TensorFlow DL models by their training API usage,
-we manually inspected open-source TensorFlow models and
-defined four \textit{training API patterns} that categorizes them.
-The training API patterns are the code patterns of TensorFlow APIs 
-that commonly appear in the same categories of the models.
-For instance, the models in the same category with the figure
-\ref{fig:pattern:ex01}(a) use the {\tt with} statements that create the
-{\tt GradientTape} objects.
-We patternize such common API usages into the training API patterns and
-utilize to categorize the TensorFlow DL models.
-Figure \ref{tab:patterns} describe the four training API patterns defined
-for TensorFlow DL models.
-The following paragraphs explain the details of each training API pattern.
+%To categorize the TensorFlow DL models by their training API usage,
+%we manually inspected open-source TensorFlow models and
+%defined four \textit{training API patterns} that categorizes them.
+%The training API patterns are the code patterns of TensorFlow APIs 
+%that commonly appear in the same categories of the models.
+%For instance, the models in the same category with the figure
+%\ref{fig:pattern:ex01}(a) use the {\tt with} statements that create the
+%{\tt GradientTape} objects.
+%We patternize such common API usages into the training API patterns and
+%utilize to categorize the TensorFlow DL models.
+%Figure \ref{tab:patterns} describe the four training API patterns defined
+%for TensorFlow DL models.
+%The following paragraphs explain the details of each training API pattern.
 
 
 
@@ -112,7 +148,7 @@ The following paragraphs explain the details of each training API pattern.
 % cannot be automatically transformed by our approach.
 
 
-\subsubsection{Session Pattern}
+\subsubsection{Session Pattern}\label{sec:session}
 
 \begin{figure}[!ht]
 \begin{lstlisting}[language=Python]
@@ -220,7 +256,7 @@ If identifier finds both of the statements, the identifer categorizes the
 model as the GradientTape pattern.
 
 
-\subsubsection{Keras Pattern}
+\subsubsection{Keras Pattern}\label{sec:keras}
 
 \begin{figure}[ht!]
   \begin{lstlisting}[language=Python]
@@ -251,7 +287,7 @@ recognize subclasses of the {\tt keras.Model} class and their instances.
 If identifier find the {\tt fit} method call of the {\tt keras.Model} subclass
 instance, the identifier categorizes the model as the Keras pattern.
 
-\subsection{Training API Pattern Identifier}
+\subsection{Training API Pattern Identifier}\label{sec:ident}
 
 We implemented the training API pattern identifier, which classifies the
 input TensorFlow model into one of the four patterns.
