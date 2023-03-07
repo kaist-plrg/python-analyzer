@@ -281,14 +281,25 @@ for images, labels in dataset.take(10000):
 
 
 \paragraph{Keras Pattern.}
-The Keras pattern categorizes TensorFlow 2.x models that use
-the {\tt keras.Model} class method {\tt fit} to train the model. 
-Figure \ref{fig:keraspattern} is a code example of Keras pattern.
-The line 1 defines the {\tt ResNet} class that inherits the 
-{\tt keras.Model} class. 
-The line 5 creates the {\tt ResNet} class instance.
-The line 6 calls the {\tt fit} method to train the model.
-Note that the {\tt fit} method is inherited from the {\tt keras.Model} class.
+The Keras pattern is another classification for TensorFlow 2.x models that
+utilize the keras library in both model creations and training. 
+Figure~\ref{fig:keraspattern} represents an example of the Keras pattern.
+Line 1 defines the {\tt ResNet} class that inherits from the {\tt keras.Model}
+class. 
+As described in Section~\ref{sec:cha}, the {\tt keras.Model} class provides a
+convenient way to construct and train models. 
+On line 5, a model is constructed as an instance of the {\tt ResNet} class.
+Finally, on line 6, the {\tt fit} method call trains the model with given
+dataset.
+
+%The Keras pattern categorizes TensorFlow 2.x models that use
+%the {\tt keras.Model} class method {\tt fit} to train the model. 
+%Figure \ref{fig:keraspattern} is a code example of Keras pattern.
+%The line 1 defines the {\tt ResNet} class that inherits the 
+%{\tt keras.Model} class. 
+%The line 5 creates the {\tt ResNet} class instance.
+%The line 6 calls the {\tt fit} method to train the model.
+%Note that the {\tt fit} method is inherited from the {\tt keras.Model} class.
 \vspace{-1em} 
 
 \begin{figure}[ht!]
