@@ -1,4 +1,5 @@
 PACKAGE=WileyNJD-v2
+SRC=$(wildcard *.tex)
 
 all: WileyNJD-v2.cls spe.pdf
 

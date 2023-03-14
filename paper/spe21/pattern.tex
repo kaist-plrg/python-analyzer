@@ -89,6 +89,7 @@ Section~\ref{sec:ident}.
 
 \begin{table}[ht!]
   \centering
+  \caption{Four types of training API patterns}
   \begin{tabular}{|c|c|l|}
     \hline
     TF version & API Pattern & Description \\
@@ -108,7 +109,6 @@ Section~\ref{sec:ident}.
       to train the model.\\
     \hline
   \end{tabular}
-  \caption{Four types of training API patterns}
   \label{tab:patterns}
 \end{table}
 
@@ -324,32 +324,121 @@ model.fit(dataset, epochs=50)\end{lstlisting}
 %instance, the identifier categorizes the model as the Keras pattern.
 
 \subsection{Training API Pattern Identifier}\label{sec:ident}
-
-We implemented the training API pattern identifier, which classifies the
-input TensorFlow model into one of the four patterns.
-The training API pattern identifier scans through the input model AST,
-detects statements that match one of the four traning API patterns.
-One caveat here is that the input model can no statements or multiple statements
-that match the training API patterns.
-In these cases, the identifier must notify user that the
-input model is not available for automatic transformation.
-To implement this, we define a flat lattice structure composed of four 
-training API patterns and the top and bottom elements.
-The lattice structure is described in figure \ref{fig:pattern:lattice}.
-The training api pattern identifier returns one of the six elements of
-the lattice. The bottom element means that the input model does not have
-statements that matches with the training API patterns.
-The top elements means that the input model has statements that matches with
-more than one of the training API patterns.
-In both cases, the input model is not available for the automatic 
-transformation, resulting in abortion of the tranformation process.
+We implemented \tapi, which classifies a TensorFlow model into one of four
+training API patterns. 
+Our approach traverses the input model AST to identify statements that match
+one of these patterns. 
+Note that the input model may not contain any statements or may contain
+multiple statements that match the training API patterns. 
+In such cases, the identifier has to inform the user that the input model is
+not suitable for the automatic transformation.
 
 \begin{figure}[ht!]
   \centering
-  \includegraphics[width=0.7\textwidth]{lattice.pdf}
-  \caption{The flat lattice structure of four traininig API patterns}
+  \includegraphics[width=0.6\textwidth]{lattice.pdf}
+  \caption{Flat lattice for the training API pattern identification}
   \label{fig:pattern:lattice}
 \end{figure}
+
+To handle these scenarios, \tapi~performs a simple static analysis with a flat
+lattice domain composed of four training API patterns, as well as {\it Unknown}
+and {\it Multiple} elements. 
+Figure~\ref{fig:pattern:lattice} depicts the lattice structure.  
+The lattice represents a partially ordered set $(P, \sqsubseteq)$ of which the
+boxes denote elements in $P$ and the edges denote the given order $\sqsubseteq$
+between elements.
+The order is a binary relation on the set $P$, which is reflexive ($\forall x
+\in P.\ x \sqsubseteq x$), antisymmetric ($\forall x, y \in P.\ x \sqsubseteq y
+\wedge x \not= y \to y \not\sqsubseteq x$), and transitive ($\forall x, y, z
+\in P.\ x \sqsubseteq y \wedge y \sqsubseteq z \to x \sqsubseteq z$). 
+We also define an internal binary operation on the set $P$, denoted as the
+symbol $\sqcup$ and named {\it join}, which computes the least upper bound
+$lub$ of arbitrary two elements $x$ and $y$ in $P$ as follows: $x \sqsubseteq
+lub \wedge y \sqsubseteq lub \wedge \forall ub \in \{e\ |\ x \sqsubseteq e
+\wedge y \sqsubseteq e\}.\ lub \sqsubseteq ub$. 
+\tapi~applies the join operation to produce one identification result from a
+model of which the statements match multiple different training API patterns.
+For example, the Session results from the join of the Session and the Unknown,
+and the Multiple results from the join of the MonitoredSession and the Keras.
+
+Algorithm~\ref{al:apiident} describes the pseudocode of the training API
+pattern identification.
+The function {\tt IdentifyPattern} takes both an input AST and the class
+hierarchy analysis result, traverses the AST to identify its training API
+pattern, and returns the pattern.
+The algorithm first tries to match the AST with four training API patterns.
+The case statement on
+lines~\ref{alg:begin-match-session}~and~\ref{alg:end-match-session}~checks
+whether the AST is a {\tt with} statement that creates a {\tt Session} instance
+and calls the {\tt run} method of the instance in the body statements.  If the
+match succeeds, the algorithm returns the Session element as the AST's
+identified training API pattern.
+The case statement on
+lines~\ref{alg:begin-match-monitoredsession}~and~\ref{alg:end-match-monitoredsession}~checks
+whether the AST is a {\tt with} statement that creates a {\tt MonitoredSession}
+instance and calls the {\tt run} method of the instance in the body statements.
+If the match succeeds, the algorithm returns the MonitoredSession element.
+The case statement on line~\ref{alg:begin-match-gradient} checks whether the
+AST is a {\tt with} statement that creates a {\tt GradientTape} instance.
+Line~\ref{alg:mid-match-gradient} then also checks whether the parent AST has a
+child statement that calls the {\tt apply\_gradients} method of the instance.
+If both matches succeed, the algorithm returns the GradientTape element.
+The case statement on line~\ref{alg:begin-match-keras} checks whether the AST
+is a {\tt call} statement that invokes the {\tt fit} method of the object
+assigned into a arbitrary variable $model$.
+The algorithm then analyzes the class type of the object by tracking the
+definition site of the variable and tests whether the class is a subclass of
+the {\tt keras.Model}, using the class hierarchy analysis result.
+If the match succeeds, the algorithm returns the Keras element.
+From lines~\ref{alg:begin-ow}~to~\ref{alg:end-ow}~operate when the input AST
+does not match with any of the four training API patterns.
+The code invokes the {\tt IdentifyPattern} function recursively for each child
+of the AST, joins all the results of the function calls, and returns the join
+operation result.
+If the AST does not have any children, it is simply identified as the Unknown
+pattern.
+
+
+\tapi~finally identifies the input model as one of the six elements.
+If the identified pattern is either Multiple or Unknown, our tool fails to
+transform the model in the automated way and terminates. 
+Otherwise, \atran~transforms the model via appropriate transformation rules,
+depending on the identified pattern.
+Note that the transformation failures are rare in that our evaluation shows
+that the tool identifies only one of the 16 target TensorFlow models as either
+Multiple or Unknown.
+
+
+%When traversing an input TensorFlow model AST, \tapi~identifies a training API
+%pattern for each statement and produces one of the six elements of the lattice.
+%The {\it unknown} element, on the third level, indicates that the statement
+%does not match match any of the training API patterns. 
+%The four elements, on the second level, indicate that the statement matches
+%exactly the one corresponding training API patterns.
+%The {\it multiple} element, on the first level, indicates that the statement
+%matches multiple training API patterns. 
+%contains statements that match more than one of the training API patterns. 
+%In either case, the input model is deemed unsuitable for automatic
+%transformation, resulting in the termination of the transformation process.
+
+%We implemented the training API pattern identifier, which classifies the
+%input TensorFlow model into one of the four patterns.
+%The training API pattern identifier scans through the input model AST,
+%detects statements that match one of the four traning API patterns.
+%One caveat here is that the input model can no statements or multiple statements
+%that match the training API patterns.
+%In these cases, the identifier must notify user that the
+%input model is not available for automatic transformation.
+%To implement this, we define a flat lattice structure composed of four 
+%training API patterns and the top and bottom elements.
+%The lattice structure is described in figure \ref{fig:pattern:lattice}.
+%The training api pattern identifier returns one of the six elements of
+%the lattice. The bottom element means that the input model does not have
+%statements that matches with the training API patterns.
+%The top elements means that the input model has statements that matches with
+%more than one of the training API patterns.
+%In both cases, the input model is not available for the automatic 
+%transformation, resulting in abortion of the tranformation process.
 
 
 % TODO put algorithm blocks inside the figure env.
@@ -387,77 +476,130 @@ transformation, resulting in abortion of the tranformation process.
 % \end{algorithm}
 
 % pseudocode
+
+%\begin{algorithm}
+%  \caption{Training API pattern identifier}\label{al:apiident}
+%  \begin{algorithmic}[1]
+%    \Function{IdentifyPattern}{$AST$}
+%    \Match~$AST$~\textbf{with:}
+%
+%      \Case~{\tt with Session() as}~$name$~{\tt :}~$body$
+%        \If{$body$~includes~$name${\tt.run()}}
+%          SessionPattern
+%        \EndIf
+%      \EndCase
+%
+%      \Case~{\tt with MonitoredTrainingSession() as}~$name$~{\tt :}~$body$
+%        \If{$body$~includes~$name${\tt.run()}}
+%          MonitoredSessionPattern
+%        \EndIf
+%      \EndCase
+%
+%      \Case~{\tt with GradientTape() as}~$name$~{\tt :}~$body$
+%        \If{$AST$.parent~includes~$name${\tt.apply\_gradients()}}
+%          GradientTapePattern
+%        \EndIf
+%      \EndCase
+%
+%      \Case~$model${\tt.fit(...)}
+%        \If{$model$.class~isSubclassOf~{\tt keras.Model}}
+%          KerasPattern
+%        \EndIf
+%      \EndCase
+%
+%      \Case~\_
+%        \If{$AST$.isSimpleStatement}
+%          Bot 
+%        \Else
+%          \State \textbf{Let} childrenPatterns \textbf{=} $AST$.childrenStatements.map(s => IdentifyPattern(s))
+%          \State childrenPatterns.fold((p1, p2) => p1 $\cup$ p2) 
+%        \EndIf
+%      \EndCase
+%
+%    \EndMatch
+%    \EndFunction
+%  \end{algorithmic}
+%\end{algorithm}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\algblockdefx[Foreach]{Foreach}{Endforeach}[2]{\textbf{for each} $#1$ \textbf{in} $#2$}{}
+\algblockdefx[Match]{Matchwith}{Endmatch}[1]{\textbf{match} $#1$ \textbf{with}}{}
+\algblockdefx[Case]{Matchcase}{Endcase}[1]{\textbf{case} {\tt #1} \textbf{:}}{}
+\algtext*{Endforeach}
+\algtext*{Endmatch}
+\algtext*{Endcase}
+
 \begin{algorithm}
-\caption{Training API pattern identifier}\label{tapa}
+  \caption{Training API pattern identification}\label{al:apiident}
   \begin{algorithmic}[1]
-    \Function{IdentifyPattern}{$AST$}
-    \Match~$AST$~\textbf{with:}
+    \Require an abstract syntax tree ($ast$) and the class hierarhcy analysis result ($cha$)
+    \Ensure the identified training API pattern
+    \Function{IdentifyPattern}{$ast$, $cha$}
+    \Matchwith{ast}
 
-      \Case~{\tt with Session() as}~$name$~{\tt :}~$body$
+      \Matchcase{with Session() as $name$ : $body$}\label{alg:begin-match-session}
         \If{$body$~includes~$name${\tt.run()}}
-          SessionPattern
+          Session
         \EndIf
-      \EndCase
+      \Endcase\label{alg:end-match-session}
 
-      \Case~{\tt with MonitoredTrainingSession() as}~$name$~{\tt :}~$body$
+      \Matchcase{with MonitoredTrainingSession() as $name$ : $body$}\label{alg:begin-match-monitoredsession}
         \If{$body$~includes~$name${\tt.run()}}
-          MonitoredSessionPattern
+          MonitoredSession
         \EndIf
-      \EndCase
+      \Endcase\label{alg:end-match-monitoredsession}
 
-      \Case~{\tt with GradientTape() as}~$name$~{\tt :}~$body$
-        \If{$AST$.parent~includes~$name${\tt.apply\_gradients()}}
-          GradientTapePattern
+      \Matchcase{with GradientTape() as $name$ : $body$}\label{alg:begin-match-gradient}
+        \If{$ast$.parent~includes~$name${\tt.apply\_gradients()}}\label{alg:mid-match-gradient}
+          GradientTape
         \EndIf
-      \EndCase
+      \EndCase\label{alg:end-match-gradient}
 
-      \Case~$model${\tt.fit(...)}
-        \If{$model$.class~isSubclassOf~{\tt keras.Model}}
-          KerasPattern
+      \Matchcase{$model$.fit(...)}\label{alg:begin-match-keras}
+        \If{$cha$.isSubclassOf(type($model$), {\tt keras.Model}))}
+          Keras
         \EndIf
-      \EndCase
+      \Endcase\label{alg:end-match-keras}
+    \Endmatch
 
-      \Case~\_
-        \If{$AST$.isSimpleStatement}
-          Bot 
-        \Else
-          \State \textbf{Let} childrenPatterns \textbf{=} $AST$.childrenStatements.map(s => IdentifyPattern(s))
-          \State childrenPatterns.fold((p1, p2) => p1 $\cup$ p2) 
-        \EndIf
-      \EndCase
-
-    \EndMatch
+    \State $pattern$ $\leftarrow$ Unknown\label{alg:begin-ow}
+    \Foreach{child}{ast\text{.children}}
+      \State $pattern$ $\leftarrow$ $pattern$ $\sqcup$ {\sc IdentifyPattern($child$, $cha$)}
+    \Endforeach
+    \State $pattern$\label{alg:end-ow}
     \EndFunction
   \end{algorithmic}
 \end{algorithm}
 
-Figure \ref{???} is the pseudocode of the training API pattern identifier.
-The function {\tt IdentifyPattern} gets and input AST and returns a training
-API pattern lattice element.
-The algorithm first matches the statement with four training API patterns.
-Lines 3 and 4 match if the input AST is a {\tt with} statement that
-creates a {\tt Session} instance and call the {\tt run} method in the body.
-If the match succeeds, the algorithm returns Session pattern.
-Lines 5 and 6 match if the input AST is a {\tt with} statement that
-creates a {\tt MonitoredSession} instance and call the {\tt run} method in the
-body.
-If the match succeeds, the algorithm returns MonitoredSession pattern.
-Line 7 matches if the input AST is a {\tt with} statement that
-creates a {\tt GradientTape} instance.
-Line 8 then matches if the parent AST has a child statement that calls the
-{\tt apply\_gradients} method of the {\tt GradientTape} instance.
-If both matches succeed, the algorithm returns GradientTape pattern.
-Line 9 and 10 matches if the input AST is a statement that calls
-the {\tt fit} method of a subclass of {\tt keras.Model}. 
-If the match succeeds, the algorithm returns Keras pattern.
+%Algorithm~\ref{al:apiident} describes the pseudocode of the training API
+%pattern identifier.
+%The function {\tt IdentifyPattern} gets and input AST and returns a training
+%API pattern lattice element.
+%The algorithm first matches the statement with four training API patterns.
+%Lines 3 and 4 match if the input AST is a {\tt with} statement that
+%creates a {\tt Session} instance and call the {\tt run} method in the body.
+%If the match succeeds, the algorithm returns Session pattern.
+%Lines 5 and 6 match if the input AST is a {\tt with} statement that
+%creates a {\tt MonitoredSession} instance and call the {\tt run} method in the
+%body.
+%If the match succeeds, the algorithm returns MonitoredSession pattern.
+%Line 7 matches if the input AST is a {\tt with} statement that
+%creates a {\tt GradientTape} instance.
+%Line 8 then matches if the parent AST has a child statement that calls the
+%{\tt apply\_gradients} method of the {\tt GradientTape} instance.
+%If both matches succeed, the algorithm returns GradientTape pattern.
+%Line 9 and 10 matches if the input AST is a statement that calls
+%the {\tt fit} method of a subclass of {\tt keras.Model}. 
+%If the match succeeds, the algorithm returns Keras pattern.
+%
+%Lines 11 to 15 describe the cases where the input AST does not match with 
+%one of the four training API patterns.
+%If the input AST is a simple statement, which does not have child ASTs,
+%the algorithm returns the bottom element.
+%Else, the algorithm recursively identifies the pattern of the child ASTs
+%then return the join of the results.
+%If the child ASTs are matched with multiple training API patterns, 
+%the algorithm will return the top element.
 
-Lines 11 to 15 describe the cases where the input AST does not match with 
-one of the four training API patterns.
-If the input AST is a simple statement, which does not have child ASTs,
-the algorithm returns the bottom element.
-Else, the algorithm recursively identifies the pattern of the child ASTs
-then return the join of the results.
-If the child ASTs are matched with multiple training API patterns, 
-the algorithm will return the top element.
-
-\pagebreak
