@@ -341,12 +341,15 @@ not suitable for the automatic transformation.
 \end{figure}
 
 To handle these scenarios, \tapi~performs a simple static analysis with a flat
-lattice domain composed of four training API patterns, as well as {\it Unknown}
-and {\it Multiple} elements. 
+lattice domain composed of the four training API patterns, as well as {\it
+Unknown} and {\it Multiple} elements. 
+The Unknown element represents that an AST does not match any of the four
+training API patterns, and the Multiple element represents that an AST matches
+multiple different training API patterns.
 Figure~\ref{fig:pattern:lattice} depicts the lattice structure.  
 The lattice represents a partially ordered set $(P, \sqsubseteq)$ of which the
-boxes denote elements in $P$ and the edges denote the given order $\sqsubseteq$
-between elements.
+boxes denote elements in $P$ and the directed edges denote the given order
+$\sqsubseteq$ between their {\it from} elements and their {\it to} elements.
 The order is a binary relation on the set $P$, which is reflexive ($\forall x
 \in P.\ x \sqsubseteq x$), antisymmetric ($\forall x, y \in P.\ x \sqsubseteq y
 \wedge x \not= y \to y \not\sqsubseteq x$), and transitive ($\forall x, y, z
@@ -358,8 +361,9 @@ lub \wedge y \sqsubseteq lub \wedge \forall ub \in \{e\ |\ x \sqsubseteq e
 \wedge y \sqsubseteq e\}.\ lub \sqsubseteq ub$. 
 \tapi~applies the join operation to produce one identification result from a
 model of which the statements match multiple different training API patterns.
-For example, the Session results from the join of the Session and the Unknown,
-and the Multiple results from the join of the MonitoredSession and the Keras.
+For example, the Session element results from the join of Session and Unknown
+elements, and the Multiple element results from the join of MonitoredSession and
+Keras elements.
 
 Algorithm~\ref{al:apiident} describes the pseudocode of the training API
 pattern identification.
@@ -385,7 +389,7 @@ child statement that calls the {\tt apply\_gradients} method of the instance.
 If both matches succeed, the algorithm returns the GradientTape element.
 The case statement on line~\ref{alg:begin-match-keras} checks whether the AST
 is a {\tt call} statement that invokes the {\tt fit} method of the object
-assigned into a arbitrary variable $model$.
+assigned into an arbitrary variable $model$.
 The algorithm then analyzes the class type of the object by tracking the
 definition site of the variable and tests whether the class is a subclass of
 the {\tt keras.Model}, using the class hierarchy analysis result.
@@ -394,9 +398,8 @@ From lines~\ref{alg:begin-ow}~to~\ref{alg:end-ow}~operate when the input AST
 does not match with any of the four training API patterns.
 The code invokes the {\tt IdentifyPattern} function recursively for each child
 of the AST, joins all the results of the function calls, and returns the join
-operation result.
-If the AST does not have any children, it is simply identified as the Unknown
-pattern.
+operation result as the training API pattern.
+If the AST does not have any children, it is simply identified as Unknown.
 
 
 \tapi~finally identifies the input model as one of the six elements.
