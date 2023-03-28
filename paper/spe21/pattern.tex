@@ -401,15 +401,22 @@ of the AST, joins all the results of the function calls, and returns the join
 operation result as the training API pattern.
 If the AST does not have any children, it is simply identified as Unknown.
 
-
-\tapi~finally identifies the input model as one of the six elements.
-If the identified pattern is either Multiple or Unknown, our tool fails to
-transform the model in the automated way and terminates. 
-Otherwise, \atran~transforms the model via appropriate transformation rules,
-depending on the identified pattern.
+\atran~transforms an input model via appropriate transformation rules,
+depending on the model's training API pattern identified by \tapi.
+When the the identified pattern is either Multiple or Unknown, our tool fails
+to transform the model in the automated way and terminates. 
 Note that the transformation failures are rare in that our evaluation shows
-that the tool identifies only one of the 16 target TensorFlow models as either
+that \tapi~identifies only one of the 16 target TensorFlow models as either
 Multiple or Unknown.
+
+%\tapi~finally identifies the input model as one of the six elements.
+%If the identified pattern is either Multiple or Unknown, our tool fails to
+%transform the model in the automated way and terminates. 
+%Otherwise, \atran~transforms the model via appropriate transformation rules,
+%depending on the identified pattern.
+%Note that the transformation failures are rare in that our evaluation shows
+%that the tool identifies only one of the 16 target TensorFlow models as either
+%Multiple or Unknown.
 
 
 %When traversing an input TensorFlow model AST, \tapi~identifies a training API

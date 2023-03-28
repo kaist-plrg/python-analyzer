@@ -1,0 +1,278 @@
+\documentclass{article}
+
+\usepackage{stackengine}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[inner=2.5cm,outer=1.5cm,bottom=2cm]{geometry}
+\usepackage{stmaryrd}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{longtable}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+\usetikzlibrary{tikzmark, scopes, backgrounds, positioning}
+\newcommand\finarrow{\mathrel{\stackrel{\makebox[0pt]{\mbox{\normalfont\tiny fin}}}{\ensuremath{\rightarrow}}}}
+
+% keywords
+\newcommand{\knone}{{\tt None}}
+\newcommand{\kdef}{{\tt def}}
+\newcommand{\kasync}{{\tt async}}
+\newcommand{\kclass}{{\tt class}}
+\newcommand{\kreturn}{{\tt return}}
+\newcommand{\kdelete}{{\tt delete}}
+\newcommand{\kcolon}{{\tt :}}
+\newcommand{\kat}{{\tt @}}
+\newcommand{\krightarrow}{{\tt ->}}
+\newcommand{\kfor}{{\tt for}}
+\newcommand{\kin}{{\tt in}}
+\newcommand{\kelse}{{\tt else}}
+\newcommand{\kwhile}{{\tt while}}
+\newcommand{\kif}{{\tt if}}
+\newcommand{\kwith}{{\tt with}}
+\newcommand{\kmatch}{{\tt match}}
+\newcommand{\kraise}{{\tt raise}}
+\newcommand{\kfrom}{{\tt from}}
+\newcommand{\ktry}{{\tt try}}
+\newcommand{\kexcept}{{\tt except}}
+\newcommand{\kfinally}{{\tt finally}}
+\newcommand{\kassert}{{\tt assert}}
+\newcommand{\kimport}{{\tt import}}
+\newcommand{\kglobal}{{\tt global}}
+\newcommand{\knonlocal}{{\tt nonlocal}}
+\newcommand{\kpass}{{\tt pass}}
+\newcommand{\kbreak}{{\tt break}}
+\newcommand{\kcontinue}{{\tt continue}}
+\newcommand{\klambda}{{\tt lambda}}
+\newcommand{\kawait}{{\tt await}}
+\newcommand{\kyield}{{\tt yield}}
+\newcommand{\kas}{{\tt as}}
+\newcommand{\kcase}{{\tt case}}
+\newcommand{\knot}{{\tt not}}
+\newcommand{\kinvert}{\ensuremath{\thicksim}}
+
+% nonterminals
+\newcommand{\nmodule}{\ensuremath{module}}
+\newcommand{\ntypignore}{\ensuremath{type\_ignore}}
+\newcommand{\nstmt}{\ensuremath{stmt}}
+\newcommand{\nstmtsubs}[1]{\ensuremath{\nstmt_{#1}}}
+\newcommand{\nstmttypignore}{\ensuremath{\nstmt\_with\_\ntypignore}}
+\newcommand{\nid}{\ensuremath{id}}
+\newcommand{\nidsubs}[1]{\ensuremath{id_{#1}}}
+\newcommand{\nargs}{\ensuremath{args}}
+\newcommand{\narg}{\ensuremath{arg}}
+\newcommand{\nexpr}{\ensuremath{expr}}
+\newcommand{\nexprsubs}[1]{\ensuremath{expr_{#1}}}
+\newcommand{\ndeco}{\nexpr}
+\newcommand{\nstr}{\ensuremath{s}}
+\newcommand{\ntypcomm}{{\tt \#type:\nstr}}
+\newcommand{\nkeyword}{\ensuremath{keyword}}
+\newcommand{\nbinop}{\ensuremath{binop}}
+\newcommand{\nboolop}{\ensuremath{boolop}}
+\newcommand{\nunop}{\ensuremath{unop}}
+\newcommand{\ncompop}{\ensuremath{compop}}
+\newcommand{\nwithitem}{\ensuremath{with\_item}}
+\newcommand{\nwithitemsubs}[1]{\ensuremath{with\_item_{#1}}}
+\newcommand{\nmatchcase}{\ensuremath{match\_case}}
+\newcommand{\nexchandler}{\ensuremath{exc\_handler}}
+\newcommand{\nexchandlersubs}[1]{\ensuremath{exc\_handler_{#1}}}
+\newcommand{\nalias}{\ensuremath{alias}}
+\newcommand{\naliassubs}[1]{\ensuremath{alias_{#1}}}
+\newcommand{\ncompr}{\ensuremath{comprehension}}
+\newcommand{\nint}{\ensuremath{i}}
+\newcommand{\nfloat}{\ensuremath{f}}
+\newcommand{\ncomplex}{\ensuremath{c}}
+\newcommand{\nbool}{\ensuremath{b}}
+\newcommand{\nconstant}{\ensuremath{constant}}
+\newcommand{\npattern}{\ensuremath{pattern}}
+\newcommand{\npatternsubs}[1]{\ensuremath{pattern_{#1}}}
+
+% operators
+\newcommand{\oassign}{{\tt = }}
+\newcommand{\oaugassign}{{\tt \nbinop~= }}
+\newcommand{\oand}{{\tt and}}
+\newcommand{\oor}{{\tt or}}
+\newcommand{\onot}{{\tt not}}
+\newcommand{\oadd}{{\tt +}}
+\newcommand{\osub}{{\tt -}}
+\newcommand{\omul}{{\tt *}}
+\newcommand{\odiv}{{\tt /}}
+\newcommand{\omod}{{\tt \%}}
+\newcommand{\oexp}{{\tt **}}
+\newcommand{\ofloordiv}{{\tt //}}
+\newcommand{\oeq}{{\tt ==}}
+\newcommand{\oneq}{{\tt !=}}
+\newcommand{\ogt}{{\tt >}}
+\newcommand{\olt}{{\tt <}}
+\newcommand{\ogte}{{\tt >=}}
+\newcommand{\olte}{{\tt <=}}
+\newcommand{\omatmul}{{\tt @}}
+\newcommand{\olshift}{{\tt <<}}
+\newcommand{\orshift}{{\tt >>}} 
+\newcommand{\obor}{{\tt |}} 
+\newcommand{\oband}{{\tt \&}} 
+\newcommand{\obcomp}{{\tt \~}} 
+\newcommand{\obexor}{{\tt \^{}}} 
+\newcommand{\ois}{{\tt is}}
+\newcommand{\onis}{{\tt is not}}
+\newcommand{\oin}{{\tt in}}
+\newcommand{\onin}{{\tt not in}}
+
+% auxiliary functions
+\newcommand{\mul}[1]{\ensuremath{#1^*}}
+\newcommand{\sep}{\ensuremath{\ |\ }}
+\newcommand{\op}[1]{#1?}
+\newcommand{\desc}[1]{{\sc (#1)}}
+\newcommand{\sparen}[1]{{\tt (}#1{\tt)}}
+\newcommand{\mparen}[1]{{\tt \{#1\}}}
+\newcommand{\lparen}[1]{{\tt [#1]}}
+\newcommand{\inden}{\hspace{1.5em}}
+\newcommand{\vpar}{\vspace{1em}}
+
+% abbreviations
+\newcommand{\decolist}{\mul{(\kat\nexpr)}} 
+\newcommand{\decolistsubs}[1]{\mul{(\kat\nexpr_{#1})}} 
+\newcommand{\optypcomm}{\op{(\ntypcomm)}}
+
+% semantic functions
+\newcommand{\fktrans}{\ensuremath{trans}}
+\newcommand{\fkmodule}{\ensuremath{\fktrans_M}}
+\newcommand{\fkstmt}{\ensuremath{\fktrans_S}}
+\newcommand{\fksstmt}{\ensuremath{\fktrans_{\overline{S}}}}
+\newcommand{\fkeexpr}{\ensuremath{\fktrans_{\overline{E}}}}
+\newcommand{\fkexpr}{\ensuremath{\fktrans_E}}
+\newcommand{\fkwwithitem}{\ensuremath{\fktrans_{\overline{W}}}}
+\newcommand{\fkwithitem}{\ensuremath{\fktrans_W}}
+\newcommand{\fkccase}{\ensuremath{\fktrans_{\overline{C}}}}
+\newcommand{\fkcase}{\ensuremath{\fktrans_C}}
+\newcommand{\fkhhandler}{\ensuremath{\fktrans_{\overline{H}}}}
+\newcommand{\fkhandler}{\ensuremath{\fktrans_H}}
+\newcommand{\fkcomp}{\ensuremath{\fktrans_O}}
+\newcommand{\fkaalias}{\ensuremath{\fktrans_{\overline{A}}}}
+\newcommand{\fkalias}{\ensuremath{\fktrans_A}}
+\newcommand{\fkpattern}{\ensuremath{\fktrans_P}}
+\newcommand{\semfun}[1]{\ensuremath{\llbracket} #1 \ensuremath{\rrbracket}}
+\newcommand{\subsfun}[2]{#1\semfun{#2}}
+\newcommand{\tmodule}[1]{\subsfun{\fkmodule}{#1}}
+\newcommand{\tstmt}[2]{\subsfun{\fkstmt}{#1}(#2)}
+\newcommand{\tsstmt}[2]{\subsfun{\fksstmt}{#1}(#2)}
+\newcommand{\teexpr}[2]{\subsfun{\fkeexpr}{#1}(#2)}
+\newcommand{\texpr}[2]{\subsfun{\fkexpr}{#1}(#2)}
+\newcommand{\twwithitem}[2]{\subsfun{\fkwwithitem}{#1}(#2)}
+\newcommand{\twithitem}[2]{\subsfun{\fkwithitem}{#1}(#2)}
+\newcommand{\tccase}[2]{\subsfun{\fkccase}{#1}(#2)}
+\newcommand{\tcase}[2]{\subsfun{\fkcase}{#1}(#2)}
+\newcommand{\tcomp}[2]{\subsfun{\fkcomp}{#1}(#2)}
+\newcommand{\thhandler}[2]{\subsfun{\fkhhandler}{#1}(#2)}
+\newcommand{\thandler}[2]{\subsfun{\fkhandler}{#1}(#2)}
+\newcommand{\talias}[2]{\subsfun{\fkalias}{#1}(#2)}
+\newcommand{\taalias}[2]{\subsfun{\fkaalias}{#1}(#2)}
+\newcommand{\tpattern}[2]{\subsfun{\fkpattern}{#1}(#2)}
+
+% domains
+\newcommand{\dmodenv}{\ensuremath{\Sigma}}
+\newcommand{\dmodule}{\ensuremath{Module}}
+\newcommand{\dstmt}{\ensuremath{Stmt}}
+\newcommand{\dexpr}{\ensuremath{Expr}}
+\newcommand{\dwithitem}{\ensuremath{WithItem}}
+\newcommand{\dcase}{\ensuremath{MatchCase}}
+\newcommand{\dhandler}{\ensuremath{ExcHandler}}
+\newcommand{\dalias}{\ensuremath{Alias}}
+\newcommand{\dstr}{\ensuremath{Str}}
+\newcommand{\did}{\ensuremath{Id}}
+\newcommand{\dcomp}{\ensuremath{Comprehension}}
+\newcommand{\dpattern}{\ensuremath{Pattern}}
+
+% stores
+\newcommand{\smodenv}{\ensuremath{\sigma}}
+\newcommand{\smodenvsubs}[1]{\ensuremath{\smodenv_{#1}}}
+\newcommand{\smodenvempty}{\ensuremath{\emptyset_{\sigma}}}
+
+% keywords in trans rules
+\newcommand{\ktlet}{{\tt\bf LET}}
+\newcommand{\ktin}{{\tt\bf IN}}
+\newcommand{\kteq}{{\tt\bf =}}
+\newcommand{\ktappl}{{\tt\bf ::}}
+\newcommand{\ktconl}{{\tt\bf @}}
+\newcommand{\ktsubty}{{\tt\bf $<$:}}
+\newcommand{\ktif}{{\tt\bf IF}}
+\newcommand{\ktelif}{{\tt\bf ELIF}}
+\newcommand{\ktand}{{\tt\bf AND}}
+\newcommand{\ktor}{{\tt\bf OR}}
+\newcommand{\ktthen}{{\tt\bf THEN}}
+\newcommand{\ktelse}{{\tt\bf ELSE}}
+\newcommand{\ktwhen}{{\tt\bf WHEN}}
+
+% auxiliary operators
+\newcommand{\fst}{{\tt\bf .\_1}}
+\newcommand{\snd}{{\tt\bf .\_2}}
+\newcommand{\envsub}{{\tt\bf $\backslash$}}
+\newcommand{\newid}{{\tt\bf NewID()}}
+
+% strings of Env domains
+\newcommand{\gtape}{{\tt\bf ``gradient\_tape"}}
+\newcommand{\tflow}{{\tt\bf ``tensor\_flow"}}
+\newcommand{\tflowc}{{\tt\bf ``tensor\_flow\_compat"}}
+\newcommand{\tdata}{{\tt\bf ``dataset"}}
+\newcommand{\optimizer}{{\tt\bf ``optimizer"}}
+\newcommand{\checkpoint}{{\tt\bf ``checkpoint"}}
+\newcommand{\lrscheduler}{{\tt\bf``lr\_scheduler"}}
+\newcommand{\tkeras}{{\tt\bf ``keras"}}
+\newcommand{\model}{{\tt\bf ``model"}}
+\newcommand{\os}{{\tt\bf ``os"}}
+\newcommand{\optimizers}{{\tt\bf ``optimizers"}}
+\newcommand{\config}{{\tt\bf ``config"}}
+\newcommand{\configproto}{{\tt\bf ``config\_proto"}}
+\newcommand{\sess}{{\tt\bf ``session"}}
+\newcommand{\msess}{{\tt\bf ``monitored\_session"}}
+
+% comment for visibility
+\newcommand{\comment}[1]{{\color{blue} \textit{\# #1}}}
+
+% auxiliary table function
+\newcommand{\typdesc}[1]{
+  \begin{tabular}{|>{\bfseries}l>{\bfseries}c>{\bfseries}l|}
+    \hline
+    #1\\
+    \hline
+  \end{tabular}
+
+}
+
+\date{}
+\title{Rule Description}
+
+\begin{document}
+\maketitle
+
+\begin{tikzpicture}[overlay, remember picture]
+\node[] at (10,0) {
+{\def\arraystretch{1.2}
+\begin{tabular}{l}
+  \tstmt{\tikzmarknode{pb}{ }\kimport ~ \mul{\nalias}\tikzmarknode{pe}{ }}{\tikzmarknode{sb}{ }\smodenv\tikzmarknode{se}{ }} = \\
+  \inden \tikzmarknode{bb}{ }\ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
+  \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid] \\
+  \inden \ktthen~\tikzmarknode{tb}{ }([\kimport ~ \mul{\nalias},  \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}], \smodenvsubs{1})\tikzmarknode{te}{ }\tikzmarknode{be}{ }\\
+  \inden \ktelse~\tikzmarknode{fb}{ }([\kimport ~ \mul{\nalias}], \smodenvsubs{1})\tikzmarknode{fe}{ }
+\end{tabular}\\\vpar
+}
+};
+{[on background layer]
+\draw[red, thick, fill opacity=.3, fill=red!20, rounded corners=2] ([xshift=-.3em, yshift=.8em]pb.north) rectangle node[above] (pd) {} ([xshift=.2em, yshift=-.3em]pe.south) {};
+\draw[blue, thick, fill opacity=.3, fill=blue!20, rounded corners=2] ([xshift=-.4em, yshift=.8em]sb.north) rectangle node[above] (sd) {} ([xshift=.4em, yshift=-.3em]se.south) {};
+\draw[olive, thick, fill opacity=.3, fill=olive!20, rounded corners=2] ([xshift=-.4em, yshift=.8em]bb.north) rectangle node[above] (bd) {} ([xshift=.4em, yshift=-1.9em]be.south) {};
+\draw[magenta, thick, fill opacity=.3, fill=magenta!20, rounded corners=2] ([xshift=-.2em, yshift=.8em]tb.north) rectangle node[above] (td) {} ([xshift=.2em, yshift=-.3em]te.south) {};
+\draw[magenta, thick, fill opacity=.3, fill=magenta!10, rounded corners=2] ([xshift=-.2em, yshift=.8em]fb.north) rectangle node[above] (fd) {} ([xshift=.2em, yshift=-.3em]fe.south) {};
+}
+\node[above left = .6em and -2em of pd, red] (pdd) {Input AST pattern};
+\draw[-latex, red] ([yshift=-.1em]pd.north) -- + (0, .4); %- ([xshift=3em, yshift=.3em]pdd.south);
+\node[above right =.6em and -2em of sd, blue] (sdd) {Input transform context};
+\draw[-latex, blue] ([yshift=-.1em]sd.north) -- + (0, .4);
+\node[right = 1em of sdd, olive] (bdd) {Function body};
+\draw[-latex, olive] ([xshift=24em, yshift=.8em]bb.north) -- + (0, .9);
+\node[below right = 2.5em and 3em of tb, magenta] (tfdd) {Output pair of (AST, Transform context)};
+\draw[-latex, magenta] ([xshift=15em, yshift=-.27em]tb.south) -- + (0, -.9);
+\draw[-latex, magenta] ([xshift=5em, yshift=-.27em]fb.south) -- + (0, -.43);
+\end{tikzpicture}
+
+\end{document}

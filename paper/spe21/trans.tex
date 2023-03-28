@@ -1,6 +1,7 @@
 \section{Code Transformation}\label{sec:trans}
 
-\subsection{Formalization of the Transformation Rules}
+%\subsection{Formalization of the Transformation Rules}
+\subsection{Formalization of Transformation Rules}
 
 % todo: graphical issue in this figure image
 \begin{figure}[ht!]
@@ -11,44 +12,76 @@
 \end{figure}
 
 % new
-We present the formalization of the transformation rules in terms of
-\textit{trasnform functions}.
-Transform functions are the pure functions from ASTs to ASTs.
-By applying the transform function to AST of the input single-GPU model,
-we can get the AST of the transformed multi-GPU model.
-Transform functions also receive and return objects called \textit{transform
-context} in order to utilize the contextual information during the 
-transformation process.
-The transform context is a finite mapping from strings to identifiers, which
-stores arbitrary identifiers from the code and propagate them to the 
-next transform function.
-When transform functions are sequentially applied to sequence of ASTs, 
-the output transform context from the previous call is given as the input
-to the next tranform function call.
-By this method, the transform functions can utilize contextual information
-outside of their input AST and propagate some contextual information from
-their input AST to next transform function calls.
+We formalize the rules for transforming single-GPU models into multi-GPU
+models using pure functions called {\it transform functions}. 
+These functions take ASTs as input and produce ASTs as output. 
+In addition, the functions use {\it transform context} objects to incorporate
+contextual information during the transformation process. 
+The transform context is a mapping of strings to identifiers, which stores and
+propagates important identifiers being used for the transformation.
+Each transform function takes a transform context as an additional input, uses
+and updates it in the function body, and produces the updated transform context
+as an additional output.
+This enables transform functions to utilize contextual information from outside
+of their input ASTs and pass relevant contextual information to subsequent
+transform functions.
+%We present the formalization of the transformation rules in terms of
+%\textit{trasnform functions}.
+%Transform functions are the pure functions from ASTs to ASTs.
+%By applying the transform function to AST of the input single-GPU model,
+%we can get the AST of the transformed multi-GPU model.
+%Transform functions also receive and return objects called \textit{transform
+%context} in order to utilize the contextual information during the 
+%transformation process.
+%The transform context is a finite mapping from strings to identifiers, which
+%stores arbitrary identifiers from the code and propagate them to the 
+%next transform function.
+%When transform functions are sequentially applied to sequence of ASTs, 
+%the output transform context from the previous call is given as the input
+%to the next tranform function call.
+%By this method, the transform functions can utilize contextual information
+%outside of their input AST and propagate some contextual information from
+%their input AST to next transform function calls.
 
 % transform function format expl
 % 이 파트를 어떻게 효과적으로 설명해야할지 확신이 안드는 상태
-We describe the transform function as the collection of the partial transform
-function. 
-The figure~\ref{fig:trans:fnexpl} illustrates an example of the
-partial transform function.
-We use the AST pattern in the input parameter position.
-The input AST pattern means that the partial function only applies
-to the input ASTs that match the pattern.
-The input ASTs taht does not match the pattern will not be modified.
-For instance, the function in the figure~\ref{fig:trans:fnexpl} only matches
-the {\tt import} statements and transform them. 
-The function also takes the transform context $\smodenv$ as an input.
-The function body defines the output expression. 
-We use complex expressions such as {\tt LET-IN} or {\tt IF-THEN-ELSE} to 
-check and specify conditions to return different outputs.
-In the figure~\ref{fig:trans:fnexpl}, 
-the function body uses {\tt IF-THEN-ELSE} expression to check if the 
-{\tt import} statement imports the {\tt tensorflow} module, 
-and returns different ASTs according to the condition.
+We define the transform functions as a collection of partial transform
+functions, of which the one example is illustrated in
+Figure~\ref{fig:trans:fnexpl}. 
+These partial functions operate only on ASTs that match a specified code
+pattern in the input AST parameter position. 
+Any input ASTs that do not match the pattern remain unmodified. 
+For example, the function in Figure~\ref{fig:trans:fnexpl} matches only {\tt
+import} statements and transforms them accordingly. 
+The function takes the transform context $\smodenv$ as an additional input, and
+its body produces a pair of the output expression and the updated transform
+context. 
+To specify different outputs depending on certain conditions, we use complex
+expressions such as {\tt LET-IN} and {\tt IF-THEN-ELSE}. 
+In Figure~\ref{fig:trans:fnexpl}, the function body uses a {\tt LET-IN}
+expression to store the updated transform context by another transform function
+applied to the subphrase $alias^*$ to $\sigma_1$, and also uses an {\tt
+IF-THEN-ELSE} expression to return different results depending on whether the
+{\tt import} statement imports the {\tt tensorflow} module or not.
+
+%We describe the transform function as the collection of the partial transform
+%function. 
+%The figure~\ref{fig:trans:fnexpl} illustrates an example of the
+%partial transform function.
+%We use the AST pattern in the input parameter position.
+%The input AST pattern means that the partial function only applies
+%to the input ASTs that match the pattern.
+%The input ASTs taht does not match the pattern will not be modified.
+%For instance, the function in the figure~\ref{fig:trans:fnexpl} only matches
+%the {\tt import} statements and transform them. 
+%The function also takes the transform context $\smodenv$ as an input.
+%The function body defines the output expression. 
+%We use complex expressions such as {\tt LET-IN} or {\tt IF-THEN-ELSE} to 
+%check and specify conditions to return different outputs.
+%In the figure~\ref{fig:trans:fnexpl}, 
+%the function body uses {\tt IF-THEN-ELSE} expression to check if the 
+%{\tt import} statement imports the {\tt tensorflow} module, 
+%and returns different ASTs according to the condition.
 
 \pagebreak
 \begin{figure}[ht!]
