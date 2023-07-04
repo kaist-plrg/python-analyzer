@@ -105,7 +105,7 @@ Section~\ref{sec:ident}.
       step.\\
     \hline
     2.x & Keras & 
-      Using {\tt keras.Model} class to define the model and the {\tt fit} API
+      Using the {\tt keras.Model} class to define the model and the {\tt fit} API
       to train the model.\\
     \hline
   \end{tabular}
@@ -153,8 +153,8 @@ The Session pattern appears in TensorFlow 1.x models that invoke the training
 computation directly via the {\tt Session} class instance.
 Figure~\ref{fig:sessionpattern} illustrates a code example of the Session
 pattern. 
-The {\tt with} statement on line 1 creates an instance of the {\tt Session}
-class, and the {\tt run} method called on line 3 invokes the training
+The {\tt with} statement in line 1 creates an instance of the {\tt Session}
+class, and the {\tt run} method called in line 3 invokes the training
 computation on an isolated execution environment of the session instance. 
 The {\tt run} method is usually called multiple times through a loop statement
 to train models on several training batches.
@@ -190,10 +190,10 @@ However, instead of utilizing an instance of the {\tt Session} class, the
 MonitoredSession pattern leverages an instance of the {\tt
 MonitoredSession} class that provides hooks to perform some actions
 automatically on specific conditions during the training.
-The {\tt with} statement on line 3 creates an instance of the {\tt
+The {\tt with} statement in line 3 creates an instance of the {\tt
 MonitoredSession} class via the {\tt MonitoredTrainingSession} API, and the
-{\tt run} method call on line 5 invokes the training computation.
-The {\tt SummarySaverHook} API call on line 1 creates one of the pre-defined
+{\tt run} method call in line 5 invokes the training computation.
+The {\tt SummarySaverHook} API call in line 1 creates one of the pre-defined
 hooks, which saves the summaries of the model after each training step. 
 TensorFlow provides the {\tt tensorboard} utility visualizing model summaries,
 so that developers can check training processes from the summaries.
@@ -229,9 +229,9 @@ Line 4 initiates the {\tt GradientTape} class instance through the use of a
 Once the {\tt GradientTape} instance has been created, it watches all trainable
 variables by default and records operations executed on the variables within
 its context manager.
-The {\tt gradient} method call on line 7 calculates and returns gradients from
+The {\tt gradient} method call in line 7 calculates and returns gradients from
 the recorded operations and the watched variables. 
-Finally, on line 9, the {\tt apply\_gradients} method of the {\tt Optimizer}
+Finally, in line 9, the {\tt apply\_gradients} method of the {\tt Optimizer}
 class instance is called to update the model parameters.
 
 %The GradientTape pattern categorizes TensorFlow 2.x models that
@@ -288,8 +288,8 @@ Line 1 defines the {\tt ResNet} class that inherits from the {\tt keras.Model}
 class. 
 As described in Section~\ref{sec:cha}, the {\tt keras.Model} class provides a
 convenient way to construct and train models. 
-On line 5, a model is constructed as an instance of the {\tt ResNet} class.
-Finally, on line 6, the {\tt fit} method call trains the model with given
+In line 5, a model is constructed as an instance of the {\tt ResNet} class.
+Finally, in line 6, the {\tt fit} method call trains the model with given
 dataset.
 
 %The Keras pattern categorizes TensorFlow 2.x models that use
@@ -371,23 +371,23 @@ The function {\tt IdentifyPattern} takes both an input AST and the class
 hierarchy analysis result, traverses the AST to identify its training API
 pattern, and returns the pattern.
 The algorithm first tries to match the AST with four training API patterns.
-The case statement on
+The case statement in
 lines~\ref{alg:begin-match-session}~and~\ref{alg:end-match-session}~checks
 whether the AST is a {\tt with} statement that creates a {\tt Session} instance
 and calls the {\tt run} method of the instance in the body statements.  If the
 match succeeds, the algorithm returns the Session element as the AST's
 identified training API pattern.
-The case statement on
+The case statement in
 lines~\ref{alg:begin-match-monitoredsession}~and~\ref{alg:end-match-monitoredsession}~checks
 whether the AST is a {\tt with} statement that creates a {\tt MonitoredSession}
 instance and calls the {\tt run} method of the instance in the body statements.
 If the match succeeds, the algorithm returns the MonitoredSession element.
-The case statement on line~\ref{alg:begin-match-gradient} checks whether the
+The case statement in line~\ref{alg:begin-match-gradient} checks whether the
 AST is a {\tt with} statement that creates a {\tt GradientTape} instance.
 Line~\ref{alg:mid-match-gradient} then also checks whether the parent AST has a
 child statement that calls the {\tt apply\_gradients} method of the instance.
 If both matches succeed, the algorithm returns the GradientTape element.
-The case statement on line~\ref{alg:begin-match-keras} checks whether the AST
+The case statement in line~\ref{alg:begin-match-keras} checks whether the AST
 is a {\tt call} statement that invokes the {\tt fit} method of the object
 assigned into an arbitrary variable $model$.
 The algorithm then analyzes the class type of the object by tracking the
@@ -537,9 +537,11 @@ Multiple or Unknown.
 \algblockdefx[Foreach]{Foreach}{Endforeach}[2]{\textbf{for each} $#1$ \textbf{in} $#2$}{}
 \algblockdefx[Match]{Matchwith}{Endmatch}[1]{\textbf{match} $#1$ \textbf{with}}{}
 \algblockdefx[Case]{Matchcase}{Endcase}[1]{\textbf{case} {\tt #1} \textbf{:}}{}
+\algblockdefx[Otherwise]{Other}{Endother}{\textbf{otherwise} \textbf{:}}{}
 \algtext*{Endforeach}
 \algtext*{Endmatch}
 \algtext*{Endcase}
+\algtext*{Endother}
 
 \begin{algorithm}
   \caption{Training API pattern identification}\label{al:apiident}
@@ -572,13 +574,14 @@ Multiple or Unknown.
           Keras
         \EndIf
       \Endcase\label{alg:end-match-keras}
+      \Other
+        \State $pattern$ $\leftarrow$ Unknown\label{alg:begin-ow}
+        \Foreach{child}{ast\text{.children}}
+          \State $pattern$ $\leftarrow$ $pattern$ $\sqcup$ {\sc IdentifyPattern($child$, $cha$)}
+        \Endforeach
+        \State $pattern$\label{alg:end-ow}
+      \Endother
     \Endmatch
-
-    \State $pattern$ $\leftarrow$ Unknown\label{alg:begin-ow}
-    \Foreach{child}{ast\text{.children}}
-      \State $pattern$ $\leftarrow$ $pattern$ $\sqcup$ {\sc IdentifyPattern($child$, $cha$)}
-    \Endforeach
-    \State $pattern$\label{alg:end-ow}
     \EndFunction
   \end{algorithmic}
 \end{algorithm}

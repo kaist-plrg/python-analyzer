@@ -44,7 +44,7 @@ layer.
 %define the computation between the layers in TensorFlow 2.x.
 The lines 10 and 11 define a loss function and an optimizer object.  
 Unlike TensorFlow 1.x, TensorFlow 2.x provides APIs to select a loss function
-used for the training, as shown on the line 10.
+used for the training, as shown in the line 10.
 Moreover, while TensorFlow 1.x explicitly defines a training operation of an
 optimizer object and then executes it lazily on a session, TensorFlow 2.x
 simply creates an optimizer object and later uses it to eagerly execute the
@@ -68,7 +68,7 @@ operations for trainable model parameters within the {\tt with} scope.
 The lines 15 and 16 execute the neural network for an input image and calculate
 the cross entropy loss between the execution output and the answer label. 
 Because TensorFlow 2.x defines neural networks and loss functions as normal
-Python functions, they can be called directly with arguments as shown on the
+Python functions, they can be called directly with arguments as shown in the
 lines.
 %The training loop starts with the {\tt for} loop that iterates over the dataset
 %and takes batches of training images and answer labels.
