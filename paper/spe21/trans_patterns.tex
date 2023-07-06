@@ -38,7 +38,7 @@ the Session pattern using two code examples, (a) the original training code and
 (b) its distributed training version.
 One of the primary transformations involves adjusting the learning rate
 argument in the {\tt Optimizer} constructor call, which is achieved by
-multiplying it with the number of processors.
+multiplying it with the number of GPUs.
 The learning rate can be passed as the first positional argument in the
 constructor call or as the keyword argument {\tt learning\_rate}.
 The other transformation uses the Horovod-provided {\tt DistributedOptimizer}
@@ -83,7 +83,7 @@ is passed as an argument to its constructor.
 
 Figure \ref{fig:trans:sessrule} shows the key rule for the Session pattern,
 which conducts the two transformations.
-The transform rule matches a assign statement that stores the result of a
+The transform rule matches an assign statement that stores the result of a
 function call expression into a variable.
 Initially, the rule examines whether the callee function is the constructor of
 either the {\tt Optimizer} class or any of its subclasses.
