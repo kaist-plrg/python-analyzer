@@ -1,111 +1,145 @@
 \section{Evaluation}\label{sec:eval}
-
-To evaluate our approach, we set up two research questions as follows.
-
+We evaluate the proposed approach for the following research questions:
 \begin{itemize}
-\item RQ1. (Correctness) Does the transformation rules 
-correctly transform single-GPU based model codes into
-the distributed model codes?
-
-\item RQ2. (Effectiveness) Does the automatic transformation result in speed-up 
-in distributed training compared to single-GPU training?
+\item RQ1. (Correctness) Does the transformation correctly distribute the
+  training of single-GPU models?
+\item RQ2. (Effectiveness) Does the automated transformation effectively accelerate the
+  training of single-GPU models?
 \end{itemize}
 
-To answer these questions, we implemented an automated code transformation tool
-for TensorFlow DL model and experimented the tool against open-source
-TensorFlow DL models. The code transformation tool is written in Scala and
-is available at https://github.com/kaist-plrg/python-analyzer.
-For experiment target models, we gathered open-source TensorFlow DL model
-codes from three sources.
-The Hovorod library GitHub repository\cite{horovodgithub} provides
-example model codes. The TensorFlow model garden\cite{tfmodelgarden} is one of
-the official collections of TensorFlow machine learning models. 
-TensorFlow Examples by Americ Damien\cite{tfexmaplesdamien},
+\noindent
+To answer the questions, we implemented an automatic code transformation tool
+and applied the tool to 16 TensorFlow DL models.
+We collected the evaluation target models from five open repositories: 
+Hovorod\cite{horovodgithub}, TensorFlow Model Garden\cite{tfmodelgarden},
+TensorFlow Examples by Americ Damien\cite{tfexamplesdamien},
 CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github}, and
-TensorFlow 2.x Tutorials\cite{tf2tutogithub} are popular GitHub repositories
-that contain TensorFlow DL model codes.
-Among these sources, we collected total of 16 models that are eligible
-for the experiment.
-The experiment target models are listed in figure \ref{fig:eval:targets}. 
+TensorFlow 2.x Tutorials\cite{tf2tutogithub}.
+We excluded two from 18 models in the repositories, because one abnormally
+terminates with a runtime error in its execution, and the other duplicates.
+Our tool is written in Scala and is publically
+available\footnote{https://github.com/kaist-plrg/python-analyzer}.
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\pagebreak
 \begin{figure}[!ht]
   \begin{center}
-  \begin{tabular}{c|c|l}
+  \begin{tabular}{l|c|c|c}
     \hline
-    Model Name & API Pattern & Source \\
+    \multicolumn{1}{c|}{Source} & Model Name & API Pattern & Transform Result\\
+    \hline\hline
+    TensorFlow Examples by &  LSTM-MNIST & GradientTape & $\bigcirc$\\
+     Americ Damien\cite{tfexamplesdamien} & SimpleCNN-GradientTape-1 & GradientTape & $\times$\\
     \hline
-    LSTM-MNIST & GradientTape & \multirow{2}{*}{TensorFlow Examples by Americ Damien\cite{tfexamplesdamien}} \\
-    SimpleCNN-GradientTape-1 & GradientTape \\
+    \multirow{2}{*}{Horovod GitHub\cite{horovodgithub}} & SimpleCNN-GradientTape-2 & GradientTape & $\bigcirc$\\
+    & SimpleCNN-MonitoredSession & MonitoredSession  & $\bigcirc$\\
     \hline
-    SimpleCNN-GradientTape-2 & GradientTape & \multirow{2}{*}{Horovod GitHub\cite{horovodgithub}} \\
-    SimpleCNN-MonitoredSession & MonitoredSession  \\
+    TensorFlow Model Garden\cite{tfmodelgarden} & SimpleCNN-Session & Session & $\bigcirc$\\ 
     \hline
-    SimpleCNN-Session & Session & TensorFlow Model Garden\cite{tfmodelgarden} \\
+    \hspace{-.5em}\begin{tabular}{l}
+      CIFAR-10 Example with\\ TensorFlow 2.0\cite{cifar10github}
+    \end{tabular}& VGG-CIFAR10 & Keras & $\bigcirc$\\ 
     \hline
-    VGG-CIFAR10 & Keras & CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github} \\
-    \hline
-    Play-with-MNIST & GradientTape & \multirow{10}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} \\
-    Linear-Regression & GradientTape  \\
-    Fashion-MNIST & Keras  \\
-    CIFAR10-VGG16 & GradientTape \\
-    Inception-Network & GradientTape  \\
-    RNN-Sentiment-Analysis & Keras  \\
-    Stacked-LSTM-ColorBot & GradientTape  \\
-    Auto-Encoder & GradientTape  \\
-    Variational-Auto-Encoder & GradientTape  \\
-    DCGAN & GradientTape  \\
+    \multirow{10}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} & Play-with-MNIST & GradientTape & $\bigcirc$\\
+    &Linear-Regression & GradientTape & $\bigcirc$\\
+    &Fashion-MNIST & Keras  & $\bigcirc$\\
+    &CIFAR10-VGG16 & GradientTape & $\bigcirc$\\
+    &Inception-Network & GradientTape  & $\bigcirc$\\
+    &RNN-Sentiment-Analysis & Keras  & $\bigcirc$\\
+    &Stacked-LSTM-ColorBot & GradientTape  & $\bigcirc$\\
+    &Auto-Encoder & GradientTape  &$\bigcirc$\\
+    &Variational-Auto-Encoder & GradientTape & $\bigcirc$\\
+    &DCGAN & GradientTape & $\bigcirc$\\ 
     \hline
   \end{tabular}
   \end{center}
-  \caption{List of the TensorFlow DL models used for the experiments}
+  \caption{Experiment result for the automated code transformation}
+%  \caption{List of the TensorFlow DL models used for the experiments}
   \label{fig:eval:targets}
 \end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\pagebreak
+%\begin{figure}[!ht]
+%  \begin{center}
+%  \begin{tabular}{c|c|l}
+%    \hline
+%    Model Name & API Pattern & Source \\
+%    \hline
+%    LSTM-MNIST & GradientTape & \multirow{2}{*}{TensorFlow Examples by Americ Damien\cite{tfexamplesdamien}} \\
+%    SimpleCNN-GradientTape-1 & GradientTape \\
+%    \hline
+%    SimpleCNN-GradientTape-2 & GradientTape & \multirow{2}{*}{Horovod GitHub\cite{horovodgithub}} \\
+%    SimpleCNN-MonitoredSession & MonitoredSession  \\
+%    \hline
+%    SimpleCNN-Session & Session & TensorFlow Model Garden\cite{tfmodelgarden} \\
+%    \hline
+%    VGG-CIFAR10 & Keras & CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github} \\
+%    \hline
+%    Play-with-MNIST & GradientTape & \multirow{10}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} \\
+%    Linear-Regression & GradientTape  \\
+%    Fashion-MNIST & Keras  \\
+%    CIFAR10-VGG16 & GradientTape \\
+%    Inception-Network & GradientTape  \\
+%    RNN-Sentiment-Analysis & Keras  \\
+%    Stacked-LSTM-ColorBot & GradientTape  \\
+%    Auto-Encoder & GradientTape  \\
+%    Variational-Auto-Encoder & GradientTape  \\
+%    DCGAN & GradientTape  \\
+%    \hline
+%  \end{tabular}
+%  \end{center}
+%  \caption{List of the TensorFlow DL models used for the experiments}
+%  \label{fig:eval:targets}
+%\end{figure}
 
 
-\subsection{RQ1: Transformation Experiment}
+\subsection{RQ1: Correctness of the transformation}
+To show the correctness of the transformation, we transformed each of the 16
+single-GPU models using our tools and compared them to the distributed training
+versions of those models.
+For the models obtained from the Horovod repository, we used their distributed
+training versions available in the repository as the correct results.
+As for the other models, we referred to the Horovod documentation to manually
+transform them into distributed training versions and used those as the correct
+results.
 
-To answer the first research question,
-we conducted a transformation experiment.
-The transformation experiment evaluates whether the transformation tool
-correctly transforms single-GPU based models to distributed models.
-We specify the correctness of transfomation by pairing each model codes 
-with hand-crafted code of the distributed versions. 
-The models from the Horovod GitHub repository\cite{horovodgithub}
-come with corresponding distributed versions.
-For other models that do not come with distributed versions,
-we manually crafted their distributed implmentations.
+%To answer the first research question,
+%we conducted a transformation experiment.
+%The transformation experiment evaluates whether the transformation tool
+%correctly transforms single-GPU based models to distributed models.
+%We specify the correctness of transfomation by pairing each model codes 
+%with hand-crafted code of the distributed versions. 
+%The models from the Horovod GitHub repository\cite{horovodgithub}
+%come with corresponding distributed versions.
+%For other models that do not come with distributed versions,
+%we manually crafted their distributed implmentations.
 
-\begin{figure}[!ht]
-  \begin{center}
-  \begin{tabular}{|c|c|c|}
-    \hline
-    Model Name & API Pattern & Transformation Success \\
-    \hline
-    LSTM-MNIST & GradientTape & o \\
-    SimpleCNN-GradientTape-1 & GradientTape & x\\
-    SimpleCNN-GradientTape-2 & GradientTape & o \\
-    SimpleCNN-MonitoredSession & MonitoredSession &o\\
-    SimpleCNN-Session & Session & o\\
-    VGG-CIFAR10 & Keras & o \\ 
-    Play-with-MNIST & GradientTape & o \\
-    Linear-Regression & GradientTape & o \\
-    Fashion-MNIST & Keras & o \\
-    CIFAR10-VGG16 & GradientTape & o\\
-    Inception-Network & GradientTape & o \\
-    RNN-Sentiment-Analysis & Keras & o \\
-    Stacked-LSTM-ColorBot & GradientTape & o \\
-    Auto-Encoder & GradientTape & o \\
-    Variational-Auto-Encoder & GradientTape & o \\
-    DCGAN & GradientTape & o \\
-    \hline
-  \end{tabular}
-  \end{center}
-  \caption{Transformation experiment Result}
-  \label{fig:eval:trans}
-\end{figure}
+%\begin{figure}[!ht]
+%  \begin{center}
+%  \begin{tabular}{|c|c|c|}
+%    \hline
+%    Model Name & API Pattern & Transformation Success \\
+%    \hline
+%    LSTM-MNIST & GradientTape & o \\
+%    SimpleCNN-GradientTape-1 & GradientTape & x\\
+%    SimpleCNN-GradientTape-2 & GradientTape & o \\
+%    SimpleCNN-MonitoredSession & MonitoredSession &o\\
+%    SimpleCNN-Session & Session & o\\
+%    VGG-CIFAR10 & Keras & o \\ 
+%    Play-with-MNIST & GradientTape & o \\
+%    Linear-Regression & GradientTape & o \\
+%    Fashion-MNIST & Keras & o \\
+%    CIFAR10-VGG16 & GradientTape & o\\
+%    Inception-Network & GradientTape & o \\
+%    RNN-Sentiment-Analysis & Keras & o \\
+%    Stacked-LSTM-ColorBot & GradientTape & o \\
+%    Auto-Encoder & GradientTape & o \\
+%    Variational-Auto-Encoder & GradientTape & o \\
+%    DCGAN & GradientTape & o \\
+%    \hline
+%  \end{tabular}
+%  \end{center}
+%  \caption{Transformation experiment Result}
+%  \label{fig:eval:trans}
+%\end{figure}
 
 \begin{figure}[!ht]
   \begin{lstlisting}[language=Python]
@@ -135,44 +169,47 @@ def run_optimization(x, y):
 
 # training loop
 for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):
-    run_optimization(batch_x, batch_y)
-  \end{lstlisting}
+    run_optimization(batch_x, batch_y)\end{lstlisting}
   \caption{Training code of SimpleCNN-GradientTape-1 model}
   \label{fig:eval:simplecnn1}
 \end{figure}
 
-The transformation experiment result is described in the 
-figure \ref{fig:eval:trans}. Among 16 targets, only one model failed to
-be correctly transformed. As shown in the figure \ref{fig:eval:trans},
-the SimpleCNN-GradientTape-1 model failed to be transformed into the
-distributed model.
 
-We manually investigate the SimpleCNN-GradientTape-1 model code to 
+Figure~\ref{fig:eval:targets} represents the transformation experiment results.
+The first column shows the repositories from which obtaining the models, the
+second column shows the model names, the third column shows the API patterns of
+the models, and the fourth column shows whether our tool correctly transforms
+the models.
+As shown in the table, our tool correctly transformed 15 out of the 16 models
+and failed to transform only the SimpleCNN-GradientTape-1 model.
+In the failed case, our tool raised a transformation failure error, because
+some of the GradientTape transformation rules do not apply to the model.
+
+
+%The transformation experiment result is described in the 
+%figure \ref{fig:eval:trans}. Among 16 targets, only one model failed to
+%be correctly transformed. As shown in the figure \ref{fig:eval:trans},
+%the SimpleCNN-GradientTape-1 model failed to be transformed into the
+%distributed model.
+
+We manually investigated the SimpleCNN-GradientTape-1 model code to 
 identify the cause of the transformation failure.
-The figure \ref{fig:eval:simplecnn1} illustrate the part of the training code
-of the model.
-The code uses the GradientTape pattern in lines 17 to 22, which
-creates a {\tt GradientTape} object to record the computation
-and automatically backpropagate the gradients to the model parameters.
-It turns out that the code does not use the {\tt Model} instance to
-define the neural network, instead define the function {\tt conv\_net} 
-to eagerly compute the loss value.
-To transform the GradientTape pattern codes into the distributed codes,
-the vairable broadcast should be done to the {\tt variables} attributed of
-the {\tt Model} instance. Because the SimpleCNN-GradientTape-1 training code
-does not include the {\tt Model} instance, the code cannot be correctly
-transformed into a distributed code by our transformation tool.
-We argue that this is a very rare case, and our tool can transform most of the
-codes. Among 11 target models of GraidentTape pattern, only
-SimpleCNN-GradientTape-1 model fails to be correctly transformed.
-All other model codes include the {\tt Model} instance, 
-which is a common method to define the ML model in TensorFlow. 
+Figure~\ref{fig:eval:simplecnn1} illustrates the training code snippet of the
+model.
+The code uses a GradientTape object in lines 17 to 22 to train a model
+constructed via a sequence of TensorFlow API calls in lines 3 to 12.
+As described in Section~\ref{sec:grad}, our approach transforms the
+GradientTape pattern code by injecting statements that broadcast trainable
+variables of a {\tt Model} instance.
+However, because the code does not construct the model as a {\tt Model}
+instance, our tool cannot obtain the trainable variables from the model and
+fails to transform the code correctly.
+Note that such model construction is rare in that our tool correctly transforms
+11 out of the 12 GradientTape models since they utilize a {\tt Model}
+instance.
 
 
-
-
-
-\subsection{RQ2: Distributed Training Experiment}
+\subsection{RQ2: Effectiveness of the automatically distributed training}
 
 To answer the second research question,
 we conducted a distributed training experiment that compares
@@ -198,8 +235,8 @@ NVIDIA TITAN Xp GPUs.
     \caption{LSTM-MNIST}
   \end{subfigure}
   ~ 
-  \begin{subfigure}[t]{.24\textwidth}
-    \includegraphics[width=\textwidth]{tape-simple2}
+  \begin{subfigure}[t]{.36\textwidth}\centering
+    \includegraphics[width=.66\textwidth]{tape-simple2}
     \caption{SimpleCNN-GradientTape-2}
   \end{subfigure}
   ~
