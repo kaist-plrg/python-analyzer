@@ -418,17 +418,17 @@ different learning rate parameters.
 Figure~\ref{fig:eval:cifar10} shows the experiment result.
 The black line represents the result of non-distributed training, the red line
 represents the result of distributed training with the original learning rate
-of 1e-3, and the blue and green lines represent the results of distributed
-training with adjusted learning rates of 1e-4 and 1e-5, respectively.
+of $1e-3$, and the blue and green lines represent the results of distributed
+training with adjusted learning rates of $1e-4$ and $1e-5$, respectively.
 The three distributed training cases reached the minimum loss at nearly
 the same time, but they exhibited significant differences in terms of the
 achieved minimum loss for each training.
 In the case of distributed training with the original learning rate, no change
 in loss was observed during training. 
-However, when adjusting the learning rate to 1e-4 in distributed training, 
+However, when adjusting the learning rate to $1e-4$ in distributed training, 
 we observed that the minimum loss significantly decreased to the similar level
 to that of non-distributed training.
-In the case of distributed training with the learning rate adjusted to 1e-5,
+In the case of distributed training with the learning rate adjusted to $1e-5$,
 the result for the minimum loss was better than distributed training with the
 original learning rate, but worse than non-distributed training.
 This experiment shows that model engineers may need to tune hyperparameters
