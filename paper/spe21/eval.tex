@@ -20,8 +20,10 @@ terminates with a runtime error in its execution, and the other duplicates.
 Our tool is written in Scala and is publically
 available\footnote{https://github.com/kaist-plrg/python-analyzer}.
 
-\begin{figure}[!ht]
+\begin{table}[!ht]
   \begin{center}
+  \caption{Experiment result for the automated code transformation}
+  \label{fig:eval:targets}
   \begin{tabular}{l|c|c|c}
     \hline
     \multicolumn{1}{c|}{Source} & Model Name & API Pattern & Transform Result\\
@@ -51,10 +53,8 @@ available\footnote{https://github.com/kaist-plrg/python-analyzer}.
     \hline
   \end{tabular}
   \end{center}
-  \caption{Experiment result for the automated code transformation}
 %  \caption{List of the TensorFlow DL models used for the experiments}
-  \label{fig:eval:targets}
-\end{figure}
+\end{table}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %\pagebreak
 %\begin{figure}[!ht]
@@ -175,7 +175,7 @@ for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):
 \end{figure}
 
 
-Figure~\ref{fig:eval:targets} represents the transformation experiment results.
+Table~\ref{fig:eval:targets} represents the transformation experiment results.
 The first column shows the repositories from which obtaining the models, the
 second column shows the model names, the third column shows the API patterns of
 the models, and the fourth column shows whether our tool correctly transforms
@@ -210,25 +210,79 @@ instance.
 
 
 \subsection{RQ2: Effectiveness of the automatically distributed training}
+For the second research question, we conducted a comparative analysis
+between the training time of the automatically transformed models and their
+respective original models.
+We calculate the training time as the time taken to reach minimum losses in
+training.
+To measure the losses, we manually injected the TensorBoard\cite{tensorboard}
+API calls into the model codes, which log the loss value of each training
+epoch.
+Among the 16 models, we targeted 13 models in the experiment; we excluded two
+TensorFlow 1.x models with which the TensorBoard APIs are incompatible 
+and one model that our tool failed to transform.
+We performed the experiment on a Linux machine with Intel Xeon CPU E5-2690 v4 @
+2.60GHz, 131GB memory, and four NVIDIA TITAN Xp GPUs.
 
-To answer the second research question,
-we conducted a distributed training experiment that compares
-the training speed between the original models
-and corresponding transform models.
-To quantify the training speed, we measured the epoch loss during the training
-of each model.
-Among 16 models used for the first experiment,
-we excluded two TensorFlow 1.x models (SimpleCNN-MonitoredSession,
-SimpleCNN-Session) and the SimpleCNN-GradientTape-1 model that failed to
-correctly be transformed.
-Thus, we targeted total 13 models for the distributed training experiment.
-We manually added the TensorBoard\cite{tensorboard} APIs to 
-record the loss value during the training. 
-The experiment server uses
-Intel Xeon CPU E5-2690 v4 @ 2.60GHz with 131GB memory and four 
-NVIDIA TITAN Xp GPUs.
+%To answer the second research question,
+%we conducted a distributed training experiment that compares
+%the training speed between the original models
+%and corresponding transform models.
+%To quantify the training speed, we measured the epoch loss during the training
+%of each model.
+%Among 16 models used for the first experiment,
+%we excluded two TensorFlow 1.x models (SimpleCNN-MonitoredSession,
+%SimpleCNN-Session) and the SimpleCNN-GradientTape-1 model that failed to
+%correctly be transformed.
+%Thus, we targeted total 13 models for the distributed training experiment.
+%We manually added the TensorBoard\cite{tensorboard} APIs to 
+%record the loss value during the training. 
+%The experiment server uses
+%Intel Xeon CPU E5-2690 v4 @ 2.60GHz with 131GB memory and four 
+%NVIDIA TITAN Xp GPUs.
 
-\begin{figure}[!ht]
+
+
+\begin{table}
+  \centering
+  \caption{Training time comparison results}
+  \label{fig:eval:traintime}
+  \begin{tabular}{|l|r|r|r|}
+\hline
+                         & Single-GPU         & Distributed       & \\
+Model Name               &  training time (s) & training time (s) &  Speedup\\
+\hline
+LSTM-MNIST               & 78.675& 11.951& $\times$6.58\\
+SimpleCNN-GradientTape-2 & 3.192& 1.753& $\times$1.82\\
+VGG-CIFAR10              & 1060.296  & 1159.293  &$\times$0.91   \\
+Play-with-MNIST          & 148.101& 80.040& $\times$1.85\\
+Linear-Regression        & 0.607& 0.371& $\times$1.63\\
+Fashion-MNIST            & 110.274& 29.294& $\times$3.76\\
+CIFAR10-VGG16            & 1060.296& 1159.293& $\times$0.91\\
+Inception-network        & 956.261& 995.597& $\times$0.96\\
+RNN-Sentiment-Analysis   & 338.984& 451.985& $\times$0.74\\
+Stacked-LSTM-ColorBot    & 57.327 & -           & -   \\
+Auto-Encoder             & 567.230& 412.214& $\times$1.37\\
+Variational-Auto-Encoder & 1120.291& 699.777& $\times$1.60\\
+DCGAN                    & 2389.052& 828.428& $\times$2.88\\ 
+\hline
+  \end{tabular}
+\end{table}
+
+We summarize the training time comparison results in
+Table~\ref{fig:eval:traintime}.
+The first column presents the model name, the second and third columns
+present the training time of the model, and the last column presents the
+training speed-up of the distributed model.
+The comparison results indicate that the training of the distributed
+models is, on average, approximately 2.08 times faster than that of the
+original models; when distributed training has a positive effect on the
+training time, the enhancement ranges from 1.37 times to 6.58 times.
+Note that we do not record the distributed training time of the
+Stacked-LSTM-ColorBot model because the loss of the first distributed training
+epoch of the model is minimal.
+
+\begin{figure}%[!ht]
   \centering
   \begin{subfigure}[t]{.24\textwidth}
     \includegraphics[width=\textwidth]{tape-lstm}
@@ -295,112 +349,127 @@ NVIDIA TITAN Xp GPUs.
     \caption{DCGAN}
   \end{subfigure} 
 
-  \caption{Distributed training experiment result time-loss graphs.}
-  \begin{tabular}{r@{: }l r@{: }l}
-    X-axis & Time (seconds) & Y-axis & Loss value\\
-    Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
-  \end{tabular}
+  \caption{Comparison of training between the distributed models and the
+  original models (X-axis: time in seconds, Y-axis: loss value, blue-line:
+  original model, red-line: distributed model)}
+  %\begin{tabular}{r@{: }l r@{: }l}
+  %  X-axis & Time (seconds) & Y-axis & Loss value\\
+  %  Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
+  %\end{tabular}
   \label{fig:eval:train}
 \end{figure}
 
+Interestingly, distributed training does not ensure an acceleration of
+training.
+In four models, distributed training takes longer to reach
+minimum losses than non-distributed training.
+Furthermore, distributed training can harm the inference precision of models.
+Figure~\ref{fig:eval:train} illustrates the changes in the loss of models over
+training time. 
+The x-axis represents the training time in seconds, the y-axis represents the
+loss values, and the red and blue lines represent the losses of the
+original models and their transformed models, respectively.
+The distributed training in six models led to higher losses than
+the non-distributed training.
+For instance, in the case of the VGG-CIFAR10 model, we observed that the loss
+gradually decreases during the training process without distributed training.
+However, when adopting distributed training, the loss does not decrease but
+remains unchanged.
 
-\begin{figure}
+%The results of the distributed traininig experiment 
+%are shown in figure \ref{fig:eval:train} and figure \ref{fig:eval:traintime}.
+%Figure \ref{fig:eval:train} graphically describes the change of training loss
+%of single GPU-based models and distributed models over time.
+%The x-axis represent the time in seconds, and the y-axis represent
+%the loss value number.
+%The lines represent the loss values;
+%blue lines correspond to the single GPU-based model training loss
+%and the red lines correspond to the distributed model training loss.
+%Figure \ref{fig:eval:traintime} show the training times required in
+%single GPU-based models and distributed models.
+%To define the training time, we first calculated the total reduction of
+%loss by finding the maximum and minimum losses.
+%We define that the training has completed when the loss decreased by
+%95\% of the loss reduction amount, and the time up to that point
+%was defined as the training time.
+%The fourth column of figure \ref{fig:eval:traintime} 
+%shows the relative speedup of the 
+%distributed model training with respect to the single GPU-based model training.
+%Note that the Stacked-LSTM-ColorBot model does not have distributed training
+%time recorded. This is because the loss values after the first epoch
+%are always higher that the initial loss value; thus the training time is
+%undefined.
+
+%As shown in the results in figure \ref{fig:eval:traintime},
+%only 8 out of 13 distributed models show speedup. 
+%Figure \ref{fig:eval:train} also shows that some models are erroneously trained.
+%In figure \ref{fig:eval:train}(c), the distributed training of
+%VGG-CIFAR10 model does not decrease the loss value.
+%In figure \ref{fig:eval:train}(j), the distributed training of
+%Stacked-LSTM-ColorBot model increases the loss value.
+%In general, the experiment result implies that even if the transformation
+%of the model code is successful, it does not guarantee
+%increase in the training speed of the distributed models.
+
+To achieve positive effects, distributed training often requires additional
+tuning of hyperparameters.
+We conducted distributed training on the VGG-CIFAR10 model by applying three
+different learning rate parameters.
+Figure~\ref{fig:eval:cifar10} shows the experiment result.
+The black line represents the result of single GPU training, the red line
+represents the result of distributed training with the original learning rate
+of 1e-3, and the blue and green lines represent the results of distributed
+training with adjusted learning rates of 1e-4 and 1e-5, respectively.
+The three distributed training cases reached the minimum loss at nearly
+the same time, but they exhibited significant differences in terms of the
+achieved minimum loss for each training.
+In the case of distributed training with the original learning rate, no change
+in loss was observed during training. 
+However, when adjusting the learning rate to 1e-4 in distributed training, 
+we observed that the minimum loss significantly decreased to the similar level
+to that of non-distributed training.
+In the case of distributed training with the learning rate adjusted to 1e-5,
+the result for the minimum loss was better than distributed training with the
+original learning rate, but worse than non-distributed training.
+This experiment shows that model engineers may need to tune hyperparameters
+differently from non-distributed models to obtain the benefits of distributed
+training.
+
+\begin{figure}%[!ht]
   \centering
-  \begin{tabular}{|l|r|r|r|}
-\hline
-                         & Single-GPU         & Distributed       & \\
-Model Name               &  training time (s) & training time (s) &  Speedup\\
-\hline
-LSTM-MNIST               & 78.675& 11.951& $\times$6.58\\
-SimpleCNN-GradientTape-2 & 3.192& 1.753& $\times$1.82\\
-VGG-CIFAR10              & 1060.296  & 1159.293  &$\times$0.91   \\
-Play-with-MNIST          & 148.101& 80.040& $\times$1.85\\
-Linear-Regression        & 0.607& 0.371& $\times$1.63\\
-Fashion-MNIST            & 110.274& 29.294& $\times$3.76\\
-CIFAR10-VGG16            & 1060.296& 1159.293& $\times$0.91\\
-Inception-network        & 956.261& 995.597& $\times$0.96\\
-RNN-Sentiment-Analysis   & 338.984& 451.985& $\times$0.74\\
-Stacked-LSTM-ColorBot    & 57.327 & -           & -   \\
-Auto-Encoder             & 567.230& 412.214& $\times$1.37\\
-Variational-Auto-Encoder & 1120.291& 699.777& $\times$1.60\\
-DCGAN                    & 2389.052& 828.428& $\times$2.88\\ 
-\hline
-  \end{tabular}
-  \caption{Training time and speedup between single GPU-based models and automatically transformed distributed models}
-  \label{fig:eval:traintime}
-\end{figure}
-
-The results of the distributed traininig experiment 
-are shown in figure \ref{fig:eval:train} and figure \ref{fig:eval:traintime}.
-Figure \ref{fig:eval:train} graphically describes the change of training loss
-of single GPU-based models and distributed models over time.
-The x-axis represent the time in seconds, and the y-axis represent
-the loss value number.
-The lines represent the loss values;
-blue lines correspond to the single GPU-based model training loss
-and the red lines correspond to the distributed model training loss.
-Figure \ref{fig:eval:traintime} show the training times required in
-single GPU-based models and distributed models.
-To define the training time, we first calculated the total reduction of
-loss by finding the maximum and minimum losses.
-We define that the training has completed when the loss decreased by
-95\% of the loss reduction amount, and the time up to that point
-was defined as the training time.
-The fourth column of figure \ref{fig:eval:traintime} 
-shows the relative speedup of the 
-distributed model training with respect to the single GPU-based model training.
-Note that the Stacked-LSTM-ColorBot model does not have distributed training
-time recorded. This is because the loss values after the first epoch
-are always higher that the initial loss value; thus the training time is
-undefined.
-
-As shown in the results in figure \ref{fig:eval:traintime},
-only 8 out of 13 distributed models show speedup. 
-Figure \ref{fig:eval:train} also shows that some models are erroneously trained.
-In figure \ref{fig:eval:train}(c), the distributed training of
-VGG-CIFAR10 model does not decrease the loss value.
-In figure \ref{fig:eval:train}(j), the distributed training of
-Stacked-LSTM-ColorBot model increases the loss value.
-In general, the experiment result implies that even if the transformation
-of the model code is successful, it does not guarantee
-increase in the training speed of the distributed models.
-
-We claim that training hyperparameters can be tuned to
-achieve the distributed training speedup.
-We provide an experimental evidence to this by
-training the distributed VGG-CIFAR10 model with
-different learning rates.
-Learning rate value of the original VGG-CIFAR10 model is 0.001,
-We altered this value to 0.0001, 0.00001
-and compared the training loss changes over time.
-
-\begin{figure}[!ht]
-  \centering
-  \includegraphics[width=.7\textwidth]{lr-exp-graph}
-
-  \caption{Distributed training experiments of VGG-CIFAR10 model with different learning rates.}
+  \includegraphics[width=.5\textwidth]{lr-exp-graph}
+  \caption{Distributed training on the VGG-CIFAR10 model with different learning rates}
   \label{fig:eval:cifar10}
 \end{figure}
 
-Figure \ref{fig:eval:cifar10} shows the loss value changes of training 
-distributed VGG-CIFAR10 models with different learning rates.
-The distributed training with the original learning rate=0.001 does not show
-training speedup.
-However, when the learning rate is changed to 0.0001,
-the distributed training shows speedup compared to the single GPU training.
-Changing the learning rate to 0.00001 does not increases training speed
-compared to the single GPU training, but its speed is higher than
-the distributed training with the original learnin rate.
-By this experiment, we show that tuning the learning rate into right place 
-increases the distributed training speed.  
+%We claim that training hyperparameters can be tuned to
+%achieve the distributed training speedup.
+%We provide an experimental evidence to this by
+%training the distributed VGG-CIFAR10 model with
+%different learning rates.
+%Learning rate value of the original VGG-CIFAR10 model is 0.001,
+%We altered this value to 0.0001, 0.00001
+%and compared the training loss changes over time.
 
-Our automated transformation approach reduces much friction and time between
-writing single GPU-based model and deploying the model in distributed system.
-The transformation tool quickly transforms the single GPU-based
-models into the distributed model and initiate the training process.
-Using the transformation tool, the model engineers can start the distributed
-training process without effort to rewrite the model codes. 
-Our transformation tool requires users to manually inspect the
-training speed and tune the hyperparameters.
-This is the minimal amount of effort which is always required for
-scaling and distributing DL models.
+%Figure \ref{fig:eval:cifar10} shows the loss value changes of training 
+%distributed VGG-CIFAR10 models with different learning rates.
+%The distributed training with the original learning rate=0.001 does not show
+%training speedup.
+%However, when the learning rate is changed to 0.0001,
+%the distributed training shows speedup compared to the single GPU training.
+%Changing the learning rate to 0.00001 does not increases training speed
+%compared to the single GPU training, but its speed is higher than
+%the distributed training with the original learnin rate.
+%By this experiment, we show that tuning the learning rate into right place 
+%increases the distributed training speed.  
+
+%Our automated transformation approach reduces much friction and time between
+%writing single GPU-based model and deploying the model in distributed system.
+%The transformation tool quickly transforms the single GPU-based
+%models into the distributed model and initiate the training process.
+%Using the transformation tool, the model engineers can start the distributed
+%training process without effort to rewrite the model codes. 
+%Our transformation tool requires users to manually inspect the
+%training speed and tune the hyperparameters.
+%This is the minimal amount of effort which is always required for
+%scaling and distributing DL models.
