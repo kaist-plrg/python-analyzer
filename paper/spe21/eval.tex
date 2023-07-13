@@ -367,7 +367,7 @@ Furthermore, distributed training can harm the inference precision of models.
 Figure~\ref{fig:eval:train} illustrates the changes in the loss of models over
 training time. 
 The x-axis represents the training time in seconds, the y-axis represents the
-loss values, and the red and blue lines represent the losses of the
+loss values, and the bule and red lines represent the losses of the
 original models and their transformed models, respectively.
 Distributed training in six models led to higher losses than
 non-distributed training.
@@ -416,9 +416,9 @@ achieve positive effects.
 We conducted distributed training on the VGG-CIFAR10 model by applying three
 different learning rate parameters.
 Figure~\ref{fig:eval:cifar10} shows the experiment result.
-The black line represents the result of non-distributed training, the red line
+The gray line represents the result of non-distributed training, the red line
 represents the result of distributed training with the original learning rate
-of $1e-3$, and the blue and green lines represent the results of distributed
+of $1e-3$, and the blue and black lines represent the results of distributed
 training with adjusted learning rates of $1e-4$ and $1e-5$, respectively.
 The three distributed training cases reached the minimum loss at nearly
 simultaneoulsy, but they exhibited significant differences in the
