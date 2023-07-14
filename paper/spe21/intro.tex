@@ -4,15 +4,15 @@ With recent advancements in artificial intelligence, deep learning (DL) has
 been widely utilized in various fields.
 %Recent advancements in deep learning(DL) have opened the wide possibility of
 %applying artificial intelligence in various fields.
-LeCun et al.\cite{LeCun2015} define the deep learning as a type of machine
-learning techniques, which composes multiple abstraction layers to build up a
-high-level representation of raw data. 
+LeCun et al.\cite{LeCun2015} define deep learning as a machine learning
+technique that composes multiple abstraction layers to build up a high-level
+representation of raw data. 
 %LeCun et al.\cite{LeCun2015} define deep learning as a
 %type of machine learning technique that composes multiple
 %abstraction layers to build up a high-level representation of raw data. 
-Developers construct DL models as neural networks consisting of independent
+Model engineers construct DL models as neural networks consisting of independent
 layers of several perceptrons, and each layer gets input signals from the
-previous layer and send output signals to the next layer.
+previous layer and sends output signals to the next layer.
 %The neural networks are composed of independent layers of perceptrons,
 %which get input signals from the previous layer then sends the
 %output signal to the next layer.
@@ -25,27 +25,26 @@ previous layer and send output signals to the next layer.
 %In practice, developers use DL frameworks that support easier building of
 %deep neural networks in high-level code, for example, using
 %TensorFlow\cite{tensorflow} with Python programming language\cite{pythonref}.
-There are several DL frameworks, such as TensorFlow\cite{tensorflow} 
-and PyTorch\cite{pytorch2019}, that provide
-APIs to easily implement deep neural networks in general purpose high-level
-programming languages like Python.
+Several DL frameworks, such as TensorFlow\cite{tensorflow} and
+PyTorch\cite{pytorch2019}, provide APIs to easily implement deep neural
+networks in general purpose high-level programming languages like Python.
 VGG\cite{vggnet2014} and ResNet\cite{resnet2015} for image recognition and
 BERT\cite{bert2018} and GPT-3\cite{gpt32020} for natural language processing
-are popular applications of the deep learning.
+are popular deep learning applications.
 
 
-The deep learning development process consists of a training phase and an
-inference phase.
+The deep learning development process consists of training and inference
+phases.
 %Deep learning development consists of two stages: 
 %the training stage and the inference stage.
 The training phase improves the accuracy of DL models via multiple training
-steps that adjust models' parameters via forward and backward propagations. 
+steps that adjust models' parameters via forward and backward propagation. 
 The forward propagation calculates answers of DL models for a training dataset
 and computes an error rate of the answers, called {\it loss}.
 Then, the backward propagation computes a model parameter gradient and adjusts
 parameters to reduce the loss using gradient descent algorithms.
-The training phase usually repeats the propagations multiple times over the
-entire training dataset for the better accuracy.
+The training phase repeats the propagations multiple times over the entire
+training dataset for better accuracy.
 %In the training stage, the hidden layer parameters are updated
 %with respect to the training dataset so that the output from the output layer
 %matches the answer in the dataset. 
@@ -62,7 +61,7 @@ entire training dataset for the better accuracy.
 %In many of the cases, the training repeats multiple times over the entire 
 %training dataset in order to gain better accuracy.  
 In the inference phase, trained DL models produce actual prediction results on
-input data via the forward propagation.
+input data via forward propagation.
 %In the inference stage, new data unseen to the model
 %is given as an input to the model, a forward propagation returns an output
 %and it is used as prediction results for the data.
@@ -70,10 +69,10 @@ input data via the forward propagation.
 %dataset, the model probably returns correct results for the
 %unseen data.
 
-While the training phase is an essential part of the DL model development, it
-is the most time-consuming phase of the development.
-Developers train models on a huge training dataset to obtain better accuracy,
-but a larger training dataset also requires more training time.
+While the training phase is essential to the DL model development, it is the
+most time-consuming.
+Model engineers train models on a huge training dataset for better accuracy,
+but a larger dataset also requires more training time.
 According to the report by You et al.~\cite{imagenettraining2017}, it takes 14
 days on a single GPU to train the ResNet-50 model on the ImageNet benchmark
 dataset containing 1.28 million images~\cite{imagenet2014}.
@@ -82,14 +81,14 @@ model development cost increases as the training time increases.
 
 Taking advantages of parallelism, distributed training has emerged to reduce
 the training time. 
-Since the distributed training parallelizes training workload across multiple
-GPUs, developers can train models in significantly less time than the single
-GPU training.
-Research in various fields utilizes the distributed training without losing
+Since distributed training parallelizes training workload across multiple GPUs,
+model engineers can train models in significantly less time than
+non-distributed training.
+Research in various fields utilizes distributed training without losing
 the accuracy of trained models.
 Goyal et al.\cite{facebook2018} trained the ResNet-50 model on the ImageNet
 benchmark in one hour with 256 GPUs, which is over 300 times faster than the
-single-GPU training result.
+non-distributed training result.
 Silver et al.\cite{Silver2017alphagozero} trained AlphaGo with 176
 GPUs and 48 TPUs, Zhang et al.\cite{zhang2019distrspeech} used 16 GPUs to train
 a speech recognition model, and Tian et al.\cite{tian2020distrwebattack} used
@@ -130,22 +129,22 @@ two GPUs to train a web attack detection model on edge devices.
 %the need for distributing the training process in DL research is inevitable.
 
 
-However, tranforming existing DL models to multi-GPU models is a time-consuming
-and a labor-intensive task.
-DL models developed as single-GPU models training on a single GPU are not
-directly trainable on multiple GPUs. 
-Developers need to manually rewrite the single-GPU models into multi-GPU models
+However, rewriting existing DL models for distributed training is
+time-consuming and labor-intensive.
+DL models designed for non-distributed training are not directly trainable on
+multiple GPUs. 
+Model engineers need to manually rewrite the models for distributed training
 with additional configurations in their training code to identify GPUs in the
-system, spawn processes for each GPU, and assign the training dataset into each
+system, spawn processes for each GPU, and assign the training dataset to each
 process.
 Distributed training frameworks, such as Horovod~\cite{sergeev2018horovod} and
-Ray Train~\cite{raytrain}, reduce manual efforts by providing APIs for the
+DeepSpeed~\cite{deepspeed}, reduce manual efforts by providing APIs for
 distributed training without such complex configurations.
-Nevertheless, training with the frameworks still requires additional works such
-as reading and understanding documents and code examples of the frameworks, and
+Nevertheless, training with the frameworks still requires additional work, such
+as reading documents and code examples of the frameworks, and
 modifying the training code using their APIs.
-To the best of our knowledge, there are no automated methods to train
-single-GPU models on multiple GPUs without manual modifications.
+To the best of our knowledge, there are no automated methods to train models on
+multiple GPUs without manual modifications.
 
 
 %The distributed training code contains additional implementation for
@@ -163,9 +162,8 @@ single-GPU models on multiple GPUs without manual modifications.
 %difficult challenge.
 
 
-In this paper, we propose an automated approach that transforms single-GPU
-TensorFlow models to multi-GPU models training on multiple GPUs with the
-Horovod framework.
+In this paper, we propose an automated approach that transforms TensorFlow DL
+models to ones training on multiple GPUs with the Horovod framework.
 %In this paper, we propose an \textit{automated code transformation for
 %distributed training}.
 %The transformation converts the single-GPU-based TensorFlow models into the
@@ -173,24 +171,25 @@ Horovod framework.
 %Our goal is to distribute TensorFlow DL models written in Python by modifying
 %the training codes with the Horovod library.
 We closely inspected the Horovod library documentation and the code examples
-that describe code transformation required to train DL models on multiple GPUs.
+that describe the code transformation required to train DL models on multiple
+GPUs.
 From the description, we identified four common training patterns used in
-TensorFlow DL models and code transformation required for each training
+TensorFlow DL models and the code transformation required for each training
 pattern.
-Then, we formally defined transformation rules from single-GPU models to
-multi-GPU models.
-Based-on the formal rules, we implemented an automated model transformation
-tool for the distributed training.
-Our tool firstly analyzes an input single-GPU model to identify its training
-pattern and code locations on which modifications for the distributed training
+Then, we formally defined transformation rules that rewrite models with Horovod
+APIs for distributed training.
+Based on the formal rules, we implemented an automated model transformation
+tool for distributed training.
+Our tool first analyzes an input DL model to identify its training
+pattern and code locations on which modifications for distributed training
 are required.
-It then applies the transformation rules for the identified training pattern to
-the single-GPU model, and produces a multi-GPU model as a result.
-In our evaluation, we show that our tool successfully transforms 15 out of 16
-open-source TensorFlow single-GPU models to multi-GPU models that train
-correctly on multiple GPUs.
-We also discuss the effects of the distributed training of the models in the
-evalution.
+It then rewrites the model by applying the transformation rules of the
+identified training pattern.
+Our evaluation shows that our tool successfully transforms 15 out of 16
+open-source TensorFlow DL models, and the transformed models with newly tuned
+hyperparameters train about 2.28 times faster than the original models.
+We also discuss the effects of distributed training of the models in the
+evaluation.
 
 
 %We manually inspected the Horovod library documentation and the code examples
@@ -205,27 +204,26 @@ evalution.
 The contributions of this paper are as follows:
 
 \begin{itemize}
-  \item {\bf We formalize the code transformation rules for the distributed
-    training of TensorFlow models.} The formal rules allow developers to
-    understand the transformation in an explicit way rather than implicit code
-    examples, as well as provide a basis for automation. 
+  \item {\bf We formalize the code transformation rules for distributed
+    training of TensorFlow DL models.} The formal rules allow model engineers
+    to understand the transformation in an explicit way rather than implicit
+    code examples, as well as provide a basis for automation. 
     %We formally define the code transformation as functions from AST to AST. 
     %After manually inspecting the Horovod documentation and code examples,
     %We provide transform function definitions for automatically
     %transforming single-GPU model codes into distributed DL model codes.
 
-  \item {\bf We design and implement an automated model transformation tool for
-    the distributed training.} We show that our tool can reduce manual efforts
-    in the distributed training by automating the code transformation from
-    single-GPU models to multi-GPU models.
+  \item {\bf We design and implement an automated code transformation tool for
+    distributed training.} Our tool can reduce manual efforts in rewriting
+    models for distributed training via automation.
     %We evaluate the tool's performance
     %by applying the transformation to TensorFlow example model codes.
 
-  \item {\bf We reveal that the distributed training often requires additional
-    hyperparameter tuning.} Our empirical evaluation shows that multi-GPU
-    models without newly tuned hyperparameters may perform worse in both the
-    training time and the inference precision than the corresponding single-GPU
-    models.
+  \item {\bf We reveal that distributed training often requires additional
+    hyperparameter tuning.} 
+    Our empirical evaluation shows that distributed training without newly
+    tuned hyperparameters may perform worse in training time and inference
+    precision than non-distributed training.
     %By evaluation, we show that distributed training of TensorFlow model
     %using Horovod library does not always speed up. 
     %We provide further empricial evidence that the training hyperparameters can
