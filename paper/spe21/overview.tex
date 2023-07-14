@@ -11,16 +11,14 @@
 % main topic sentence for each paragraph
 
 % 우리는 코드 변환을 기반을 기존의 모델을 자동으로 분산화하는 기법을 제안한다.
-In this paper, we propose an automated code transformation method that converts
-single-GPU TensorFlow DL models to their corresponding distributed models for
-training with the Horovod library. 
-As discussed in the previous section, the process of distributing TensorFlow DL
-models with Horovod requires the manual editing of the original model code,
-which can be a challenging task for developers because they need to understand
-the Horovod library thoroughly via code examples and the documentation.
-To alleviate this burden, our proposed method utilizes code transformation
-techniques to automatically rewrite the input TensorFlow model code with the
-Horovod library.
+This paper proposes an automated code transformation method that rewrites
+TensorFlow DL models to the distributed versions with Horovod.
+As discussed in the previous section, distributed training with the Horovod
+library requires model engineers to understand the Horovod library and rewrite
+model code manually.
+To alleviate this burden, our proposed method utilizes static analysis and code
+transformation techniques to rewrite TensorFlow DL model code automatically
+based on our formal transformation rules.
 % to simplify the process of distributing DL models.
 
 %We propose the code transformation-based approach for automated distributed
@@ -36,9 +34,9 @@ Horovod library.
 %library.
 
 Figure \ref{sysarch} illustrates the overview of our automated code
-transformation approach for distrubting DL models with Horovod.
-Our approach first parses a given single-GPU model into Abstract Syntax Trees
-(ASTs) to mechanically analyze and modify the model code.
+transformation approach for distributed training of DL models with Horovod.
+Our approach first parses a given model into Abstract Syntax Trees
+(ASTs) to analyze and modify the model code mechanically.
 In order to define the code transformation rules for the distributed training
 of TensorFlow DL models, we manually inspected the Horovod library
 documentation and code examples. 
@@ -48,14 +46,14 @@ in the models.
 Thus, we defined four \textit{training API patterns} that represent common code
 patterns of TensorFlow APIs that appear in TensorFlow DL models.
 The \cha~analyzes the ASTs and extracts the class
-inheritance information relations between TensorFlow built-in classes and
+inheritance information relations between TensorFlow built-in and
 user-defined classes.
 Using the inheritance information, the \tapi~identifies the training API
 pattern of the input model.  Then, the \atran~selects the appropriate
-transformation rules based on the identified training API pattern, and applies
+transformation rules based on the identified training API pattern and applies
 the rules to the model's ASTs. 
 The modified ASTs are then finally converted back into a TensorFlow DL
-model, and the model is now able to train on multiple GPUs with the support of
+model, and the model can now train on multiple GPUs with the support of
 the Horovod library.
 
 %The modified ASTs are finally converted into Python codes to return
