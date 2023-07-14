@@ -2,74 +2,98 @@
 
 \subsection{Distributed DL frameworks}
 
-In this work, Horovod library is used to distribute
-DL training codes.
-Horovod\cite{sergeev2018horovod} is one of the popular distributed training 
-library for multiple DL frameworks.
-Aside Horovod, there are several frameworks and libraries that support
-distributed tranining for deep learning.
-TensorFlow offers an API for distributed training,
-namely {\tt tf.distribute.Strategy}. 
-The API provides several distributed training strategies;
-{\tt MirroredStrategy} and {\tt TPUStrategy} corresponds to 
-synchronous distributed training on multiple GPUs and TPUs,  
-{\tt ParameterSeverStrategy} corresponds to 
-data-parallel strategy using workers and a parameter server.
-The {\tt tf.distribute.Strategy} API can be used with Keras APIs
-to define distributed training code only with TensorFlow.  
-
+%In this work, Horovod library is used to distribute
+%DL training codes.
+Horovod\cite{sergeev2018horovod} is a popular distributed training library that
+supports multiple DL frameworks such as TensorFlow and PyTorch.
+Beside Horovod, there are several frameworks and libraries for distributed
+training.
 TensorFlowOnSpark\cite{tfonspark} is a Python library that
 combines TensorFlow with Apache Spark and Hadoop to distribute
-the DL task on server clusters. 
-DeepSpeed\cite{deepspeed} is Microsoft's distributed programming library
-built on top of PyTorch\cite{pytorch2019}.  
-DeepSpeed supports multiple distributed traininig methods and features,
-including model parallelism and pipeline parallelism. 
+DL tasks on server clusters. 
+DeepSpeed\cite{deepspeed} is a distributed programming library developed by
+Microsoft, built on top of PyTorch\cite{pytorch2019}.  
+DeepSpeed supports multiple distributed training methods and features,
+including model and pipeline parallelisms. 
+TensorFlow officially provides a package of APIs, {\tt tf.distribute}, for
+distributed training\cite{tfdistributed}.
+The package supports multiple implementations of {\tt tf.distribute.Strategy},
+enabling model engineers to perform distributed learning using various
+strategies.
+To train DL models in distributed environments, model engineers have to choose
+a library and manually modify the models following the library's documentation.
+Our approach automatically transforms existing DL models into distributed ones,
+reducing engineers' burdens of understanding the document and modifying models.
 
-% explain that none of dist.DL frameworks automatically transform
-None of these frameworks support automatic transformation from single-GPU
-based training to distributed training. 
-The users have to manually modify existing single-GPU-based models
-in accordance with the specific frameworks. 
-In comparison, our work offers an automatic transformation from
-existing DL model to distributed DL model, which reduces
-programmer burden of manually modifying the training code
-in according to the library specification and use case.
+%% explain that none of dist.DL frameworks automatically transform
+%None of these frameworks support automatic transformation from single-GPU based
+%training to distributed training. 
+%The users have to manually modify existing single-GPU-based models in
+%accordance with the specific frameworks. 
+%In comparison, our work offers an automatic transformation from existing DL
+%model to distributed DL model, which reduces programmer burden of manually
+%modifying the training code in according to the library specification and use
+%case.
 
+%\paragraph{Code transformation.}
 \subsection{Code Transformation}
 
-% code transformation common usage - compile and optimization
-Code transformation, or program transformation,
-is technique that alters a \textit{source} code
-into a different \textit{target} code. 
-Code transformation is used in variety of area, although
-compilation and optimization is the primary application of
-the technique.
-According to Visser\cite{Visser2001}'s taxonomy, 
-code transformation can be classified into two: \textit{translation},
-where source and target programs are in differene langauge,
-and \textit{rephrasing}, where source and target programs are in
-same language.
-Our approach for automated distributed training is considered to be
-rephrasing transformation, considering it changes a Python code
-into another Python code. 
-In specific, our approach belongs to \textit{renovation} transformation
-according to Visser's taxonomy, considering that
-the transformation alters the behavior of the single-GPU-based
-training code into the distributed training.
+Code transformation is techniques that modify code into a different form.  
+Visser devised a taxonomy\cite{Visser2001} that classifies code transformation
+techniques into two types: 
+\textit{translation}, where input and output code are written in different
+languages, and \textit{rephrasing}, where input and output code are written in
+the same language.
+Our approach belongs to \textit{renovation}, one of the subtypes of
+\textit{rephrasing}, which changes the behaviors of input code and generates
+output code in the same language.
+
+%% code transformation common usage - compile and optimization
+%Code transformation, or program transformation,
+%is technique that alters a \textit{source} code
+%into a different \textit{target} code. 
+%Code transformation is used in variety of area, although
+%compilation and optimization is the primary application of
+%the technique.
+%According to Visser\cite{Visser2001}'s taxonomy, 
+%code transformation can be classified into two: \textit{translation},
+%where source and target programs are in differene langauge,
+%and \textit{rephrasing}, where source and target programs are in
+%same language.
+%Our approach for automated distributed training is considered to be
+%rephrasing transformation, considering it changes a Python code
+%into another Python code. 
+%In specific, our approach belongs to \textit{renovation} transformation
+%according to Visser's taxonomy, considering that
+%the transformation alters the behavior of the single-GPU-based
+%training code into the distributed training.
 
 % Code Transformation in Python
-There are several other works on application of program transformation
-in Python and machine learning domain.
-Loulergue and Philippe\cite{Loulergue2020} developed an
-transformation framework that automatically transforms PySke programs, 
-the python skeleton library for parallel programming.
-Haryono et al. \cite{mlcatchup} developed MLCatchUp,
-a tool that automatically updates deprecated APIs in Python machine learning
-programs. Reed et al. \cite{torchfx} developed torch.fx,
-a Python source-to-source transform framework designed to capture
-program structures in Python DL programs and transform them. 
-Compared to these works, our work specifically targets
-TensorFlow DL training codes written in Python,
-and provide concrete and correct transformation rules rather than
-only providing the framework.
+Researchers have proposed several code transformation techniques in Python
+and machine learning domains.
+Loulergue and Philippe\cite{Loulergue2020} devised a framework that optimizes
+PySke programs by automatically rewriting terms in the programs based on
+transformation rules they define.
+Haryono et al. \cite{mlcatchup} developed MLCatchUp, a code transformation tool
+that enables Python machine learning programs to migrate from deprecated APIs
+to new and stable APIs automatically. 
+Reed et al. \cite{torchfx} developed {\tt torch.fx}, a Python library for
+capturing and transforming PyTorch programs.
+Compared to these works, our work targets TensorFlow DL models written in
+Python and provides concrete and correct transformation rules for their
+distributed training.
+
+%There are several other works on application of program transformation
+%in Python and machine learning domain.
+%Loulergue and Philippe\cite{Loulergue2020} developed an
+%transformation framework that automatically transforms PySke programs, 
+%the python skeleton library for parallel programming.
+%Haryono et al. \cite{mlcatchup} developed MLCatchUp,
+%a tool that automatically updates deprecated APIs in Python machine learning
+%programs. Reed et al. \cite{torchfx} developed torch.fx,
+%a Python source-to-source transform framework designed to capture
+%program structures in Python DL programs and transform them. 
+%Compared to these works, our work specifically targets
+%TensorFlow DL training codes written in Python,
+%and provide concrete and correct transformation rules rather than
+%only providing the framework.
