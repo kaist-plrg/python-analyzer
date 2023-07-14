@@ -6,13 +6,13 @@
 
 This section describes two different forms of TensorFlow DL models written in
 Python.
-TensorFlow provides two major version libraries, TensorFlow 1.x published in
+TensorFlow provides two major version libraries: TensorFlow 1.x published in
 2016 and TensorFlow 2.x published in 2019. 
-DL models are significantly differ in their forms depending on which library
+DL models significantly differ in their forms depending on which library
 they use. 
-On TensorFlow 1.x, neural networks are manually constructed as computational
-graphs using tensor variables and operations, and the networks are lazily
-executed for both their training and inference on an encapsulated environment,
+On TensorFlow 1.x, model engineers manually construct models as computational
+graphs using tensor variables and operations and execute them lazily  for
+training and inference on an encapsulated environment
 called {\it session}.
 %The first version is TensorFlow 1.x published in 2016.
 %TensorFlow 1.x provides APIs for defining tensor variables and operations
@@ -23,15 +23,15 @@ called {\it session}.
 %operations, and their training process using APIs for defining tensor variables
 %and operations between them.
 %The second version is TensorFlow 2.x published in 2019.
-On the other hand, TensorFlow 2.x supports the eager execution by which all
-tensor operations are executed as they occur in code. 
-With the eager execution feature, developers do not need to construct
-computational graphs and use encapsulated environments anymore.
+On the other hand, TensorFlow 2.x supports the eager execution that executes
+all tensor operations as they occur in code. 
+With the eager execution feature, engineers no longer need to construct
+computational graphs and use encapsulated environments.
 %developers to use plain Python syntax to define the model
 %operations and the training process.
 In addition, TensorFlow 2.x integrates with the Keras library, a layer-based
 deep learning model library that provides a convenient interface to construct
-neural networks.
+models.
 %As a result, the models written in TensorFlow 1.x and TensorFlow 2.x are
 %significantly differ in their forms. 
 
@@ -42,26 +42,26 @@ vectors, and direct edges denote data dependencies from source to destination
 in vector operations.
 %The model will get an input image of 784 pixels and classify it into one of ten
 %output classes.
-The network consists of three layers: an input layer, an output layer, and a
-hidden layer between the two layers.
+The network consists of three layers: an input, an output, and a hidden layer
+between the two layers.
 Each layer stores data into a vector, and the vector of a layer mutates into a
 vector of another layer via vector operations.  
 In the network, the input layer has a vector of length 784, and the data in the
 vector is the pixels of an input image.
 The hidden layer is parametrized by the two-dimensional weight matrix $W_1$ of
 size 784 $\times$ 100 and the bias vector $b_1$ of length 100.
-The vector of the hidden layer is computed by first multiplying the input layer
+The hidden layer's vector is computed by multiplying the input layer
 vector $x$ with the weight matrix $W_1$, adding the bias vector $b_1$, and
-finally applying the ReLU activation function that makes the result as non-zero
+finally applying the ReLU activation function that makes the results non-zero
 values.
 The output layer is parametrized by the two-dimensional weight matrix $W_2$ of
 size 100 $\times$ 10 and the bias vector $b_2$ of length 10.
-The vector of the output layer is computed by first multiplying the hidden
+The output layer's vector is computed by multiplying the hidden
 layer vector $h$ with the weight matrix $W_2$, adding the bias vector $b_2$,
 and finally applying the Softmax activation function that converts the ten data
 to a probability distribution of the ten categories.
 The weight matrices and the bias vectors in the network are model parameters,
-and the training phase adjusts the model parameters again and again to classify
+and the training phase adjusts the model parameters repeatedly, to classify
 input images correctly.
 %The model structure is defined in terms of layers and operation between them.
 %The layers are tensors of real values, which represent the signals and data.
@@ -144,28 +144,28 @@ input images correctly.
 
 Figure~\ref{fig:back:tf1} shows a TensorFlow 1.x model for the example neural
 network with the gradient descent training algorithm.
-First, the lines 5 to 14 define the network structure and the operations
+First, lines 5 to 14 define the network structure and the operations
 between the layers.
-The lines 5 and 6 first create two placeholder variables, {\tt x} and {\tt y},
+Lines 5 and 6 first create two placeholder variables, {\tt x} and {\tt y},
 where {\tt x} is a vector storing the pixel data of an input image, and {\tt y}
 is a vector storing the answer for the classification of the input image. 
-The lines 8 to 10 define the hidden layer.
-The line 8 creates a randomly initialized weight matrix {\tt W\_1}, and the
-line 9 creates a zero-initialized bias vector {\tt b\_1}.
-Then, the matrix and the bias vector are wrapped with the {\tt Variable} API.
+Lines 8 to 10 define the hidden layer.
+Line 8 creates a randomly initialized weight matrix {\tt W\_1}, and line 9
+creates a zero-initialized bias vector {\tt b\_1}.
+Then, the {\tt Variable} API wraps the matrix and the bias vector.
 The {\tt Variable} API creates a model parameter of which internal values are
-modifiable during the training process.
-The line 10 defines the operation of the hidden layer. It first multiplies the
+modifiable during training.
+Line 10 defines the operation of the hidden layer. It first multiplies the
 input vector {\tt x} with the weight matrix {\tt W\_1}, then adds the bias {\tt
-b\_1}, and finally applies the {\tt relu} activation fuction. 
-Note that the line does not actually perform the operation but only defines how
-the input data mutates into the hidden layer's data during executing the
-network.
-The lines 12 to 14 define the output layer.
-Similar to the lines 8 and 9, the lines 12 and 13 define a randomly-initialized
+b\_1}, and finally applies the ReLU activation function. 
+Note that the line does not perform the operation but only defines how
+the input data mutates into the hidden layer's data while executing the
+model.
+Lines 12 to 14 define the output layer.
+Similar to lines 8 and 9, lines 12 and 13 define a randomly-initialized
 weight matrix {\tt W\_2}, and a zero-initialized bias vector {\tt b\_2}, as
 model parameters of the output layer.
-Then, the line 14 defines the operation that
+Then, line 14 defines the operation that
 multiplies the hidden layer output with
 the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and finally applies the
 {\tt softmax} activation function.
@@ -201,14 +201,14 @@ the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and finally applies the
 %but only define the operations that will be computed during the training.
 
 After constructing the neural network, the code defines the training algorithm
-on the lines 16 and 17.
-The line 16 defines the categorical cross entropy loss function that
+in lines 16 and 17.
+Line 16 defines the categorical cross-entropy loss function that
 quantifies the degree of difference between the output data of {\tt layer\_2}
 and the answer {\tt y}.
-The line 17, then, creates an object of the {\tt AdamOptimizer} that is an
+Line 17, then, creates an object of the {\tt AdamOptimizer} that is an
 implementation of the Adam gradient descent algorithm~\cite{kingma2014adam}.
 The {\tt minimize} method of the object generates a training operation that
-updates model parameters using the Adam gradient descent alogrithm to minimize
+updates model parameters using the Adam gradient descent algorithm to minimize
 the loss calculated by the loss function.
 
 %The lines 16 and 17 defines the loss function and the training operation. 
@@ -226,15 +226,15 @@ the loss calculated by the loss function.
 %Thus, the line 17 defines the operation of a single training step,
 %which optimizes the model parameters via gradient descent to the loss gradient.
 
-The lines 19 to 22 train the constructed neural network on a session.
-The line 19 creates a {\tt Session} object that provides an encapsulated
+Lines 19 to 22 train the model in a session.
+Line 19 creates a {\tt Session} object that provides an encapsulated
 environment storing model parameters.
 %that provides the {\tt run} method to execute the network's operations in an
 %encapsulated environment.
 %The line 20 calls the {\tt run} method with a global variable initializer
 %to initialize model parameters of the network.
-The line 20 calls the {\tt run} method of the object with a global variable
-initializer to initialize all the model paramters of the network in the
+Line 20 calls the {\tt run} method of the object with a global variable
+initializer to initialize all the model parameters of the model in the
 encapsulated environment.
 %The {\tt Session} object provides the {\tt run} method that can invoke
 %computation of TensorFlow operations.
@@ -244,10 +244,9 @@ encapsulated environment.
 %used for the internal computation.
 %After the variables are initialized, the line 21 uses the {\tt for} loop
 %to iterate over the dataset and get training input data. 
-Then, the lines 21 and 22 actually train the network in a loop that executes
-the trainig operation {\tt train\_op} with the input data {\tt x} and {\tt y}
-by iterating over the ten thousand input dataset obtained from {\tt
-dataset.take(10000)}.
+Lines 21 and 22 then train the model in a loop that executes the training
+operation {\tt train\_op} with the input data {\tt x} and {\tt y} by iterating
+over the ten thousand input datasets obtained from {\tt dataset.take(10000)}.
 
 %The number of training data is specified by the {\tt take} API of the
 %dataset object.
