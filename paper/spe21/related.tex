@@ -6,7 +6,7 @@
 %DL training codes.
 Horovod\cite{sergeev2018horovod} is a popular distributed training library that
 supports multiple DL frameworks such as TensorFlow and PyTorch.
-Beside Horovod, there are several frameworks and libraries for distributed
+Besides Horovod, there are several frameworks and libraries for distributed
 training.
 TensorFlowOnSpark\cite{tfonspark} is a Python library that
 combines TensorFlow with Apache Spark and Hadoop to distribute
@@ -21,7 +21,7 @@ The package supports multiple implementations of {\tt tf.distribute.Strategy},
 enabling model engineers to perform distributed learning using various
 strategies.
 To train DL models in distributed environments, model engineers have to choose
-a library and manually modify the models following the library's documentation.
+a library and manually rewrite the models following the library's documentation.
 Our approach automatically transforms existing DL models into distributed ones,
 reducing engineers' burdens of understanding the document and modifying models.
 
@@ -70,7 +70,7 @@ output code in the same language.
 
 % Code Transformation in Python
 Researchers have proposed several code transformation techniques in Python
-and machine learning domains.
+and machine-learning domains.
 Loulergue and Philippe\cite{Loulergue2020} devised a framework that optimizes
 PySke programs by automatically rewriting terms in the programs based on
 transformation rules they define.
