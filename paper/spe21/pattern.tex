@@ -38,16 +38,16 @@ TensorFlow offers multiple APIs for defining the structure of the model and the
 training process. 
 These APIs include low-level APIs such as {\tt tf.GradientTape} and high-level
 APIs such as {\tt tf.keras.Model}.
-The choice of API depends on the complexity of the model and the specific
-requirements of the project.
+The choice of API depends on the model' complexity and the project's specific
+requirements.
 Figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that use
 different APIs to define the training process. 
 Figure~\ref{fig:pattern:ex01}(a) explicitly repeats the training
-steps by using the {\tt for} loop and the {\tt GradientTape} instance. 
+steps using the {\tt for} loop and the {\tt GradientTape} instance. 
 On the other hand, Figure~\ref{fig:pattern:ex01}(b) uses the Keras
 library APIs, {\tt compile} and {\tt fit}, to set a training methodology of the
 model and invoke the training process. 
-While both codes train the model in the same way, they use different training
+While both codes train the model similarly, they use different training
 APIs in different patterns.
 
 Our transformation approach needs to apply different transformation rules based
@@ -60,14 +60,14 @@ commonly appear in the models belonging to the same categories.
 For instance, models in the {GradientTape} category commonly use a {\tt with}
 statement to create a {\tt GradientTape} object, as illustrated in
 Figure~\ref{fig:pattern:ex01}(a).
-We patternize such common API usages, and our tool identifies the training API
-patterns of given models automatically to choose appropriate transformation
-rules for the models.
+We define patterns for such common API usages, and our tool identifies the
+training API patterns of given models automatically to choose appropriate
+transformation rules for the models.
 
 Table~\ref{tab:patterns} represents the four training API patterns. 
-The first column shows a TensorFlow version on which models are built, and the
-second and the third columns show a training API pattern name and its
-description, respectively.
+The first column shows TensorFlow versions on which models are built, and the
+second and third columns show training API pattern names and descriptions,
+respectively.
 We provide a detailed description of each pattern in the subsequent paragraphs
 and then present an algorithm that identifies the categories of models in
 Section~\ref{sec:ident}.
