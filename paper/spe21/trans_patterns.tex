@@ -38,11 +38,11 @@ the Session pattern using two code examples, (a) the original training code and
 (b) its distributed training version.
 One of the primary transformations involves adjusting the learning rate
 argument in the {\tt Optimizer} constructor call, which is achieved by
-multiplying it with the number of GPUs.
+multiplying it by the number of GPUs.
 The learning rate can be passed as the first positional argument in the
 constructor call or as the keyword argument {\tt learning\_rate}.
 The other transformation uses the Horovod-provided {\tt DistributedOptimizer}
-instance in place of the the original {\tt Optimizer} instance. 
+instance instead of the original {\tt Optimizer} instance. 
 To create the {\tt DisributedOptimizer} instance, the original {\tt Optimizer}
 is passed as an argument to its constructor.
 
@@ -81,18 +81,19 @@ is passed as an argument to its constructor.
   \label{fig:trans:sessrule}
 \end{figure}
 
-Figure \ref{fig:trans:sessrule} shows the key rule for the Session pattern,
+Figure \ref{fig:trans:sessrule} shows the essential rule for the Session pattern,
 which conducts the two transformations.
-The transform rule matches an assign statement that stores the result of a
+The transform rule matches an assignment statement that stores the result of a
 function call expression into a variable.
 Initially, the rule examines whether the callee function is the constructor of
 either the {\tt Optimizer} class or any of its subclasses.
 The predicate \ktsubtysubs{\smodenv} checks the subclass relation between two
-classes by utilizing the class hierarchy analysis result.
+classes using the class hierarchy analysis result.
 Then, the rule adjusts the learning rate argument of the constructor call. 
-If the learning rate is passed as a keyword argument, the rule replaces the
-keyword argument value with the multiplication of the original learning rate
-and the return value of {\tt horovod.size()}.
+Suppose the learning rate is passed as a keyword argument. 
+In that case, the rule replaces the keyword argument value with the
+multiplication of the original learning rate and the return value of {\tt
+horovod.size()}.
 Otherwise, the rule adjusts the first argument instead.
 Following the adjustment of the learning rate, the rule adds a new statement:
 $id_r\ =\ ${\tt hvd.DistributedOptimizer($id_r$)}. 
