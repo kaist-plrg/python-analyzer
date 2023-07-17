@@ -8,9 +8,9 @@ Also, we developed a code transformation tool that takes a TensorFlow DL model,
 identifies its training pattern via static analysis techniques, and rewrites
 it for distributed training by applying transformation rules of the identified
 training pattern.
-The evaluation showed that our approach is practical in that it transforms 15
-out of 16 open-source TensorFlow DL models to the same with their handcrafted
-distributed training versions.
+The evaluation showed that our approach is practical in correctly transforming
+15 out of 16 open-source TensorFlow DL models.
+%to the same with their handcrafted distributed training versions.
 We also showed that our approach is effective in that the transformed models
 train about 2.28 times faster than the original models.
 We believe that our tool reduces model engineers' burdens in rewriting models
