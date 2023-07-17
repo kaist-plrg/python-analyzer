@@ -15,9 +15,9 @@ Hovorod\cite{horovodgithub}, TensorFlow Model Garden\cite{tfmodelgarden},
 TensorFlow Examples by Americ Damien\cite{tfexamplesdamien},
 CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github}, and
 TensorFlow 2.x Tutorials\cite{tf2tutogithub}.
-We excluded two from 18 models in the repositories, because one abnormally
+We excluded two from 18 models in the repositories because one abnormally
 terminates with a runtime error in its execution, and the other duplicates.
-Our tool is written in Scala and is publically
+Our tool is written in Scala and is publicly
 available\footnote{https://github.com/kaist-plrg/python-analyzer}.
 
 \begin{table}[!ht]
@@ -182,7 +182,7 @@ the models, and the fourth column shows whether our tool correctly transforms
 the models.
 As shown in the table, our tool correctly transformed 15 out of the 16 models
 and failed to transform only the SimpleCNN-GradientTape-1 model.
-In the failed case, our tool raised a transformation failure error, because
+In the failed case, our tool raised a transformation failure error because
 some of the GradientTape transformation rules do not apply to the model.
 
 
@@ -204,7 +204,7 @@ variables of a {\tt Model} instance.
 However, because the code does not construct the model as a {\tt Model}
 instance, our tool cannot obtain the trainable variables from the model and
 fails to transform the code correctly.
-Note that such model construction is rare in that our tool correctly transforms
+Note that such model construction is rare because our tool correctly transforms
 11 out of the 12 GradientTape models since they utilize a {\tt Model}
 instance.
 
