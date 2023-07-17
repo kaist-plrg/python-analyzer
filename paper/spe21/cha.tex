@@ -40,20 +40,20 @@ model.fit(
   \label{fig:cha:tfex}
 \end{figure}
 
-Figure~\ref{fig:cha:tfex:a} demonstrates how TensorFlow APIs can be used to
-create and train a neural network using user-defined classes. 
+Figure~\ref{fig:cha:tfex:a} demonstrates how ones use TensorFlow APIs to create
+and train models using user-defined classes.
 The key concept in the code is the inheritance of the TensorFlow library class
 {\tt keras.Model} by the user-defined class {\tt ResNet}, which allows the user
 to access the methods provided by {\tt keras.Model} and use them to train the
-neural network.
-In line 4 of the code, the user-defined class {\tt ResNet} is defined by
-inheriting from {\tt keras.Model}. 
-Based-on the Python inheritance mechanism, the {\tt ResNet} class inherits all
+model.
+Line 4 of the code defines the user-defined class {\tt ResNet} by inheriting
+from {\tt keras.Model}. 
+Based on the Python inheritance mechanism, the {\tt ResNet} class inherits all
 the methods and attributes of the {\tt keras.Model} class and can also define
-its own methods and attributes. 
-The neural network is then created and trained using the {\tt ResNet} class
-instead of the {\tt keras.Model} class. 
-In line 8, a neural network is created with six blocks containing two layers
+its methods and attributes. 
+The code then creates and trains the model using the {\tt ResNet} class instead
+of the {\tt keras.Model} class.
+In line 8, a model is created with six blocks containing two layers
 each, using the {\tt ResNet} class instead of the {\tt keras.Model} class.
 Finally, in line 9, the {\tt fit} method provided by the {\tt keras.Model}
 class is called to train the network on the given data.
@@ -76,10 +76,10 @@ in Figure \ref{fig:cha:tfex:a} to a distributed model.
 The example highlights the importance of recognizing the inheritance
 relationship between user-defined classes and the TensorFlow library classes in
 identifying the training-related methods. 
-The transformation involves adding a keyword argument {\tt callbacks} to the
+The transformation involves adding a keyword argument, {\tt callbacks}, to the
 {\tt fit} method call, as shown in line 13.
 However, without recognizing the inheritance relationship between {\tt ResNet}
-and {\tt keras.Model}, we cannot identify the training method call in the line
+and {\tt keras.Model}, we cannot identify the training method call in line
 9 of Figure \ref{fig:cha:tfex:a}, and we cannot make the necessary modification
 to add the {\tt callbacks} keyword argument.
 
@@ -97,22 +97,22 @@ to add the {\tt callbacks} keyword argument.
 %{\tt keras.Model}, we cannot identify the training method call
 %in the line 9.
 
-The class hierarchy analysis is an essential pre-analysis step that we employ
-to solve the problem of identifying the training-related methods in DL models.
-The class hierarchy analysis is a static analysis technique that identifies the
+The class hierarchy analysis is an essential pre-analysis step to solve the
+problem of identifying the training-related methods in DL models.  The class
+hierarchy analysis is a static analysis technique that identifies the
 inheritance relationship between the classes in the code. 
 By applying the class hierarchy analysis on the input DL models, we can
-identify which user-defined classes inherit TensorFlow library classes, and
-therefore correctly identify the training-related method calls inherited from
+identify which user-defined classes inherit TensorFlow library classes and
+check whether call statements target training-related methods inherited from
 TensorFlow library classes.
-In the code example in Figure \ref{fig:cha:tfex:a}, for instance, the class
+In the code example in Figure \ref{fig:cha:tfex:a}, the class
 hierarchy analyzer reads the class definition in line 4 to conclude that the
 class {\tt ResNet} inherits the class {\tt keras.Model}. 
-The \tapi~takes this information so that it recognizes the {\tt fit} method
+The \tapi~takes this information to recognize the {\tt fit} method
 call as the call to the training method provided by the {\tt keras.Model} and
 selects appropriate transformation rules for the training pattern.
 The information is also sent to \atran~to identify the training method call
-statement and apply the transformation rules on it.
+statement and apply the transformation rules.
 
 %We employ the class hierarchy analysis as a pre-analysis to solve this problem.
 %\textit{Class hierarchy analysis} is a static analysis technique that identifies
