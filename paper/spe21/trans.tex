@@ -17,13 +17,13 @@ models using pure functions called {\it transform functions}.
 These functions take ASTs as input and produce ASTs as output. 
 In addition, the functions use {\it transform context} objects to incorporate
 contextual information during the transformation process. 
-The transform context is a mapping of strings to identifiers, which stores and
-propagates important identifiers being used for the transformation.
+The transform context maps strings to identifiers, which stores and
+propagates necessary identifiers used for the transformation.
 Each transform function takes a transform context as an additional input, uses
 and updates it in the function body, and produces the updated transform context
 as an additional output.
-This enables transform functions to utilize contextual information from outside
-of their input ASTs and pass relevant contextual information to subsequent
+This enables transform functions to utilize contextual information outside
+their input ASTs and pass relevant contextual information to subsequent
 transform functions.
 %We present the formalization of the transformation rules in terms of
 %\textit{trasnform functions}.
@@ -46,7 +46,7 @@ transform functions.
 % transform function format expl
 % 이 파트를 어떻게 효과적으로 설명해야할지 확신이 안드는 상태
 We define the transform functions as a collection of partial transform
-functions, of which the one example is illustrated in
+functions, of which one example is illustrated in
 Figure~\ref{fig:trans:fnexpl}. 
 These partial functions operate only on ASTs that match a specified code
 pattern in the input AST parameter position. 
@@ -56,11 +56,12 @@ import} statements and transforms them accordingly.
 The function takes the transform context $\smodenv$ as an additional input, and
 its body produces a pair of the output expression and the updated transform
 context. 
-To specify different outputs depending on certain conditions, we use complex
-expressions such as {\tt LET-IN} and {\tt IF-THEN-ELSE}. 
+We use compound expressions such as {\tt LET-IN} and {\tt IF-THEN-ELSE} to
+specify different outputs depending on certain conditions. 
 In Figure~\ref{fig:trans:fnexpl}, the function body uses a {\tt LET-IN}
 expression to store the updated transform context by another transform function
-applied to the subphrase $alias^*$ to $\sigma_1$, and also uses an {\tt
+applied to the sub phrase $alias^*$ to $\sigma_1$. 
+Also, it uses an {\tt
 IF-THEN-ELSE} expression to return different results depending on whether the
 {\tt import} statement imports the {\tt tensorflow} module or not.
 
@@ -95,15 +96,15 @@ The function first computes the transform context $\smodenvsubs{1}$ that
 includes all the modules and their alias identifiers imported by the statement.
 Next, the function calculates the difference between $\smodenvsubs{1}$ and the
 input transform context $\smodenv$.
-If the difference contains the new entry for the string {\tt "tensor\_flow"},
-the transform function returns a statement list containing the original
-statement and a new statement {\tt import horovod.tensorflow as hvd} to add the
-import statement for the {\tt horovod} module after the original statement as
-shown in Figure~\ref{fig:trans:ex01}(b).  
+Suppose the difference contains the new entry for the string {\tt "tensor\_flow"}.
+In that case, the transform function returns a statement list containing the
+original statement and a new statement {\tt import horovod.tensorflow as hvd}
+to add the import statement for the {\tt horovod} module after the original
+statement, as shown in Figure~\ref{fig:trans:ex01}(b).  
 Otherwise, the function returns a statement list containing only the original
 statement remaining unchanged.
 
-In the next subsection, we briefly present key code transform rules for
+The following subsection briefly presents essential code transform rules for
 each training API pattern with formal descriptions. 
 We also provide the full transform rules as a companion
 report~\footnote{https://...}.
