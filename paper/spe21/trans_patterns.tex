@@ -271,7 +271,7 @@ In addition, the model also needs to broadcast trainable global variables from
 the root process to the others once after applying the gradients.
 Lines 13 to 17 in Figure~\ref{fig:trans:gtapetrans}(b) represent the code that
 broadcasts the variables depending on the value of {\tt hvd\_broadcast\_done}.
-Once the broadcasting is done, the {\tt hvd\_broadcast\_done} is set to {\tt
+Once finishing the broadcasting, the {\tt hvd\_broadcast\_done} is set to {\tt
 False} to prevent further broadcasting.
 
 %To correctly transform GradientTape pattern training codes,
