@@ -330,8 +330,8 @@ Our approach traverses the input model AST to identify statements that match
 one of these patterns. 
 Note that the input model may not contain any statements or may contain
 multiple statements that match the training API patterns. 
-In such cases, the identifier has to inform the user that the input model is
-not suitable for the automatic transformation.
+In such cases, the identifier must inform the user that the input model is
+unsuitable for the automatic transformation.
 
 \begin{figure}[ht!]
   \centering
@@ -341,14 +341,14 @@ not suitable for the automatic transformation.
 \end{figure}
 
 To handle these scenarios, \tapi~performs a simple static analysis with a flat
-lattice domain composed of the four training API patterns, as well as {\it
+lattice domain composed of the four training API patterns, and {\it
 Unknown} and {\it Multiple} elements. 
 The Unknown element represents that an AST does not match any of the four
 training API patterns, and the Multiple element represents that an AST matches
-multiple different training API patterns.
+multiple training API patterns.
 Figure~\ref{fig:pattern:lattice} depicts the lattice structure.  
 The lattice represents a partially ordered set $(P, \sqsubseteq)$ of which the
-boxes denote elements in $P$ and the directed edges denote the given order
+boxes denote elements in $P$, and the directed edges denote the given order
 $\sqsubseteq$ between their {\it from} elements and their {\it to} elements.
 The order is a binary relation on the set $P$, which is reflexive ($\forall x
 \in P.\ x \sqsubseteq x$), antisymmetric ($\forall x, y \in P.\ x \sqsubseteq y
@@ -360,16 +360,16 @@ $lub$ of arbitrary two elements $x$ and $y$ in $P$ as follows: $x \sqsubseteq
 lub \wedge y \sqsubseteq lub \wedge \forall ub \in \{e\ |\ x \sqsubseteq e
 \wedge y \sqsubseteq e\}.\ lub \sqsubseteq ub$. 
 \tapi~applies the join operation to produce one identification result from a
-model of which the statements match multiple different training API patterns.
-For example, the Session element results from the join of Session and Unknown
-elements, and the Multiple element results from the join of MonitoredSession and
+model in which the statements match multiple training API patterns.
+For example, the Session element results from joining Session and Unknown
+elements, and the Multiple element results from joining MonitoredSession and
 Keras elements.
 
 Algorithm~\ref{al:apiident} describes the pseudocode of the training API
 pattern identification.
 The function {\tt IdentifyPattern} takes both an input AST and the class
 hierarchy analysis result, traverses the AST to identify its training API
-pattern, and returns the pattern.
+pattern, and returns it.
 The algorithm first tries to match the AST with four training API patterns.
 The case statement in
 lines~\ref{alg:begin-match-session}~and~\ref{alg:end-match-session}~checks
@@ -384,30 +384,30 @@ instance and calls the {\tt run} method of the instance in the body statements.
 If the match succeeds, the algorithm returns the MonitoredSession element.
 The case statement in line~\ref{alg:begin-match-gradient} checks whether the
 AST is a {\tt with} statement that creates a {\tt GradientTape} instance.
-Line~\ref{alg:mid-match-gradient} then also checks whether the parent AST has a
+Line~\ref{alg:mid-match-gradient} also checks whether the parent AST has a
 child statement that calls the {\tt apply\_gradients} method of the instance.
 If both matches succeed, the algorithm returns the GradientTape element.
 The case statement in line~\ref{alg:begin-match-keras} checks whether the AST
 is a {\tt call} statement that invokes the {\tt fit} method of the object
 assigned into an arbitrary variable $model$.
-The algorithm then analyzes the class type of the object by tracking the
-definition site of the variable and tests whether the class is a subclass of
-the {\tt keras.Model}, using the class hierarchy analysis result.
+The algorithm then analyzes the object's class type by tracking the variable's 
+definition site and tests whether the class is a subclass of
+the {\tt keras.Model} using the class hierarchy analysis result.
 If the match succeeds, the algorithm returns the Keras element.
-From lines~\ref{alg:begin-ow}~to~\ref{alg:end-ow}~operate when the input AST
+Lines~\ref{alg:begin-ow}~to~\ref{alg:end-ow}~operate when the input AST
 does not match with any of the four training API patterns.
 The code invokes the {\tt IdentifyPattern} function recursively for each child
 of the AST, joins all the results of the function calls, and returns the join
 operation result as the training API pattern.
-If the AST does not have any children, it is simply identified as Unknown.
+If the AST has no children, the algorithm identifies it as Unknown.
 
 \atran~transforms an input model via appropriate transformation rules,
 depending on the model's training API pattern identified by \tapi.
-When the the identified pattern is either Multiple or Unknown, our tool fails
-to transform the model in the automated way and terminates. 
-Note that the transformation failures are rare in that our evaluation shows
-that \tapi~identifies only one of the 16 target TensorFlow models as either
-Multiple or Unknown.
+When the identified pattern is Multiple or Unknown, our tool fails
+to transform the model automatically and terminates. 
+Note that the transformation failures are rare because our evaluation shows
+that \tapi~identifies only one of the 16 target TensorFlow models as Multiple
+or Unknown.
 
 %\tapi~finally identifies the input model as one of the six elements.
 %If the identified pattern is either Multiple or Unknown, our tool fails to
