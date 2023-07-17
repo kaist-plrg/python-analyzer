@@ -180,7 +180,7 @@ with tf.Session() as sess:
 
 
 \paragraph{MonitoredSession Pattern.}
-The MonitoredSession is another common code pattern that has been observed in
+The MonitoredSession is another typical code pattern observed in
 TensorFlow 1.x models. 
 Figure~\ref{fig:monsesspattern} demonstrates a code example of the
 MonitoredSession pattern.
@@ -194,9 +194,9 @@ The {\tt with} statement in line 3 creates an instance of the {\tt
 MonitoredSession} class via the {\tt MonitoredTrainingSession} API, and the
 {\tt run} method call in line 5 invokes the training computation.
 The {\tt SummarySaverHook} API call in line 1 creates one of the pre-defined
-hooks, which saves the summaries of the model after each training step. 
-TensorFlow provides the {\tt tensorboard} utility visualizing model summaries,
-so that developers can check training processes from the summaries.
+hooks, which saves the model summaries after each training step. 
+TensorFlow provides the {\tt TensorBoard} utility visualizing model summaries,
+so that model engineers can check training processes from the summaries.
 \vspace{-1em} 
 
 \begin{figure}[!ht]
@@ -220,13 +220,13 @@ with MonitoredTrainingSession(hooks=[summary_hook]) as mon_sess:
 
 \paragraph{GradientTape Pattern.}
 The GradientTape pattern is a classification for TensorFlow 2.x models that
-utilize the {\tt GradientTape} class instance to manually initiate training
-computations. 
+utilize the {\tt GradientTape} class instance to initiate training computations
+manually.
 Figure~\ref{fig:tapepattern} demonstrates an example of the
 GradientTape pattern. 
-Line 4 initiates the {\tt GradientTape} class instance through the use of a
-{\tt with} statement. 
-Once the {\tt GradientTape} instance has been created, it watches all trainable
+Line 4 initiates the {\tt GradientTape} class instance through a {\tt with}
+statement. 
+Once creating the {\tt GradientTape} instance, it watches all trainable
 variables by default and records operations executed on the variables within
 its context manager.
 The {\tt gradient} method call in line 7 calculates and returns gradients from
@@ -284,12 +284,12 @@ for images, labels in dataset.take(10000):
 The Keras pattern is another classification for TensorFlow 2.x models that
 utilize the keras library in both model creations and training. 
 Figure~\ref{fig:keraspattern} represents an example of the Keras pattern.
-Line 1 defines the {\tt ResNet} class that inherits from the {\tt keras.Model}
+Line 1 defines the {\tt ResNet} class inherited from the {\tt keras.Model}
 class. 
 As described in Section~\ref{sec:cha}, the {\tt keras.Model} class provides a
 convenient way to construct and train models. 
-In line 5, a model is constructed as an instance of the {\tt ResNet} class.
-Finally, in line 6, the {\tt fit} method call trains the model with given
+Line 5 constructs a model as an instance of the {\tt ResNet} class.
+Finally, the {\tt fit} method invoked in line 6 trains the model with the given
 dataset.
 
 %The Keras pattern categorizes TensorFlow 2.x models that use
