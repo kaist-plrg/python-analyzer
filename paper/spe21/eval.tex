@@ -220,8 +220,8 @@ API calls into the model codes, which log the loss value of each training
 epoch.
 Among the 16 models, we targeted 13 models in the experiment; we excluded two
 TensorFlow 1.x models with which the TensorBoard APIs are incompatible 
-and one model that our tool failed to transform.
-We performed the experiment on a Linux machine with Intel Xeon CPU E5-2690 v4 @
+and one that our tool failed to transform.
+We experimented on a Linux machine with Intel Xeon CPU E5-2690 v4 @
 2.60GHz, 131GB memory, and four NVIDIA TITAN Xp GPUs.
 
 %To answer the second research question,
@@ -367,7 +367,7 @@ Furthermore, distributed training can harm the inference precision of models.
 Figure~\ref{fig:eval:train} illustrates the changes in the loss of models over
 training time. 
 The x-axis represents the training time in seconds, the y-axis represents the
-loss values, and the bule and red lines represent the losses of the
+loss values, and the blue and red lines represent the losses of the
 original models and their transformed models, respectively.
 Distributed training in six models led to higher losses than
 non-distributed training.
@@ -420,8 +420,8 @@ The gray line represents the result of non-distributed training, the red line
 represents the result of distributed training with the original learning rate
 of $1e-3$, and the blue and black lines represent the results of distributed
 training with adjusted learning rates of $1e-4$ and $1e-5$, respectively.
-The three distributed training cases reached the minimum loss at nearly
-simultaneoulsy, but they exhibited significant differences in the
+The three distributed training cases reached the minimum loss nearly
+simultaneously but exhibited significant differences in the
 achieved minimum loss for each training.
 In the case of distributed training with the original learning rate, the
 training led to only slight changes in loss.
