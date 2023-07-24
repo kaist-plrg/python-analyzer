@@ -2,9 +2,9 @@
 We evaluate the proposed approach for the following research questions:
 \begin{itemize}
 \item RQ1. (Correctness) Does the transformation correctly distribute the
-  training of single-GPU models?
-\item RQ2. (Effectiveness) Does the automated transformation effectively accelerate the
-  training of single-GPU models?
+  training of non-distributed models?
+\item RQ2. (Effectiveness) Does the automated transformation effectively
+  accelerate the training of non-distributed models?
 \end{itemize}
 
 \noindent
@@ -93,7 +93,7 @@ available\footnote{https://github.com/kaist-plrg/python-analyzer}.
 
 \subsection{RQ1: Correctness of the transformation}
 To show the correctness of the transformation, we transformed each of the 16
-single-GPU models using our tools and compared them to the distributed training
+non-distributed models using our tools and compared them to the distributed training
 versions of those models.
 For the models obtained from the Horovod repository, we used their distributed
 training versions available in the repository as the correct results.
@@ -249,7 +249,7 @@ We experimented on a Linux machine with Intel Xeon CPU E5-2690 v4 @
   \label{fig:eval:traintime}
   \begin{tabular}{|l|r|r|r|}
 \hline
-                         & Single-GPU         & Distributed       & \\
+                         & Non-distributed & Distributed       & \\
 Model Name               &  training time (s) & training time (s) &  Speedup\\
 \hline
 LSTM-MNIST               & 78.675& 11.951& $\times$6.58\\
