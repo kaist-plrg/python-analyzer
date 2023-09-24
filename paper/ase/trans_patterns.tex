@@ -8,8 +8,8 @@
 
 \subsubsection{Rules for the Session Pattern}
 
-\begin{figure}[ht!]
-  \begin{subfigure}[t]{0.45\textwidth}
+\begin{figure}[ht!]\centering
+  \begin{subfigure}[t]{0.8\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
 
@@ -19,7 +19,7 @@ with tf.Session() as sess:
     \caption{Session pattern example}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[t]{0.45\textwidth}
+  \begin{subfigure}[t]{0.8\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01 * hvd.size())
 optimizer = hvd.DistributedOptimizer(optimizer)
@@ -140,7 +140,7 @@ parameters of the source to the other processes.
 
 \begin{figure}
   \centering
-  \begin{subfigure}[t]{0.45\textwidth}
+  \begin{subfigure}[t]{0.8\textwidth}
     \begin{lstlisting}[style=mpython]
 with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     while not mon_sess.should_stop():
@@ -148,7 +148,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     \caption{MonitoredSession pattern example}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[t]{0.45\textwidth}
+  \begin{subfigure}[t]{0.8\textwidth}
     \begin{lstlisting}[style=mpython]
 with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVariablesHook(0)) as mon_sess:
     while not mon_sess.should_stop():
@@ -290,8 +290,8 @@ False} to prevent further broadcasting.
 %model to ensure that variable broadcasting occurs exactly once.
 
 
-\begin{figure}[ht!]
-\noindent
+\begin{figure}[ht!]\centering
+%\noindent
 \begin{tabular}{l}
   \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
   \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
@@ -361,8 +361,8 @@ global broadcast flag to {\tt True}.
 
 \subsubsection{Rules for the Keras pattern}
 
-\begin{figure}[ht!]
-  \begin{subfigure}[t]{0.45\textwidth}
+\begin{figure}[ht!]\centering
+  \begin{subfigure}[t]{0.8\textwidth}
   \begin{lstlisting}[style=mpython]
 class ResNet(keras.Model):
     def __init__(self, block_list):
@@ -374,7 +374,7 @@ model.fit(x_train, y_train)\end{lstlisting}
   \caption{Keras pattern example}
   \end{subfigure}
   \hspace{3mm}
-  \begin{subfigure}[t]{0.45\textwidth}
+  \begin{subfigure}[t]{0.8\textwidth}
   \begin{lstlisting}[style=mpython]
 class ResNet(keras.Model):
     def __init__(self, block_list):

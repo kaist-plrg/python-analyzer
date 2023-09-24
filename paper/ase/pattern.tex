@@ -158,7 +158,7 @@ class, and the {\tt run} method called in line 3 invokes the training
 computation on an isolated execution environment of the session instance. 
 The {\tt run} method is usually called multiple times through a loop statement
 to train models on several training batches.
-\vspace{-1em} 
+%\vspace{-1em} 
 
 \begin{figure}[!ht]
 \begin{lstlisting}[style=mpython]
@@ -169,7 +169,7 @@ with tf.Session() as sess:
 \caption{Session pattern code example}
 \label{fig:sessionpattern}
 \end{figure}
-\vspace{-1em} 
+%\vspace{-1em} 
 
 
 %To identify the Session pattern model, the identifier 
@@ -197,7 +197,7 @@ The {\tt SummarySaverHook} API call in line 1 creates one of the pre-defined
 hooks, which saves the model summaries after each training step. 
 TensorFlow provides the {\tt TensorBoard} utility visualizing model summaries,
 so that model engineers can check training processes from the summaries.
-\vspace{-1em} 
+%\vspace{-1em} 
 
 \begin{figure}[!ht]
   \begin{lstlisting}[style=mpython]
@@ -216,7 +216,7 @@ with MonitoredTrainingSession(hooks=[summary_hook]) as mon_sess:
 %If the body statements of the {\tt with} statement call the {\tt run} methods 
 %of the {\tt MonitoredSession} instance, 
 %the identifier categorizes the input model as the MonitoredSession pattern. 
-\vspace{-1em} 
+%\vspace{-1em} 
 
 \paragraph{GradientTape Pattern.}
 The GradientTape pattern is a classification for TensorFlow 2.x models that
@@ -244,7 +244,7 @@ class instance is called to update the model parameters.
 %to retreive the recorded gradients of the model.
 %The line 9 calls the {\tt apply\_gradients} methods of the {\tt Optimizer}
 %class instance to finally update the model parameters.
-\vspace{-1em} 
+%\vspace{-1em} 
 
 \begin{figure}[!ht]
   \begin{lstlisting}[style=mpython]
@@ -300,7 +300,7 @@ dataset.
 %The line 5 creates the {\tt ResNet} class instance.
 %The line 6 calls the {\tt fit} method to train the model.
 %Note that the {\tt fit} method is inherited from the {\tt keras.Model} class.
-\vspace{-1em} 
+%\vspace{-1em} 
 
 \begin{figure}[ht!]
   \begin{lstlisting}[style=mpython]
@@ -314,7 +314,7 @@ model.fit(dataset, epochs=50)\end{lstlisting}
   \caption{Keras pattern code example}
   \label{fig:keraspattern}
 \end{figure}
-\vspace{-1em} 
+%\vspace{-1em} 
 
 %To identify a Keras pattern model, the identifer searches for the
 %{\tt Model.fit} method call. The training API pattern identifier utilizes the

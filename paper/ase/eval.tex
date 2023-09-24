@@ -142,7 +142,7 @@ results.
 %  \label{fig:eval:trans}
 %\end{figure}
 
-\begin{figure}[!ht]
+\begin{figure}[!ht]\centering
   \begin{lstlisting}[language=Python]
 # Model object is not used, instead a function used
 def conv_net(x):
@@ -285,67 +285,74 @@ epoch of the model is minimal.
 
 \begin{figure}%[!ht]
   \centering
-  \begin{subfigure}[t]{.24\textwidth}
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tape-lstm}
     \caption{LSTM-MNIST}
   \end{subfigure}
   ~ 
-  \begin{subfigure}[t]{.36\textwidth}\centering
+  \begin{subfigure}[t]{.30\textwidth}
     \includegraphics[width=.66\textwidth]{tape-simple2}
     \caption{SimpleCNN-GradientTape-2}
   \end{subfigure}
   ~
-  \begin{subfigure}[t]{.24\textwidth}
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{keras-cifar}
     \caption{VGG-CIFAR10}
   \end{subfigure}
-  \par\bigskip
-  \begin{subfigure}[t]{.24\textwidth}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-03}
     \caption{Play-with-MNIST}
   \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
+
+  \par\bigskip
+  
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-04}
     \caption{Linear-Regression}
   \end{subfigure} 
   ~ 
-  \begin{subfigure}[t]{.24\textwidth}
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-05}
     \caption{Fashion-MNIST}
   \end{subfigure}
   ~
-  \begin{subfigure}[t]{.24\textwidth}
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-06}
     \caption{CIFAR10-VGG16}
   \end{subfigure}
-  \par\bigskip
-  \begin{subfigure}[t]{.24\textwidth}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-07}
     \caption{Inception-network}
   \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
+  
+
+  \par\bigskip
+
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-09}
     \caption{RNN-Sentiment-Analysis}
   \end{subfigure} 
-  ~ 
-  \begin{subfigure}[t]{.24\textwidth}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-10}
     \caption{Stacked-LSTM-ColorBot}
   \end{subfigure}
   ~
-  \begin{subfigure}[t]{.24\textwidth}
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-11}
     \caption{Auto-Encoder}
   \end{subfigure}
-  \par\bigskip
-  \begin{subfigure}[t]{.24\textwidth}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-12}
     \caption{Variational-Auto-Encoder}
   \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.24\textwidth}
+  
+  \par\bigskip
+
+  \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-13}
     \caption{DCGAN}
   \end{subfigure} 
@@ -438,7 +445,7 @@ training.
 
 \begin{figure}%[!ht]
   \centering
-  \includegraphics[width=.5\textwidth]{lr-exp-graph}
+  \includegraphics[width=.8\textwidth]{lr-exp-graph}
   \caption{Distributed training on the VGG-CIFAR10 model with different learning rates}
   \label{fig:eval:cifar10}
 \end{figure}
