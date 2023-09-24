@@ -1,0 +1,359 @@
+\section{Code Transformation}\label{sec:trans}
+
+%\subsection{Formalization of the Transformation Rules}
+\subsection{Formalization of Transformation Rules}
+
+% todo: graphical issue in this figure image
+\begin{figure}[ht!]
+    \centering
+    \includegraphics[width=0.7\textwidth]{transfn_expl.pdf}
+    \caption{Transform function description}
+    \label{fig:trans:fnexpl}
+\end{figure}
+
+% new
+We formalize the rules for transforming single-GPU models into multi-GPU
+models using pure functions called {\it transform functions}. 
+These functions take ASTs as input and produce ASTs as output. 
+In addition, the functions use {\it transform context} objects to incorporate
+contextual information during the transformation process. 
+The transform context maps strings to identifiers, which stores and
+propagates necessary identifiers used for the transformation.
+Each transform function takes a transform context as an additional input, uses
+and updates it in the function body, and produces the updated transform context
+as an additional output.
+This enables transform functions to utilize contextual information outside
+their input ASTs and pass relevant contextual information to subsequent
+transform functions.
+%We present the formalization of the transformation rules in terms of
+%\textit{trasnform functions}.
+%Transform functions are the pure functions from ASTs to ASTs.
+%By applying the transform function to AST of the input single-GPU model,
+%we can get the AST of the transformed multi-GPU model.
+%Transform functions also receive and return objects called \textit{transform
+%context} in order to utilize the contextual information during the 
+%transformation process.
+%The transform context is a finite mapping from strings to identifiers, which
+%stores arbitrary identifiers from the code and propagate them to the 
+%next transform function.
+%When transform functions are sequentially applied to sequence of ASTs, 
+%the output transform context from the previous call is given as the input
+%to the next tranform function call.
+%By this method, the transform functions can utilize contextual information
+%outside of their input AST and propagate some contextual information from
+%their input AST to next transform function calls.
+
+% transform function format expl
+% 이 파트를 어떻게 효과적으로 설명해야할지 확신이 안드는 상태
+We define the transform functions as a collection of partial transform
+functions, of which one example is illustrated in
+Figure~\ref{fig:trans:fnexpl}. 
+These partial functions operate only on ASTs that match a specified code
+pattern in the input AST parameter position. 
+Any input ASTs that do not match the pattern remain unmodified. 
+For example, the function in Figure~\ref{fig:trans:fnexpl} matches only {\tt
+import} statements and transforms them accordingly. 
+The function takes the transform context $\smodenv$ as an additional input, and
+its body produces a pair of the output expression and the updated transform
+context. 
+We use compound expressions such as {\tt LET-IN} and {\tt IF-THEN-ELSE} to
+specify different outputs depending on certain conditions. 
+In Figure~\ref{fig:trans:fnexpl}, the function body uses a {\tt LET-IN}
+expression to store the updated transform context by another transform function
+applied to the sub phrase $alias^*$ to $\sigma_1$. 
+Also, it uses an {\tt
+IF-THEN-ELSE} expression to return different results depending on whether the
+{\tt import} statement imports the {\tt tensorflow} module or not.
+
+\begin{figure}[ht!]
+    \centering
+    % org
+    \begin{subfigure}[b]{0.48\textwidth}
+        \begin{lstlisting}[language=Python]
+import tensorflow as tf\end{lstlisting}
+        \caption{Original DL python code}
+        \label{fig:trans:ex01:org}
+    \end{subfigure}
+    ~
+    % hvd
+    \begin{subfigure}[b]{0.48\textwidth}
+        \begin{lstlisting}[language=Python]
+import tensorflow as tf
+import horovod.tensorflow as hvd\end{lstlisting}
+        \caption{Transformed DL python code}
+        \label{fig:trans:ex01:hvd}
+    \end{subfigure}
+    \caption{Example code transformation result}
+    \label{fig:trans:ex01}
+\end{figure}
+
+Figure~\ref{fig:trans:ex01} shows the example code transformation result by the
+partial transform function in Figure~\ref{fig:trans:fnexpl}.
+Because the statement in Figure~\ref{fig:trans:ex01}(a) is an import statement
+matched with the input AST pattern of the function, the function is responsible
+for transforming the statement.
+The function first computes the transform context $\smodenvsubs{1}$ that
+includes all the modules and their alias identifiers imported by the statement.
+Next, the function calculates the difference between $\smodenvsubs{1}$ and the
+input transform context $\smodenv$.
+Suppose the difference contains the new entry for the string {\tt "tensor\_flow"}.
+In that case, the transform function returns a statement list containing the
+original statement and a new statement {\tt import horovod.tensorflow as hvd}
+to add the import statement for the {\tt horovod} module after the original
+statement, as shown in Figure~\ref{fig:trans:ex01}(b).  
+Otherwise, the function returns a statement list containing only the original
+statement remaining unchanged.
+
+The following subsection briefly presents essential code transform rules for
+each training API pattern with formal descriptions. 
+We also provide the full transform rules as a companion
+report~\footnote{https://github.com/kaist-plrg/python-analyzer/blob/main/trans/trans.pdf}.
+
+%We describe the transform function as the collection of the partial transform
+%function. 
+%The figure~\ref{fig:trans:fnexpl} illustrates an example of the
+%partial transform function.
+%We use the AST pattern in the input parameter position.
+%The input AST pattern means that the partial function only applies
+%to the input ASTs that match the pattern.
+%The input ASTs taht does not match the pattern will not be modified.
+%For instance, the function in the figure~\ref{fig:trans:fnexpl} only matches
+%the {\tt import} statements and transform them. 
+%The function also takes the transform context $\smodenv$ as an input.
+%The function body defines the output expression. 
+%We use complex expressions such as {\tt LET-IN} or {\tt IF-THEN-ELSE} to 
+%check and specify conditions to return different outputs.
+%In the figure~\ref{fig:trans:fnexpl}, 
+%the function body uses {\tt IF-THEN-ELSE} expression to check if the 
+%{\tt import} statement imports the {\tt tensorflow} module, 
+%and returns different ASTs according to the condition.
+
+%\pagebreak
+%\begin{figure}[ht!]
+%  \centering
+%  \begin{subfigure}[t]{0.48\textwidth}
+%    \begin{lstlisting}[language=Python]
+%import tensorflow as tf
+%
+%dataset = ...
+%model = ...
+%optim = tf.optimizers.Adam(0.001) 
+%
+%for (x, y) in dataset.take(10000):
+%  with tf.GradientTape() as tape:
+%    pred = model(x)
+%    loss_value = loss(y, pred)\end{lstlisting} 
+%    \caption{Original DL training code}
+%  \end{subfigure}
+%  \hspace{5mm}
+%  \begin{subfigure}[t]{0.48\textwidth}
+%    \begin{lstlisting}[language=Python]
+%import tensorflow as tf
+%import horovod.tensorflow as hvd
+%
+%dataset = ...
+%model = ...
+%optim = tf.optimizers.Adam(0.001 * hvd.size()) 
+%
+%for (x, y) in dataset.take(10000):
+%  with tf.GradientTape() as tape:
+%    pred = model(x)
+%    loss_value = loss(y, pred) 
+%  tape = hvd.DistributedGradientTape(tape)\end{lstlisting}
+%    \caption{Distributed DL training code}
+%  \end{subfigure}
+%  \caption{Example of original DL model code transformed into the distributed model}
+%  \label{fig:trans:ex}
+%\end{figure}
+%
+%We explain how transform functions are defined to transform the DL model codes
+%in the example in figure \ref{fig:trans:ex}.
+%Figure \ref{fig:trans:ex} is an example of single-GPU model code and
+%the corresponding distributed model code.
+%There are three transformed parts of the code. 
+%First, an import statement for the {\tt horovod} module is added in the line 2. 
+%The statement is added right after the {\tt tensorflow} module import statement.
+%Second, in the line 6, the argument of the {\tt Optimizer} instance constructor
+%is modified. The new argument expression multiplies {\tt hvd.size()} 
+%to the original argument expression.
+%Third, in the line 12, an assign statement is added. 
+%The assignment wraps the original {\tt GradientTape} object with
+%the Horovod library function, {\tt hvd.DistributedGradientTape}.
+
+%\begin{figure}[ht!]
+%    \centering
+%    % org
+%    \begin{subfigure}[b]{0.48\textwidth}
+%        \begin{lstlisting}[language=Python]
+%import tensorflow as tf\end{lstlisting}
+%        \caption{Original DL training code: only TensorFlow module is imported.}
+%        \label{fig:trans:ex01:org}
+%    \end{subfigure}
+%    ~
+%    % hvd
+%    \begin{subfigure}[b]{0.48\textwidth}
+%        \begin{lstlisting}[language=Python]
+%import tensorflow as tf
+%import horovod.tensorflow as hvd\end{lstlisting}
+%        \caption{Distributed DL training code: Horovod module import statement is added.}
+%        \label{fig:trans:ex01:hvd}
+%    \end{subfigure}
+%    % fn
+%    \begin{subfigure}[t]{\textwidth}
+%        \centering
+%        \begin{tabular}{l}
+%            \typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ 
+%            $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}\\
+%            \tstmt{\kimport ~ \mul{\nalias}}{\smodenv} = \\
+%            \inden \ktlet ~ \smodenvsubs{1} ~ \kteq ~ \taalias{\mul{\nalias}}{\smodenv} \ktin \\
+%            \inden \ktif ~ \smodenvsubs{1} ~ \envsub ~ \smodenv ~ \kteq ~ [\tflow $\mapsto$ \nid]\\ 
+%            \inden\ktthen \\
+%            \inden\hspace{1em} ([\kimport ~ \mul{\nalias},
+%            \kimport ~ {\tt horovod.tensorflow} \kas ~ {\tt hvd}], \smodenvsubs{1})\\
+%            \inden \ktelse~([\kimport ~ \mul{\nalias}], \smodenvsubs{1})
+%\end{tabular}\\\vpar
+%
+%        \caption{The Partial Transform function}
+%        \label{fig:trans:ex01:fn}
+%    \end{subfigure}
+%
+%    \caption{Transformation of Adding the Horovod {\tt import} Statement}
+%    \label{fig:trans:ex01}
+%\end{figure}
+
+
+%Figure \ref{fig:trans:ex01} describes the partial transform function that
+%transforms the first part of the code.
+%The input AST pattern matches an import statement that imports the
+%{\tt tensorflow} module.
+%The line 2 in the figure~\ref{fig:trans:ex01:fn} first computes the
+%$\smodenvsubs{1}$, which is the transfom context that includes the modules 
+%imported by the input statement.
+%Then the line 3 compute the difference between $\smodenvsubs{1}$ 
+%and the input transform context $\smodenv$.
+%If the difference includes the new entry for string {\tt "tensor\_flow"},
+%it means that the import statement imports the {\tt tensorFlow} module.
+%In this case, the transform function adds the {\tt horovod} module import 
+%statement after the original statement.
+%
+%\pagebreak
+%\begin{figure}[ht!]
+%    \centering
+%
+%    \begin{subfigure}[t]{0.48\textwidth}
+%        \begin{lstlisting}[language=Python]
+%        optim = tf.optimizers.Adam(0.001)\end{lstlisting}
+%        \caption{Original DL training code}
+%    \end{subfigure}
+%
+%    \hspace{5mm}
+%
+%    \begin{subfigure}[t]{0.48\textwidth}
+%        \begin{lstlisting}[language=Python]
+%        optim = tf.optimizers.Adam(0.001 * hvd.size())\end{lstlisting}
+%        \caption{Distributed DL training code}
+%    \end{subfigure}
+%
+%    \begin{subfigure}[t]{\textwidth}
+%        \centering
+%        \begin{tabular}{l}
+%
+%            \typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}\\
+%
+%            \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n}} }{\smodenv} = \\
+%
+%            \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer}\\
+%            \inden \ktthen \\
+%
+%            \inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11}
+%            {\tt * hvd.size()} ... \nexprsubs{1n}}], \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+%
+%        \end{tabular}
+%        \caption{Transform function: scaling the Optimizer instance argument}
+%        \label{fig:trans:fn02}
+%    \end{subfigure}
+%    \caption{Code examples}
+%    \label{fig:trans:ex02}
+%\end{figure}
+%
+%Figure \ref{fig:trans:ex02} the transform function that transformed the second
+%part of the code.
+%The learning rate argument for the {\tt Optimizer} class constructor is 
+%multiplied by the expression {\tt hvd.size()}. 
+%To apply the transformation, the transform function must first recognize a
+%assign statement that creates an {\tt Optimizer} instance.
+%One caveat here is that the {\tt Optimizer} instance can be 
+%created by not only TensorFlow library APIs, but also
+%user-defined class constructors. 
+%The transform function utilizes the class inheritance information
+%generated by the class hierarchy analyzer to recognize the user-defined
+%constructors for {\tt Optimizer} subclasses.
+%
+%After identifying the {\tt Optimizer} instance assign statement, 
+%the transform function modifies the argument expression of the
+%constructor call.
+%The transform function would take the original argument expression,
+%then create a new expression that multiplies {\tt hvd.size()}
+%To modify the argument expression, the function body utilizes the AST pattern
+%variable $\nexprsubs{11}$ in the input AST pattern.
+%The pattern variable $\nexprsubs{11}$ will match {\tt 0.001} in the figure
+%\ref{fig:trans:ex02}(a).
+%In the output AST, the modified argument expression 
+%$\nexprsubs{11} {\tt * hvd.size()}$ will expand to {\tt 0.001 * hvd.size()}.
+%
+%\begin{figure}[ht!]
+%  \centering
+%  \begin{subfigure}[t]{0.48\textwidth}
+%    \begin{lstlisting}[language=Python]
+%for (x, y) in dataset.take(10000):
+%  with tf.GradientTape() as tape:
+%    pred = model(x)
+%    loss_value = loss(y, pred)\end{lstlisting} 
+%    \caption{Original DL training code}
+%  \end{subfigure}
+%  \hspace{5mm}
+%  \begin{subfigure}[t]{0.48\textwidth}
+%    \begin{lstlisting}[language=Python]
+%for (x, y) in dataset.take(10000):
+%  with tf.GradientTape() as tape:
+%    pred = model(x)
+%    loss_value = loss(y, pred) 
+%  tape = hvd.DistributedGradientTape(tape)\end{lstlisting}
+%    \caption{Distributed DL training code}
+%  \end{subfigure}
+%  \caption{Example of original DL model code transformed into the distributed model}
+%  \label{fig:trans:ex03}
+%\end{figure}
+%
+%\begin{figure}[ht!]
+%  \centering
+%  \begin{tabular}{l}
+%  \typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)}\\
+%  \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+%  \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
+%  \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+%  \inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\gtape $\mapsto$ \nid] ~ \ktthen\\
+%  \inden\inden ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$, \\
+%  \inden\inden \nid ~ \oassign {\tt hvd.DistributedGradientTape(\nid)}], \smodenvsubs{2})\\
+%  \inden \ktelse ~ ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+%\end{tabular}\\\vpar
+%  \caption{Transform function: wrapping GraidentTape instance with Horovod API}
+%  \label{fig:trans:fn03}
+%\end{figure}
+%
+%Figure \ref{fig:trans:ex03} describes the transform function that transforms
+%the third part of the code.
+%An assign statement is added after the {\tt with} statement body end.
+%To apply this transformation, the transform function must first identify
+%a with statement that creates a {\tt GradientTape} instance. 
+%The transform function utilizes the transform context to recognize whether a
+%with statement creates a new {\tt GradientTape} instance or not. 
+%The transform function compares the input transform context with the 
+%transform context just after processing the with statement to check
+%whether the input with statement creates a {\tt GradientTape} instance.
+%Then, the transform function adds a new assign statement after the 
+%with statement, which wraps the variable with a
+%{\tt DistributedGradientTape} Horovod API.
+
+% next subsection
+\input{trans_patterns}
