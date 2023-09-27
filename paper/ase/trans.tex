@@ -6,7 +6,7 @@
 % todo: graphical issue in this figure image
 \begin{figure}[ht!]
     \centering
-    \includegraphics[width=0.7\textwidth]{transfn_expl.pdf}
+    \includegraphics[width=0.8\textwidth]{transfn_expl.pdf}
     \caption{Transform function description}
     \label{fig:trans:fnexpl}
 \end{figure}
@@ -89,7 +89,7 @@ import horovod.tensorflow as hvd\end{lstlisting}
 
 Figure~\ref{fig:trans:ex01} shows the example code transformation result by the
 partial transform function in Figure~\ref{fig:trans:fnexpl}.
-Because the statement in Figure~\ref{fig:trans:ex01}(a) is an import statement
+Because the statement in Figure~\ref{fig:trans:ex01:org} is an import statement
 matched with the input AST pattern of the function, the function is responsible
 for transforming the statement.
 The function first computes the transform context $\smodenvsubs{1}$ that
@@ -100,7 +100,7 @@ Suppose the difference contains the new entry for the string {\tt "tensor\_flow"
 In that case, the transform function returns a statement list containing the
 original statement and a new statement {\tt import horovod.tensorflow as hvd}
 to add the import statement for the {\tt horovod} module after the original
-statement, as shown in Figure~\ref{fig:trans:ex01}(b).  
+statement, as shown in Figure~\ref{fig:trans:ex01:hvd}.  
 Otherwise, the function returns a statement list containing only the original
 statement remaining unchanged.
 
