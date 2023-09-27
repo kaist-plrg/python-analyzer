@@ -9,7 +9,7 @@
 \subsubsection{Rules for the Session Pattern}
 
 \begin{figure}[ht!]\centering
-  \begin{subfigure}[t]{0.8\textwidth}
+  \begin{subfigure}[t]{0.9\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
 
@@ -17,9 +17,10 @@ with tf.Session() as sess:
     for step in range(num_epochs): 
         sess.run(optimizer, feed_dict)\end{lstlisting}
     \caption{Session pattern example}
+    \label{fig:trans:sessiontrans:a}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[t]{0.8\textwidth}
+  \begin{subfigure}[t]{0.9\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01 * hvd.size())
 optimizer = hvd.DistributedOptimizer(optimizer)
@@ -28,14 +29,16 @@ with tf.Session() as sess:
     for step in range(num_epochs): 
         sess.run(optimizer, feed_dict)\end{lstlisting}
     \caption{Distributed Session pattern example}
+    \label{fig:trans:sessiontrans:b}
   \end{subfigure}
   \caption{Example transformation of the Session pattern}
   \label{fig:trans:sessiontrans}
 \end{figure}
 
 Figure \ref{fig:trans:sessiontrans} illustrates the required transformation of
-the Session pattern using two code examples, (a) the original training code and
-(b) its distributed training version.
+the Session pattern using two code examples, \ref{fig:trans:sessiontrans:a} the
+original training code and \ref{fig:trans:sessiontrans:b} its distributed
+training version.
 One of the primary transformations involves adjusting the learning rate
 argument in the {\tt Optimizer} constructor call, which is achieved by
 multiplying it by the number of GPUs.
@@ -59,24 +62,24 @@ is passed as an argument to its constructor.
 %The transformation also adds a new statementd that wraps the 
 %{\tt Optimizer} instance by {\tt DistributedOptimizer}.
 
-\begin{figure}[ht!]
+\begin{figure}[ht!]\small
 \noindent
-\begin{tabular}{l}
+  \begin{tabularx}{\textwidth}{X}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
   \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}
-  ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \\
   \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
   \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
 
   \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}
-  ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} \\
+  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \\
   \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
   \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
 
-\end{tabular}
+\end{tabularx}
   \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
   \label{fig:trans:sessrule}
 \end{figure}
@@ -134,9 +137,7 @@ shown in Figure~\ref{fig:trans:monsesstrans}(b).
 The instance can be created by calling the constructor of the {\tt
 BroadcastGlobalVariableHook} class with the ID of a source process.  
 When starting the training, the hook broadcasts the initial global variable
-parameters of the source to the other processes.
-
-
+parameters of the source to the other processes.\\
 
 \begin{figure}
   \centering
@@ -170,7 +171,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
 %{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
 \vspace{-1em}
 
-\begin{figure}[ht!]
+\begin{figure}[ht!]\small
  \noindent
   \begin{tabular}{l}
     %\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)} \\
@@ -216,7 +217,7 @@ assign a function call result to a variable.
 The second line checks whether the callee function of the {\tt with\_item} is a
 constructor of the subclass of the {\tt MonitoredSession} class. 
 If then, the transform function finds the keyword argument {\tt hooks} and
-appends a {\tt BroadcastGlobalVariablesHook} object to the argument.
+appends a {\tt BroadcastGlobalVariablesHook} object to the argument.\\\newpage
 
 \subsubsection{Rules for the GradientTape pattern}\label{sec:grad}
 
@@ -290,7 +291,7 @@ False} to prevent further broadcasting.
 %model to ensure that variable broadcasting occurs exactly once.
 
 
-\begin{figure}[ht!]\centering
+\begin{figure}[ht!]\small
 %\noindent
 \begin{tabular}{l}
   \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
@@ -317,7 +318,7 @@ which replaces the instance of the variable with a newly created {\tt
 DistributedGradientTape} instance for further uses in subsequent statements.
 
 
-\begin{figure}[ht!]
+\begin{figure}[ht!]\small
 \noindent
 \begin{tabular}{l}
   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
@@ -404,25 +405,26 @@ When training starts, the callback ensures consistent initialization of all
 processes by broadcasting initial global variable states from a source to the
 other processes.
 
-\begin{figure}[ht!]
+\begin{figure}[ht!]\small
 \centering
 \begin{tabular}{l}
   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
   \inden \ktif ~ \nidsubs{m} ~ \kteq ~ \smodenv({\tmodel}) ~ \ktand ~ 
           \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
-  \inden\inden\inden ([{\tt cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
+  \inden\inden\inden ([{\tt cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
   \inden\inden\inden ~ {\tt if hvd.rank() == 0: cb.append(\nexprsubs{2i})}, \\
   \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} ... \nexprsubs{1n}}
                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
                               \nidsubs{i} \oassign {\tt cb} ... 
                               \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
   \inden\inden \ktelse \\
-  \inden\inden\inden ([{\tt cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)]},\\
+  \inden\inden\inden ([{\tt cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
   \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11}... \nexprsubs{1n}}
                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} ~ 
-                              {\tt callbacks \oassign cb} {\tt )}], \smodenv) \\
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}
+                              {\tt callbacks \oassign cb} {\tt )}],\\
+                              \inden\inden\inden\inden\smodenv) \\
 \end{tabular}
   \caption{Keras pattern transform function}
   \label{fig:trans:kerasrule}
