@@ -11,10 +11,10 @@ We evaluate the proposed approach for the following research questions:
 To answer the questions, we implemented an automatic code transformation tool
 and applied the tool to 16 TensorFlow DL models.
 We collected the evaluation target models from five open repositories: 
-Hovorod\cite{horovodgithub}, TensorFlow Model Garden\cite{tfmodelgarden},
-TensorFlow Examples by Americ Damien\cite{tfexamplesdamien},
-CIFAR-10 Example with TensorFlow 2.0\cite{cifar10github}, and
-TensorFlow 2.x Tutorials\cite{tf2tutogithub}.
+Hovorod~\cite{horovodgithub}, TensorFlow Model Garden~\cite{tfmodelgarden},
+TensorFlow Examples by Americ Damien~\cite{tfexamplesdamien},
+CIFAR-10 Example with TensorFlow 2.0~\cite{cifar10github}, and
+TensorFlow 2.x Tutorials~\cite{tf2tutogithub}.
 We excluded two from 18 models in the repositories because one abnormally
 terminates with a runtime error in its execution, and the other duplicates.
 Our tool is written in Scala and is publicly
@@ -30,18 +30,18 @@ available\footnote{https://github.com/kaist-plrg/python-analyzer}.
     \multicolumn{1}{c|}{Source} & Model Name & API Pattern & Transform Result\\
     \hline\hline
     TensorFlow Examples by &  LSTM-MNIST & GradientTape & $\bigcirc$\\
-     Americ Damien\cite{tfexamplesdamien} & SimpleCNN-GradientTape-1 & GradientTape & $\times$\\
+     Americ Damien~\cite{tfexamplesdamien} & SimpleCNN-GradientTape-1 & GradientTape & $\times$\\
     \hline
-    \multirow{2}{*}{Horovod GitHub\cite{horovodgithub}} & SimpleCNN-GradientTape-2 & GradientTape & $\bigcirc$\\
+    \multirow{2}{*}{Horovod GitHub~\cite{horovodgithub}} & SimpleCNN-GradientTape-2 & GradientTape & $\bigcirc$\\
     & SimpleCNN-MonitoredSession & MonitoredSession  & $\bigcirc$\\
     \hline
-    TensorFlow Model Garden\cite{tfmodelgarden} & SimpleCNN-Session & Session & $\bigcirc$\\ 
+    TensorFlow Model Garden~\cite{tfmodelgarden} & SimpleCNN-Session & Session & $\bigcirc$\\ 
     \hline
     \hspace{-.5em}\begin{tabular}{l}
-      CIFAR-10 Example with\\ TensorFlow 2.0\cite{cifar10github}
+      CIFAR-10 Example with\\ TensorFlow 2.0~\cite{cifar10github}
     \end{tabular}& VGG-CIFAR10 & Keras & $\bigcirc$\\ 
     \hline
-    \multirow{10}{*}{TensorFlow 2.x Tutorials\cite{tf2tutogithub}} & Play-with-MNIST & GradientTape & $\bigcirc$\\
+    \multirow{10}{*}{TensorFlow 2.x Tutorials~\cite{tf2tutogithub}} & Play-with-MNIST & GradientTape & $\bigcirc$\\
     &Linear-Regression & GradientTape & $\bigcirc$\\
     &Fashion-MNIST & Keras  & $\bigcirc$\\
     &CIFAR10-VGG16 & GradientTape & $\bigcirc$\\
@@ -216,7 +216,7 @@ between the training time of the automatically transformed models and their
 respective original models.
 We calculate the training time as the time taken to reach minimum losses in
 training.
-To measure the losses, we manually injected the TensorBoard\cite{tensorboard}
+To measure the losses, we manually injected the TensorBoard~\cite{tensorboard}
 API calls into the model codes, which log the loss value of each training
 epoch.
 Among the 16 models, we targeted 13 models in the experiment; we excluded two

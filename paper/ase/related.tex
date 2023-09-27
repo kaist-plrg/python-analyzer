@@ -4,19 +4,19 @@
 
 %In this work, Horovod library is used to distribute
 %DL training codes.
-Horovod\cite{sergeev2018horovod} is a popular distributed training library that
+Horovod~\cite{sergeev2018horovod} is a popular distributed training library that
 supports multiple DL frameworks such as TensorFlow and PyTorch.
 Besides Horovod, there are several frameworks and libraries for distributed
 training.
-TensorFlowOnSpark\cite{tfonspark} is a Python library that
+TensorFlowOnSpark~\cite{tfonspark} is a Python library that
 combines TensorFlow with Apache Spark and Hadoop to distribute
 DL tasks on server clusters. 
-DeepSpeed\cite{deepspeed} is a distributed programming library developed by
-Microsoft, built on top of PyTorch\cite{pytorch2019}.  
+DeepSpeed~\cite{deepspeed} is a distributed programming library developed by
+Microsoft, built on top of PyTorch~\cite{pytorch2019}.  
 DeepSpeed supports multiple distributed training methods and features,
 including model and pipeline parallelisms. 
 TensorFlow officially provides a package of APIs, {\tt tf.distribute}, for
-distributed training\cite{tfdistributed}.
+distributed training~\cite{tfdistributed}.
 The package supports multiple implementations of {\tt tf.distribute.Strategy},
 enabling model engineers to perform distributed learning using various
 strategies.
@@ -39,7 +39,7 @@ reducing engineers' burdens of understanding the document and modifying models.
 \subsection{Code Transformation}
 
 Code transformation is techniques that modify code into a different form.  
-Visser devised a taxonomy\cite{Visser2001} that classifies code transformation
+Visser devised a taxonomy~\cite{visser2001survey} that classifies code transformation
 techniques into two types: 
 \textit{translation}, where input and output code are written in different
 languages, and \textit{rephrasing}, where input and output code are written in
@@ -71,13 +71,13 @@ output code in the same language.
 % Code Transformation in Python
 Researchers have proposed several code transformation techniques in Python
 and machine-learning domains.
-Loulergue and Philippe\cite{Loulergue2020} devised a framework that optimizes
+Loulergue and Philippe~\cite{loulergue2019automatic} devised a framework that optimizes
 PySke programs by automatically rewriting terms in the programs based on
 transformation rules they define.
-Haryono et al. \cite{mlcatchup} developed MLCatchUp, a code transformation tool
+Haryono et al.~\cite{haryono2021mlcatchup} developed MLCatchUp, a code transformation tool
 that enables Python machine learning programs to migrate from deprecated APIs
 to new and stable APIs automatically. 
-Reed et al. \cite{torchfx} developed {\tt torch.fx}, a Python library for
+Reed et al.~\cite{reed2022torch} developed {\tt torch.fx}, a Python library for
 capturing and transforming PyTorch programs.
 Compared to these works, our work targets TensorFlow DL models written in
 Python and provides concrete and correct transformation rules for their
