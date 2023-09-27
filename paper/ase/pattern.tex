@@ -3,6 +3,7 @@
 
 \subsection{Training API Patterns of TensorFlow DL Models}
 
+\renewcommand\tabularxcolumn[1]{m{#1}}
 \begin{figure}[ht!]
 \centering
   \begin{subfigure}[b]{\textwidth}
@@ -17,6 +18,7 @@ for x, y in train_data.take(training_steps):
     pairs = zip(gradients, trainable_vars)
     optimizer.apply_gradients(pairs)\end{lstlisting}
     \caption{Using low-level training API}
+    \label{fig:pattern:ex01:a}
   \end{subfigure}
   \hspace{5mm}
   \begin{subfigure}[b]{\textwidth}
@@ -26,6 +28,7 @@ model.compile(
     loss = loss_compute) 
 model.fit(train_data.take(training_steps))\end{lstlisting} 
     \caption{Using high-level training API}
+    \label{fig:pattern:ex01:b}
   \end{subfigure}
 
   \caption{TensorFlow model code example using two different API patterns}
@@ -42,9 +45,9 @@ The choice of API depends on the model' complexity and the project's specific
 requirements.
 Figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that use
 different APIs to define the training process. 
-Figure~\ref{fig:pattern:ex01}(a) explicitly repeats the training
+Figure~\ref{fig:pattern:ex01:a} explicitly repeats the training
 steps using the {\tt for} loop and the {\tt GradientTape} instance. 
-On the other hand, Figure~\ref{fig:pattern:ex01}(b) uses the Keras
+On the other hand, Figure~\ref{fig:pattern:ex01:b} uses the Keras
 library APIs, {\tt compile} and {\tt fit}, to set a training methodology of the
 model and invoke the training process. 
 While both codes train the model similarly, they use different training
@@ -59,7 +62,7 @@ The training API patterns are the code patterns of TensorFlow API calls that
 commonly appear in the models belonging to the same categories.
 For instance, models in the {GradientTape} category commonly use a {\tt with}
 statement to create a {\tt GradientTape} object, as illustrated in
-Figure~\ref{fig:pattern:ex01}(a).
+Figure~\ref{fig:pattern:ex01:a}.
 We define patterns for such common API usages, and our tool identifies the
 training API patterns of given models automatically to choose appropriate
 transformation rules for the models.
@@ -90,9 +93,9 @@ Section~\ref{sec:ident}.
 \begin{table}[ht!]
   \centering
   \caption{Four types of training API patterns}
-  \begin{tabular}{|c|c|l|}
+  \begin{tabularx}{\textwidth}{|c|c|X|}
     \hline
-    TF version & API Pattern & Description \\
+    TF version & API Pattern & \multicolumn{1}{c|}{Description} \\
     \hline
     1.x & Session & 
 	  Using the {\tt Session} API to invoke training operations\\
@@ -108,7 +111,7 @@ Section~\ref{sec:ident}.
       Using the {\tt keras.Model} class to define the model and the {\tt fit} API
       to train the model.\\
     \hline
-  \end{tabular}
+  \end{tabularx}
   \label{tab:patterns}
 \end{table}
 
@@ -335,7 +338,7 @@ unsuitable for the automatic transformation.
 
 \begin{figure}[ht!]
   \centering
-  \includegraphics[width=0.6\textwidth]{lattice.pdf}
+  \includegraphics[width=0.7\textwidth]{lattice.pdf}
   \caption{Flat lattice for the training API pattern identification}
   \label{fig:pattern:lattice}
 \end{figure}
@@ -543,7 +546,7 @@ or Unknown.
 \algtext*{Endcase}
 \algtext*{Endother}
 
-\begin{algorithm}
+\begin{algorithm}[t]
   \caption{Training API pattern identification}\label{al:apiident}
   \begin{algorithmic}[1]
     \Require an abstract syntax tree ($ast$) and the class hierarhcy analysis result ($cha$)
