@@ -248,11 +248,11 @@ We experimented on a Linux machine with Intel Xeon CPU E5-2690 v4 @
   \centering
   \caption{Training time comparison results}
   \label{fig:eval:traintime}
-  \begin{tabular}{|l|r|r|r|}
+  \begin{tabular}{l|r|r|r}
 \hline
-                         & Non-distributed & Distributed       & \\
-Model Name               &  training time (s) & training time (s) &  Speedup\\
-\hline
+    \multicolumn{1}{c|}{\multirow{2}{*}{Model Name}}& \multicolumn{1}{c|}{Non-distributed} & \multicolumn{1}{c|}{Distributed}& \multicolumn{1}{c}{\multirow{2}{*}{Speedup}}\\
+                         &  \multicolumn{1}{c|}{training time (s)} & \multicolumn{1}{c|}{training time (s)} &  \\
+\hline\hline
 LSTM-MNIST               & 78.675& 11.951& $\times$6.58\\
 SimpleCNN-GradientTape-2 & 3.192& 1.753& $\times$1.82\\
 VGG-CIFAR10              & 967.076 & 299.229 &$\times$3.23\\
@@ -270,6 +270,90 @@ DCGAN                    & 2389.052& 828.428& $\times$2.88\\
   \end{tabular}
 \end{table}
 
+\begin{figure}[!ht]
+  \centering
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tape-lstm}
+    \caption{\small LSTM-MNIST}
+  \end{subfigure}
+  ~ 
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tape-simple2}
+    \caption{\small SimpleCNN-\\GradientTape-2}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{keras-cifar}
+    \caption{\small VGG-CIFAR10}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-03}
+    \caption{\small Play-with-\\MNIST}
+  \end{subfigure}
+
+  \par\bigskip
+  
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-04}
+    \caption{\small Linear-\\Regression}
+  \end{subfigure} 
+  ~ 
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-05}
+    \caption{\small Fashion-MNIST}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-06}
+    \caption{\small CIFAR10-\\VGG16}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-07}
+    \caption{\small Inception-\\network}
+  \end{subfigure}
+  
+
+  \par\bigskip
+
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-09}
+    \caption{\small RNN-Sentiment-\\Analysis}
+  \end{subfigure} 
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-10}
+    \caption{\small Stacked-\\LSTM-ColorBot}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-11}
+    \caption{\small Auto-Encoder}
+  \end{subfigure}
+  ~
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-12}
+    \caption{\small Variational-\\Auto-Encoder}
+  \end{subfigure}
+  
+  \par\bigskip
+
+  \begin{subfigure}[t]{.22\textwidth}
+    \includegraphics[width=\textwidth]{tf2-13}
+    \caption{\small DCGAN}
+  \end{subfigure} 
+
+  \caption{Comparison of training between the distributed models and the
+  original models (X-axis: time in seconds, Y-axis: loss value, blue-line:
+  original model, red-line: distributed model)}
+  %\begin{tabular}{r@{: }l r@{: }l}
+  %  X-axis & Time (seconds) & Y-axis & Loss value\\
+  %  Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
+  %\end{tabular}
+  \label{fig:eval:train}
+\end{figure}
+
 We summarize the training time comparison results in
 Table~\ref{fig:eval:traintime}.
 The first column presents the model name, the second and third columns
@@ -283,89 +367,6 @@ Note that we do not record the distributed training time of the
 Stacked-LSTM-ColorBot model because the loss of the first distributed training
 epoch of the model is minimal.
 
-\begin{figure}%[!ht]
-  \centering
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tape-lstm}
-    \caption{LSTM-MNIST}
-  \end{subfigure}
-  ~ 
-  \begin{subfigure}[t]{.30\textwidth}
-    \includegraphics[width=.66\textwidth]{tape-simple2}
-    \caption{SimpleCNN-GradientTape-2}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{keras-cifar}
-    \caption{VGG-CIFAR10}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-03}
-    \caption{Play-with-MNIST}
-  \end{subfigure}
-
-  \par\bigskip
-  
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-04}
-    \caption{Linear-Regression}
-  \end{subfigure} 
-  ~ 
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-05}
-    \caption{Fashion-MNIST}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-06}
-    \caption{CIFAR10-VGG16}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-07}
-    \caption{Inception-network}
-  \end{subfigure}
-  
-
-  \par\bigskip
-
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-09}
-    \caption{RNN-Sentiment-Analysis}
-  \end{subfigure} 
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-10}
-    \caption{Stacked-LSTM-ColorBot}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-11}
-    \caption{Auto-Encoder}
-  \end{subfigure}
-  ~
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-12}
-    \caption{Variational-Auto-Encoder}
-  \end{subfigure}
-  
-  \par\bigskip
-
-  \begin{subfigure}[t]{.22\textwidth}
-    \includegraphics[width=\textwidth]{tf2-13}
-    \caption{DCGAN}
-  \end{subfigure} 
-
-  \caption{Comparison of training between the distributed models and the
-  original models (X-axis: time in seconds, Y-axis: loss value, blue-line:
-  original model, red-line: distributed model)}
-  %\begin{tabular}{r@{: }l r@{: }l}
-  %  X-axis & Time (seconds) & Y-axis & Loss value\\
-  %  Blue line & ORG loss, smoothed & Red line & HVD loss, smoothed\\ 
-  %\end{tabular}
-  \label{fig:eval:train}
-\end{figure}
 
 Interestingly, distributed training does not ensure an acceleration of
 training.
