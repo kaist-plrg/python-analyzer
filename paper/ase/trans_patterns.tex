@@ -133,7 +133,7 @@ SessionRunHook} objects as a keyword argument {\tt hooks}.
 To ensure consistent global variable initialization of all processes in the
 distributed training, the list needs to contain a {\tt
 BroadcastGlobalVariableHook} object for the global variable broadcasting, as
-shown in Figure~\ref{fig:trans:monsesstrans}(b).
+shown in Figure~\ref{fig:trans:monsesstrans:b}.
 The instance can be created by calling the constructor of the {\tt
 BroadcastGlobalVariableHook} class with the ID of a source process.  
 When starting the training, the hook broadcasts the initial global variable
@@ -147,6 +147,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     while not mon_sess.should_stop():
         mon_sess.run()\end{lstlisting}
     \caption{MonitoredSession pattern example}
+    \label{fig:trans:monsesstrans:a}
   \end{subfigure}
   \hspace{5mm}
   \begin{subfigure}[t]{0.8\textwidth}
@@ -155,6 +156,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
     while not mon_sess.should_stop():
         mon_sess.run()\end{lstlisting}
     \caption{Distributed MonitoredSession pattern example}
+    \label{fig:trans:monsesstrans:b}
   \end{subfigure}
   \caption{Example transformation of the MonitoredSession pattern}
   \label{fig:trans:monsesstrans}
@@ -234,6 +236,7 @@ with tf.GradientTape() as tape:
 grads = tape.gradient(loss_value, model.trainable_variables)
 opt.apply_gradients(zip(grads, model.trainable_variables))\end{lstlisting}
     \caption{GradientTape pattern example}
+    \label{fig:trans:gtapetrans:a}
   \end{subfigure}
   \hspace{5mm}
   \begin{subfigure}[t]{0.8\textwidth}
@@ -256,6 +259,7 @@ if not hvd_broadcast_done:
     hvd.broadcast_variables(opt.variables(), root_rank=0,)
     hvd_broadcast_done = True\end{lstlisting}
     \caption{Distributed GradientTape pattern example}
+    \label{fig:trans:gtapetrans:b}
   \end{subfigure}
   \caption{Example transformation of the GradientTape pattern}
   \label{fig:trans:gtapetrans}
@@ -267,10 +271,10 @@ code and its distributed version.
 For the distributed training, the model needs to utilize a {\tt
 DistributedGradientTape} instance in training instead of the {\tt
 GradientTape} instance, as shown in lines 8 and 9 in
-Figure~\ref{fig:trans:gtapetrans}(b).
+Figure~\ref{fig:trans:gtapetrans:b}.
 In addition, the model also needs to broadcast trainable global variables from
 the root process to the others once after applying the gradients.
-Lines 13 to 17 in Figure~\ref{fig:trans:gtapetrans}(b) represent the code that
+Lines 13 to 17 in Figure~\ref{fig:trans:gtapetrans:b} represent the code that
 broadcasts the variables depending on the value of {\tt hvd\_broadcast\_done}.
 Once finishing the broadcasting, the {\tt hvd\_broadcast\_done} is set to {\tt
 False} to prevent further broadcasting.
@@ -373,6 +377,7 @@ model = ResNet([2, 2, 2])
 
 model.fit(x_train, y_train)\end{lstlisting}
   \caption{Keras pattern example}
+    \label{fig:trans:keras:a}
   \end{subfigure}
   \hspace{3mm}
   \begin{subfigure}[t]{0.8\textwidth}
@@ -387,6 +392,7 @@ callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]
 model.fit(x_train, y_train,
           callbacks=callbacks)\end{lstlisting}
     \caption{Distributed Keras pattern example}
+    \label{fig:trans:keras:b}
   \end{subfigure}
   \caption{Example transformation of the Keras Pattern}
   \label{fig:trans:keras}
@@ -400,7 +406,7 @@ as {\tt ResNet}, constructs a model as an instance of the class, and trains the
 model by calling its {\tt fit} method inherited from {\tt keras.Model}.
 To distribute the model's training with Horovod, the {\tt fit} method needs to
 take a callback {\tt BroadcastGlobalVariablesCallback} as the keyword argument
-{\tt callbacks}, shown in Figure~\ref{fig:trans:keras}(b).
+{\tt callbacks}, shown in Figure~\ref{fig:trans:keras:b}.
 When training starts, the callback ensures consistent initialization of all
 processes by broadcasting initial global variable states from a source to the
 other processes.
@@ -444,5 +450,5 @@ variable only when the {\tt hvd.rank()} is zero, which enables the original
 callbacks to be called only on the one process.
 If the keyword argument does not exist in the function call, the transform
 function propagates the callback as the {\tt callbacks} keyword argument, shown
-in Figure~ \ref{fig:trans:keras}(b).
+in Figure~ \ref{fig:trans:keras:b}.
 
