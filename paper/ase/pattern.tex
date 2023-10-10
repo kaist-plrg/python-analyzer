@@ -1,4 +1,3 @@
-\pagebreak
 \section{Training API Pattern Identification}\label{sec:pattern}
 
 \subsection{Training API Patterns of TensorFlow DL Models}
@@ -37,6 +36,7 @@ model.fit(train_data.take(training_steps))\end{lstlisting}
 
 % tf 모델을 바르게 변환하기 위해서는,  서로 다른 훈련 api를 사용하느 ㄴ모델을
 % 분류하고, 각 분류의 모델에 다른 변환을 적용할 필요가 있다.
+\noindent
 TensorFlow offers multiple APIs for defining the structure of the model and the
 training process. 
 These APIs include low-level APIs such as {\tt tf.GradientTape} and high-level

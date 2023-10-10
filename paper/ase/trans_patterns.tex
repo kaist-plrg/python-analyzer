@@ -35,6 +35,7 @@ with tf.Session() as sess:
   \label{fig:trans:sessiontrans}
 \end{figure}
 
+\noindent
 Figure \ref{fig:trans:sessiontrans} illustrates the required transformation of
 the Session pattern using two code examples, \ref{fig:trans:sessiontrans:a} the
 original training code and \ref{fig:trans:sessiontrans:b} its distributed
@@ -219,7 +220,7 @@ assign a function call result to a variable.
 The second line checks whether the callee function of the {\tt with\_item} is a
 constructor of the subclass of the {\tt MonitoredSession} class. 
 If then, the transform function finds the keyword argument {\tt hooks} and
-appends a {\tt BroadcastGlobalVariablesHook} object to the argument.\\\newpage
+appends a {\tt BroadcastGlobalVariablesHook} object to the argument.\\
 
 \subsubsection{Rules for the GradientTape pattern}\label{sec:grad}
 
@@ -265,7 +266,7 @@ if not hvd_broadcast_done:
   \label{fig:trans:gtapetrans}
 \end{figure}
 
-
+\noindent
 Figure \ref{fig:trans:gtapetrans} illustrates an example GradientTape pattern
 code and its distributed version.  
 For the distributed training, the model needs to utilize a {\tt
@@ -398,7 +399,7 @@ model.fit(x_train, y_train,
   \label{fig:trans:keras}
 \end{figure}
 
-
+\noindent
 Figure \ref{fig:trans:keras} illustrates an example transformation of the Keras
 pattern.
 The Keras pattern code usually defines a subclass of {\tt keras.Model}, such

@@ -27,26 +27,27 @@ available\footnote{https://github.com/kaist-plrg/python-analyzer}.
   \label{fig:eval:targets}
   \begin{tabular}{l|c|c|c}
     \hline
-    \multicolumn{1}{c|}{Source} & Model Name & API Pattern & Transform Result\\
+    \multicolumn{1}{c|}{Source} & Model Name & API Pattern & \begin{tabular}{c}Transform\\Result\end{tabular}\\
     \hline\hline
-    TensorFlow Examples by &  LSTM-MNIST & GradientTape & $\bigcirc$\\
-     Americ Damien~\cite{tfexamplesdamien} & SimpleCNN-GradientTape-1 & GradientTape & $\times$\\
+    TensorFlow Examples &  LSTM-MNIST & GradientTape & $\bigcirc$\\
+     by Americ Damien~\cite{tfexamplesdamien} & SimpleCNN-GradientTape-1 & GradientTape & $\times$\\
     \hline
     \multirow{2}{*}{Horovod GitHub~\cite{horovodgithub}} & SimpleCNN-GradientTape-2 & GradientTape & $\bigcirc$\\
     & SimpleCNN-MonitoredSession & MonitoredSession  & $\bigcirc$\\
     \hline
-    TensorFlow Model Garden~\cite{tfmodelgarden} & SimpleCNN-Session & Session & $\bigcirc$\\ 
+    TensorFlow Model &\multirow{2}{*}{SimpleCNN-Session} & \multirow{2}{*}{Session} & \multirow{2}{*}{$\bigcirc$}\\ 
+     Garden~\cite{tfmodelgarden} & &&\\
     \hline
     \hspace{-.5em}\begin{tabular}{l}
       CIFAR-10 Example with\\ TensorFlow 2.0~\cite{cifar10github}
     \end{tabular}& VGG-CIFAR10 & Keras & $\bigcirc$\\ 
     \hline
-    \multirow{10}{*}{TensorFlow 2.x Tutorials~\cite{tf2tutogithub}} & Play-with-MNIST & GradientTape & $\bigcirc$\\
+    & Play-with-MNIST & GradientTape & $\bigcirc$\\
     &Linear-Regression & GradientTape & $\bigcirc$\\
     &Fashion-MNIST & Keras  & $\bigcirc$\\
     &CIFAR10-VGG16 & GradientTape & $\bigcirc$\\
-    &Inception-Network & GradientTape  & $\bigcirc$\\
-    &RNN-Sentiment-Analysis & Keras  & $\bigcirc$\\
+    TensorFlow 2.x &Inception-Network & GradientTape  & $\bigcirc$\\
+    Tutorials~\cite{tf2tutogithub} &RNN-Sentiment-Analysis & Keras  & $\bigcirc$\\
     &Stacked-LSTM-ColorBot & GradientTape  & $\bigcirc$\\
     &Auto-Encoder & GradientTape  &$\bigcirc$\\
     &Variational-Auto-Encoder & GradientTape & $\bigcirc$\\
