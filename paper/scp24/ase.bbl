@@ -1,0 +1,450 @@
+%% BioMed_Central_Bib_Style_v1.01
+
+\begin{thebibliography}{28}
+% BibTex style file: bmc-mathphys.bst (version 2.1), 2014-07-24
+\ifx \bisbn   \undefined \def \bisbn  #1{ISBN #1}\fi
+\ifx \binits  \undefined \def \binits#1{#1}\fi
+\ifx \bauthor  \undefined \def \bauthor#1{#1}\fi
+\ifx \batitle  \undefined \def \batitle#1{#1}\fi
+\ifx \bjtitle  \undefined \def \bjtitle#1{#1}\fi
+\ifx \bvolume  \undefined \def \bvolume#1{\textbf{#1}}\fi
+\ifx \byear  \undefined \def \byear#1{#1}\fi
+\ifx \bissue  \undefined \def \bissue#1{#1}\fi
+\ifx \bfpage  \undefined \def \bfpage#1{#1}\fi
+\ifx \blpage  \undefined \def \blpage #1{#1}\fi
+\ifx \burl  \undefined \def \burl#1{\textsf{#1}}\fi
+\ifx \doiurl  \undefined \def \doiurl#1{\url{https://doi.org/#1}}\fi
+\ifx \betal  \undefined \def \betal{\textit{et al.}}\fi
+\ifx \binstitute  \undefined \def \binstitute#1{#1}\fi
+\ifx \binstitutionaled  \undefined \def \binstitutionaled#1{#1}\fi
+\ifx \bctitle  \undefined \def \bctitle#1{#1}\fi
+\ifx \beditor  \undefined \def \beditor#1{#1}\fi
+\ifx \bpublisher  \undefined \def \bpublisher#1{#1}\fi
+\ifx \bbtitle  \undefined \def \bbtitle#1{#1}\fi
+\ifx \bedition  \undefined \def \bedition#1{#1}\fi
+\ifx \bseriesno  \undefined \def \bseriesno#1{#1}\fi
+\ifx \blocation  \undefined \def \blocation#1{#1}\fi
+\ifx \bsertitle  \undefined \def \bsertitle#1{#1}\fi
+\ifx \bsnm \undefined \def \bsnm#1{#1}\fi
+\ifx \bsuffix \undefined \def \bsuffix#1{#1}\fi
+\ifx \bparticle \undefined \def \bparticle#1{#1}\fi
+\ifx \barticle \undefined \def \barticle#1{#1}\fi
+\bibcommenthead
+\ifx \bconfdate \undefined \def \bconfdate #1{#1}\fi
+\ifx \botherref \undefined \def \botherref #1{#1}\fi
+\ifx \url \undefined \def \url#1{\textsf{#1}}\fi
+\ifx \bchapter \undefined \def \bchapter#1{#1}\fi
+\ifx \bbook \undefined \def \bbook#1{#1}\fi
+\ifx \bcomment \undefined \def \bcomment#1{#1}\fi
+\ifx \oauthor \undefined \def \oauthor#1{#1}\fi
+\ifx \citeauthoryear \undefined \def \citeauthoryear#1{#1}\fi
+\ifx \endbibitem  \undefined \def \endbibitem {}\fi
+\ifx \bconflocation  \undefined \def \bconflocation#1{#1}\fi
+\ifx \arxivurl  \undefined \def \arxivurl#1{\textsf{#1}}\fi
+\csname PreBibitemsHook\endcsname
+
+%%% 1
+\bibitem[\protect\citeauthoryear{LeCun et~al.}{2015}]{lecun2015deep}
+\begin{barticle}
+\bauthor{\bsnm{LeCun}, \binits{Y.}},
+\bauthor{\bsnm{Bengio}, \binits{Y.}},
+\bauthor{\bsnm{Hinton}, \binits{G.}}:
+\batitle{Deep learning}.
+\bjtitle{nature}
+\bvolume{521}(\bissue{7553}),
+\bfpage{436}--\blpage{444}
+(\byear{2015})
+\end{barticle}
+\endbibitem
+
+%%% 2
+\bibitem[\protect\citeauthoryear{Abadi et~al.}{2016}]{abadi2016tensorflow}
+\begin{bchapter}
+\bauthor{\bsnm{Abadi}, \binits{M.}},
+\bauthor{\bsnm{Barham}, \binits{P.}},
+\bauthor{\bsnm{Chen}, \binits{J.}},
+\bauthor{\bsnm{Chen}, \binits{Z.}},
+\bauthor{\bsnm{Davis}, \binits{A.}},
+\bauthor{\bsnm{Dean}, \binits{J.}},
+\bauthor{\bsnm{Devin}, \binits{M.}},
+\bauthor{\bsnm{Ghemawat}, \binits{S.}},
+\bauthor{\bsnm{Irving}, \binits{G.}},
+\bauthor{\bsnm{Isard}, \binits{M.}}, \betal:
+\bctitle{Tensorflow: a system for large-scale machine learning}.
+In: \bbtitle{12th USENIX Symposium on Operating Systems Design and
+  Implementation (OSDI 16)},
+pp. \bfpage{265}--\blpage{283}
+(\byear{2016})
+\end{bchapter}
+\endbibitem
+
+%%% 3
+\bibitem[\protect\citeauthoryear{Paszke et~al.}{2019}]{pytorch2019}
+\begin{botherref}
+\oauthor{\bsnm{Paszke}, \binits{A.}},
+\oauthor{\bsnm{Gross}, \binits{S.}},
+\oauthor{\bsnm{Massa}, \binits{F.}},
+\oauthor{\bsnm{Lerer}, \binits{A.}},
+\oauthor{\bsnm{Bradbury}, \binits{J.}},
+\oauthor{\bsnm{Chanan}, \binits{G.}},
+\oauthor{\bsnm{Killeen}, \binits{T.}},
+\oauthor{\bsnm{Lin}, \binits{Z.}},
+\oauthor{\bsnm{Gimelshein}, \binits{N.}},
+\oauthor{\bsnm{Antiga}, \binits{L.}}, et al.:
+Pytorch: An imperative style, high-performance deep learning library.
+Advances in neural information processing systems
+\textbf{32}
+(2019)
+\end{botherref}
+\endbibitem
+
+%%% 4
+\bibitem[\protect\citeauthoryear{Simonyan and
+  Zisserman}{2014}]{simonyan2014very}
+\begin{botherref}
+\oauthor{\bsnm{Simonyan}, \binits{K.}},
+\oauthor{\bsnm{Zisserman}, \binits{A.}}:
+Very deep convolutional networks for large-scale image recognition.
+arXiv preprint arXiv:1409.1556
+(2014)
+\end{botherref}
+\endbibitem
+
+%%% 5
+\bibitem[\protect\citeauthoryear{He et~al.}{2016}]{he2016deep}
+\begin{bchapter}
+\bauthor{\bsnm{He}, \binits{K.}},
+\bauthor{\bsnm{Zhang}, \binits{X.}},
+\bauthor{\bsnm{Ren}, \binits{S.}},
+\bauthor{\bsnm{Sun}, \binits{J.}}:
+\bctitle{Deep residual learning for image recognition}.
+In: \bbtitle{Proceedings of the IEEE Conference on Computer Vision and Pattern
+  Recognition},
+pp. \bfpage{770}--\blpage{778}
+(\byear{2016})
+\end{bchapter}
+\endbibitem
+
+%%% 6
+\bibitem[\protect\citeauthoryear{Devlin et~al.}{2018}]{bert2018}
+\begin{botherref}
+\oauthor{\bsnm{Devlin}, \binits{J.}},
+\oauthor{\bsnm{Chang}, \binits{M.-W.}},
+\oauthor{\bsnm{Lee}, \binits{K.}},
+\oauthor{\bsnm{Toutanova}, \binits{K.}}:
+Bert: Pre-training of deep bidirectional transformers for language
+  understanding.
+arXiv preprint arXiv:1810.04805
+(2018)
+\end{botherref}
+\endbibitem
+
+%%% 7
+\bibitem[\protect\citeauthoryear{Brown et~al.}{2020}]{gpt32020}
+\begin{barticle}
+\bauthor{\bsnm{Brown}, \binits{T.}},
+\bauthor{\bsnm{Mann}, \binits{B.}},
+\bauthor{\bsnm{Ryder}, \binits{N.}},
+\bauthor{\bsnm{Subbiah}, \binits{M.}},
+\bauthor{\bsnm{Kaplan}, \binits{J.D.}},
+\bauthor{\bsnm{Dhariwal}, \binits{P.}},
+\bauthor{\bsnm{Neelakantan}, \binits{A.}},
+\bauthor{\bsnm{Shyam}, \binits{P.}},
+\bauthor{\bsnm{Sastry}, \binits{G.}},
+\bauthor{\bsnm{Askell}, \binits{A.}}, \betal:
+\batitle{Language models are few-shot learners}.
+\bjtitle{Advances in neural information processing systems}
+\bvolume{33},
+\bfpage{1877}--\blpage{1901}
+(\byear{2020})
+\end{barticle}
+\endbibitem
+
+%%% 8
+\bibitem[\protect\citeauthoryear{You et~al.}{2018}]{imagenettraining2017}
+\begin{bchapter}
+\bauthor{\bsnm{You}, \binits{Y.}},
+\bauthor{\bsnm{Zhang}, \binits{Z.}},
+\bauthor{\bsnm{Hsieh}, \binits{C.-J.}},
+\bauthor{\bsnm{Demmel}, \binits{J.}},
+\bauthor{\bsnm{Keutzer}, \binits{K.}}:
+\bctitle{Imagenet training in minutes}.
+In: \bbtitle{Proceedings of the 47th International Conference on Parallel
+  Processing},
+pp. \bfpage{1}--\blpage{10}
+(\byear{2018})
+\end{bchapter}
+\endbibitem
+
+%%% 9
+\bibitem[\protect\citeauthoryear{Russakovsky et~al.}{2015}]{imagenet2014}
+\begin{barticle}
+\bauthor{\bsnm{Russakovsky}, \binits{O.}},
+\bauthor{\bsnm{Deng}, \binits{J.}},
+\bauthor{\bsnm{Su}, \binits{H.}},
+\bauthor{\bsnm{Krause}, \binits{J.}},
+\bauthor{\bsnm{Satheesh}, \binits{S.}},
+\bauthor{\bsnm{Ma}, \binits{S.}},
+\bauthor{\bsnm{Huang}, \binits{Z.}},
+\bauthor{\bsnm{Karpathy}, \binits{A.}},
+\bauthor{\bsnm{Khosla}, \binits{A.}},
+\bauthor{\bsnm{Bernstein}, \binits{M.}}, \betal:
+\batitle{Imagenet large scale visual recognition challenge}.
+\bjtitle{International journal of computer vision}
+\bvolume{115},
+\bfpage{211}--\blpage{252}
+(\byear{2015})
+\end{barticle}
+\endbibitem
+
+%%% 10
+\bibitem[\protect\citeauthoryear{Goyal et~al.}{2017}]{goyal2017accurate}
+\begin{botherref}
+\oauthor{\bsnm{Goyal}, \binits{P.}},
+\oauthor{\bsnm{Doll{\'a}r}, \binits{P.}},
+\oauthor{\bsnm{Girshick}, \binits{R.}},
+\oauthor{\bsnm{Noordhuis}, \binits{P.}},
+\oauthor{\bsnm{Wesolowski}, \binits{L.}},
+\oauthor{\bsnm{Kyrola}, \binits{A.}},
+\oauthor{\bsnm{Tulloch}, \binits{A.}},
+\oauthor{\bsnm{Jia}, \binits{Y.}},
+\oauthor{\bsnm{He}, \binits{K.}}:
+Accurate, large minibatch sgd: Training imagenet in 1 hour.
+arXiv preprint arXiv:1706.02677
+(2017)
+\end{botherref}
+\endbibitem
+
+%%% 11
+\bibitem[\protect\citeauthoryear{Silver et~al.}{2017}]{Silver2017alphagozero}
+\begin{barticle}
+\bauthor{\bsnm{Silver}, \binits{D.}},
+\bauthor{\bsnm{Schrittwieser}, \binits{J.}},
+\bauthor{\bsnm{Simonyan}, \binits{K.}},
+\bauthor{\bsnm{Antonoglou}, \binits{I.}},
+\bauthor{\bsnm{Huang}, \binits{A.}},
+\bauthor{\bsnm{Guez}, \binits{A.}},
+\bauthor{\bsnm{Hubert}, \binits{T.}},
+\bauthor{\bsnm{Baker}, \binits{L.}},
+\bauthor{\bsnm{Lai}, \binits{M.}},
+\bauthor{\bsnm{Bolton}, \binits{A.}}, \betal:
+\batitle{Mastering the game of go without human knowledge}.
+\bjtitle{nature}
+\bvolume{550}(\bissue{7676}),
+\bfpage{354}--\blpage{359}
+(\byear{2017})
+\end{barticle}
+\endbibitem
+
+%%% 12
+\bibitem[\protect\citeauthoryear{Zhang et~al.}{2019}]{zhang2019distributed}
+\begin{bchapter}
+\bauthor{\bsnm{Zhang}, \binits{W.}},
+\bauthor{\bsnm{Cui}, \binits{X.}},
+\bauthor{\bsnm{Finkler}, \binits{U.}},
+\bauthor{\bsnm{Kingsbury}, \binits{B.}},
+\bauthor{\bsnm{Saon}, \binits{G.}},
+\bauthor{\bsnm{Kung}, \binits{D.}},
+\bauthor{\bsnm{Picheny}, \binits{M.}}:
+\bctitle{Distributed deep learning strategies for automatic speech
+  recognition}.
+In: \bbtitle{ICASSP 2019-2019 IEEE International Conference on Acoustics,
+  Speech and Signal Processing (ICASSP)},
+pp. \bfpage{5706}--\blpage{5710}
+(\byear{2019}).
+\bcomment{IEEE}
+\end{bchapter}
+\endbibitem
+
+%%% 13
+\bibitem[\protect\citeauthoryear{Tian et~al.}{2019}]{tian2019distributed}
+\begin{barticle}
+\bauthor{\bsnm{Tian}, \binits{Z.}},
+\bauthor{\bsnm{Luo}, \binits{C.}},
+\bauthor{\bsnm{Qiu}, \binits{J.}},
+\bauthor{\bsnm{Du}, \binits{X.}},
+\bauthor{\bsnm{Guizani}, \binits{M.}}:
+\batitle{A distributed deep learning system for web attack detection on edge
+  devices}.
+\bjtitle{IEEE Transactions on Industrial Informatics}
+\bvolume{16}(\bissue{3}),
+\bfpage{1963}--\blpage{1971}
+(\byear{2019})
+\end{barticle}
+\endbibitem
+
+%%% 14
+\bibitem[\protect\citeauthoryear{Sergeev and
+  Del~Balso}{2018}]{sergeev2018horovod}
+\begin{botherref}
+\oauthor{\bsnm{Sergeev}, \binits{A.}},
+\oauthor{\bsnm{Del~Balso}, \binits{M.}}:
+Horovod: fast and easy distributed deep learning in tensorflow.
+arXiv preprint arXiv:1802.05799
+(2018)
+\end{botherref}
+\endbibitem
+
+%%% 15
+\bibitem[\protect\citeauthoryear{Rasley et~al.}{2020}]{deepspeed}
+\begin{bchapter}
+\bauthor{\bsnm{Rasley}, \binits{J.}},
+\bauthor{\bsnm{Rajbhandari}, \binits{S.}},
+\bauthor{\bsnm{Ruwase}, \binits{O.}},
+\bauthor{\bsnm{He}, \binits{Y.}}:
+\bctitle{Deepspeed: System optimizations enable training deep learning models
+  with over 100 billion parameters}.
+In: \bbtitle{Proceedings of the 26th ACM SIGKDD International Conference on
+  Knowledge Discovery \& Data Mining},
+pp. \bfpage{3505}--\blpage{3506}
+(\byear{2020})
+\end{bchapter}
+\endbibitem
+
+%%% 16
+\bibitem[\protect\citeauthoryear{Kingma and Ba}{2014}]{kingma2014adam}
+\begin{botherref}
+\oauthor{\bsnm{Kingma}, \binits{D.P.}},
+\oauthor{\bsnm{Ba}, \binits{J.}}:
+Adam: A method for stochastic optimization.
+arXiv preprint arXiv:1412.6980
+(2014)
+\end{botherref}
+\endbibitem
+
+%%% 17
+\bibitem[\protect\citeauthoryear{Horovod}{}]{horovodgithub}
+\begin{botherref}
+\oauthor{\bsnm{Horovod}}:
+Horovod.
+\url{https://github.com/horovod/horovod}
+\end{botherref}
+\endbibitem
+
+%%% 18
+\bibitem[\protect\citeauthoryear{TensorFlow}{}]{tfmodelgarden}
+\begin{botherref}
+\oauthor{\bsnm{TensorFlow}}:
+TensorFlow Model Garden.
+\url{https://github.com/tensorflow/models}
+\end{botherref}
+\endbibitem
+
+%%% 19
+\bibitem[\protect\citeauthoryear{Damien}{}]{tfexamplesdamien}
+\begin{botherref}
+\oauthor{\bsnm{Damien}, \binits{A.}}:
+TensorFlow Examples.
+\url{https://github.com/aymericdamien/TensorFlow-Examples}
+\end{botherref}
+\endbibitem
+
+%%% 20
+\bibitem[\protect\citeauthoryear{\relax{Arconsis IT-Solutions
+  GmbH}}{}]{cifar10github}
+\begin{botherref}
+\oauthor{\bsnm{\relax{Arconsis IT-Solutions GmbH}}}:
+CIFAR 10 with TensorFlow.
+\url{https://github.com/arconsis/cifar-10-with-tensorflow2/blob/master/BetterNetwork.py}
+\end{botherref}
+\endbibitem
+
+%%% 21
+\bibitem[\protect\citeauthoryear{Loong}{}]{tf2tutogithub}
+\begin{botherref}
+\oauthor{\bsnm{Loong}, \binits{J.}}:
+TensorFlow 2.0 Tutorials.
+\url{https://github.com/dragen1860/TensorFlow-2.x-Tutorials}
+\end{botherref}
+\endbibitem
+
+%%% 22
+\bibitem[\protect\citeauthoryear{TensorFlow}{}]{tensorboard}
+\begin{botherref}
+\oauthor{\bsnm{TensorFlow}}:
+TensorBoard.
+\url{https://www.tensorflow.org/tensorboard}
+\end{botherref}
+\endbibitem
+
+%%% 23
+\bibitem[\protect\citeauthoryear{Yahoo}{}]{tfonspark}
+\begin{botherref}
+\oauthor{\bsnm{Yahoo}}:
+TensorFlowOnSpark.
+\url{https://github.com/yahoo/TensorFlowOnSpark}
+\end{botherref}
+\endbibitem
+
+%%% 24
+\bibitem[\protect\citeauthoryear{TensorFlow}{}]{tfdistributed}
+\begin{botherref}
+\oauthor{\bsnm{TensorFlow}}:
+Module: tf.distribute.
+\url{https://www.tensorflow.org/api_docs/python/tf/distribute}
+\end{botherref}
+\endbibitem
+
+%%% 25
+\bibitem[\protect\citeauthoryear{Visser}{2001}]{visser2001survey}
+\begin{barticle}
+\bauthor{\bsnm{Visser}, \binits{E.}}:
+\batitle{A survey of rewriting strategies in program transformation systems}.
+\bjtitle{Electronic Notes in Theoretical Computer Science}
+\bvolume{57},
+\bfpage{109}--\blpage{143}
+(\byear{2001})
+\end{barticle}
+\endbibitem
+
+%%% 26
+\bibitem[\protect\citeauthoryear{Loulergue and
+  Philippe}{2019}]{loulergue2019automatic}
+\begin{bchapter}
+\bauthor{\bsnm{Loulergue}, \binits{F.}},
+\bauthor{\bsnm{Philippe}, \binits{J.}}:
+\bctitle{Automatic optimization of python skeletal parallel programs}.
+In: \bbtitle{International Conference on Algorithms and Architectures for
+  Parallel Processing},
+pp. \bfpage{183}--\blpage{197}
+(\byear{2019}).
+\bcomment{Springer}
+\end{bchapter}
+\endbibitem
+
+%%% 27
+\bibitem[\protect\citeauthoryear{Haryono et~al.}{2021}]{haryono2021mlcatchup}
+\begin{bchapter}
+\bauthor{\bsnm{Haryono}, \binits{S.A.}},
+\bauthor{\bsnm{Thung}, \binits{F.}},
+\bauthor{\bsnm{Lo}, \binits{D.}},
+\bauthor{\bsnm{Lawall}, \binits{J.}},
+\bauthor{\bsnm{Jiang}, \binits{L.}}:
+\bctitle{Mlcatchup: Automated update of deprecated machine-learning apis in
+  python}.
+In: \bbtitle{2021 IEEE International Conference on Software Maintenance and
+  Evolution (ICSME)},
+pp. \bfpage{584}--\blpage{588}
+(\byear{2021}).
+\bcomment{IEEE}
+\end{bchapter}
+\endbibitem
+
+%%% 28
+\bibitem[\protect\citeauthoryear{Reed et~al.}{2022}]{reed2022torch}
+\begin{barticle}
+\bauthor{\bsnm{Reed}, \binits{J.}},
+\bauthor{\bsnm{DeVito}, \binits{Z.}},
+\bauthor{\bsnm{He}, \binits{H.}},
+\bauthor{\bsnm{Ussery}, \binits{A.}},
+\bauthor{\bsnm{Ansel}, \binits{J.}}:
+\batitle{Torch. fx: Practical program capture and transformation for deep
+  learning in python}.
+\bjtitle{Proceedings of Machine Learning and Systems}
+\bvolume{4},
+\bfpage{638}--\blpage{651}
+(\byear{2022})
+\end{barticle}
+\endbibitem
+
+\end{thebibliography}
