@@ -1,0 +1,273 @@
+\section{Class hierarchy analysis}\label{sec:cha}
+\captionsetup[sub]{font=normal,labelfont={bf,sf}}
+\begin{figure}[!ht]
+  \centering
+  \begin{subfigure}[b]{0.45\textwidth}
+    \begin{lstlisting}[style=mpython]
+from tensorflow import keras
+
+# `ResNet` inherits `keras.Model`
+class ResNet(keras.Model):
+    def __init__(self, block_list):
+        ...
+
+model = ResNet([2,2,2])
+model.fit(x_train, y_train)\end{lstlisting}
+    \caption{Single-GPU DL model}
+    \label{fig:cha:tfex:a}
+  \end{subfigure}
+  \hspace{3mm}
+  \begin{subfigure}[b]{0.5\textwidth}
+    \begin{lstlisting}[style=mpython]
+from tensorflow import keras
+import horovod.tensorflow.keras as hvd
+
+class ResNet(keras.Model):
+    def __init__(self, block_list):
+        ...
+
+model = ResNet([2,2,2])
+
+model.fit(
+    x_train,
+    y_train,
+    callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)])\end{lstlisting}
+    \caption{Distributed DL model}
+    \label{fig:cha:tfex:b}
+  \end{subfigure}
+
+  \caption{Code example of distributing a single-GPU DL model using a user-defined class}
+  \label{fig:cha:tfex}
+\end{figure}
+
+\noindent
+Figure~\ref{fig:cha:tfex:a} demonstrates how ones use TensorFlow APIs to create
+and train models using user-defined classes.
+The key concept in the code is the inheritance of the TensorFlow library class
+{\tt keras.Model} by the user-defined class {\tt ResNet}, which allows the user
+to access the methods provided by {\tt keras.Model} and use them to train the
+model.
+Line 4 of the code defines the user-defined class {\tt ResNet} by inheriting
+from {\tt keras.Model}. 
+Based on the Python inheritance mechanism, the {\tt ResNet} class inherits all
+the methods and attributes of the {\tt keras.Model} class and can also define
+its methods and attributes. 
+The code then creates and trains the model using the {\tt ResNet} class instead
+of the {\tt keras.Model} class.
+In line 8, a model is created with six blocks containing two layers
+each, using the {\tt ResNet} class instead of the {\tt keras.Model} class.
+Finally, in line 9, the {\tt fit} method provided by the {\tt keras.Model}
+class is called to train the network on the given data.
+
+%Models can utilize TensorFlow APIs via user-defined classes that inherit
+%TensorFlow library classes.
+%Figure~\ref{fig:cha:tfex:a} shows such a single-GPU model code example.
+%On line 4, the user-defined class {\tt ResNet} inherits the TensorFlow library
+%class {\tt keras.Model}, the object of which represents a neural network and
+%provides methods for training features.
+%Using the {\tt ResNet} class instead of the {\tt keras.Model}, the code creates
+%and trains a neural network;
+%the line 8 creates a neural network with three blocks containing two layers,
+%and the line 9 trains the network by calling the API method {\tt fit}
+%that the class {\tt keras.Model} provides.
+
+Distributing such models is simple, but we cannot transform them syntactically.
+Figure \ref{fig:cha:tfex:b} demonstrates a modification of the model presented
+in Figure \ref{fig:cha:tfex:a} to a distributed model. 
+The example highlights the importance of recognizing the inheritance
+relationship between user-defined classes and the TensorFlow library classes in
+identifying the training-related methods. 
+The transformation involves adding a keyword argument, {\tt callbacks}, to the
+{\tt fit} method call, as shown in line 13.
+However, without recognizing the inheritance relationship between {\tt ResNet}
+and {\tt keras.Model}, we cannot identify the training method call in line
+9 of Figure \ref{fig:cha:tfex:a}, and we cannot make the necessary modification
+to add the {\tt callbacks} keyword argument.
+
+%The training API pattern identifier and the AST transformer require
+%class inheritance relationship to recognize the training-related methods.
+%Figure \ref{fig:cha:tfex:b} is an example of modifying the code in
+%\ref{fig:cha:tfex:a} into the distributed model.
+%The line 9 of \ref{fig:cha:tfex:a} is modified as the lines 10 to 13 of
+%\ref{fig:cha:tfex:b}. The modification adds the keyword argument
+%{\tt callbacks} to the {\tt fit} method call.
+%To apply this modification, we must first recognize that the {\tt fit} method
+%in the line 9 of \ref{fig:cha:tfex:a} is inherited from the
+%{\tt keras.Model} class.
+%Without recognizing the inheritance relation between {\tt ResNet} and
+%{\tt keras.Model}, we cannot identify the training method call
+%in the line 9.
+
+The class hierarchy analysis is an essential pre-analysis step to solve the
+problem of identifying the training-related methods in DL models.  The class
+hierarchy analysis is a static analysis technique that identifies the
+inheritance relationship between the classes in the code. 
+By applying the class hierarchy analysis on the input DL models, we can
+identify which user-defined classes inherit TensorFlow library classes and
+check whether call statements target training-related methods inherited from
+TensorFlow library classes.
+In the code example in Figure \ref{fig:cha:tfex:a}, the class
+hierarchy analyzer reads the class definition in line 4 to conclude that the
+class {\tt ResNet} inherits the class {\tt keras.Model}. 
+The \tapi~takes this information to recognize the {\tt fit} method
+call as the call to the training method provided by the {\tt keras.Model} and
+selects appropriate transformation rules for the training pattern.
+The information is also sent to \atran~to identify the training method call
+statement and apply the transformation rules.
+
+%We employ the class hierarchy analysis as a pre-analysis to solve this problem.
+%\textit{Class hierarchy analysis} is a static analysis technique that identifies
+%inheritance relation between the classes in the code.
+%By applying class hierarchy analysis on the input DL models,
+%we can identify which user-defined classes inherit TensorFlow library classes,
+%and therefore correctly identify the training-relate
+%method calls inherited from TensorFlow library classes.
+%In the figure \ref{fig:cha:tfex:a}, for instance,
+%the class hierarchy analyzer reads the line 4 to conclude that the class
+%{\tt ResNet} inherits the class {\tt keras.Model}.
+%This information is sent to the training API pattern identifier and
+%AST transformer so that they can recognize the {\tt fit} method in line 9
+%as the call to the training method.
+
+%\begin{figure}[!ht]
+%  \centering
+%  \begin{subfigure}[t]{0.35\textwidth}
+%    \begin{lstlisting}[style=mpython]
+%from tensorflow import keras
+%
+%# `ResNet` inherits `keras.Model`
+%class ResNet(keras.Model): 
+%    def __init__(self, block_list):
+%        ...
+%
+%model = ResNet([2,2,2])
+%model.fit(x_train, y_train)\end{lstlisting}
+%    \caption{Single-GPU model using an user-defined class}
+%    \label{fig:cha:tfex:a}
+%  \end{subfigure}
+%  \hspace{3mm}
+%  \begin{subfigure}[t]{0.6\textwidth}
+%    \begin{lstlisting}[style=mpython]
+%from tensorflow import keras
+%import horovod.tensorflow.keras as hvd
+%
+%class ResNet(keras.Model):
+%    def __init__(self, block_list):
+%        ...
+%
+%model = ResNet([2,2,2])
+%
+%model.fit(
+%    x_train, 
+%    y_train,
+%    callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)])\end{lstlisting}
+%    \caption{Distributed model using an user-defined class}
+%    \label{fig:cha:tfex:b}
+%  \end{subfigure}
+%
+%  \caption{Code example of distributing a model using an user-defined class}
+%  \label{fig:cha:tfex}
+%\end{figure}
+%
+%
+%%The first step for the automated code transformation identifies TensorFlow APIs
+%%used in models to apply a different transformation rule depending on the API
+%%pattern. 
+%%However, we cannot perform the identification syntactically, because models can
+%%call the TensorFlow APIs via user-defined classes that inherit TensorFlow
+%%library classes.
+%%Figure~\ref{fig:cha:tfex:a} shows such a single-GPU model code example.
+%%On line 4, the user-defined class {\tt ResNet} inherits the TensorFlow library
+%%class {\tt keras.Model}, the object of which represents a neural network and
+%%provides methods for training features.
+%%Using the {\tt ResNet} class instead of the {\tt keras.Model}, the code creates
+%%and trains a neural network;
+%%the line 8 creates a neural network with three blocks containing two layers,
+%%and the line 9 trains the network by calling the API method {\tt fit}
+%%that the class {\tt keras.Model} provides.
+%%Figure~\ref{fig:cha:tfex:b} shows the distributed model of the single-GPU
+%%model.
+%%The transformation first identifies a statement calling the {\tt fit} API
+%%method of the {\tt keras.Model} class and then passes an additional {\tt
+%%callbacks} argument to the method as shown on line 13.
+%%The transformation is simple in the sense that it requires only the
+%%modification of the {\tt fit} method call statement.
+%%However, we cannot syntactically check whether the {\tt fit} method is the API
+%%method of the {\tt keras.Model} class or a user-defined method having the same
+%%name, because the {\tt model} object is an instance of the user-defined class
+%%{\tt ResNet}, not the TensorFlow library class {\tt kerase.Model}.
+%
+%
+%To solve the problem, we design and implement the class hierarchy analysis for
+%Python as a pre-analysis of the transformation.
+%The class hierarchy analysis is a static analysis technique that identifies
+%inheritance relation between the classes in the code.
+%By applying the class hierarchy analysis on the input DL models,
+%we can identify which user-defined classes inherit TensorFlow library classes,
+%and therefore correctly identify the training-relate
+%method calls inherited from TensorFlow library classes.
+%
+%
+%%By inheriting the {\tt keras.Model} class, the {\tt ResNet} class
+%%defines a new model structure while reusing the methods 
+%%defined in the {\tt keras.Model} class.
+%%Then line 9 calls the {\tt fit} method, inherited from the {\tt keras.Model} 
+%%class. 
+%%The {\tt fit} methods trains the model with the training dataset given as
+%%arguments.
+%
+%%We employ the class hierarchy analysis as a pre-analysis to solve this problem. 
+%%\textit{Class hierarchy analysis} is a static analysis technique that identifies
+%%inheritance relation between the classes in the code.
+%By applying class hierarchy analysis on the input DL models,
+%we can identify which user-defined classes inherit TensorFlow library classes,
+%and therefore correctly identify the training-relate
+%method calls inherited from TensorFlow library classes.
+%In the figure \ref{fig:cha:tfex:a}, for instance, 
+%the class hierarchy analyzer reads the line 4 to conclude that the class
+%{\tt ResNet} inherits the class {\tt keras.Model}.
+%This information is sent to the training API pattern identifier and 
+%AST transformer so that they can recognize the {\tt fit} method in line 9 
+%as the call to the training method. 
+%
+%%To correctly identify TensorFlow APIs used in models, the {\sc Training API
+%%Pattern Identifier} requires inheritance relations between classes.
+%%Figure \ref{fig:cha:tfex:b} is an example of modifying the code in 
+%%\ref{fig:cha:tfex:a} into the distributed model.
+%%The line 9 of \ref{fig:cha:tfex:a} is modified as the lines 10 to 13 of 
+%%\ref{fig:cha:tfex:b}. The modification adds the keyword argument 
+%%{\tt callbacks} to the {\tt fit} method call. 
+%%To apply this modification, we must first recognize that the {\tt fit} method
+%%in the line 9 of \ref{fig:cha:tfex:a} is inherited from the
+%%{\tt keras.Model} class.
+%%Without recognizing the inheritance relation between {\tt ResNet} and
+%%{\tt keras.Model}, we cannot identify the training method call 
+%%in the line 9.  
+%
+%%the {\sc Training API Pattern Identifier} and the {\sc AST Transformer} require
+%%class inheritance relationship to recognize the training-related methods.
+%%Figure \ref{fig:cha:tfex:b} is an example of modifying the code in 
+%%\ref{fig:cha:tfex:a} into the distributed model.
+%%The line 9 of \ref{fig:cha:tfex:a} is modified as the lines 10 to 13 of 
+%%\ref{fig:cha:tfex:b}. The modification adds the keyword argument 
+%%{\tt callbacks} to the {\tt fit} method call. 
+%%To apply this modification, we must first recognize that the {\tt fit} method
+%%in the line 9 of \ref{fig:cha:tfex:a} is inherited from the
+%%{\tt keras.Model} class.
+%%Without recognizing the inheritance relation between {\tt ResNet} and
+%%{\tt keras.Model}, we cannot identify the training method call 
+%%in the line 9.  
+%
+%%We employ the class hierarchy analysis as a pre-analysis to solve this problem. 
+%%\textit{Class hierarchy analysis} is a static analysis technique that identifies
+%%inheritance relation between the classes in the code.
+%%By applying class hierarchy analysis on the input DL models,
+%%we can identify which user-defined classes inherit TensorFlow library classes,
+%%and therefore correctly identify the training-relate
+%%method calls inherited from TensorFlow library classes.
+%%In the figure \ref{fig:cha:tfex:a}, for instance, 
+%%the class hierarchy analyzer reads the line 4 to conclude that the class
+%%{\tt ResNet} inherits the class {\tt keras.Model}.
+%%This information is sent to the training API pattern identifier and 
+%%AST transformer so that they can recognize the {\tt fit} method in line 9 
+%%as the call to the training method. 
