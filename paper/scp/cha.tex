@@ -2,7 +2,7 @@
 \captionsetup[sub]{font=normal,labelfont={bf,sf}}
 \begin{figure}[!ht]
   \centering
-  \begin{subfigure}[b]{0.45\textwidth}
+  \begin{subfigure}[b]{1.0\textwidth}
     \begin{lstlisting}[style=mpython]
 from tensorflow import keras
 
@@ -16,8 +16,8 @@ model.fit(x_train, y_train)\end{lstlisting}
     \caption{Single-GPU DL model}
     \label{fig:cha:tfex:a}
   \end{subfigure}
-  \hspace{3mm}
-  \begin{subfigure}[b]{0.5\textwidth}
+
+  \begin{subfigure}[b]{1.0\textwidth}
     \begin{lstlisting}[style=mpython]
 from tensorflow import keras
 import horovod.tensorflow.keras as hvd
