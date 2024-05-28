@@ -1,0 +1,234 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\Newlabel{cor1}{1}
+\citation{lecun2015deep}
+\citation{abadi2016tensorflow}
+\citation{pytorch2019}
+\citation{simonyan2014very}
+\citation{he2016deep}
+\citation{bert2018}
+\citation{gpt32020}
+\Newlabel{inst1}{a}
+\Newlabel{inst2}{b}
+\citation{imagenettraining2017}
+\citation{imagenet2014}
+\citation{goyal2017accurate}
+\citation{Silver2017alphagozero}
+\citation{zhang2019distributed}
+\citation{tian2019distributed}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{2}{section.1}\protected@file@percent }
+\newlabel{sec:intro}{{1}{2}{Introduction}{section.1}{}}
+\citation{sergeev2018horovod}
+\citation{deepspeed}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{4}{section.2}\protected@file@percent }
+\newlabel{sec:background}{{2}{4}{Background}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}TensorFlow Deep Learning Models}{4}{subsection.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces The neural network with a hidden layer and an output layer\relax }}{5}{figure.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:back:model}{{1}{5}{The neural network with a hidden layer and an output layer\relax }{figure.caption.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{tensorflow1\textunderscore mnist.py}{6}{lstlisting.-1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces TensorFlow 1.x model example\relax }}{6}{figure.caption.2}\protected@file@percent }
+\newlabel{fig:back:tf1}{{2}{6}{TensorFlow 1.x model example\relax }{figure.caption.2}{}}
+\citation{kingma2014adam}
+\citation{sergeev2018horovod}
+\@writefile{lol}{\contentsline {lstlisting}{tensorflow2\textunderscore ex.py}{8}{lstlisting.-2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces TensorFlow 2.x model example\relax }}{8}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:back:tf2}{{3}{8}{TensorFlow 2.x model example\relax }{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Horovod Distributed Training Library}{8}{subsection.2.2}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{horovod\textunderscore tf1\textunderscore ex.py}{9}{lstlisting.-3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Horovod distributed model example for TensorFlow 1.x model\relax }}{9}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:back:hvd1}{{4}{9}{Horovod distributed model example for TensorFlow 1.x model\relax }{figure.caption.4}{}}
+\@writefile{lol}{\contentsline {lstlisting}{horovod\textunderscore ex.py}{11}{lstlisting.-4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Horovod distributed model example for TensorFlow 2.x model\relax }}{11}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:back:hvd2}{{5}{11}{Horovod distributed model example for TensorFlow 2.x model\relax }{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Overview}{12}{section.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Overall structure of the automated transformation for distributed training\relax }}{12}{figure.caption.6}\protected@file@percent }
+\newlabel{sysarch}{{6}{12}{Overall structure of the automated transformation for distributed training\relax }{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Class hierarchy analysis}{13}{section.4}\protected@file@percent }
+\newlabel{sec:cha}{{4}{13}{Class hierarchy analysis}{section.4}{}}
+\newlabel{fig:cha:tfex:a}{{7a}{13}{\footnotesize Single-GPU DL model\relax }{figure.caption.7}{}}
+\newlabel{sub@fig:cha:tfex:a}{{a}{13}{\footnotesize Single-GPU DL model\relax }{figure.caption.7}{}}
+\newlabel{fig:cha:tfex:b}{{7b}{13}{\footnotesize Distributed DL model\relax }{figure.caption.7}{}}
+\newlabel{sub@fig:cha:tfex:b}{{b}{13}{\footnotesize Distributed DL model\relax }{figure.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Code example of distributing a single-GPU DL model using a user-defined class\relax }}{13}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:cha:tfex}{{7}{13}{Code example of distributing a single-GPU DL model using a user-defined class\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Training API Pattern Identification}{15}{section.5}\protected@file@percent }
+\newlabel{sec:pattern}{{5}{15}{Training API Pattern Identification}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Training API Patterns of TensorFlow DL Models}{15}{subsection.5.1}\protected@file@percent }
+\newlabel{fig:pattern:ex01:a}{{8a}{15}{Using low-level training API\relax }{figure.caption.8}{}}
+\newlabel{sub@fig:pattern:ex01:a}{{a}{15}{Using low-level training API\relax }{figure.caption.8}{}}
+\newlabel{fig:pattern:ex01:b}{{8b}{15}{Using high-level training API\relax }{figure.caption.8}{}}
+\newlabel{sub@fig:pattern:ex01:b}{{b}{15}{Using high-level training API\relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces TensorFlow model code example using two different API patterns\relax }}{15}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:pattern:ex01}{{8}{15}{TensorFlow model code example using two different API patterns\relax }{figure.caption.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Four types of training API patterns\relax }}{16}{table.caption.9}\protected@file@percent }
+\newlabel{tab:patterns}{{1}{16}{Four types of training API patterns\relax }{table.caption.9}{}}
+\@writefile{toc}{\contentsline {paragraph}{Session Pattern.}{16}{section*.10}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Session pattern code example\relax }}{16}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:sessionpattern}{{9}{16}{Session pattern code example\relax }{figure.caption.11}{}}
+\@writefile{toc}{\contentsline {paragraph}{MonitoredSession Pattern.}{17}{section*.12}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces MonitoredSession pattern code example\relax }}{17}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:monsesspattern}{{10}{17}{MonitoredSession pattern code example\relax }{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {paragraph}{GradientTape Pattern.}{17}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Keras Pattern.}{17}{section*.16}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces GradientTape pattern code example\relax }}{18}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:tapepattern}{{11}{18}{GradientTape pattern code example\relax }{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Keras pattern code example\relax }}{18}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:keraspattern}{{12}{18}{Keras pattern code example\relax }{figure.caption.17}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Training API Pattern Identifier}{18}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:ident}{{5.2}{18}{Training API Pattern Identifier}{subsection.5.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Flat lattice for the training API pattern identification\relax }}{19}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:pattern:lattice}{{13}{19}{Flat lattice for the training API pattern identification\relax }{figure.caption.18}{}}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Training API pattern identification\relax }}{20}{algorithm.1}\protected@file@percent }
+\newlabel{al:apiident}{{1}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:begin-match-session}{{3}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:end-match-session}{{4}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:begin-match-monitoredsession}{{5}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:end-match-monitoredsession}{{6}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:begin-match-gradient}{{7}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:mid-match-gradient}{{8}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:end-match-gradient}{{8}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:begin-match-keras}{{9}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:end-match-keras}{{10}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:begin-ow}{{12}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\newlabel{alg:end-ow}{{15}{20}{Training API pattern identification\relax }{algorithm.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Code Transformation}{21}{section.6}\protected@file@percent }
+\newlabel{sec:trans}{{6}{21}{Code Transformation}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Formalization of Transformation Rules}{21}{subsection.6.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces Transform function description\relax }}{21}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:trans:fnexpl}{{14}{21}{Transform function description\relax }{figure.caption.19}{}}
+\newlabel{fig:trans:ex01:org}{{15a}{22}{Original DL python code\relax }{figure.caption.20}{}}
+\newlabel{sub@fig:trans:ex01:org}{{a}{22}{Original DL python code\relax }{figure.caption.20}{}}
+\newlabel{fig:trans:ex01:hvd}{{15b}{22}{Transformed DL python code\relax }{figure.caption.20}{}}
+\newlabel{sub@fig:trans:ex01:hvd}{{b}{22}{Transformed DL python code\relax }{figure.caption.20}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces Example code transformation result\relax }}{22}{figure.caption.20}\protected@file@percent }
+\newlabel{fig:trans:ex01}{{15}{22}{Example code transformation result\relax }{figure.caption.20}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Transformation Rules for API Patterns}{22}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.2.1}Rules for the Session Pattern}{22}{subsubsection.6.2.1}\protected@file@percent }
+\newlabel{fig:trans:sessiontrans:a}{{16a}{23}{Session pattern example\relax }{figure.caption.21}{}}
+\newlabel{sub@fig:trans:sessiontrans:a}{{a}{23}{Session pattern example\relax }{figure.caption.21}{}}
+\newlabel{fig:trans:sessiontrans:b}{{16b}{23}{Distributed Session pattern example\relax }{figure.caption.21}{}}
+\newlabel{sub@fig:trans:sessiontrans:b}{{b}{23}{Distributed Session pattern example\relax }{figure.caption.21}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces Example transformation of the Session pattern\relax }}{23}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:trans:sessiontrans}{{16}{23}{Example transformation of the Session pattern\relax }{figure.caption.21}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces Session pattern transform function: Optimizer learning rate scaling and wrapping\relax }}{23}{figure.caption.22}\protected@file@percent }
+\newlabel{fig:trans:sessrule}{{17}{23}{Session pattern transform function: Optimizer learning rate scaling and wrapping\relax }{figure.caption.22}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.2.2}Rules for the MonitoredSession Pattern}{24}{subsubsection.6.2.2}\protected@file@percent }
+\newlabel{fig:trans:monsesstrans:a}{{18a}{25}{MonitoredSession pattern example\relax }{figure.caption.23}{}}
+\newlabel{sub@fig:trans:monsesstrans:a}{{a}{25}{MonitoredSession pattern example\relax }{figure.caption.23}{}}
+\newlabel{fig:trans:monsesstrans:b}{{18b}{25}{Distributed MonitoredSession pattern example\relax }{figure.caption.23}{}}
+\newlabel{sub@fig:trans:monsesstrans:b}{{b}{25}{Distributed MonitoredSession pattern example\relax }{figure.caption.23}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {18}{\ignorespaces Example transformation of the MonitoredSession pattern\relax }}{25}{figure.caption.23}\protected@file@percent }
+\newlabel{fig:trans:monsesstrans}{{18}{25}{Example transformation of the MonitoredSession pattern\relax }{figure.caption.23}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {19}{\ignorespaces MonitoredSession pattern transform function: Modifying {\tt  StopAtStepHook} instance\relax }}{25}{figure.caption.24}\protected@file@percent }
+\newlabel{fig:trans:monsessrule}{{19}{25}{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance\relax }{figure.caption.24}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.2.3}Rules for the GradientTape pattern}{25}{subsubsection.6.2.3}\protected@file@percent }
+\newlabel{sec:grad}{{6.2.3}{25}{Rules for the GradientTape pattern}{subsubsection.6.2.3}{}}
+\newlabel{fig:trans:gtapetrans:a}{{20a}{26}{GradientTape pattern example\relax }{figure.caption.25}{}}
+\newlabel{sub@fig:trans:gtapetrans:a}{{a}{26}{GradientTape pattern example\relax }{figure.caption.25}{}}
+\newlabel{fig:trans:gtapetrans:b}{{20b}{26}{Distributed GradientTape pattern example\relax }{figure.caption.25}{}}
+\newlabel{sub@fig:trans:gtapetrans:b}{{b}{26}{Distributed GradientTape pattern example\relax }{figure.caption.25}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {20}{\ignorespaces Example transformation of the GradientTape pattern\relax }}{26}{figure.caption.25}\protected@file@percent }
+\newlabel{fig:trans:gtapetrans}{{20}{26}{Example transformation of the GradientTape pattern\relax }{figure.caption.25}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {21}{\ignorespaces GradientTape pattern transform function: utilizing the {\tt  DistributedGradientTape} instance\relax }}{27}{figure.caption.26}\protected@file@percent }
+\newlabel{fig:trans:gtaperule}{{21}{27}{GradientTape pattern transform function: utilizing the {\tt DistributedGradientTape} instance\relax }{figure.caption.26}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {22}{\ignorespaces GradientTape pattern transform function: broadcasting trainable global variables\relax }}{27}{figure.caption.27}\protected@file@percent }
+\newlabel{fig:trans:gtaperule2}{{22}{27}{GradientTape pattern transform function: broadcasting trainable global variables\relax }{figure.caption.27}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.2.4}Rules for the Keras pattern}{28}{subsubsection.6.2.4}\protected@file@percent }
+\newlabel{fig:trans:keras:a}{{23a}{28}{Keras pattern example\relax }{figure.caption.28}{}}
+\newlabel{sub@fig:trans:keras:a}{{a}{28}{Keras pattern example\relax }{figure.caption.28}{}}
+\newlabel{fig:trans:keras:b}{{23b}{28}{Distributed Keras pattern example\relax }{figure.caption.28}{}}
+\newlabel{sub@fig:trans:keras:b}{{b}{28}{Distributed Keras pattern example\relax }{figure.caption.28}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {23}{\ignorespaces Example transformation of the Keras Pattern\relax }}{28}{figure.caption.28}\protected@file@percent }
+\newlabel{fig:trans:keras}{{23}{28}{Example transformation of the Keras Pattern\relax }{figure.caption.28}{}}
+\citation{horovodgithub}
+\citation{tfmodelgarden}
+\citation{tfexamplesdamien}
+\citation{cifar10github}
+\citation{tf2tutogithub}
+\citation{tfexamplesdamien}
+\citation{horovodgithub}
+\citation{tfmodelgarden}
+\citation{cifar10github}
+\citation{tf2tutogithub}
+\@writefile{lof}{\contentsline {figure}{\numberline {24}{\ignorespaces Keras pattern transform function\relax }}{29}{figure.caption.29}\protected@file@percent }
+\newlabel{fig:trans:kerasrule}{{24}{29}{Keras pattern transform function\relax }{figure.caption.29}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Evaluation}{29}{section.7}\protected@file@percent }
+\newlabel{sec:eval}{{7}{29}{Evaluation}{section.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Experiment result for the automated code transformation\relax }}{30}{table.caption.30}\protected@file@percent }
+\newlabel{fig:eval:targets}{{2}{30}{Experiment result for the automated code transformation\relax }{table.caption.30}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}RQ1: Correctness of the transformation}{30}{subsection.7.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {25}{\ignorespaces Training code of SimpleCNN-GradientTape-1 model\relax }}{31}{figure.caption.31}\protected@file@percent }
+\newlabel{fig:eval:simplecnn1}{{25}{31}{Training code of SimpleCNN-GradientTape-1 model\relax }{figure.caption.31}{}}
+\citation{tensorboard}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Training time comparison results\relax }}{32}{table.caption.32}\protected@file@percent }
+\newlabel{fig:eval:traintime}{{3}{32}{Training time comparison results\relax }{table.caption.32}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}RQ2: Effectiveness of the automatically distributed training}{32}{subsection.7.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {26}{\ignorespaces Comparison of training between the distributed models and the original models (X-axis: time in seconds, Y-axis: loss value, blue-line: original model, red-line: distributed model)\relax }}{33}{figure.caption.33}\protected@file@percent }
+\newlabel{fig:eval:train}{{26}{33}{Comparison of training between the distributed models and the original models (X-axis: time in seconds, Y-axis: loss value, blue-line: original model, red-line: distributed model)\relax }{figure.caption.33}{}}
+\citation{sergeev2018horovod}
+\citation{tfonspark}
+\citation{deepspeed}
+\citation{pytorch2019}
+\citation{tfdistributed}
+\@writefile{lof}{\contentsline {figure}{\numberline {27}{\ignorespaces Distributed training on the VGG-CIFAR10 model with different learning rates\relax }}{35}{figure.caption.34}\protected@file@percent }
+\newlabel{fig:eval:cifar10}{{27}{35}{Distributed training on the VGG-CIFAR10 model with different learning rates\relax }{figure.caption.34}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Related Work}{35}{section.8}\protected@file@percent }
+\newlabel{sec:related}{{8}{35}{Related Work}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Distributed DL frameworks}{35}{subsection.8.1}\protected@file@percent }
+\citation{visser2001survey}
+\citation{loulergue2019automatic}
+\citation{haryono2021mlcatchup}
+\citation{reed2022torch}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Code Transformation}{36}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion}{36}{section.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{36}{Conclusion}{section.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Data Availability}{37}{section.10}\protected@file@percent }
+\bibstyle{elsarticle-num}
+\bibdata{ref}
+\bibcite{lecun2015deep}{{1}{}{{}}{{}}}
+\bibcite{abadi2016tensorflow}{{2}{}{{}}{{}}}
+\bibcite{pytorch2019}{{3}{}{{}}{{}}}
+\bibcite{simonyan2014very}{{4}{}{{}}{{}}}
+\bibcite{he2016deep}{{5}{}{{}}{{}}}
+\bibcite{bert2018}{{6}{}{{}}{{}}}
+\bibcite{gpt32020}{{7}{}{{}}{{}}}
+\bibcite{imagenettraining2017}{{8}{}{{}}{{}}}
+\bibcite{imagenet2014}{{9}{}{{}}{{}}}
+\bibcite{goyal2017accurate}{{10}{}{{}}{{}}}
+\bibcite{Silver2017alphagozero}{{11}{}{{}}{{}}}
+\bibcite{zhang2019distributed}{{12}{}{{}}{{}}}
+\bibcite{tian2019distributed}{{13}{}{{}}{{}}}
+\bibcite{sergeev2018horovod}{{14}{}{{}}{{}}}
+\bibcite{deepspeed}{{15}{}{{}}{{}}}
+\bibcite{kingma2014adam}{{16}{}{{}}{{}}}
+\bibcite{horovodgithub}{{17}{}{{}}{{}}}
+\bibcite{tfmodelgarden}{{18}{}{{}}{{}}}
+\bibcite{tfexamplesdamien}{{19}{}{{}}{{}}}
+\bibcite{cifar10github}{{20}{}{{}}{{}}}
+\bibcite{tf2tutogithub}{{21}{}{{}}{{}}}
+\bibcite{tensorboard}{{22}{}{{}}{{}}}
+\bibcite{tfonspark}{{23}{}{{}}{{}}}
+\bibcite{tfdistributed}{{24}{}{{}}{{}}}
+\bibcite{visser2001survey}{{25}{}{{}}{{}}}
+\bibcite{loulergue2019automatic}{{26}{}{{}}{{}}}
+\bibcite{haryono2021mlcatchup}{{27}{}{{}}{{}}}
+\bibcite{reed2022torch}{{28}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{40}

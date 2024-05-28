@@ -295,7 +295,7 @@ in TensorFlow 2.x.
 %The line 11 pin the GPU to the process, using the local rank of the process.
 % p2 : optimizer lr
 Line 19 defines the optimizer object with the learning rate multiplied by
-the number of GPUs but without the wrapped {\tt DistributedOptimizer} API.
+the number of GPUs but without wrapping {\tt DistributedOptimizer}.
 %As in the optimizer of figure \ref{fig:back:hvd1}, 
 %the learning rate argument of the optimizer object 
 %should be scaled by {\tt hvd.size()} for efficient distributed training. 
@@ -336,9 +336,9 @@ across the training processes.
 TensorFlow 2.x implicitly initializes variables once when applying the
 optimizer's {\tt apply\_gradients} function to {\tt
 model.trainable\_variables}.
-Thus, after applying the function, the code broadcasts the variables
-using the {\tt hvd.broadcast\_variables} API and sets the boolean flag {\tt
-hvd\_broadcast\_done} to {\tt True} to prevent repeated broadcasting.
+Thus, after applying the function, the code calls the {\tt
+hvd.broadcast\_variables} API to broadcast the variables and sets the boolean
+flag {\tt hvd\_broadcast\_done} to {\tt True} to prevent repeated broadcasting.
 %To ensure that the variable broadcasting happen after the optimizer
 %variables are initialized, the variable broadcasting codes are placed
 %after the first gradient descent step is finished, thus the optimizer

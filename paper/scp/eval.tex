@@ -145,7 +145,7 @@ results.
 %\end{figure}
 
 \begin{figure}[!ht]\centering
-  \begin{lstlisting}[language=Python]
+  \begin{lstlisting}[language=Python, upquote=true]
 # Model object is not used, instead a function used
 def conv_net(x):
     x = tf.reshape(x, [-1, 28, 28, 1])
@@ -247,7 +247,7 @@ We experimented on a Linux machine with Intel Xeon CPU E5-2690 v4 @
 
 
 \begin{table}
-  \scriptsize
+  \footnotesize
   \centering
   \caption{Training time comparison results}
   \label{fig:eval:traintime}
@@ -277,44 +277,44 @@ DCGAN                    & 2389.052& 828.428& $\times$2.88\\
   \centering
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tape-lstm}
-    \caption{\small LSTM-MNIST}
+    \caption{\footnotesize LSTM-MNIST}
   \end{subfigure}
   ~ 
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tape-simple2}
-    \caption{\small SimpleCNN-\\GradientTape-2}
+    \caption{\footnotesize SimpleCNN-\\GradientTape-2}
   \end{subfigure}
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{keras-cifar}
-    \caption{\small VGG-CIFAR10}
+    \caption{\footnotesize VGG-CIFAR10}
   \end{subfigure}
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-03}
-    \caption{\small Play-with-\\MNIST}
+    \caption{\footnotesize Play-with-\\MNIST}
   \end{subfigure}
 
   \par\bigskip
   
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-04}
-    \caption{\small Linear-\\Regression}
+    \caption{\footnotesize Linear-\\Regression}
   \end{subfigure} 
   ~ 
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-05}
-    \caption{\small Fashion-MNIST}
+    \caption{\footnotesize Fashion-MNIST}
   \end{subfigure}
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-06}
-    \caption{\small CIFAR10-\\VGG16}
+    \caption{\footnotesize CIFAR10-\\VGG16}
   \end{subfigure}
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-07}
-    \caption{\small Inception-\\network}
+    \caption{\footnotesize Inception-\\network}
   \end{subfigure}
   
 
@@ -322,29 +322,29 @@ DCGAN                    & 2389.052& 828.428& $\times$2.88\\
 
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-09}
-    \caption{\small RNN-Sentiment-\\Analysis}
+    \caption{\footnotesize RNN-Sentiment-\\Analysis}
   \end{subfigure} 
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-10}
-    \caption{\small Stacked-\\LSTM-ColorBot}
+    \caption{\footnotesize Stacked-\\LSTM-ColorBot}
   \end{subfigure}
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-11}
-    \caption{\small Auto-Encoder}
+    \caption{\footnotesize Auto-Encoder}
   \end{subfigure}
   ~
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-12}
-    \caption{\small Variational-\\Auto-Encoder}
+    \caption{\footnotesize Variational-\\Auto-Encoder}
   \end{subfigure}
   
   \par\bigskip
 
   \begin{subfigure}[t]{.22\textwidth}
     \includegraphics[width=\textwidth]{tf2-13}
-    \caption{\small DCGAN}
+    \caption{\footnotesize DCGAN}
   \end{subfigure} 
 
   \caption{Comparison of training between the distributed models and the

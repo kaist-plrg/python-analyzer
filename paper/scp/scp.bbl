@@ -1,0 +1,139 @@
+\begin{thebibliography}{10}
+\expandafter\ifx\csname url\endcsname\relax
+  \def\url#1{\texttt{#1}}\fi
+\expandafter\ifx\csname urlprefix\endcsname\relax\def\urlprefix{URL }\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \def\href#1#2{#2} \def\path#1{#1}\fi
+
+\bibitem{lecun2015deep}
+Y.~LeCun, Y.~Bengio, G.~Hinton, Deep learning, nature 521~(7553) (2015)
+  436--444.
+
+\bibitem{abadi2016tensorflow}
+M.~Abadi, P.~Barham, J.~Chen, Z.~Chen, A.~Davis, J.~Dean, M.~Devin,
+  S.~Ghemawat, G.~Irving, M.~Isard, et~al., Tensorflow: a system for
+  large-scale machine learning, in: 12th USENIX symposium on operating systems
+  design and implementation (OSDI 16), 2016, pp. 265--283.
+
+\bibitem{pytorch2019}
+A.~Paszke, S.~Gross, F.~Massa, A.~Lerer, J.~Bradbury, G.~Chanan, T.~Killeen,
+  Z.~Lin, N.~Gimelshein, L.~Antiga, et~al., Pytorch: An imperative style,
+  high-performance deep learning library, Advances in neural information
+  processing systems 32 (2019).
+
+\bibitem{simonyan2014very}
+K.~Simonyan, A.~Zisserman, Very deep convolutional networks for large-scale
+  image recognition, arXiv preprint arXiv:1409.1556 (2014).
+
+\bibitem{he2016deep}
+K.~He, X.~Zhang, S.~Ren, J.~Sun, Deep residual learning for image recognition,
+  in: Proceedings of the IEEE conference on computer vision and pattern
+  recognition, 2016, pp. 770--778.
+
+\bibitem{bert2018}
+J.~Devlin, M.-W. Chang, K.~Lee, K.~Toutanova, Bert: Pre-training of deep
+  bidirectional transformers for language understanding, arXiv preprint
+  arXiv:1810.04805 (2018).
+
+\bibitem{gpt32020}
+T.~Brown, B.~Mann, N.~Ryder, M.~Subbiah, J.~D. Kaplan, P.~Dhariwal,
+  A.~Neelakantan, P.~Shyam, G.~Sastry, A.~Askell, et~al., Language models are
+  few-shot learners, Advances in neural information processing systems 33
+  (2020) 1877--1901.
+
+\bibitem{imagenettraining2017}
+Y.~You, Z.~Zhang, C.-J. Hsieh, J.~Demmel, K.~Keutzer, Imagenet training in
+  minutes, in: Proceedings of the 47th International Conference on Parallel
+  Processing, 2018, pp. 1--10.
+
+\bibitem{imagenet2014}
+O.~Russakovsky, J.~Deng, H.~Su, J.~Krause, S.~Satheesh, S.~Ma, Z.~Huang,
+  A.~Karpathy, A.~Khosla, M.~Bernstein, et~al., Imagenet large scale visual
+  recognition challenge, International journal of computer vision 115 (2015)
+  211--252.
+
+\bibitem{goyal2017accurate}
+P.~Goyal, P.~Doll{\'a}r, R.~Girshick, P.~Noordhuis, L.~Wesolowski, A.~Kyrola,
+  A.~Tulloch, Y.~Jia, K.~He, Accurate, large minibatch sgd: Training imagenet
+  in 1 hour, arXiv preprint arXiv:1706.02677 (2017).
+
+\bibitem{Silver2017alphagozero}
+D.~Silver, J.~Schrittwieser, K.~Simonyan, I.~Antonoglou, A.~Huang, A.~Guez,
+  T.~Hubert, L.~Baker, M.~Lai, A.~Bolton, et~al., Mastering the game of go
+  without human knowledge, nature 550~(7676) (2017) 354--359.
+
+\bibitem{zhang2019distributed}
+W.~Zhang, X.~Cui, U.~Finkler, B.~Kingsbury, G.~Saon, D.~Kung, M.~Picheny,
+  Distributed deep learning strategies for automatic speech recognition, in:
+  ICASSP 2019-2019 IEEE International Conference on Acoustics, Speech and
+  Signal Processing (ICASSP), IEEE, 2019, pp. 5706--5710.
+
+\bibitem{tian2019distributed}
+Z.~Tian, C.~Luo, J.~Qiu, X.~Du, M.~Guizani, A distributed deep learning system
+  for web attack detection on edge devices, IEEE Transactions on Industrial
+  Informatics 16~(3) (2019) 1963--1971.
+
+\bibitem{sergeev2018horovod}
+A.~Sergeev, M.~Del~Balso, Horovod: fast and easy distributed deep learning in
+  tensorflow, arXiv preprint arXiv:1802.05799 (2018).
+
+\bibitem{deepspeed}
+J.~Rasley, S.~Rajbhandari, O.~Ruwase, Y.~He, Deepspeed: System optimizations
+  enable training deep learning models with over 100 billion parameters, in:
+  Proceedings of the 26th ACM SIGKDD International Conference on Knowledge
+  Discovery \& Data Mining, 2020, pp. 3505--3506.
+
+\bibitem{kingma2014adam}
+D.~P. Kingma, J.~Ba, Adam: A method for stochastic optimization, arXiv preprint
+  arXiv:1412.6980 (2014).
+
+\bibitem{horovodgithub}
+Horovod, Horovod, \url{https://github.com/horovod/horovod}.
+
+\bibitem{tfmodelgarden}
+TensorFlow, Tensorflow model garden,
+  \url{https://github.com/tensorflow/models}.
+
+\bibitem{tfexamplesdamien}
+A.~Damien, Tensorflow examples,
+  \url{https://github.com/aymericdamien/TensorFlow-Examples}.
+
+\bibitem{cifar10github}
+\relax{Arconsis IT-Solutions GmbH}, Cifar 10 with tensorflow,
+  \url{https://github.com/arconsis/cifar-10-with-tensorflow2/blob/master/BetterNetwork.py}.
+
+\bibitem{tf2tutogithub}
+J.~Loong, Tensorflow 2.0 tutorials,
+  \url{https://github.com/dragen1860/TensorFlow-2.x-Tutorials}.
+
+\bibitem{tensorboard}
+TensorFlow, Tensorboard, \url{https://www.tensorflow.org/tensorboard}.
+
+\bibitem{tfonspark}
+Yahoo, Tensorflowonspark, \url{https://github.com/yahoo/TensorFlowOnSpark}.
+
+\bibitem{tfdistributed}
+TensorFlow, Module: tf.distribute,
+  \url{https://www.tensorflow.org/api_docs/python/tf/distribute}.
+
+\bibitem{visser2001survey}
+E.~Visser, A survey of rewriting strategies in program transformation systems,
+  Electronic Notes in Theoretical Computer Science 57 (2001) 109--143.
+
+\bibitem{loulergue2019automatic}
+F.~Loulergue, J.~Philippe, Automatic optimization of python skeletal parallel
+  programs, in: International Conference on Algorithms and Architectures for
+  Parallel Processing, Springer, 2019, pp. 183--197.
+
+\bibitem{haryono2021mlcatchup}
+S.~A. Haryono, F.~Thung, D.~Lo, J.~Lawall, L.~Jiang, Mlcatchup: Automated
+  update of deprecated machine-learning apis in python, in: 2021 IEEE
+  International Conference on Software Maintenance and Evolution (ICSME), IEEE,
+  2021, pp. 584--588.
+
+\bibitem{reed2022torch}
+J.~Reed, Z.~DeVito, H.~He, A.~Ussery, J.~Ansel, Torch. fx: Practical program
+  capture and transformation for deep learning in python, Proceedings of
+  Machine Learning and Systems 4 (2022) 638--651.
+
+\end{thebibliography}

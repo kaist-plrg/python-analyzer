@@ -63,21 +63,21 @@ is passed as an argument to its constructor.
 %The transformation also adds a new statementd that wraps the 
 %{\tt Optimizer} instance by {\tt DistributedOptimizer}.
 
-\begin{figure}[ht!]\small
+\begin{figure}[ht!]\footnotesize
 \noindent
   \begin{tabularx}{\textwidth}{X}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
   \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \\
-  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
+  {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
   \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
 
   \inden\inden \ktelse \\
   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}, \\
-  \inden\inden\inden {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
+  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
+  {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
   \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
 
 \end{tabularx}
@@ -174,7 +174,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
 %{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
 \vspace{-1em}
 
-\begin{figure}[ht!]\small
+\begin{figure}[ht!]\footnotesize
  \noindent
   \begin{tabular}{l}
     %\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)} \\
@@ -189,7 +189,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
     %\typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)}  \\
     \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
                 \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} {\tt as} \nidsubs{as} }{\smodenv} = \\
+                \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} {\tt as} \nidsubs{as}}{\smodenv} = \\
 
     \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} {\tt tensorflow.train.MonitoredSession} ~ \ktthen \\
     \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
@@ -219,8 +219,8 @@ Among many forms of the {\tt with\_item}, the function matches those that
 assign a function call result to a variable.
 The second line checks whether the callee function of the {\tt with\_item} is a
 constructor of the subclass of the {\tt MonitoredSession} class. 
-If then, the transform function finds the keyword argument {\tt hooks} and
-appends a {\tt BroadcastGlobalVariablesHook} object to the argument.\\
+If then, the transformation appends a {\tt BroadcastGlobalVariablesHook} object
+to the keyword argument {\tt hooks}.\\
 
 \subsubsection{Rules for the GradientTape pattern}\label{sec:grad}
 
@@ -296,7 +296,7 @@ False} to prevent further broadcasting.
 %model to ensure that variable broadcasting occurs exactly once.
 
 
-\begin{figure}[ht!]\small
+\begin{figure}[ht!]\footnotesize
 %\noindent
 \begin{tabular}{l}
   \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
@@ -310,8 +310,8 @@ False} to prevent further broadcasting.
   \label{fig:trans:gtaperule}
 \end{figure}
 
-Figure \ref{fig:trans:gtaperule} formalizes the partial transform function for
-utilizing the {\tt DistributedGradientTape} instance.
+Figure \ref{fig:trans:gtaperule} depicts the transformation for the
+GradientTape pattern utilizing the {\tt DistributedGradientTape} instance.
 The transform function matches {\tt with} statements and updates the transform
 context by transforming the list of {\tt with\_item}.
 The updated transform context contains a mapping from the string {\tt
@@ -323,10 +323,10 @@ which replaces the instance of the variable with a newly created {\tt
 DistributedGradientTape} instance for further uses in subsequent statements.
 
 
-\begin{figure}[ht!]\small
+\begin{figure}[ht!]\footnotesize
 \noindent
 \begin{tabular}{l}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} }{\smodenv} = \\
+  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
   \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
   \inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
   \inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
@@ -404,7 +404,7 @@ Figure \ref{fig:trans:keras} illustrates an example transformation of the Keras
 pattern.
 The Keras pattern code usually defines a subclass of {\tt keras.Model}, such
 as {\tt ResNet}, constructs a model as an instance of the class, and trains the
-model by calling its {\tt fit} method inherited from {\tt keras.Model}.
+model by calling its {\tt fit} method.
 To distribute the model's training with Horovod, the {\tt fit} method needs to
 take a callback {\tt BroadcastGlobalVariablesCallback} as the keyword argument
 {\tt callbacks}, shown in Figure~\ref{fig:trans:keras:b}.
@@ -412,26 +412,27 @@ When training starts, the callback ensures consistent initialization of all
 processes by broadcasting initial global variable states from a source to the
 other processes.
 
-\begin{figure}[ht!]\small
+\begin{figure}[ht!]\footnotesize
 \centering
 \begin{tabular}{l}
   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
   \inden \ktif ~ \nidsubs{m} ~ \kteq ~ \smodenv({\tmodel}) ~ \ktand ~ 
           \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
-  \inden\inden\inden ([{\tt cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
+  \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
   \inden\inden\inden ~ {\tt if hvd.rank() == 0: cb.append(\nexprsubs{2i})}, \\
-  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} ... \nexprsubs{1n}}
-                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                              \nidsubs{i} \oassign {\tt cb} ... 
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}], \smodenv) \\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
+                              \nidsubs{i} \oassign {\tt cb} $\cdots$
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}\\
+  \inden\inden\inden ], \smodenv) \\
   \inden\inden \ktelse \\
-  \inden\inden\inden ([{\tt cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
-  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11}... \nexprsubs{1n}}
-                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}
-                              {\tt callbacks \oassign cb} {\tt )}],\\
-                              \inden\inden\inden\inden\smodenv) \\
+  \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
+  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
+                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
+                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}\\
+                              \inden\inden\inden$\ \ ${\tt callbacks \oassign cb} {\tt )}],
+                              \smodenv) \\
 \end{tabular}
   \caption{Keras pattern transform function}
   \label{fig:trans:kerasrule}

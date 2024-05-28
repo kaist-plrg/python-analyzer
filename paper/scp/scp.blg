@@ -1,0 +1,55 @@
+This is BibTeX, Version 0.99d (TeX Live 2022)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: scp.aux
+The style file: elsarticle-num.bst
+Database file #1: ref.bib
+Warning--empty year in horovodgithub
+Warning--empty year in tfmodelgarden
+Warning--empty year in tfexamplesdamien
+Warning--empty year in cifar10github
+Warning--empty year in tf2tutogithub
+Warning--empty year in tensorboard
+Warning--empty year in tfonspark
+Warning--empty year in tfdistributed
+You've used 28 entries,
+            2952 wiz_defined-function locations,
+            814 strings with 10581 characters,
+and the built_in function-call counts, 8854 in all, are:
+= -- 757
+> -- 397
+< -- 7
++ -- 151
+- -- 123
+* -- 541
+:= -- 1227
+add.period$ -- 28
+call.type$ -- 28
+change.case$ -- 28
+chr.to.int$ -- 0
+cite$ -- 36
+duplicate$ -- 291
+empty$ -- 983
+format.name$ -- 142
+if$ -- 2286
+int.to.chr$ -- 0
+int.to.str$ -- 28
+missing$ -- 20
+newline$ -- 92
+num.names$ -- 28
+pop$ -- 198
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 633
+stack$ -- 0
+substring$ -- 414
+swap$ -- 76
+text.length$ -- 7
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 8
+while$ -- 63
+width$ -- 30
+write$ -- 231
+(There were 8 warnings)

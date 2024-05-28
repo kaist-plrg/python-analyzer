@@ -13,7 +13,7 @@ class ResNet(keras.Model):
 
 model = ResNet([2,2,2])
 model.fit(x_train, y_train)\end{lstlisting}
-    \caption{Single-GPU DL model}
+    \caption{\footnotesize Single-GPU DL model}
     \label{fig:cha:tfex:a}
   \end{subfigure}
 
@@ -32,7 +32,7 @@ model.fit(
     x_train,
     y_train,
     callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)])\end{lstlisting}
-    \caption{Distributed DL model}
+    \caption{\footnotesize Distributed DL model}
     \label{fig:cha:tfex:b}
   \end{subfigure}
 

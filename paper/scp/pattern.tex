@@ -37,7 +37,7 @@ model.fit(train_data.take(training_steps))\end{lstlisting}
 % tf 모델을 바르게 변환하기 위해서는,  서로 다른 훈련 api를 사용하느 ㄴ모델을
 % 분류하고, 각 분류의 모델에 다른 변환을 적용할 필요가 있다.
 \noindent
-TensorFlow offers multiple APIs for defining the structure of the model and the
+TensorFlow offers multiple APIs for defining the model structure and the
 training process. 
 These APIs include low-level APIs such as {\tt tf.GradientTape} and high-level
 APIs such as {\tt tf.keras.Model}.
@@ -368,6 +368,71 @@ For example, the Session element results from joining Session and Unknown
 elements, and the Multiple element results from joining MonitoredSession and
 Keras elements.
 
+% TODO put algorithm blocks inside the figure env.
+% algo related macro
+\algblockdefx{Match}{EndMatch}{\textbf{Match}}{}
+\algblockdefx{Case}{EndCase}{\textbf{case}}{}
+\algtext*{EndMatch}
+\algtext*{EndCase}
+
+\algblockdefx{Enum}{EndEnum}{\textbf{Enum}}{}
+\algtext*{EndEnum}
+
+\renewcommand{\algorithmicrequire}{\textbf{Input:}}
+\renewcommand{\algorithmicensure}{\textbf{Output:}}
+
+\algblockdefx[Foreach]{Foreach}{Endforeach}[2]{\textbf{for each} $#1$ \textbf{in} $#2$}{}
+\algblockdefx[Match]{Matchwith}{Endmatch}[1]{\textbf{match} $#1$ \textbf{with}}{}
+\algblockdefx[Case]{Matchcase}{Endcase}[1]{\textbf{case} {\tt #1} \textbf{:}}{}
+\algblockdefx[Otherwise]{Other}{Endother}{\textbf{otherwise} \textbf{:}}{}
+\algtext*{Endforeach}
+\algtext*{Endmatch}
+\algtext*{Endcase}
+\algtext*{Endother}
+
+\begin{algorithm}[t]
+  \caption{Training API pattern identification}\label{al:apiident}
+  \begin{algorithmic}[1]\footnotesize
+    \Require an abstract syntax tree ($ast$) and the class hierarhcy analysis result ($cha$)
+    \Ensure the identified training API pattern
+    \Function{IdentifyPattern}{$ast$, $cha$}
+    \Matchwith{ast}
+
+      \Matchcase{with Session() as $name$ : $body$}\label{alg:begin-match-session}
+        \If{$body$~includes~$name${\tt.run()}}
+          Session
+        \EndIf
+      \Endcase\label{alg:end-match-session}
+
+      \Matchcase{with MonitoredTrainingSession() as $name$ : $body$}\label{alg:begin-match-monitoredsession}
+        \If{$body$~includes~$name${\tt.run()}}
+          MonitoredSession
+        \EndIf
+      \Endcase\label{alg:end-match-monitoredsession}
+
+      \Matchcase{with GradientTape() as $name$ : $body$}\label{alg:begin-match-gradient}
+        \If{$ast$.parent~includes~$name${\tt.apply\_gradients()}}\label{alg:mid-match-gradient}
+          GradientTape
+        \EndIf
+      \EndCase\label{alg:end-match-gradient}
+
+      \Matchcase{$model$.fit(...)}\label{alg:begin-match-keras}
+        \If{$cha$.isSubclassOf(type($model$), {\tt keras.Model}))}
+          Keras
+        \EndIf
+      \Endcase\label{alg:end-match-keras}
+      \Other
+        \State $pattern$ $\leftarrow$ Unknown\label{alg:begin-ow}
+        \Foreach{child}{ast\text{.children}}
+          \State $pattern$ $\leftarrow$ $pattern$ $\sqcup$ {\sc IdentifyPattern($child$, $cha$)}
+        \Endforeach
+        \State $pattern$\label{alg:end-ow}
+      \Endother
+    \Endmatch
+    \EndFunction
+  \end{algorithmic}
+\end{algorithm}
+
 Algorithm~\ref{al:apiident} describes the pseudocode of the training API
 pattern identification.
 The function {\tt IdentifyPattern} takes both an input AST and the class
@@ -454,15 +519,6 @@ or Unknown.
 %transformation, resulting in abortion of the tranformation process.
 
 
-% TODO put algorithm blocks inside the figure env.
-% algo related macro
-\algblockdefx{Match}{EndMatch}{\textbf{Match}}{}
-\algblockdefx{Case}{EndCase}{\textbf{case}}{}
-\algtext*{EndMatch}
-\algtext*{EndCase}
-
-\algblockdefx{Enum}{EndEnum}{\textbf{Enum}}{}
-\algtext*{EndEnum}
 
 % lattice
 % \begin{algorithm}[ht!]
@@ -534,60 +590,6 @@ or Unknown.
 %  \end{algorithmic}
 %\end{algorithm}
 
-\renewcommand{\algorithmicrequire}{\textbf{Input:}}
-\renewcommand{\algorithmicensure}{\textbf{Output:}}
-
-\algblockdefx[Foreach]{Foreach}{Endforeach}[2]{\textbf{for each} $#1$ \textbf{in} $#2$}{}
-\algblockdefx[Match]{Matchwith}{Endmatch}[1]{\textbf{match} $#1$ \textbf{with}}{}
-\algblockdefx[Case]{Matchcase}{Endcase}[1]{\textbf{case} {\tt #1} \textbf{:}}{}
-\algblockdefx[Otherwise]{Other}{Endother}{\textbf{otherwise} \textbf{:}}{}
-\algtext*{Endforeach}
-\algtext*{Endmatch}
-\algtext*{Endcase}
-\algtext*{Endother}
-
-\begin{algorithm}[t]
-  \caption{Training API pattern identification}\label{al:apiident}
-  \begin{algorithmic}[1]
-    \Require an abstract syntax tree ($ast$) and the class hierarhcy analysis result ($cha$)
-    \Ensure the identified training API pattern
-    \Function{IdentifyPattern}{$ast$, $cha$}
-    \Matchwith{ast}
-
-      \Matchcase{with Session() as $name$ : $body$}\label{alg:begin-match-session}
-        \If{$body$~includes~$name${\tt.run()}}
-          Session
-        \EndIf
-      \Endcase\label{alg:end-match-session}
-
-      \Matchcase{with MonitoredTrainingSession() as $name$ : $body$}\label{alg:begin-match-monitoredsession}
-        \If{$body$~includes~$name${\tt.run()}}
-          MonitoredSession
-        \EndIf
-      \Endcase\label{alg:end-match-monitoredsession}
-
-      \Matchcase{with GradientTape() as $name$ : $body$}\label{alg:begin-match-gradient}
-        \If{$ast$.parent~includes~$name${\tt.apply\_gradients()}}\label{alg:mid-match-gradient}
-          GradientTape
-        \EndIf
-      \EndCase\label{alg:end-match-gradient}
-
-      \Matchcase{$model$.fit(...)}\label{alg:begin-match-keras}
-        \If{$cha$.isSubclassOf(type($model$), {\tt keras.Model}))}
-          Keras
-        \EndIf
-      \Endcase\label{alg:end-match-keras}
-      \Other
-        \State $pattern$ $\leftarrow$ Unknown\label{alg:begin-ow}
-        \Foreach{child}{ast\text{.children}}
-          \State $pattern$ $\leftarrow$ $pattern$ $\sqcup$ {\sc IdentifyPattern($child$, $cha$)}
-        \Endforeach
-        \State $pattern$\label{alg:end-ow}
-      \Endother
-    \Endmatch
-    \EndFunction
-  \end{algorithmic}
-\end{algorithm}
 
 %Algorithm~\ref{al:apiident} describes the pseudocode of the training API
 %pattern identifier.
