@@ -1,0 +1,126 @@
+\documentclass[AMA,STIX1COL]{WileyNJD-v2}
+
+\articletype{Research article}%
+
+\received{26 April 2016}
+\revised{6 June 2016}
+\accepted{6 June 2016}
+
+\raggedbottom
+
+\input{macro}
+\usepackage{url}
+\usepackage[T1]{fontenc}
+\lstdefinestyle{mpython}{
+  language=Python,
+  upquote=true,
+  morekeywords={with,as},
+  emphstyle=\color{blue},
+  emph={True,False},
+  deletekeywords=[2]{compile},
+}
+
+\begin{document}
+
+%\title{This is the sample article title\protect\thanks{This is an example for title footnote.}}
+\title{Automated Code Transformation for Distributed Training of TensorFlow Deep Learning Models}
+
+\author[1]{Yusung Sim}
+
+\author[1]{Wonho Shin}
+
+\author[2]{Sungho Lee}
+
+\authormark{AUTHOR ONE \textsc{et al}}
+
+\address[1]{\orgdiv{School of Computing}, \orgname{KAIST}, \orgaddress{\state{Daejeon}, \country{Republic of Korea}}}
+
+%\address[2]{\orgdiv{School of Computing}, \orgname{KAIST}, \orgaddress{\state{Daejeon}, \country{South Korea}}}
+
+\address[2]{\orgdiv{Department of Computer Science and Engineering}, \orgname{Chungnam National University}, \orgaddress{\state{Daejeon}, \country{Republic of Korea}}}
+
+\corres{Sungho Lee, Department of Computer Science and Engineering, Chungnam National University, 99 Daehak-ro, Yuseong-gu, Daejeon 34134, Republic of Korea. \email{eshaj@cnu.ac.kr}}
+
+%\fundingAgency{National Research Foundation of Korea}
+%\fundingNumber{2021R1F1A1051310}
+%\presentaddress{This is sample for present address text this is sample for present address text}
+
+\abstract[Summary]{
+Distributed training of deep learning models reduces training time by
+parallelizing training workloads across multiple GPUs.
+%Distributed training is one of the popular technique to reduce the training time by parallelizing
+%the training workload over multiple GPUs.
+Distributed training frameworks, such as Horovod and DeepSpeed, provide APIs,
+and model engineers rewrite deep learning models using the APIs to parallelize
+their training.
+However, the rewriting is time-consuming and labor-intensive because it
+requires engineers to read and understand documents and examples of the
+frameworks as well as manual efforts to rewrite code.
+%Until now, developers manually rewrite single-GPU-based models into
+%distributed models, which is a time-consuming and labor-intensive task that also requires
+%full understanding of the distribued training library APIs.
+
+In this paper, we propose an automated code transformation approach that
+transforms TensorFlow deep learning models designed for non-distributed
+training to models training on multiple GPUs with the Horovod framework.
+We closely inspect the Horovod document and code examples and identify four
+common training patterns of TensorFlow deep learning models.
+Then, we formalize code transformation rules for each training pattern. 
+Using the rules, we implement an automated code transformation tool that takes
+a TensorFlow deep learning model written in Python and rewrites it with the
+Horovod APIs for distributed training. 
+Our evaluation shows that the tool correctly transforms 15 out of 16
+open-source TensorFlow deep learning models.
+We believe that our approach significantly reduces manual efforts to
+parallelize training of existing TensorFlow deep learning models.
+%In this end, we propose an \textit{automated code transformation for distributed training}.
+%We formalize the code transformation rule as an function from AST to AST,
+%using pattern matching to capture and modify target parts of the code.
+%After manually inspecting the distributed training library document and code examples,
+%we provide correct definitions for transformation rules for different patterns of
+%TensorFlow model training codes.
+%The transformation rules are implemented as an automatic code transformation
+%tool.
+%We evaluate our tool on 16 open-source TensorFlow ML models,
+%which transformation succeed on 15 models.
+%The evaluation results show that our tool significantly reduces
+%the user's effort to distribute existing ML models.
+}
+
+\keywords{machine learning, distributed training, code transformation, Python}
+
+\jnlcitation{\cname{%
+\author{Williams K.}, 
+\author{B. Hoskins}, 
+\author{R. Lee}, 
+\author{G. Masato}, and 
+\author{T. Woollings}} (\cyear{2016}), 
+\ctitle{A regime analysis of Atlantic winter jet variability applied to evaluate HadGEM3-GC2}, \cjournal{Q.J.R. Meteorol. Soc.}, \cvol{2017;00:1--6}.}
+
+\maketitle
+
+%\footnotetext{\textbf{Abbreviations:} ANA, anti-nuclear antibodies; APC, antigen-presenting cells; IRF, interferon regulatory factor}
+
+\input{intro}
+\input{background}
+\input{overview}
+%\input{parse}
+\input{cha}
+\input{pattern}
+\input{trans}
+\input{eval}
+\input{related}
+\input{conclusion}
+
+\nocite{*}% Show all bib entries - both cited and uncited; comment this line to view only cited bib entries;
+\bibliography{ref}%
+
+\clearpage
+
+\section*{Author Biography}
+
+% TODO(all): Add your biography here.
+%\begin{biography}{\includegraphics[width=66pt,height=86pt,draft]{empty}}{\textbf{Author Name.} This is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text this is sample author biography text.}
+%\end{biography}
+
+\end{document}

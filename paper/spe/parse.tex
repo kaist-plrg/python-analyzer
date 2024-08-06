@@ -1,0 +1,90 @@
+\section{Python Abstract Syntax}\label{sec:pysyn}
+
+To build the Python parser and ASTs for our transformation approach,
+we define the abstract syntax of the Python programming language.
+We manually examined the grammar specification in 
+Python Language Reference \cite{pythonref} to define the formal grammar.
+The figure \ref{fig:parse:abssyntax} 
+illustrates the simplified version of the Python abstract syntax.
+The three major components of the Python syntax are modules, statements, and
+expressions.
+
+The top-level component of Python is a module.
+The module represents a single Python file, which includes multiple
+class definitions and function definitions.
+In the abstract syntax, the module is defined to be a statement,
+which will be a sequence of multiple statements in most cases.
+
+% todo: rephrase?
+% stmt는 등의 프로그램 구성품과 그 행동을 정의한다.
+Statements define the program components and their actions. 
+In Python, statements are used in two major cases.
+First, Python statements define the sequence of actions that changes the
+program state. Assignment statements create variables or update the
+value stored in the variable. If-else, for, and while statements change
+the control flow of the program.
+Second, Python statements define the classes and functions.
+The {\tt class} statement defines a new class with a class name and the
+class methods. 
+The {\tt def} statement defines a new function with a function name, the 
+argument, and the body statements.
+
+Expressions are parts of the code that evaluate to values.
+For instance, list and tuple expressions evlauate to the new list and tuple
+objects. Expressions also include operator expressions, which evaluates to
+the resulting value of the operation on the operands.
+Expressions are used as part of statements, such as assign statements or
+control flow statements.
+
+\begin{figure}[!ht]
+\begin{tabular}{lrll}
+  \nmodule & := & \nstmt  \\
+  \nstmt & ::= & \kdef ~ \nid ~ \sparen{\nargs} ~ \kcolon ~ \mul{\nstmt} & \desc{FunDef} \\ 
+  & $|$ & \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
+  & $|$ & \nexpr ~ \oassign \nexpr & \desc{Assign} \\
+  & $|$ & \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} & \desc{ForLoop} \\
+  & $|$ & \kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} & \desc{WhileLoop} \\
+  & $|$ & \kif ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{If} \\
+  & $|$ & \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{With} \\
+  & $|$ & \kimport ~ \mul{\nalias} & \desc{Import} \\
+  & $|$ & \kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias} & \desc{ImportFrom} \\
+  & $|$ & \nexpr & \desc{ExprStmt} \\
+  & $|$ & \nstmt ~ {\tt \textbackslash n} ~ \nstmt  & \desc{Sequence} \\
+
+  \nexpr & ::= & \nexpr ~ \nboolop ~ \nexpr & \desc{BoolOp} \\
+  & $|$ & \nexpr ~ \nbinop ~ \nexpr & \desc{BinaryOp} \\ 
+  & $|$ & \nunop ~ \nexpr & \desc{UnaryOp} \\ 
+  & $|$ & \lparen{\mul{\nexpr}} & \desc{List} \\ 
+  & $|$ & \sparen{\mul{\nexpr}} & \desc{Tuple} \\ 
+  & $|$ & \nexpr ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} & \desc{Call} \\
+  & $|$ & \nconstant & \desc{Constant} \\
+  & $|$ & \nexpr {\tt .}\nid& \desc{Attribute} \\
+  & $|$ & \nid & \desc{Name} \\
+
+  \nboolop & ::= & \oand ~ $|$ ~ \oor & \desc{BoolOperator} \\
+  \nbinop & ::= & \oand ~ $|$ ~ \osub ~ $|$ ~ \omul & \desc{BinOperator} \\
+  \nunop& ::= & \kinvert ~ $|$ ~ \knot ~ $|$ ~ \oadd ~ $|$ ~ \osub & \desc{UnOperator} \\
+  \nargs & ::= & \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg} & \desc{Arguments}\\
+  \narg & ::= & \nid ~ \op{\nexpr}~\op{\nstr} & \desc{Argument} \\
+  \nkeyword & ::= & \op{\nid} \oassign \nexpr & \desc{Keyword} \\ 
+  \nalias & ::= & \nid ~\mul{(.\nid)} \op{(\kas ~ \nid)} & \desc{Alias} \\
+  \nwithitem & ::= & \nexpr ~ \op{(\kas ~ \nexpr)} & \desc{WithItem}\\
+
+  \nconstant & ::= & \knone & \desc{NoneLiteral} \\
+  & $|$ & \nint & \desc{IntLiteral} \\
+  & $|$ & \nfloat & \desc{FloatLiteral} \\
+  & $|$ & \nstr & \desc{StringLiteral} \\
+  & $|$ & \nbool & \desc{BooleanLiteral} \\
+  & $|$ & \sparen{\mul{\nconstant}} & \desc{TupleLiteral} \\
+  \nid & $\in$ & \did \\
+  \nstr & $\in$ & \dstr \\
+  \nbool & $\in$ & \{{\tt True}, {\tt False}\}\\
+  \nint & $\in$ & $\mathbb{Z}$ \\
+  \nfloat & $\in$ & $\mathbb{R}$ \\
+\end{tabular}
+  \caption{Python abstract syntax}
+  \label{fig:parse:abssyntax}
+\end{figure}
+
+% todo : delete pagebrak
+\pagebreak

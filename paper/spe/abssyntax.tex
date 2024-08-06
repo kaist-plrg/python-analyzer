@@ -1,0 +1,110 @@
+\section{Python Abstract Syntax}
+
+
+\def\arraystretch{1.2}
+\begin{tabular}{lrll}
+  \nmodule & ::= & \mul{\nstmt} ~ \ntypignore & \desc{ModuleDef} \\
+  \nstmt & ::= & \decolist ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexpr)} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt} & \desc{FunDef} \\ 
+  & $|$ & \decolist ~ \kasync ~ \kdef ~ \nid ~ \sparen{\nargs} ~ \op{(\krightarrow ~ \nexpr)} ~ \kcolon ~ \optypcomm ~ \mul{\nstmt} & \desc{AsyncFunDef} \\ 
+  & $|$ & \decolist ~ \kclass ~ \nid ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} ~ \kcolon ~ \mul{\nstmt} & \desc{ClassDef} \\
+  & $|$ & \kreturn ~ \op{\nexpr} & \desc{Return} \\
+  & $|$ & \kdelete ~ \mul{\nexpr} & \desc{Delete} \\
+  & $|$ & \mul{\nexpr} ~ \oassign ~ \nexpr ~ \optypcomm & \desc{Assign} \\
+  & $|$ & \nexpr ~ \oaugassign ~ \nexpr & \desc{AugAssign} \\
+  & $|$ & \nexpr ~ \kcolon ~ \nexpr ~ \op{(\oassign \nexpr)}& \desc{AnnAssign} \\
+  & $|$ & \optypcomm ~ \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{ForLoop} \\
+  & $|$ & \optypcomm ~ \kasync ~ \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{AsyncForLoop} \\
+  & $|$ & \kwhile ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{WhileLoop} \\
+  & $|$ & \kif ~ \sparen{\nexpr} ~ \kcolon ~ \mul{\nstmt} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})}& \desc{If} \\
+  & $|$ & \optypcomm ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{With} \\
+  & $|$ & \optypcomm ~ \kasync ~ \kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt} & \desc{AsyncWith} \\
+  & $|$ & \kmatch ~ \nexpr ~ \kcolon ~ \mul{\nmatchcase} & \desc{Match} \\
+  & $|$ & \kraise ~ \op{\nexpr} ~ \op{(\kfrom ~ \nexpr)} & \desc{Raise} \\
+  & $|$ & \ktry ~ \kcolon ~ \mul{\nstmt} ~ \mul{\nexchandler} ~ \op{(\kelse ~ \kcolon ~ \mul{\nstmt})} ~ \op{(\kfinally ~ \kcolon ~ \mul{\nstmt})} & \desc{Try} \\
+  & $|$ & \kassert ~ \nexpr ~ \op{\nexpr} & \desc{Assert} \\
+  & $|$ & \kimport ~ \mul{\nalias} & \desc{Import} \\
+  & $|$ & \kfrom ~ \nint ~ \op{\nid} \kimport ~ \mul{\nalias} & \desc{ImportFrom} \\
+  & $|$ & \kglobal ~ \mul{\nid} & \desc{Global} \\
+  & $|$ & \knonlocal ~ \mul{\nid} & \desc{NonLocal} \\
+  & $|$ & \nexpr & \desc{ExprStmt} \\
+  & $|$ & \kpass & \desc{Pass} \\
+  & $|$ & \kbreak & \desc{Break} \\
+  & $|$ & \kcontinue & \desc{Continue} \\
+\end{tabular}
+
+\begin{tabular}{lrll}
+  \nexpr & ::= & \nexpr ~ \nboolop ~ \nexpr & \desc{BoolOp} \\
+  & $|$ & \nexpr ~ \kcolon\oassign ~ \nexpr & \desc{NamedExpr} \\ 
+  & $|$ & \nexpr ~ \nbinop ~ \nexpr & \desc{BinaryOp} \\ 
+  & $|$ & \nunop ~ \nexpr & \desc{UnaryOp} \\ 
+  & $|$ & \klambda ~ \nargs ~ \kcolon ~ \nexpr & \desc{Lambda} \\ 
+  & $|$ & \nexpr ~ \kif ~ \nexpr ~ \kelse ~ \nexpr & \desc{IfExpr} \\ 
+  & $|$ & \mparen{\mul{(\nexpr ~ \kcolon ~ \nexpr)} \mul{({\tt\bf**}\nexpr)}} & \desc{Dictionary} \\ 
+  & $|$ & \mparen{\mul{\nexpr}} & \desc{Set} \\ 
+  & $|$ & \lparen{\mul{\nexpr}} & \desc{List} \\ 
+  & $|$ & \sparen{\mul{\nexpr}} & \desc{Tuple} \\ 
+  & $|$ & \mparen{\nexpr \kcolon \nexpr ~ \mul{\ncompr}} & \desc{DictionaryComp} \\ 
+  & $|$ & \mparen{\nexpr ~ \mul{\ncompr}} & \desc{SetComp} \\ 
+  & $|$ & \lparen{\nexpr ~ \mul{\ncompr}} & \desc{ListComp} \\ 
+  & $|$ & \sparen{\nexpr ~ \mul{\ncompr}} & \desc{GeneratorComp} \\ 
+  & $|$ & \kawait ~ \nexpr & \desc{Await} \\
+  & $|$ & \kyield ~ \op{\nexpr} & \desc{Yield} \\
+  & $|$ & \kyield ~ \kfrom ~ \nexpr & \desc{YieldFrom} \\
+  & $|$ & \nexpr ~ \mul{(\ncompop ~ \nexpr)} & \desc{CompOp} \\
+  & $|$ & \nexpr ~ \sparen{\mul{\nexpr} \mul{\nkeyword}} & \desc{Call} \\
+  & $|$ & \mparen{\nexpr ~ \op{({\tt !}\nint)} \op{({\tt :}\nexpr)}} & \desc{FormattedValue} \\
+  & $|$ & \mul{\nexpr} & \desc{JoinedStr} \\
+  & $|$ & \nconstant & \desc{Constant} \\
+  & $|$ & \nexpr {\tt .}\nid& \desc{Attribute} \\
+  & $|$ & \nexpr\lparen{\nexpr} & \desc{Subscript} \\
+  & $|$ & {\tt *}\nexpr & \desc{Starred} \\
+  & $|$ & {\tt **}\nexpr & \desc{DoubleStarred} \\
+  & $|$ & \nid & \desc{Name} \\
+  & $|$ & \op{\nexpr} \op{(\kcolon \nexpr)} \op{(\kcolon \nexpr)} & \desc{Slice} \\
+  \nboolop & ::= & \oand \sep \oor & \desc{BoolOperator} \\
+  \nbinop & ::= & \oadd \sep \osub \sep \omul \sep \omatmul \sep \odiv \sep \oexp \sep \olshift \sep \orshift \sep \obor \sep \obexor \sep \oband \sep \ofloordiv \sep \omod & \desc{BinOperator}\\
+  \nunop& ::= & \kinvert \sep \knot \sep \oadd \sep \osub & \desc{UnOperator} \\
+  \ncompop& ::= & \oeq \sep \oneq \sep \olt \sep \olte \sep \ogt \sep \ogte \sep \ois \sep \onis \sep \oin \sep \onin & \desc{CompOperator}\\
+  \ncompr & ::= & \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \mul{(\kif ~ \nexpr)} & \desc{Comprehension} \\
+  & $|$ & \kasync ~ \kfor ~ \nexpr ~ \kin ~ \nexpr ~ \mul{(\kif ~ \nexpr)} & \desc{AsyncComprehension} \\
+  \nexchandler & ::= & \kexcept ~ \op{\nexpr} \op{(\kas ~ \nid)} \kcolon ~ \mul{\nstmt} & \desc{ExcHandler} \\
+  \nargs & ::= & \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg}, ~ \mul{(\narg ~ \op{(\oassign ~ \nexpr)})}, ~ \op{\narg} & \desc{Arguments}\\
+  \narg & ::= & \nid ~ \op{\nexpr}~\op{\nstr} & \desc{Argument} \\
+  \nkeyword & ::= & \op{\nid} \oassign \nexpr & \desc{Keyword} \\ 
+  \nalias & ::= & \nid ~\mul{(.\nid)} \op{(\kas ~ \nid)} & \desc{Alias} \\
+  \nwithitem & ::= & \nexpr ~ \op{(\kas ~ \nexpr)} & \desc{WithItem}\\
+\end{tabular}
+
+\begin{tabular}{lrll}
+  \nmatchcase & ::= & \kcase ~ \npattern ~ \op{(\kif ~ \nexpr)} \kcolon ~ \mul{\nstmt} & \desc{MatchCase}\\
+  \npattern & ::= & \nexpr & \desc{MatchValue} \\
+  & $|$ & \nconstant & \desc{MatchSingleton}\\ 
+  & $|$ & \lparen{\mul{\npattern}} & \desc{MatchSequence}\\ 
+  & $|$ & {\tt *}\op{(\nid)} & \desc{MatchStar}\\
+  & $|$ & \mparen{\mul{(\nexpr ~ \kcolon ~ \npattern)} \op{\nid}} & \desc{MatchMapping} \\
+  & $|$ & \nexpr ~ \sparen{\mul{\npattern} \mul{(\nid ~ \oassign ~ \npattern)}} & \desc{MatchClass} \\
+  & $|$ & \op{(\npattern ~ \kas)} \nid & \desc{MatchAs} \\
+  & $|$ & \npattern ~ {\tt |} \npattern & \desc{MatchOr} \\
+  & $|$ & {\tt \_} & \desc{MatchWildcard} \\
+  \nconstant & ::= & \knone & \desc{NoneLiteral} \\
+  & $|$ & \nint & \desc{IntLiteral} \\
+  & $|$ & \nfloat & \desc{FloatLiteral} \\
+  & $|$ & \ncomplex & \desc{ComplexLiteral} \\
+  & $|$ & \nstr & \desc{StringLiteral} \\
+  & $|$ & \nbool & \desc{BooleanLiteral} \\
+  & $|$ & \sparen{\mul{\nconstant}} & \desc{TupleLiteral} \\
+  & $|$ & {\tt ...} & \desc{Ellipsis} \\
+  \ntypignore & ::=  & \mul{\nint} & \desc{TypeIgnore} \\
+  \nid & $\in$ & \did \\
+  \nstr & $\in$ & \dstr \\
+  \nbool & $\in$ & \{{\tt True}, {\tt False}\}\\
+  \nint & $\in$ & $\mathbb{Z}$ \\
+  \nfloat & $\in$ & $\mathbb{R}$ \\
+  \ncomplex & $\in$ & $\mathbb{C}$ \\
+\end{tabular}
+
+\vspace{1em}
+\noindent
+Note: there may be more constant terms such as an immutable container
+containing only constant elements. Please update the \nconstant~rule if you
+know such terms.\\
