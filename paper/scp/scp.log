@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.9.10)  2 SEP 2024 14:26
+This is pdfTeX, Version 3.141592653-2.6-1.40.22 (TeX Live 2021) (preloaded format=pdflatex 2021.9.10)  2 SEP 2024 14:43
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -683,7 +683,13 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 
 
 {/usr/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-[2] [3]) (./background.tex (./background_tf1.tex
+[2]
+Overfull \hbox (7.30852pt too wide) in paragraph at lines 142--148
+[]\T1/cmr/m/n/12 Still, rewrit-ing DL mod-els with the frame-works man-u-ally i
+s time-consuming
+ []
+
+[3]) (./background.tex (./background_tf1.tex
 Package epstopdf Info: Source file: <Fig1.eps>
 (epstopdf)                    date: 2024-07-12 14:01:59
 (epstopdf)                    size: 288684 bytes
@@ -717,7 +723,7 @@ LaTeX Font Info:    Trying to load font information for TS1+cmtt on input line
 (/usr/local/texlive/2021/texmf-dist/tex/latex/base/ts1cmtt.fd
 File: ts1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 )) [7]
-(./horovod_tf1_ex.py) [8] [9] (./horovod_ex.py)) (./overview.tex [10] [11]
+(./horovod_tf1_ex.py) [8] [9] (./horovod_ex.py)) (./overview.tex [10]
 Package epstopdf Info: Source file: <Fig6.eps>
 (epstopdf)                    date: 2024-07-12 14:01:59
 (epstopdf)                    size: 1449485 bytes
@@ -728,20 +734,20 @@ Package epstopdf Info: Source file: <Fig6.eps>
 Fig6.eps>
 (epstopdf)             \includegraphics on input line 5.
 Package epstopdf Info: Output file is already uptodate.
-<Fig6-eps-converted-to.pdf, id=378, 1618.045pt x 469.755pt>
+<Fig6-eps-converted-to.pdf, id=338, 1618.045pt x 469.755pt>
 File: Fig6-eps-converted-to.pdf Graphic file (type pdf)
 <use Fig6-eps-converted-to.pdf>
 Package pdftex.def Info: Fig6-eps-converted-to.pdf  used on input line 5.
 (pdftex.def)             Requested size: 390.0pt x 113.22374pt.
-
+ [11]
 [12 <./Fig6-eps-converted-to.pdf>]) (./cha.tex
 LaTeX Font Info:    Trying to load font information for T1+cmss on input line 1
 6.
 
 (/usr/local/texlive/2021/texmf-dist/tex/latex/base/t1cmss.fd
 File: t1cmss.fd 2019/12/16 v2.5j Standard LaTeX font definitions
-) [13] [14])
-(./pattern.tex
+) [13])
+(./pattern.tex [14]
 Overfull \hbox (4.11288pt too wide) in paragraph at lines 39--55
 \T1/cmr/m/n/12 train-ing pro-cess. These APIs in-clude low-level APIs such as \
 T1/cmtt/m/n/12 tf.GradientTape
@@ -758,7 +764,7 @@ Package epstopdf Info: Source file: <Fig13.eps>
  Fig13.eps>
 (epstopdf)             \includegraphics on input line 341.
 Package epstopdf Info: Output file is already uptodate.
-<Fig13-eps-converted-to.pdf, id=488, 548.0475pt x 202.7575pt>
+<Fig13-eps-converted-to.pdf, id=490, 548.0475pt x 202.7575pt>
 File: Fig13-eps-converted-to.pdf Graphic file (type pdf)
 <use Fig13-eps-converted-to.pdf>
 Package pdftex.def Info: Fig13-eps-converted-to.pdf  used on input line 341.
@@ -809,13 +815,13 @@ Overfull \hbox (24.07199pt too wide) in paragraph at lines 269--282
 ast-ing, the \T1/cmtt/m/n/12 hvd_broadcast_done
  []
 
-[25]
+
 Underfull \hbox (badness 10000) in paragraph at lines 309--309
 []\T1/cmr/m/n/10 Figure 21: |Gra-di-ent-Tape pat-tern trans-form func-tion: uti
 -liz-ing the
  []
 
-
+[25]
 Overfull \hbox (3.33542pt too wide) in paragraph at lines 313--324
 \T1/cmr/m/n/12 ing the \T1/cmtt/m/n/12 DistributedGradientTape \T1/cmr/m/n/12 i
 n-stance. The trans-form func-tion matches
@@ -918,13 +924,12 @@ File: lr-exp-graph.png Graphic file (type png)
 Package pdftex.def Info: lr-exp-graph.png  used on input line 452.
 (pdftex.def)             Requested size: 312.00119pt x 247.86389pt.
 ) (./related.tex
-[34]
 Overfull \hbox (5.10208pt too wide) in paragraph at lines 7--27
 \T1/cmr/m/n/12 The pack-age sup-ports mul-ti-ple im-ple-men-ta-tions of \T1/cmt
 t/m/n/12 tf.distribute.Strategy\T1/cmr/m/n/12 ,
  []
 
-[35 <./lr-exp-graph.png>]
+[34] [35 <./lr-exp-graph.png>]
 Overfull \hbox (12.72662pt too wide) in paragraph at lines 72--85
 []\T1/cmr/m/n/12 Researchers have pro-posed sev-eral code trans-for-ma-tion tec
 h-niques in Python
@@ -981,7 +986,7 @@ Package rerunfilecheck Info: File `scp.out' has not changed.
 Here is how much of TeX's memory you used:
  17007 strings out of 478994
  246127 string characters out of 5858184
- 932425 words of memory out of 5000000
+ 932360 words of memory out of 5000000
  33736 multiletter control sequences out of 15000+600000
  425331 words of font info for 90 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
@@ -1016,7 +1021,7 @@ e1/public/cm-super/sfti1000.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1
 ublic/cm-super/sftt1000.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/pub
 lic/cm-super/sftt1200.pfb></usr/local/texlive/2021/texmf-dist/fonts/type1/publi
 c/stmaryrd/stmary10.pfb>
-Output written on scp.pdf (40 pages, 1544328 bytes).
+Output written on scp.pdf (40 pages, 1544175 bytes).
 PDF statistics:
  1045 PDF objects out of 1200 (max. 8388607)
  880 compressed objects within 9 object streams

@@ -130,7 +130,7 @@ two GPUs to train a web attack detection model on edge devices.
 
 Meanwhile, DL models designed for non-distributed training are not directly
 trainable on multiple GPUs.
-Model engineers need to manually rewrite the models for distributed training
+Model engineers need to rewrite the models for distributed training
 with additional configurations in their training code to identify GPUs in the
 system, spawn processes for each GPU, and assign the training dataset to each
 process.
@@ -139,12 +139,11 @@ Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which reduce
 manual efforts by providing APIs for distributed training without such complex
 configurations.
 
-However, manually rewriting DL models for distributed training is
+Still, rewriting DL models with the frameworks manually is
 time-consuming and labor-intensive.
-Training with the frameworks still requires additional work, such
-as reading documents and code examples of the frameworks, and
-modifying the training code using their APIs.
-To the best of our knowledge, there are no automated methods to train models on
+It requires additional work, such as reading documents and code examples of
+the frameworks, and modifying the training code using their APIs.
+To the best of our knowledge, there is no automated method to train models on
 multiple GPUs without manual modifications.
 
 
