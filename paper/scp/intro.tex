@@ -135,14 +135,13 @@ with additional configurations in their training code to identify GPUs in the
 system, spawn processes for each GPU, and assign the training dataset to each
 process.
 There are a few distributed training frameworks, such as
-Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which reduce
-manual efforts by providing APIs for distributed training without such complex
-configurations.
+Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which provide
+APIs for distributed training without such complex configurations.
 
-Still, rewriting DL models with the frameworks manually is
-time-consuming and labor-intensive.
-It requires additional work, such as reading documents and code examples of
-the frameworks, and modifying the training code using their APIs.
+However, manually rewriting the models is time-consuming and labor-intensive.
+Even if model engineers utilize the frameworks, additional works should be done,
+such as reading documents and code examples of the frameworks, and modifying
+the training code using their APIs.
 To the best of our knowledge, there is no automated method to train models on
 multiple GPUs without manual modifications.
 
