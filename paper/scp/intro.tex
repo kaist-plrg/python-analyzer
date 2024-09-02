@@ -138,10 +138,11 @@ There are a few distributed training frameworks, such as
 Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which provide
 APIs for distributed training without such complex configurations.
 
-However, manually rewriting the models is time-consuming and labor-intensive.
-Even though model engineers utilize the frameworks, additional works should be done,
-such as reading documents and code examples of the frameworks, and modifying
-the training code using their APIs.
+However, manually rewriting the models is error-prone, time-consuming, and
+labor-intensive.
+Even though model engineers utilize the frameworks, they should carefully
+read documents and code examples, and modify the training code using
+framework APIs accrodingly.
 To the best of our knowledge, there is no automated method to train models on
 multiple GPUs without manual modifications.
 
