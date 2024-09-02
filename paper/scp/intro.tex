@@ -128,19 +128,20 @@ two GPUs to train a web attack detection model on edge devices.
 %As DL models are becoming more complex and training datasets are growing,
 %the need for distributing the training process in DL research is inevitable.
 
-
-However, rewriting existing DL models for distributed training is
-time-consuming and labor-intensive.
-DL models designed for non-distributed training are not directly trainable on
-multiple GPUs. 
+Meanwhile, DL models designed for non-distributed training are not directly
+trainable on multiple GPUs.
 Model engineers need to manually rewrite the models for distributed training
 with additional configurations in their training code to identify GPUs in the
 system, spawn processes for each GPU, and assign the training dataset to each
 process.
-Distributed training frameworks, such as Horovod~\cite{sergeev2018horovod} and
-DeepSpeed~\cite{deepspeed}, reduce manual efforts by providing APIs for
-distributed training without such complex configurations.
-Nevertheless, training with the frameworks still requires additional work, such
+There are few distributed training frameworks, such as
+Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which reduce
+manual efforts by providing APIs for distributed training without such complex
+configurations.
+
+However, manually rewriting DL models for distributed training is
+time-consuming and labor-intensive.
+Training with the frameworks still requires additional work, such
 as reading documents and code examples of the frameworks, and
 modifying the training code using their APIs.
 To the best of our knowledge, there are no automated methods to train models on
