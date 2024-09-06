@@ -35,6 +35,49 @@ reducing engineers' burdens of understanding the document and modifying models.
 %modifying the training code in according to the library specification and use
 %case.
 
+\begin{inred}
+
+\subsection{Automatically Distributing Deep Learning Models}
+
+Several works proposed techniques on optimizing the parallelization plan of DNN model training by automatic or manual manner.
+Megatron-LM \cite{megatron-lm} is one of the earliest works on automatically 
+finding efficient parallelization plans of DNN model training. 
+The Megatron-LM framework distributes operations inside the layers of 
+transformer networks by adding synchronization primitives.
+Alpa \cite{alpa} is an automatic model-parallel training framework that 
+organizes different parallelization techniques into a hierarchy 
+and maps them to the hierarchical structure of compute devices. 
+This allows Alpa to optimize plans for both inter-operator parallelization and intra-operator parallelization.
+Lin et al. \cite{nnscaler} introduce new primitive operators 
+that allow domain experts to compose their own search space, 
+then the proposed framework generates an efficient parallelizationplan for the DNN model training.
+AutoDDL\cite{autoddl} adds new tensor operators to expand the search space for parallelization strategies. 
+The framework uses an analytical performance model with a Coordinate Descent-based search algorithm to optimize the communication cost.
+Pipedream \cite{pipedream} is an asynchronous distributed training framework 
+that improves parallel training throughput by adding pipelining and intra-batch parallelism. 
+PipeDream also minimizes communication cost by partitioning the training computation based on a profiling run on a single GPU.
+DAPPLE \cite{dapple} is a synchronous distributed training framework 
+that combines data and pipeline parallelism for large DNN models, 
+which finds the optimal parallelization plan with a novel parallelization strategy planner 
+and a new runtime scheduling algorithm to reduce memory usage.
+Tiresias\cite{tiresias} is a GPU cluster manager 
+that efficiently schedules DL training jobs to reduce their job completion times. 
+Because it is difficult to predict when the DL jobs completes, 
+the authors propose two scheduling algorithms tailored to minimize the average job completion times.
+
+Compared to these works, our work utilizes the Horovod library’s 
+data-parallel distributed training to distribute existing single-GPU-based DL training codes.
+While previous works’ main technique is to distribute low-level, 
+primitive compute operation over multiple GPUs, 
+our main technique is to transform a single-GPU-based DL training code 
+to a distributed version in Python source code level. 
+By reusing the Horovod library and converting the training code on the source code level, 
+we allow non-expert developers to easily distribute the training code without manually rewriting the original training code.
+
+
+
+\end{inred}
+
 %\paragraph{Code transformation.}
 \subsection{Code Transformation}
 
@@ -69,19 +112,29 @@ output code in the same language.
 %training code into the distributed training.
 
 % Code Transformation in Python
-Researchers have proposed several code transformation techniques in Python
-and machine-learning domains.
+Researchers have proposed several code transformation techniques in Python.
 Loulergue and Philippe~\cite{loulergue2019automatic} devised a framework that optimizes
 PySke programs by automatically rewriting terms in the programs based on
 transformation rules they define.
 Haryono et al.~\cite{haryono2021mlcatchup} developed MLCatchUp, a code transformation tool
 that enables Python machine learning programs to migrate from deprecated APIs
 to new and stable APIs automatically. 
-Reed et al.~\cite{reed2022torch} developed {\tt torch.fx}, a Python library for
-capturing and transforming PyTorch programs.
+\begin{inred}
+In Zhang et al. \cite{python-idiomatic}, the authors develop AST-rewriting 
+operations to detect non-idiomatic code for each pythonic idiom and refactor 
+non-idiomatic Python codes into idiomatic codes.
+Rózsa et al. \cite{dont-diy}  introduces a framework 
+which transforms traditional conditional branching to structural pattern matching 
+without changing the original behavior. 
+This improves the readability and maintainability of codes written in legacy Python.
+Tangent \cite{tangent} is a new library that transforms a subset of Python and NumPy code 
+to perform automatic differentiation on a source code level.
 Compared to these works, our work targets TensorFlow DL models written in
 Python and provides concrete and correct transformation rules for their
 distributed training.
+To our knowledge, our work is the first work that utilizes Python code transformation technique to 
+automatically distribute single-GPU-based DL training codes.
+\end{inred}{
 
 %There are several other works on application of program transformation
 %in Python and machine learning domain.
