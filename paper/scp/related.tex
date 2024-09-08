@@ -39,34 +39,45 @@ reducing engineers' burdens of understanding the document and modifying models.
 
 \subsection{Automatically Distributing Deep Learning Models}
 
-Several works proposed techniques on optimizing the parallelization plan of DNN model training by automatic or manual manner.
-Megatron-LM \cite{megatron-lm} is one of the earliest works on automatically 
+Several works proposed techniques on automatically optimizing the
+distributed training of DL models.
+A line of work searches for optimal parallelization plans
+before runtime of the DL model training codes.
+Megatron-LM~\cite{megatron-lm} is one of the earliest works on automatically 
 finding efficient parallelization plans of DNN model training. 
 The Megatron-LM framework distributes operations inside the layers of 
 transformer networks by adding synchronization primitives.
-Alpa \cite{alpa} is an automatic model-parallel training framework that 
+Pipedream~\cite{pipedream} is an asynchronous distributed training framework 
+that improves parallel training throughput by adding pipelining and intra-batch parallelism. 
+PipeDream also minimizes communication cost by partitioning the training computation based on a profiling run on a single GPU.
+Alpa~\cite{alpa} is an automatic model-parallel training framework that 
 organizes different parallelization techniques into a hierarchy 
 and maps them to the hierarchical structure of compute devices. 
 This allows Alpa to optimize plans for both inter-operator parallelization and intra-operator parallelization.
-Lin et al. \cite{nnscaler} introduce new primitive operators 
+Lin et al.~\cite{nnscaler} introduce new primitive operators 
 that allow domain experts to compose their own search space, 
 then the proposed framework generates an efficient parallelizationplan for the DNN model training.
-AutoDDL\cite{autoddl} adds new tensor operators to expand the search space for parallelization strategies. 
+AutoDDL~\cite{autoddl} adds new tensor operators to expand the search space for parallelization strategies. 
 The framework uses an analytical performance model with a Coordinate Descent-based search algorithm to optimize the communication cost.
-Pipedream \cite{pipedream} is an asynchronous distributed training framework 
-that improves parallel training throughput by adding pipelining and intra-batch parallelism. 
-PipeDream also minimizes communication cost by partitioning the training computation based on a profiling run on a single GPU.
-DAPPLE \cite{dapple} is a synchronous distributed training framework 
+
+Another line of work focuses on optimizing the resource usage
+during the training runtime. 
+DAPPLE~\cite{dapple} is a synchronous distributed training framework 
 that combines data and pipeline parallelism for large DNN models, 
 which finds the optimal parallelization plan with a novel parallelization strategy planner 
 and a new runtime scheduling algorithm to reduce memory usage.
-Tiresias\cite{tiresias} is a GPU cluster manager 
+Tiresias~\cite{tiresias} is a GPU cluster manager 
 that efficiently schedules DL training jobs to reduce their job completion times. 
 Because it is difficult to predict when the DL jobs completes, 
 the authors propose two scheduling algorithms tailored to minimize the average job completion times.
 
-Compared to these works, our work utilizes the Horovod library’s 
-data-parallel distributed training to distribute existing single-GPU-based DL training codes.
+Compared to these works, 
+our work's main technique is to optimize the DL model training by
+automatically transforming single-GPU-based training codes into distributed training codes.
+Aforementioned works require developers to manually write distributed training codes
+according to the proposed framework.
+Our work utilizes the Horovod library’s data-parallel distributed training to 
+distribute existing single-GPU-based DL training codes without rewriting them.
 While previous works’ main technique is to distribute low-level, 
 primitive compute operation over multiple GPUs, 
 our main technique is to transform a single-GPU-based DL training code 
