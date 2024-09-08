@@ -207,3 +207,142 @@
   journal={arXiv preprint arXiv:1412.6980},
   year={2014}
 }
+
+@article{megatron-lm,
+      title={Megatron-LM: Training Multi-Billion Parameter Language Models Using Model Parallelism}, 
+      author={Mohammad Shoeybi and Mostofa Patwary and Raul Puri and Patrick LeGresley and Jared Casper and Bryan Catanzaro},
+      year={2020},
+      eprint={1909.08053},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/1909.08053}, 
+}
+
+@inproceedings {alpa,
+author = {Lianmin Zheng and Zhuohan Li and Hao Zhang and Yonghao Zhuang and Zhifeng Chen and Yanping Huang and Yida Wang and Yuanzhong Xu and Danyang Zhuo and Eric P. Xing and Joseph E. Gonzalez and Ion Stoica},
+title = {Alpa: Automating Inter- and {Intra-Operator} Parallelism for Distributed Deep Learning},
+booktitle = {16th USENIX Symposium on Operating Systems Design and Implementation (OSDI 22)},
+year = {2022},
+isbn = {978-1-939133-28-1},
+address = {Carlsbad, CA},
+pages = {559--578},
+url = {https://www.usenix.org/conference/osdi22/presentation/zheng-lianmin},
+publisher = {USENIX Association},
+month = jul
+}
+
+@inproceedings {nnscaler,
+author = {Zhiqi Lin and Youshan Miao and Quanlu Zhang and Fan Yang and Yi Zhu and Cheng Li and Saeed Maleki and Xu Cao and Ning Shang and Yilei Yang and Weijiang Xu and Mao Yang and Lintao Zhang and Lidong Zhou},
+title = {{nnScaler}: {Constraint-Guided} Parallelization Plan Generation for Deep Learning Training},
+booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI 24)},
+year = {2024},
+isbn = {978-1-939133-40-3},
+address = {Santa Clara, CA},
+pages = {347--363},
+url = {https://www.usenix.org/conference/osdi24/presentation/lin-zhiqi},
+publisher = {USENIX Association},
+month = jul
+}
+
+@article{autoddl,
+author = {Chen, Jinfan and Li, Shigang and Guo, Ran and Yuan, Jinhui and Hoefler, Torsten},
+year = {2024},
+month = {08},
+pages = {1-14},
+title = {AutoDDL: Automatic Distributed Deep Learning With Near-Optimal Bandwidth Cost},
+volume = {PP},
+journal = {IEEE Transactions on Parallel and Distributed Systems},
+doi = {10.1109/TPDS.2024.3397800}
+}
+
+@inproceedings{pipedream,
+author = {Narayanan, Deepak and Harlap, Aaron and Phanishayee, Amar and Seshadri, Vivek and Devanur, Nikhil R. and Ganger, Gregory R. and Gibbons, Phillip B. and Zaharia, Matei},
+title = {PipeDream: generalized pipeline parallelism for DNN training},
+year = {2019},
+isbn = {9781450368735},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3341301.3359646},
+doi = {10.1145/3341301.3359646},
+abstract = {DNN training is extremely time-consuming, necessitating efficient multi-accelerator parallelization. Current approaches to parallelizing training primarily use intra-batch parallelization, where a single iteration of training is split over the available workers, but suffer from diminishing returns at higher worker counts. We present PipeDream, a system that adds inter-batch pipelining to intra-batch parallelism to further improve parallel training throughput, helping to better overlap computation with communication and reduce the amount of communication when possible. Unlike traditional pipelining, DNN training is bi-directional, where a forward pass through the computation graph is followed by a backward pass that uses state and intermediate data computed during the forward pass. Na\"{\i}ve pipelining can thus result in mismatches in state versions used in the forward and backward passes, or excessive pipeline flushes and lower hardware efficiency. To address these challenges, PipeDream versions model parameters for numerically correct gradient computations, and schedules forward and backward passes of different minibatches concurrently on different workers with minimal pipeline stalls. PipeDream also automatically partitions DNN layers among workers to balance work and minimize communication. Extensive experimentation with a range of DNN tasks, models, and hardware configurations shows that PipeDream trains models to high accuracy up to 5.3X faster than commonly used intra-batch parallelism techniques.},
+booktitle = {Proceedings of the 27th ACM Symposium on Operating Systems Principles},
+pages = {1–15},
+numpages = {15},
+location = {Huntsville, Ontario, Canada},
+series = {SOSP '19}
+}
+
+
+@inproceedings{dapple,
+author = {Fan, Shiqing and Rong, Yi and Meng, Chen and Cao, Zongyan and Wang, Siyu and Zheng, Zhen and Wu, Chuan and Long, Guoping and Yang, Jun and Xia, Lixue and Diao, Lansong and Liu, Xiaoyong and Lin, Wei},
+title = {DAPPLE: a pipelined data parallel approach for training large models},
+year = {2021},
+isbn = {9781450382946},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3437801.3441593},
+doi = {10.1145/3437801.3441593},
+abstract = {It is a challenging task to train large DNN models on sophisticated GPU platforms with diversified interconnect capabilities. Recently, pipelined training has been proposed as an effective approach for improving device utilization. However, there are still several tricky issues to address: improving computing efficiency while ensuring convergence, and reducing memory usage without incurring additional computing costs. We propose DAPPLE, a synchronous training framework which combines data parallelism and pipeline parallelism for large DNN models. It features a novel parallelization strategy planner to solve the partition and placement problems, and explores the optimal hybrid strategies of data and pipeline parallelism. We also propose a new runtime scheduling algorithm to reduce device memory usage, which is orthogonal to re-computation approach and does not come at the expense of training throughput. Experiments show that DAPPLE planner consistently outperforms strategies generated by PipeDream's planner by up to 3.23\texttimes{} speedup under synchronous training scenarios, and DAPPLE runtime outperforms GPipe by 1.6\texttimes{} speedup of training throughput and saves 12\% of memory consumption at the same time.},
+booktitle = {Proceedings of the 26th ACM SIGPLAN Symposium on Principles and Practice of Parallel Programming},
+pages = {431–445},
+numpages = {15},
+keywords = {data parallelism, deep learning, hybrid parallelism, pipeline parallelism},
+location = {Virtual Event, Republic of Korea},
+series = {PPoPP '21}
+}
+
+@inproceedings {tiresias,
+author = {Juncheng Gu and Mosharaf Chowdhury and Kang G. Shin and Yibo Zhu and Myeongjae Jeon and Junjie Qian and Hongqiang Liu and Chuanxiong Guo},
+title = {Tiresias: A {GPU} Cluster Manager for Distributed Deep Learning},
+booktitle = {16th USENIX Symposium on Networked Systems Design and Implementation (NSDI 19)},
+year = {2019},
+isbn = {978-1-931971-49-2},
+address = {Boston, MA},
+pages = {485--500},
+url = {https://www.usenix.org/conference/nsdi19/presentation/gu},
+publisher = {USENIX Association},
+month = feb
+}
+
+@inproceedings{python-idiomatic,
+author = {Zhang, Zejun and Xing, Zhenchang and Xia, Xin and Xu, Xiwei and Zhu, Liming},
+title = {Making Python code idiomatic by automatic refactoring non-idiomatic Python code with pythonic idioms},
+year = {2022},
+isbn = {9781450394130},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3540250.3549143},
+doi = {10.1145/3540250.3549143},
+abstract = {Compared to other programming languages (e.g., Java), Python has more idioms to make Python code concise and efficient. Although pythonic idioms are well accepted in the Python community, Python programmers are often faced with many challenges in using them, for example, being unaware of certain pythonic idioms or do not know how to use them properly. Based on an analysis of 7,638 Python repositories on GitHub, we find that non-idiomatic Python code that can be implemented with pythonic idioms occurs frequently and widely. Unfortunately, there is no tool for automatically refactoring such non-idiomatic code into idiomatic code. In this paper, we design and implement an automatic refactoring tool to make Python code idiomatic. We identify nine pythonic idioms by systematically contrasting the abstract syntax grammar of Python and Java. Then we define the syntactic patterns for detecting non-idiomatic code for each pythonic idiom. Finally, we devise atomic AST-rewriting operations and refactoring steps to refactor non-idiomatic code into idiomatic code. We test and review over 4,115 refactorings applied to 1,065 Python projects from GitHub, and submit 90 pull requests for the 90 randomly sampled refactorings to 84 projects. These evaluations confirm the high accuracy, practicality and usefulness of our refactoring tool on real-world Python code.},
+booktitle = {Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering},
+pages = {696–708},
+numpages = {13},
+keywords = {Abstract Syntax Grammar, Code Refactoring, Pythonic Idioms},
+location = {Singapore, Singapore},
+series = {ESEC/FSE 2022}
+}
+
+@INPROCEEDINGS{dont-diy,
+  author={Rózsa, Balázs and Antal, Gábor and Ferenc, Rudolf},
+  booktitle={2022 IEEE 22nd International Working Conference on Source Code Analysis and Manipulation (SCAM)}, 
+  title={Don't DIY: Automatically transform legacy Python code to support structural pattern matching}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={164-169},
+  keywords={Codes;Source coding;Transforms;Software;Pattern matching;Python;Python;AST;structural pattern matching;code transformation},
+  doi={10.1109/SCAM55253.2022.00024}
+}
+
+@inproceedings{tangent,
+ author = {van Merrienboer, Bart and Moldovan, Dan and Wiltschko, Alexander},
+ booktitle = {Advances in Neural Information Processing Systems},
+ editor = {S. Bengio and H. Wallach and H. Larochelle and K. Grauman and N. Cesa-Bianchi and R. Garnett},
+ pages = {},
+ publisher = {Curran Associates, Inc.},
+ title = {Tangent: Automatic differentiation using source-code transformation for dynamically typed array programming},
+ url = {https://proceedings.neurips.cc/paper_files/paper/2018/file/748d6b6ed8e13f857ceaa6cfbdca14b8-Paper.pdf},
+ volume = {31},
+ year = {2018}
+}
+
