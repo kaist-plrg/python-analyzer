@@ -5,17 +5,16 @@
 
 \begin{figure}[ht!]
   \centering
-  \lstinputlisting[style=mpython]
-{tensorflow2_ex.py}
+  \lstinputlisting[style=mpython]{tensorflow2_ex.py}
   \caption{TensorFlow 2.x model example}
 \label{fig:back:tf2}
 \end{figure}
 
 % new
-In TensorFlow 2.x, engineers can more easily build DL models with the Keras
-library and the eager execution feature.
+% In TensorFlow 2.x, engineers can more easily build DL models with the Keras
+% library and the eager execution feature.
 Figure~\ref{fig:back:tf2} shows an implementation on TensorFlow 2.x for the
-same model shown in Figure~\ref{fig:back:tf1}.
+same model shown in Figure~\ref{fig:back:tf1_all}.
 %Figure~\ref{fig:back:tf2} is a code example of TensorFlow 2.x model.
 %The developers using TensorFlow 2.x define the model structure and the training
 %loop. 
@@ -27,11 +26,11 @@ hidden layer to an output layer using the {\tt Sequential} API of the
 library.
 %Keras~\cite{keras} is a layer-based deep learning model library included in 
 %TensorFlow 2.x. 
-The {\tt Dense} API defines a layer by taking both the size of a vector and an
-activation function. 
-The API automatically creates a weight matrix and a bias vector of the layer
-using the given size of a vector and the size of the vector of its previous
-layer.
+% The {\tt Dense} API defines a layer by taking both the size of a vector and an
+% activation function. 
+% The API automatically creates a weight matrix and a bias vector of the layer
+% using the given size of a vector and the size of the vector of its previous
+% layer.
 %The lines 6 and 7 define the dense layers with the {\tt Dense} API. 
 %The first argument specifies the size of output vector.
 %Given the output vector size, the {\tt Dense} API will automatically create
@@ -44,12 +43,12 @@ layer.
 %Compared to TensorFlow 1.x models, developers do not have to explicitly
 %define the computation between the layers in TensorFlow 2.x.
 Lines 10 and 11 define a loss function and an optimizer object.  
-Unlike TensorFlow 1.x, TensorFlow 2.x provides APIs to select a loss function
-used for the training, as shown in line 10.
-Also, while TensorFlow 1.x explicitly defines a training operation of an
-optimizer object and then executes it lazily on a session, TensorFlow 2.x
-creates an optimizer object and later uses it to execute the
-gradient descent algorithm eagerly during the training.
+% Unlike TensorFlow 1.x, TensorFlow 2.x provides APIs to select a loss function
+% used for the training, as shown in line 10.
+% Also, while TensorFlow 1.x explicitly defines a training operation of an
+% optimizer object and then executes it lazily on a session, TensorFlow 2.x
+% creates an optimizer object and later uses it to execute the
+% gradient descent algorithm eagerly during the training.
 %The line 10 uses the {\tt CategoricalCrossentropy} API to 
 %define the loss function.
 %The line 11 uses the {\tt Adam} API to define the optimizer object.
@@ -64,13 +63,19 @@ gradient descent algorithm eagerly during the training.
 %that eagerly executes the gradient descent algorithm against the training input. 
 Lines 13 to 19 train the model with a loop iterating over ten
 thousand datasets.
-Line 14 creates a {\tt GradientTape} object that records executed
-operations for trainable model parameters within the {\tt with} scope.  
-Lines 15 and 16 execute the model for an input image and calculate
-the cross entropy loss between the execution output and the answer label. 
-Because TensorFlow 2.x defines neural networks and loss functions as normal
-Python functions, they can be called directly with arguments, as shown in the
-lines.
+\begin{inred}
+The code uses the {\tt GradientTape} API to execute forward propagation
+and backpropagation.
+The model parameters are optimized according to the gradient descent algorithm
+of choice.
+\end{inred}
+% Line 14 creates a {\tt GradientTape} object that records executed
+% operations for trainable model parameters within the {\tt with} scope.  
+% Lines 15 and 16 execute the model for an input image and calculate
+% the cross entropy loss between the execution output and the answer label. 
+% Because TensorFlow 2.x defines neural networks and loss functions as normal
+% Python functions, they can be called directly with arguments, as shown in the
+% lines.
 %The training loop starts with the {\tt for} loop that iterates over the dataset
 %and takes batches of training images and answer labels.
 %Similar to the TensorFlow 1.x model,
@@ -86,14 +91,14 @@ lines.
 %Thus, the line 15 computes the model output for the input training batch. 
 %The line 16 computes the cross entropy loss between the model output and
 %the answer label.
-Lines 18 and 19 optimize the model parameters using the gradient descent
-algorithm. 
-The {\tt model.trainable\_variable} method returns the model parameters, and
-the {\tt tape.gradient} method calculates the gradients using the recorded
-operations on the model parameters and the loss value.
-Then, line 19 optimizes the model parameters according to the
-gradient descent algorithm by calling the {\tt apply\_gradients} method of the
-optimizer object.
+% Lines 18 and 19 optimize the model parameters using the gradient descent
+% algorithm. 
+% The {\tt model.trainable\_variable} method returns the model parameters, and
+% the {\tt tape.gradient} method calculates the gradients using the recorded
+% operations on the model parameters and the loss value.
+% Then, line 19 optimizes the model parameters according to the
+% gradient descent algorithm by calling the {\tt apply\_gradients} method of the
+% optimizer object.
 
 \subsection{Horovod Distributed Training Library}
 
