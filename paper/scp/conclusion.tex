@@ -1,21 +1,60 @@
 \section{Conclusion}\label{sec:conclusion}
 We propose the automated approach to transform TensorFlow DL models written in
 Python to models training on multiple GPUs.
-We defined four common training patterns for TensorFlow DL models and formal
-code transformation rules for each pattern to parallelize training via Horovod
-APIs.
-Also, we developed a code transformation tool that takes a TensorFlow DL model,
-identifies its training pattern via static analysis techniques, and rewrites
-it for distributed training by applying transformation rules of the identified
-training pattern.
-The evaluation showed that our approach is practical in correctly transforming
-15 out of 16 open-source TensorFlow DL models.
-%to the same with their handcrafted distributed training versions.
-We also showed that our approach is effective in that the transformed models
-train about 2.28 times faster than the original models.
-We believe that our tool reduces model engineers' burdens in rewriting models
+\begin{inred}
+We categorized TensorFlow DL models by four patterns of training API usage,
+and devised a static analysis technique that identifies the training pattern
+of the given model code.
+Then we defined code transformation rules for each training API pattern
+that parallelize the training process via Horovod library APIs.
+In this end, we implemented a code transformation tool
+that takes a single-GPU-based DL model training code,
+identifies its tranining pattern, and apply the corresponding source code
+transformation to output a distributed training code for the same DL model.
+
+We conducted two experiments to evaluate our proposed approach.
+First, we show that our approach correctly transforms 15 out of 16
+open-source TensorFlow LD models.
+Second, we show that our approach efficiently distributes the training process
+so that the transformed models train about 2.28 times faster than the original models.
+By an additional experiment,
+we claim that the hyperparameters of the transformed model can be tuned to
+obtain better training speeds.
+We argue that our tool reduces developers' burden in rewriting models
 in accordance with the documentation of distributed training libraries to
 parallelize training.
+
+While our work has enabled automatically distributing the training of TensorFlow
+DL models, limitation of our approach can be solved in further studies.
+Future work could improve our code transformation rules so that 
+a larger set of TensorFlow DL models can be correctly transformed.
+Extending this research to other DL frameworks, such as PyTorch~\cite{pytorch2019},
+could benefit more DL developers. 
+We also believe that our code transformation-based approach is applicable
+to other distributed training libraries such as DeepSpeed~\cite{deepspeed}.
+Moreover, future studies on automatically finding optimal hyperparameters could
+further improve the training performance of the models transformed by our approach.
+By addressing these future directions,
+we believe that a broader range of DL developer community can benefit from
+our code transformation approach.
+\end{inred}
+
+
+% We identified four common training patterns for TensorFlow DL models and formal
+% code transformation rules for each pattern to parallelize training via Horovod
+% APIs.
+% Also, we developed a code transformation tool that takes a TensorFlow DL model,
+% identifies its training pattern via static analysis techniques, and rewrites
+% it for distributed training by applying transformation rules of the identified
+% training pattern.
+% The evaluation showed that our approach is practical in correctly transforming
+% 15 out of 16 open-source TensorFlow DL models.
+% %to the same with their handcrafted distributed training versions.
+% We also showed that our approach is effective in that the transformed models
+% train about 2.28 times faster than the original models.
+% We believe that our tool reduces model engineers' burdens in rewriting models
+% in accordance with the documentation of distributed training libraries to
+% parallelize training.
 
 %Our approach classifies TensorFlow DL models into four common training patterns
 %we defined, based on their usage of the TensorFlow APIs.
