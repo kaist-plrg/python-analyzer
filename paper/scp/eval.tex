@@ -103,9 +103,19 @@ non-distributed models using our tools and compared them to the distributed trai
 versions of those models.
 For the models obtained from the Horovod repository, we used their distributed
 training versions available in the repository as the correct results.
-As for the other models, we referred to the Horovod documentation to manually
-transform them into distributed training versions and used those as the correct
-results.
+For the other models, the first author manully transform the code into
+distributed training code by referring to the Horovod documentation~\cite{hvd-docs}.
+\begin{inred}
+In specific, the first author followed step-by-step instructions in the Horovod documentation
+to convert each evaluation target code into its distributed version.
+Then the second author independently compared them with the codes transformed
+by our tool. 
+If two codes are same except minor syntactic differences such as
+whitespaces or variable declaration order,
+then we judged that our tool correctly transformed the original model code.
+
+\end{inred}
+
 
 %To answer the first research question,
 %we conducted a transformation experiment.
