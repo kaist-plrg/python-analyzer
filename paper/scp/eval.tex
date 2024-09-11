@@ -3,8 +3,11 @@ We evaluate the proposed approach for the following research questions:
 \begin{itemize}
 \item RQ1. (Correctness) Does the transformation correctly distribute the
   training of non-distributed models?
-\item RQ2. (Effectiveness) Does the automated transformation effectively
-  accelerate the training of non-distributed models?
+\item RQ2. (Efficiency) 
+    \begin{inred}
+        How much more efficient is the training of automatically transformed 
+        distributed code compared to the original single-GPU-based training code?
+    \end{inred}
 \end{itemize}
 
 \noindent
@@ -212,7 +215,7 @@ Note that such model construction is rare because our tool correctly transforms
 instance.
 
 
-\subsection{RQ2: Effectiveness of the automatically distributed training}
+\subsection{RQ2: \begin{inred}Efficiency\end{inred}of the automatically distributed training}
 For the second research question, we conducted a comparative analysis
 between the training time of the automatically transformed models and their
 respective original models.
