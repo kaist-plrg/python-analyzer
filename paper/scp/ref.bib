@@ -354,3 +354,50 @@ series = {ESEC/FSE 2022}
     urldate = {2024-09-11}
 
 }
+
+@InProceedings{pmlr-v33-yogatama14,
+  title = 	 {{Efficient Transfer Learning Method for Automatic Hyperparameter Tuning}},
+  author = 	 {Yogatama, Dani and Mann, Gideon},
+  booktitle = 	 {Proceedings of the Seventeenth International Conference on Artificial Intelligence and Statistics},
+  pages = 	 {1077--1085},
+  year = 	 {2014},
+  editor = 	 {Kaski, Samuel and Corander, Jukka},
+  volume = 	 {33},
+  series = 	 {Proceedings of Machine Learning Research},
+  address = 	 {Reykjavik, Iceland},
+  month = 	 {22--25 Apr},
+  publisher =    {PMLR},
+  pdf = 	 {http://proceedings.mlr.press/v33/yogatama14.pdf},
+  url = 	 {https://proceedings.mlr.press/v33/yogatama14.html},
+  abstract = 	 {We propose a fast and effective algorithm for automatic hyperparameter tuning that can generalize across datasets. Our method is an instance of sequential model-based optimization (SMBO) that transfers information by constructing a common response surface for all datasets, similar to Bardenet et al. (2013). The time complexity of reconstructing the response surface at every SMBO iteration in our method is linear in the number of trials (significantly less than previous work with comparable performance), allowing the method to realistically scale to many more datasets. Specifically, we use deviations from the per-dataset mean as the response values. We empirically show the superiority of our method on a large number of synthetic and real-world datasets for tuning hyperparameters of logistic regression and ensembles of classifiers.}
+}
+
+@INPROCEEDINGS{autohyper-rl,
+  author={Neary, Patrick},
+  booktitle={2018 IEEE International Conference on Cognitive Computing (ICCC)}, 
+  title={Automatic Hyperparameter Tuning in Deep Convolutional Neural Networks Using Asynchronous Reinforcement Learning}, 
+  year={2018},
+  volume={},
+  number={},
+  pages={73-77},
+  keywords={Learning (artificial intelligence);Neurons;Training;Tuning;Convolutional neural networks;Network architecture;image recognition, neural networks, machine learning, convolutional neural networks, artificial intelligence, hyperparameter tuning, deep learning},
+  doi={10.1109/ICCC.2018.00017}}
+
+@inproceedings{autotune,
+author = {Koch, Patrick and Golovidov, Oleg and Gardner, Steven and Wujek, Brett and Griffin, Joshua and Xu, Yan},
+title = {Autotune: A Derivative-free Optimization Framework for Hyperparameter Tuning},
+year = {2018},
+isbn = {9781450355520},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3219819.3219837},
+doi = {10.1145/3219819.3219837},
+abstract = {Machine learning applications often require hyperparameter tuning. The hyperparameters usually drive both the efficiency of the model training process and the resulting model quality. For hyperparameter tuning, machine learning algorithms are complex black-boxes. This creates a class of challenging optimization problems, whose objective functions tend to be nonsmooth, discontinuous, unpredictably varying in computational expense, and include continuous, categorical, and/or integer variables. Further, function evaluations can fail for a variety of reasons including numerical difficulties or hardware failures. Additionally, not all hyperparameter value combinations are compatible, which creates so called hidden constraints. Robust and efficient optimization algorithms are needed for hyperparameter tuning. In this paper we present an automated parallel derivative-free optimization framework called Autotune , which combines a number of specialized sampling and search methods that are very effective in tuning machine learning models despite these challenges. Autotune provides significantly improved models over using default hyperparameter settings with minimal user interaction on real-world applications. Given the inherent expense of training numerous candidate models, we demonstrate the effectiveness of Autotune's search methods and the efficient distributed and parallel paradigms for training and tuning models, and also discuss the resource trade-offs associated with the ability to both distribute the training process and parallelize the tuning process.},
+booktitle = {Proceedings of the 24th ACM SIGKDD International Conference on Knowledge Discovery \& Data Mining},
+pages = {443–452},
+numpages = {10},
+keywords = {bayesian optimization, derivative-free optimization, distributed computing system, hyperparameters, stochastic optimization},
+location = {London, United Kingdom},
+series = {KDD '18}
+}
+
