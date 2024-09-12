@@ -104,21 +104,26 @@ of choice.
 
 Horovod~\cite{sergeev2018horovod} is a Python library for distributed training 
 of TensorFlow models. 
-The library adopts a model-parallel approach that creates one instance of a DL
-model for each GPU.
-%, leaving each GPU responsible for computing a single model instance
-%computation.
-%of distributed 
-%training. 
-%In model-parallel distributed training, multiple instances of the DL model
-%are created, and each GPU takes responsibility of computing a single model
-%instance computation. % <- todo: rephrase?
-%Note that this means that the number of the model instances 
-%is equal to the number of GPUs.
-In the training phase, each GPU runs the computation of a single model instance
-for a batch of input data and computes a loss separately.
-The library updates the model parameters using the gradient descent algorithm
-with gradients computed from the average loss of the instances.
+\begin{inred}
+The library adopts a model-parallel approach that copies the same instance of
+a DL model for each GPU, and multiple batches of training data is distributed
+across the GPUs.
+\end{inred}
+% The library adopts a model-parallel approach that creates one instance of a DL
+% model for each GPU.
+% %, leaving each GPU responsible for computing a single model instance
+% %computation.
+% %of distributed 
+% %training. 
+% %In model-parallel distributed training, multiple instances of the DL model
+% %are created, and each GPU takes responsibility of computing a single model
+% %instance computation. % <- todo: rephrase?
+% %Note that this means that the number of the model instances 
+% %is equal to the number of GPUs.
+% In the training phase, each GPU runs the computation of a single model instance
+% for a batch of input data and computes a loss separately.
+% The library updates the model parameters using the gradient descent algorithm
+% with gradients computed from the average loss of the instances.
 Thus, engineers can take advantage of parallelism to train DL models in a
 shorter time on multiple GPUs.
 %Thus, developers can take advantage of parallelism by separate input data into
@@ -146,33 +151,41 @@ Figure~\ref{fig:back:hvd1} represents a distributed model rewritten from the
 TensorFlow 1.x model example in Figure~\ref{fig:back:tf1}.
 The distributed model has four big differences from the single-GPU model.
 1) It configures GPUs and processes for distributed training.
-Line 4 initializes the Horovod configuration by calling {\tt hvd.init()},
-and lines 5 to 7 create the same number of processes with GPUs in the
-system and pin each GPU per process. 
-The GPU pinning ensures that each model instance trains on a single
-dedicated GPU.
+\begin{inred}
+Line 4 to 7 creates a Horovod configuration and pins each GPU with
+a single dedicated model instance.
+\end{inred}
+% and lines 5 to 7 create the same number of processes with GPUs in the
+% system and pin each GPU per process. 
+% The GPU pinning ensures that each model instance trains on a single
+% dedicated GPU.
 2) The distributed model uses the distributed version of the gradient
-descent algorithm. 
-Line 23 creates the same optimizer {\tt tf.train.AdamOptimizer} with the
-learning rate multiplied by the number of GPUs, {\tt hvd.size()}. 
-According to the Horovod library document, the learning rate of the distributed
-optimizer should be scaled by the number of GPUs for efficient distributed
-training. 
-Moreover, line 23 wraps the optimizer with the {\tt DistributedOptimizer}
-API. 
-The API takes a single GPU-based optimizer and produces its distributed version
-that averages the loss gradients across the training processes.
+descent algorithm.
+\begin{inred}
+Line 23 multiplies the learning rate of optimizer object by {\tt hvd.size()},
+and wraps it with the {\tt DistributedOptimizer} API.
+\end{inred}
+% Line 23 creates the same optimizer {\tt tf.train.AdamOptimizer} with the
+% learning rate multiplied by the number of GPUs, {\tt hvd.size()}. 
+% According to the Horovod library document, the learning rate of the distributed
+% optimizer should be scaled by the number of GPUs for efficient distributed
+% training. 
+% Moreover, line 23 wraps the optimizer with the {\tt DistributedOptimizer}
+% API. 
+% The API takes a single GPU-based optimizer and produces its distributed version
+% that averages the loss gradients across the training processes.
 3) The distributed model synchronizes the model's and the optimizer's variables
-across the training processes.
-According to the Horovod library document, variables should be synchronized
-exactly once after initializing the variables.
-Therefore, line 27 broadcasts the variables across the training processes
-via {\tt broadcast\_global\_variables} API.
+across the training processes \begin{inred}via {\tt broadcast\_global\_variables} API 
+in line 27\end{inred}.
+% According to the Horovod library document, variables should be synchronized
+% exactly once after initializing the variables.
+% Therefore, line 27 broadcasts the variables across the training processes
+% via {\tt broadcast\_global\_variables} API.
 4) The distributed model divides input data into multiple batches of the same
-number as the training processes. 
-Lines 28 and 29 run multiple training processes simultaneously, on which
-each model instance gets trained with one of the batches obtained from {\tt
-dataset.take(10000 // hvd.size())}. 
+number as the training processes \begin{inred}as in lines 28 and 29.\end{inred}
+% Lines 28 and 29 run multiple training processes simultaneously, on which
+% each model instance gets trained with one of the batches obtained from {\tt
+% dataset.take(10000 // hvd.size())}. 
 %The variable broadcasting is a process where the TensorFlow 
 %variable values in different training processes are synchronized into
 %the same value.
@@ -285,66 +298,77 @@ dataset.take(10000 // hvd.size())}.
 % todo: detailed expl of gpu pinning also for 1.x?
 % todo : detailed xpl of "memory growth" for gpu pininng
 % p1: init & gpu pinning
-Because TensorFlow 2.x models differ from TensorFlow 1.x, Horovod
-suggests different ways to rewrite models depending on the TensorFlow version.
+% Because TensorFlow 2.x models differ from TensorFlow 1.x, Horovod
+% suggests different ways to rewrite models depending on the TensorFlow version.
 Figure~\ref{fig:back:hvd2} is a distributed model rewritten from the
 TensorFlow 2.x model example in Figure~\ref{fig:back:tf2}.
-Lines 4 and 5 initialize the Horovod configuration and a boolean flag
-{\tt hvd\_broadcast\_done} set to {\tt False}.
-Lines 7 to 11 get the list of GPUs in the system and pin each GPU per
-process. 
-While TensorFlow 1.x uses {\tt ConfigProto()} for the configuration, the lines
-use {\tt config.experimental} instead since {\tt ConfigProto()} is deprecated
-in TensorFlow 2.x.
-%The line 7 first gets the list of GPUs in the system.
-%The line 11 pin the GPU to the process, using the local rank of the process.
-% p2 : optimizer lr
-Line 19 defines the optimizer object with the learning rate multiplied by
-the number of GPUs but without wrapping {\tt DistributedOptimizer}.
-%As in the optimizer of figure \ref{fig:back:hvd1}, 
-%the learning rate argument of the optimizer object 
-%should be scaled by {\tt hvd.size()} for efficient distributed training. 
-% p3 : dataset length
-Line 21 starts the training loop for each model instance with a batch of
-input data obtained from {\tt dataset.take(10000 // hvd.size())}.
-%As mentioned before, the number of training data batches can be
-%scaled down by the number of GPUs.
-%To implement this, the {\tt for} loop in the line 21
-%divides the number of batches taken from the dataset by {\tt hvd.size()}.
-% p4 : tape
-Inside the training loop,
-line 26 wraps the {\tt GradientTape} object with the Horovod API  {\tt
-DistributedGradientTape}.
-The {\tt DistributedGradientTape} averages the loss gradients across the
-training processes like the {\tt DistributedOptimizer} in the
-distributed TensorFlow 1.x model.
-%API is similar
-%to the {\tt DistributedOptimizer} API in distributed TensorFlow 1.x model; 
-%the loss gradients will be averaged across the training processes 
-%before the gradient descent.
-%Thus, wrapping the {\tt GradientTape} object with the 
-%{\tt DistributedGradientTape} API is necessary for correct training
-%of the model.
-% p5. broadcast
-Finally, lines 31 to 34 broadcast the model and optimizer variables
-across the training processes.
-%As mentioned before, the variable broadcasting should occur exactly once,
-%right after the variables are initialized.
-%To ensure the variable broadcasting occur only during the first training step,
-%the line 31 uses the global boolean variable {\tt hvd\_broadcast\_done},
-%then changes the value in the line 34 after the broadcasting is done.
-%Also note that the broadcasting code is placed right after the line 29,
-%where the optimizer method {\tt apply\_gradient} is finished.
-%In TensorFlow 2.x, the variables are not explicitly initialized,
-%but rather implicitly initialized during the first computation involving the
-%variable.
-TensorFlow 2.x implicitly initializes variables once when applying the
-optimizer's {\tt apply\_gradients} function to {\tt
-model.trainable\_variables}.
-Thus, after applying the function, the code calls the {\tt
-hvd.broadcast\_variables} API to broadcast the variables and sets the boolean
-flag {\tt hvd\_broadcast\_done} to {\tt True} to prevent repeated broadcasting.
-%To ensure that the variable broadcasting happen after the optimizer
-%variables are initialized, the variable broadcasting codes are placed
-%after the first gradient descent step is finished, thus the optimizer
-%variables are already initialized.
+\begin{inred}
+There are two main differences in distributing TensorFlow 2.x models compared to
+TensorFlow 1.x models.
+First, the main training loop is eagerly executed in TensorFlow 2.x version;
+thus the Horovod API is changed accordingly.
+For instance, the {\tt DistributedGradientTape} API in line 26
+supports the automatic gradient computation in TensorFlow 2.x.
+Second, the variable broadcasting is explicitly executed at the first training
+epoch as shown in line 31 to 34.
+\end{inred}
+
+% Lines 4 and 5 initialize the Horovod configuration and a boolean flag
+% {\tt hvd\_broadcast\_done} set to {\tt False}.
+% Lines 7 to 11 get the list of GPUs in the system and pin each GPU per
+% process. 
+% While TensorFlow 1.x uses {\tt ConfigProto()} for the configuration, the lines
+% use {\tt config.experimental} instead since {\tt ConfigProto()} is deprecated
+% in TensorFlow 2.x.
+% %The line 7 first gets the list of GPUs in the system.
+% %The line 11 pin the GPU to the process, using the local rank of the process.
+% % p2 : optimizer lr
+% Line 19 defines the optimizer object with the learning rate multiplied by
+% the number of GPUs but without wrapping {\tt DistributedOptimizer}.
+% %As in the optimizer of figure \ref{fig:back:hvd1}, 
+% %the learning rate argument of the optimizer object 
+% %should be scaled by {\tt hvd.size()} for efficient distributed training. 
+% % p3 : dataset length
+% Line 21 starts the training loop for each model instance with a batch of
+% input data obtained from {\tt dataset.take(10000 // hvd.size())}.
+% %As mentioned before, the number of training data batches can be
+% %scaled down by the number of GPUs.
+% %To implement this, the {\tt for} loop in the line 21
+% %divides the number of batches taken from the dataset by {\tt hvd.size()}.
+% % p4 : tape
+% Inside the training loop,
+% line 26 wraps the {\tt GradientTape} object with the Horovod API  {\tt
+% DistributedGradientTape}.
+% The {\tt DistributedGradientTape} averages the loss gradients across the
+% training processes like the {\tt DistributedOptimizer} in the
+% distributed TensorFlow 1.x model.
+% %API is similar
+% %to the {\tt DistributedOptimizer} API in distributed TensorFlow 1.x model; 
+% %the loss gradients will be averaged across the training processes 
+% %before the gradient descent.
+% %Thus, wrapping the {\tt GradientTape} object with the 
+% %{\tt DistributedGradientTape} API is necessary for correct training
+% %of the model.
+% % p5. broadcast
+% Finally, lines 31 to 34 broadcast the model and optimizer variables
+% across the training processes.
+% %As mentioned before, the variable broadcasting should occur exactly once,
+% %right after the variables are initialized.
+% %To ensure the variable broadcasting occur only during the first training step,
+% %the line 31 uses the global boolean variable {\tt hvd\_broadcast\_done},
+% %then changes the value in the line 34 after the broadcasting is done.
+% %Also note that the broadcasting code is placed right after the line 29,
+% %where the optimizer method {\tt apply\_gradient} is finished.
+% %In TensorFlow 2.x, the variables are not explicitly initialized,
+% %but rather implicitly initialized during the first computation involving the
+% %variable.
+% TensorFlow 2.x implicitly initializes variables once when applying the
+% optimizer's {\tt apply\_gradients} function to {\tt
+% model.trainable\_variables}.
+% Thus, after applying the function, the code calls the {\tt
+% hvd.broadcast\_variables} API to broadcast the variables and sets the boolean
+% flag {\tt hvd\_broadcast\_done} to {\tt True} to prevent repeated broadcasting.
+% %To ensure that the variable broadcasting happen after the optimizer
+% %variables are initialized, the variable broadcasting codes are placed
+% %after the first gradient descent step is finished, thus the optimizer
+% %variables are already initialized.
