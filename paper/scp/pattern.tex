@@ -343,30 +343,49 @@ unsuitable for the automatic transformation.
   \label{fig:pattern:lattice}
 \end{figure}
 
-To handle these scenarios, \tapi~performs a simple static analysis with a flat
-lattice domain composed of the four training API patterns, and {\it
-Unknown} and {\it Multiple} elements. 
+To handle these scenarios, \tapi~performs a simple static analysis based on  a
+flat lattice domain composed of the four training API patterns with two
+additional elements, {\it Unknown} and {\it Multiple} elements. 
 The Unknown element represents that an AST does not match any of the four
 training API patterns, and the Multiple element represents that an AST matches
 multiple training API patterns.
 Figure~\ref{fig:pattern:lattice} depicts the lattice structure.  
-The lattice represents a partially ordered set $(P, \sqsubseteq)$ of which the
-boxes denote elements in $P$, and the directed edges denote the given order
-$\sqsubseteq$ between their {\it from} elements and their {\it to} elements.
-The order is a binary relation on the set $P$, which is reflexive ($\forall x
-\in P.\ x \sqsubseteq x$), antisymmetric ($\forall x, y \in P.\ x \sqsubseteq y
-\wedge x \not= y \to y \not\sqsubseteq x$), and transitive ($\forall x, y, z
-\in P.\ x \sqsubseteq y \wedge y \sqsubseteq z \to x \sqsubseteq z$). 
-We also define an internal binary operation on the set $P$, denoted as the
-symbol $\sqcup$ and named {\it join}, which computes the least upper bound
-$lub$ of arbitrary two elements $x$ and $y$ in $P$ as follows: $x \sqsubseteq
-lub \wedge y \sqsubseteq lub \wedge \forall ub \in \{e\ |\ x \sqsubseteq e
-\wedge y \sqsubseteq e\}.\ lub \sqsubseteq ub$. 
-\tapi~applies the join operation to produce one identification result from a
-model in which the statements match multiple training API patterns.
+The lattice represents a partially ordered set, where the boxes denote elements
+and the directed edges denote the given order between their {\it from} elements
+and their {\it to} elements.
+We also define a join operation ($\sqcup$) between two elements on the lattice,
+which calculates the least element of their common successors.
 For example, the Session element results from joining Session and Unknown
 elements, and the Multiple element results from joining MonitoredSession and
 Keras elements.
+By utilizing the join operation, \tapi~ensures that it always identifies a
+single API pattern even when the statements of a model match multiple training
+API patterns.
+
+%To handle these scenarios, \tapi~performs a simple static analysis with a flat
+%lattice domain composed of the four training API patterns, and {\it
+%Unknown} and {\it Multiple} elements. 
+%The Unknown element represents that an AST does not match any of the four
+%training API patterns, and the Multiple element represents that an AST matches
+%multiple training API patterns.
+%Figure~\ref{fig:pattern:lattice} depicts the lattice structure.  
+%The lattice represents a partially ordered set $(P, \sqsubseteq)$ of which the
+%boxes denote elements in $P$, and the directed edges denote the given order
+%$\sqsubseteq$ between their {\it from} elements and their {\it to} elements.
+%The order is a binary relation on the set $P$, which is reflexive ($\forall x
+%\in P.\ x \sqsubseteq x$), antisymmetric ($\forall x, y \in P.\ x \sqsubseteq y
+%\wedge x \not= y \to y \not\sqsubseteq x$), and transitive ($\forall x, y, z
+%\in P.\ x \sqsubseteq y \wedge y \sqsubseteq z \to x \sqsubseteq z$). 
+%We also define an internal binary operation on the set $P$, denoted as the
+%symbol $\sqcup$ and named {\it join}, which computes the least upper bound
+%$lub$ of arbitrary two elements $x$ and $y$ in $P$ as follows: $x \sqsubseteq
+%lub \wedge y \sqsubseteq lub \wedge \forall ub \in \{e\ |\ x \sqsubseteq e
+%\wedge y \sqsubseteq e\}.\ lub \sqsubseteq ub$. 
+%\tapi~applies the join operation to produce one identification result from a
+%model in which the statements match multiple training API patterns.
+%For example, the Session element results from joining Session and Unknown
+%elements, and the Multiple element results from joining MonitoredSession and
+%Keras elements.
 
 % TODO put algorithm blocks inside the figure env.
 % algo related macro
