@@ -4,9 +4,9 @@ With recent advancements in artificial intelligence, deep learning (DL) has
 been widely utilized in various fields.
 %Recent advancements in deep learning(DL) have opened the wide possibility of
 %applying artificial intelligence in various fields.
-LeCun et al.~\cite{lecun2015deep} define deep learning as a machine learning
-technique that composes multiple abstraction layers to build up a high-level
-representation of raw data. 
+% LeCun et al.~\cite{lecun2015deep} define deep learning as a machine learning
+% technique that composes multiple abstraction layers to build up a high-level
+% representation of raw data. 
 %LeCun et al.\cite{LeCun2015} define deep learning as a
 %type of machine learning technique that composes multiple
 %abstraction layers to build up a high-level representation of raw data. 
@@ -33,44 +33,49 @@ BERT~\cite{bert2018} and GPT-3~\cite{gpt32020} for natural language processing
 are popular deep learning applications.
 
 
-The deep learning development process consists of training and inference
-phases.
-%Deep learning development consists of two stages: 
-%the training stage and the inference stage.
-The training phase improves the accuracy of DL models via multiple training
-steps that adjust models' parameters via forward and backward propagation. 
-The forward propagation calculates answers of DL models for a training dataset
-and computes an error rate of the answers, called {\it loss}.
-Then, the backward propagation computes a model parameter gradient and adjusts
-parameters to reduce the loss using gradient descent algorithms.
-The training phase repeats the propagations multiple times over the entire
-training dataset for better accuracy.
-%In the training stage, the hidden layer parameters are updated
-%with respect to the training dataset so that the output from the output layer
-%matches the answer in the dataset. 
-%In other words, the model learns
-%to return correct answer to the given training data. 
-%The training stage repeats multiple training steps.
-%A training step consists of a \textit{forward propagation} and 
-%\textit{backward propagation}.
-%The forward propagation feeds an input training batch to the
-%network and computes the loss between the network output and the answer.
-%The backward propagation computes the gradients of the model parameters
-%and optimize them by applying gradient descent algorithm. 
-%The training steps are repeated until the accuracy of the model converges.
-%In many of the cases, the training repeats multiple times over the entire 
-%training dataset in order to gain better accuracy.  
-In the inference phase, trained DL models produce actual prediction results on
-input data via forward propagation.
-%In the inference stage, new data unseen to the model
-%is given as an input to the model, a forward propagation returns an output
-%and it is used as prediction results for the data.
-%Because the model \textit{learned} general patterns from the training
-%dataset, the model probably returns correct results for the
-%unseen data.
+% The deep learning development process consists of training and inference
+% phases.
+% %Deep learning development consists of two stages: 
+% %the training stage and the inference stage.
+% The training phase improves the accuracy of DL models via multiple training
+% steps that adjust models' parameters via forward and backward propagation. 
+% The forward propagation calculates answers of DL models for a training dataset
+% and computes an error rate of the answers, called {\it loss}.
+% Then, the backward propagation computes a model parameter gradient and adjusts
+% parameters to reduce the loss using gradient descent algorithms.
+% The training phase repeats the propagations multiple times over the entire
+% training dataset for better accuracy.
+% %In the training stage, the hidden layer parameters are updated
+% %with respect to the training dataset so that the output from the output layer
+% %matches the answer in the dataset. 
+% %In other words, the model learns
+% %to return correct answer to the given training data. 
+% %The training stage repeats multiple training steps.
+% %A training step consists of a \textit{forward propagation} and 
+% %\textit{backward propagation}.
+% %The forward propagation feeds an input training batch to the
+% %network and computes the loss between the network output and the answer.
+% %The backward propagation computes the gradients of the model parameters
+% %and optimize them by applying gradient descent algorithm. 
+% %The training steps are repeated until the accuracy of the model converges.
+% %In many of the cases, the training repeats multiple times over the entire 
+% %training dataset in order to gain better accuracy.  
+% In the inference phase, trained DL models produce actual prediction results on
+% input data via forward propagation.
+% %In the inference stage, new data unseen to the model
+% %is given as an input to the model, a forward propagation returns an output
+% %and it is used as prediction results for the data.
+% %Because the model \textit{learned} general patterns from the training
+% %dataset, the model probably returns correct results for the
+% %unseen data.
 
-While the training phase is essential to the DL model development, it is the
-most time-consuming.
+% While the training phase is essential to the DL model development, it is the
+% most time-consuming.
+\begin{inred}
+The most time-consuming stage in the DL model development process is the
+training phase, where the model's parameters are repeatedly opimized
+by gradient descent algorithm over a training dataset.
+\end{inred}
 Model engineers train models on a huge training dataset for better accuracy,
 but a larger dataset also requires more training time.
 According to the report by You et al.~\cite{imagenettraining2017}, it takes 14
@@ -134,18 +139,53 @@ Model engineers need to rewrite the models for distributed training
 with additional configurations in their training code to identify GPUs in the
 system, spawn processes for each GPU, and assign the training dataset to each
 process.
-There are a few distributed training frameworks, such as
-Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which provide
-APIs for distributed training without such complex configurations.
+\begin{inred}
+To ease the burden of distributed training, developers released
+several distributed training frameworks such as 
+Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}. 
+These frameworks provide simplified APIs to define distributed models
+and train them on multiple GPUs without writing low-level, complex configurations. 
+\end{inred}
+% There are a few distributed training frameworks, such as
+% Horovod~\cite{sergeev2018horovod} and DeepSpeed~\cite{deepspeed}, which provide
+% APIs for distributed training without such complex configurations.
 
-However, manually rewriting the models is error-prone, time-consuming, and
-labor-intensive.
-Even though model engineers utilize the frameworks, they should carefully
-read API documents and code examples, and modify the training code using the
-APIs accrodingly.
-To the best of our knowledge, there is no automated method to train models on
-multiple GPUs without manual modifications.
+\begin{inred}
+However, manually rewriting the DL models is error-prone, time-consuming, and labor-intensive.
+Although distributed training framework can reduce total workload required to
+distributed a DL model, developers still need to read the documentation and
+understand semantics of the framework APIs. 
+The problem is amplified when multiple DL models are simultaneously migrated to a distributed system.
+In order to correctly transform each model code into corresponding distributed model,
+developers have to fully understand not only the distributed training framework
+but also the target model's semantics and code structure.
+This process induces a heavy burden on developers and highly likely to cause errors.
+As a result, maunally distributing exisitng DL models costs a lot of time and resources
+and vulnerable to introducing human errors into the codebase.
 
+
+% However, manually rewriting the models is error-prone, time-consuming, and
+% labor-intensive.
+% Even though model engineers utilize the frameworks, they should carefully
+% read API documents and code examples, and modify the training code using the
+% APIs accrodingly.
+% To the best of our knowledge, there is no automated method to train models on
+% multiple GPUs without manual modifications.
+
+We propose to solve this problem by \textit{automatic code transformation} technique.
+Our observation is that developers follow similar steps of code rewriting
+when distributing single-GPU-based DL models. 
+This manual process of rewriting can be modeled by
+source code-level transformation from single-GPU-based DL model codes
+to distributed DL model codes.
+After modeling the typical rewriting process of distributing DL models 
+in a form of code transformation rules, 
+we can programmatically apply the transformation to existing DL models,
+which results in automatically distributed models.
+In this method, we can effectively remove developer burdens of
+manually rewriting DL models and reduce the cost of distributed training.
+ 
+\end{inred}
 
 %The distributed training code contains additional implementation for
 %recognizing GPUs in the system, spawning processes for each GPU, and assigning

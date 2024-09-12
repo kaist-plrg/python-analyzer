@@ -191,13 +191,11 @@ for step, (batch_x, batch_y) in enumerate(train_data.take(training_steps), 1):
 \end{figure}
 
 
-Table~\ref{fig:eval:targets} represents the transformation experiment results.
-The first column shows the repositories from which obtaining the models, the
-second column shows the model names, the third column shows the API patterns of
-the models, and the fourth column shows whether our tool correctly transforms
-the models.
-As shown in the table, our tool correctly transformed 15 out of the 16 models
-and failed to transform only the SimpleCNN-GradientTape-1 model.
+\begin{inred}
+Results in Table~\ref{fig:eval:targets} show that our tool correctly transformed
+\textbf{15 out of 16} target models.
+The tool failed to transform only the SimpleCNN-GradientTape-1 model.
+\end{inred}
 In the failed case, our tool raised a transformation failure error because
 some of the GradientTape transformation rules do not apply to the model.
 
@@ -220,9 +218,23 @@ variables of a {\tt Model} instance.
 However, because the code does not construct the model as a {\tt Model}
 instance, our tool cannot obtain the trainable variables from the model and
 fails to transform the code correctly.
-Note that such model construction is rare because our tool correctly transforms
-11 out of the 12 GradientTape models since they utilize a {\tt Model}
-instance.
+% Note that such model construction is rare because our tool correctly transforms
+% 11 out of the 12 GradientTape models since they utilize a {\tt Model}
+% instance.
+\begin{inred}
+We argue that this is an unconventional case as
+other 11 GradientTape models uses the {\tt Model} API to construct the model.
+As we aim to identify API pattern commonly used in TensorFlow DL models,
+we report limitation of our approach, where model codes written in unconventional
+API usage cannot be correctly transformed.
+\end{inred}
+
+\begin{inred}
+In conclusion, the result of RQ1 experiment shows that our code transformation
+approach correctly transforms most of TensorFlow DL models.
+Our tool fails in one case where the code uses the training APIs in
+unconventional way, which is a limitation of our approach.
+\end{inred}
 
 
 \subsection{RQ2: \begin{inred}Efficiency\end{inred}of the automatically distributed training}
@@ -370,36 +382,65 @@ DCGAN                    & 2389.052& 828.428& $\times$2.88\\
   \label{fig:eval:train}
 \end{figure}
 
-We summarize the training time comparison results in
-Table~\ref{fig:eval:traintime}.
-The first column presents the model name, the second and third columns
-present the training time of the model, and the last column presents the
-training speed-up of the distributed model.
-The comparison results indicate that the training of the distributed
-models is, on average, approximately 2.28 times faster than that of the
-original models; when distributed training has a positive effect on the
-training time, the enhancement ranges from 1.37 times to 6.58 times.
-Note that we do not record the distributed training time of the
-Stacked-LSTM-ColorBot model because the loss of the first distributed training
-epoch of the model is minimal.
+\begin{inred}
+% Table~\ref{fig:eval:traintime} reports the result of the RQ2 experiment.
+The result if the RQ2 experiment show that the distributed training of the 
+transformed model is, on average, 
+\textbf{2.28 times faster} than that of the original models.
+When the distributed training was faster than the original model,
+the \textbf{performance enhancement ranges from x1.37 to x6.58}.
+We do not report the distributed time of Stacked-LSTM-ColorBot case
+because the loss of the first epoch already reached minimal in the experiment.
+We conclude that while distributed training of automatically transformed models
+does not ensure faster training time,
+it enhances the training performance by x2.28 on average.
+\end{inred}
+
+% We summarize the training time comparison results in
+% Table~\ref{fig:eval:traintime}.
+% The first column presents the model name, the second and third columns
+% present the training time of the model, and the last column presents the
+% training speed-up of the distributed model.
+% The comparison results indicate that the training of the distributed
+% models is, on average, approximately 2.28 times faster than that of the
+% original models; when distributed training has a positive effect on the
+% training time, the enhancement ranges from 1.37 times to 6.58 times.
+% Note that we do not record the distributed training time of the
+% Stacked-LSTM-ColorBot model because the loss of the first distributed training
+% epoch of the model is minimal.
 
 
-Interestingly, distributed training does not ensure an acceleration of
-training.
-In three models, distributed training takes longer to reach
-minimum losses than non-distributed training.
-Furthermore, distributed training can harm the inference precision of models.
-Figure~\ref{fig:eval:train} illustrates the changes in the loss of models over
-training time. 
-The x-axis represents the training time in seconds, the y-axis represents the
-loss values, and the blue and red lines represent the losses of the
+\begin{inred}
+Our further investigation shows that distributed training of the transformed model
+does not ensure the same accuracy compared to the original, single-GPU-based model.
+Figure~\ref{fig:eval:train} illustrates the change of the loss over time
+during the training time.
+The blue and red lines represent the losses of the
 original models and their transformed models, respectively.
-Distributed training in six models led to higher losses than
-non-distributed training.
-For instance, in the case of the VGG-CIFAR10 model, we observed that the loss
-gradually decreases during the training process without distributed training.
-However, when adopting distributed training, the loss did not decrease
-significantly and remained almost unchanged, with only minor fluctuations.
+In six out of 13 models, distributed training reaches higher loss compared to
+the original model.
+For instance, in the original VGG-CIFAR10 model, we observed that the loss
+gradually decreases during the training process. 
+However, when the same model is transformed into a distributed model,
+the loss doses not meaningfully decrease and remains unchanged, 
+with only minor fluctuations.
+In conclusion, while our approach may improve the training performance by
+automatically distributing them, it does not always ensure that the
+resulting distributed model trains faster or has the same accuracy.
+\end{inred}
+
+% Interestingly, distributed training does not ensure an acceleration of
+% training.
+% In three models, distributed training takes longer to reach
+% minimum losses than non-distributed training.
+% Furthermore, distributed training can harm the inference precision of models.
+% Figure~\ref{fig:eval:train} illustrates the changes in the loss of models over
+% training time. 
+% The x-axis represents the training time in seconds, the y-axis represents the
+% loss values, and 
+% Distributed training in six models led to higher losses than
+% non-distributed training.
+
 
 %The results of the distributed traininig experiment 
 %are shown in figure \ref{fig:eval:train} and figure \ref{fig:eval:traintime}.
@@ -446,6 +487,10 @@ significantly and remained almost unchanged, with only minor fluctuations.
 
 % Distributed training often requires additional tuning of hyperparameters to
 % achieve positive effects.
+\begin{inred}
+We argue that tuning the training hyperparameters can addiitonally improve
+training performance of automatically distributed models.
+\end{inred}
 We conducted \begin{inred}an additional experiment\end{inred} on the VGG-CIFAR10 
 model by applying three different learning rate parameters 
 \begin{inred}and comparing their training performances.\end{inred} 
