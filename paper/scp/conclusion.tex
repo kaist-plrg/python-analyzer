@@ -27,13 +27,26 @@ parallelize training.
 While our work has enabled automatically distributing the training of TensorFlow
 DL models, limitation of our approach can be solved in further studies.
 Future work could improve our code transformation rules so that 
-a larger set of TensorFlow DL models can be correctly transformed.
-Extending this research to other DL frameworks, such as PyTorch~\cite{pytorch2019},
-could benefit more DL developers. 
-We also believe that our code transformation-based approach is applicable
-to other distributed training libraries such as DeepSpeed~\cite{deepspeed}.
-Moreover, future studies on automatically finding optimal hyperparameters could
-further improve the training performance of the models transformed by our approach.
+we can correctly transform a larger set of TensorFlow DL models and applications.
+Many state-of-the-art models and real-world DL applications
+depend on external training libraries or non-Python script to train the model.
+In order to correctly transform them to distributed models,
+our approach can be extended to identify API patterns of various training libraries
+and transform them into distributed versions.
+We also expect that our code transformation approach can be extended to
+support other deep learning libraries such as PyTorch~\cite{pytorch2019},
+and to other distributed training frameworks such as DeepSpeed~\cite{deepspeed}.
+Finally, in order to correctly transform DL training codes in real-world applications,
+future work can develop a static analysis technique that separates 
+and transforms only the parts related to DL model training from the application code. 
+
+Moreover, the training performance of automatically transformed models
+could be further improved by automatically finding optimal hyperparameters.
+Several previous works~\cite{pmlr-v33-yogatama14}\cite{autohyper-rl}\cite{autotune}
+already proposed techniques to automatically tune hyperparameters
+of specific models.
+By incorporating the techniques from these previous studies into the pipeline of 
+our approach, we can further improve the distributed training performance.
 By addressing these future directions,
 we believe that a broader range of DL developer community can benefit from
 our code transformation approach.
