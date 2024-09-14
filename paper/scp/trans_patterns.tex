@@ -530,7 +530,23 @@ after the input statement.
 \subsubsection{Rules for the Keras pattern}
 
 \begin{figure}[ht!]\centering
-  \begin{subfigure}[t]{0.8\textwidth}
+
+\begin{subfigure}{1\textwidth}
+\begin{lstlisting}[style=mpython]
+trans_S(`{expr}({a_1}, ..., {a_n})`, ctx):
+  let `{id_m}` = ctx["model"]
+  if `{expr}` == `{id_m}.fit`:
+    let cb_stmt = 
+      `cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0)]`
+    let new_stmt =
+      `{expr}({a_1}, ..., {a_n}, callbacks=cb)`	
+    return (cb_stmt; new_stmt, ctx) 
+\end{lstlisting}
+\caption{Transform function for Keras pattern}
+\label{fig:trans:keras:fn}
+\end{subfigure}
+
+  \begin{subfigure}[t]{1\textwidth}
   \begin{lstlisting}[style=mpython]
 class ResNet(keras.Model):
     def __init__(self, block_list):
@@ -543,7 +559,7 @@ model.fit(x_train, y_train)\end{lstlisting}
     \label{fig:trans:keras:a}
   \end{subfigure}
   \hspace{3mm}
-  \begin{subfigure}[t]{0.8\textwidth}
+  \begin{subfigure}[t]{1\textwidth}
   \begin{lstlisting}[style=mpython]
 class ResNet(keras.Model):
     def __init__(self, block_list):
@@ -551,9 +567,9 @@ class ResNet(keras.Model):
 
 model = ResNet([2, 2, 2])
 
-callbacks=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]
-model.fit(x_train, y_train,
-          callbacks=callbacks)\end{lstlisting}
+cb=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]
+model.fit(x_train, y_train, callbacks=cb)
+\end{lstlisting}
     \caption{Distributed Keras pattern example}
     \label{fig:trans:keras:b}
   \end{subfigure}
@@ -561,58 +577,83 @@ model.fit(x_train, y_train,
   \label{fig:trans:keras}
 \end{figure}
 
-\noindent
-Figure \ref{fig:trans:keras} illustrates an example transformation of the Keras
-pattern.
-The Keras pattern code usually defines a subclass of {\tt keras.Model}, such
-as {\tt ResNet}, constructs a model as an instance of the class, and trains the
-model by calling its {\tt fit} method.
-To distribute the model's training with Horovod, the {\tt fit} method needs to
-take a callback {\tt BroadcastGlobalVariablesCallback} as the keyword argument
-{\tt callbacks}, shown in Figure~\ref{fig:trans:keras:b}.
-When training starts, the callback ensures consistent initialization of all
-processes by broadcasting initial global variable states from a source to the
-other processes.
 
-\begin{figure}[ht!]\footnotesize
-\centering
-\begin{tabular}{l}
-  \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \ktif ~ \nidsubs{m} ~ \kteq ~ \smodenv({\tmodel}) ~ \ktand ~ 
-          \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
-  \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
-  \inden\inden\inden ~ {\tt if hvd.rank() == 0: cb.append(\nexprsubs{2i})}, \\
-  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
-                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
-                              \nidsubs{i} \oassign {\tt cb} $\cdots$
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}\\
-  \inden\inden\inden ], \smodenv) \\
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
-  \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
-                              \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
-                              \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}\\
-                              \inden\inden\inden$\ \ ${\tt callbacks \oassign cb} {\tt )}],
-                              \smodenv) \\
-\end{tabular}
-  \caption{Keras pattern transform function}
-  \label{fig:trans:kerasrule}
-\end{figure}
+\begin{inred}
+Figure~\ref{fig:trans:keras} illustrates the transform function for Keras
+pattern with code examples.
+The function transforms the original code in Figure~\ref{fig:trans:keras:a}
+to the distributed code in Figure~\ref{fig:trans:keras:b}.
+The transformation first construct a new list with a
+callback object, {\tt BroadcastGlobalVariablesCallback(0)}.
+Then the callback list is inserted as a new {\tt callback} argument
+of {\tt fit} method.
 
-Figure \ref{fig:trans:kerasrule} formalizes the transform function for the
-Keras pattern code.
-The transform function matches function call statements for the {\tt fit}
-method of model objects by checking whether the receiver object of the {\tt
-fit} method call is an instance of a subclass of {\tt keras.Model}.
-Then, if the function call already takes the {\tt callbacks} keyword argument,
-the transform function changes the function call to three statements. 
-The first and second statements create a temporary variable {\tt cb} for the
-later use of the function call in the third statement.
-Note that the second statement appends the original callbacks to the {\tt cb}
-variable only when the {\tt hvd.rank()} is zero, which enables the original
-callbacks to be called only on the one process.
-If the keyword argument does not exist in the function call, the transform
-function propagates the callback as the {\tt callbacks} keyword argument, shown
-in Figure~ \ref{fig:trans:keras:b}.
+The function takes a function call statement as an input.
+It first checks if the callee function is the {\tt fit} method.
+In this step, we assume that earlier calls of transformation function
+stored a {\tt Model} subclass object in the context object.
+To transform the statement,
+the function first constructs a statement that creates a list of
+{\tt BroadcastGlobalVariablesCallback} object and assigns it.
+Then the input call statement is modified to
+add the {\tt callbacks} argument.
+Finally the function returns a concatenation of two statements
+and an unmodified context object.
+
+\end{inred}
+
+% \noindent
+% Figure \ref{fig:trans:keras} illustrates an example transformation of the Keras
+% pattern.
+% The Keras pattern code usually defines a subclass of {\tt keras.Model}, such
+% as {\tt ResNet}, constructs a model as an instance of the class, and trains the
+% model by calling its {\tt fit} method.
+% To distribute the model's training with Horovod, the {\tt fit} method needs to
+% take a callback {\tt BroadcastGlobalVariablesCallback} as the keyword argument
+% {\tt callbacks}, shown in Figure~\ref{fig:trans:keras:b}.
+% When training starts, the callback ensures consistent initialization of all
+% processes by broadcasting initial global variable states from a source to the
+% other processes.
+% 
+% \begin{figure}[ht!]\footnotesize
+% \centering
+% \begin{tabular}{l}
+%   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+%   \inden \ktif ~ \nidsubs{m} ~ \kteq ~ \smodenv({\tmodel}) ~ \ktand ~ 
+%           \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
+%   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
+%   \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
+%   \inden\inden\inden ~ {\tt if hvd.rank() == 0: cb.append(\nexprsubs{2i})}, \\
+%   \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
+%                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
+%                               \nidsubs{i} \oassign {\tt cb} $\cdots$
+%                               \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}\\
+%   \inden\inden\inden ], \smodenv) \\
+%   \inden\inden \ktelse \\
+%   \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
+%   \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
+%                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
+%                               \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}\\
+%                               \inden\inden\inden$\ \ ${\tt callbacks \oassign cb} {\tt )}],
+%                               \smodenv) \\
+% \end{tabular}
+%   \caption{Keras pattern transform function}
+%   \label{fig:trans:kerasrule}
+% \end{figure}
+% 
+% Figure \ref{fig:trans:kerasrule} formalizes the transform function for the
+% Keras pattern code.
+% The transform function matches function call statements for the {\tt fit}
+% method of model objects by checking whether the receiver object of the {\tt
+% fit} method call is an instance of a subclass of {\tt keras.Model}.
+% Then, if the function call already takes the {\tt callbacks} keyword argument,
+% the transform function changes the function call to three statements. 
+% The first and second statements create a temporary variable {\tt cb} for the
+% later use of the function call in the third statement.
+% Note that the second statement appends the original callbacks to the {\tt cb}
+% variable only when the {\tt hvd.rank()} is zero, which enables the original
+% callbacks to be called only on the one process.
+% If the keyword argument does not exist in the function call, the transform
+% function propagates the callback as the {\tt callbacks} keyword argument, shown
+% in Figure~ \ref{fig:trans:keras:b}.
 
