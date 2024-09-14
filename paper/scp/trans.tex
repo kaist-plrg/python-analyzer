@@ -5,9 +5,38 @@
 
 % todo: graphical issue in this figure image
 \begin{figure}[ht!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Fig14.eps}
-    \caption{Transform function description}
+	\begin{subfigure}{1\textwidth}
+		\centering
+		%\includegraphics[width=0.8\textwidth]{Fig14.eps}
+		\begin{lstlisting}[language=Python]
+trans_S(`import {aliases}`, ctx):
+  let ctx_1 = trans_A(`{aliases}`, ctx).context
+  if diff(ctx_1, ctx) == ["tensorflow" -> `{id}`]:
+    return (`import {aliases}; import horovod.tensorflow as hvd`, ctx_1)
+  else:
+    return (`import {aliases}`, ctx_1)
+		\end{lstlisting}
+		\caption{Transform function of import statements}
+		\label{fig:trans:ex01:code}
+	\end{subfigure}
+
+    \begin{subfigure}[b]{0.4\textwidth}
+        \begin{lstlisting}[language=Python]
+import tensorflow as tf\end{lstlisting}
+        \caption{Original DL python code}
+        \label{fig:trans:ex01:org}
+    \end{subfigure}
+    ~
+    % hvd
+    \begin{subfigure}[b]{0.56\textwidth}
+        \begin{lstlisting}[language=Python]
+import tensorflow as tf
+import horovod.tensorflow as hvd\end{lstlisting}
+        \caption{Transformed DL python code}
+        \label{fig:trans:ex01:hvd}
+    \end{subfigure}
+
+	\caption{Transform function example}
     \label{fig:trans:fnexpl}
 \end{figure}
 
@@ -15,17 +44,43 @@
 \noindent
 We formalize the rules for transforming single-GPU models into multi-GPU
 models using pure functions called {\it transform functions}. 
-These functions take ASTs as input and produce ASTs as output. 
-In addition, the functions use {\it transform context} objects to incorporate
-contextual information during the transformation process. 
-The transform context maps strings to identifiers, which stores and
-propagates necessary identifiers used for the transformation.
-Each transform function takes a transform context as an additional input, uses
-and updates it in the function body, and produces the updated transform context
-as an additional output.
-This enables transform functions to utilize contextual information outside
-their input ASTs and pass relevant contextual information to subsequent
-transform functions.
+\begin{inred}
+Transform functions take a Python AST and a {\it context} object as inputs,
+and return a Python AST and a context object as output.
+A context object is a mapping from strings to Python identifier ASTs;
+context objects store and propagate necessary identifiers.
+This enables (pure) transform functions to pass relevant contextual information
+to subsequent function calls and utilize the information from outside their
+input AST.
+
+Figure \ref{fig:trans:ex01:code} illustrate a pseudocode of an example 
+transform function that transforms an import statement.
+The transform function {\tt trans\_S} gets an input AST and a context object.
+In the pseudocode, we use back-quoted notation {\tt `import \{aliases\}`} 
+to represent a Python AST object;
+brace-surrounded expression represents a child AST.
+Line 2 creates a new context object by calling transformation function
+on the child AST, {\tt `\{aliases\}`}.
+Then line 3 computes difference between the original context object {\tt ctx}
+and the new context object {\tt ctx\_1}.
+If the new context additionally stores {\tt "tensorflow"} entry,
+it means that the import statement imports the TensorFlow library,
+so the transform function concatenates a new import statement
+{\tt import horovod.tensorflow as hvd} to the input AST and returns it.
+If else, the function returns the same AST, with the new context object.
+\end{inred}
+
+% These functions take ASTs as input and produce ASTs as output. 
+% In addition, the functions use {\it transform context} objects to incorporate
+% contextual information during the transformation process. 
+% The transform context maps strings to identifiers, which stores and
+% propagates necessary identifiers used for the transformation.
+% Each transform function takes a transform context as an additional input, uses
+% and updates it in the function body, and produces the updated transform context
+% as an additional output.
+% This enables transform functions to utilize contextual information outside
+% their input ASTs and pass relevant contextual information to subsequent
+% transform functions.
 %We present the formalization of the transformation rules in terms of
 %\textit{trasnform functions}.
 %Transform functions are the pure functions from ASTs to ASTs.
@@ -43,71 +98,70 @@ transform functions.
 %By this method, the transform functions can utilize contextual information
 %outside of their input AST and propagate some contextual information from
 %their input AST to next transform function calls.
-
+%
 % transform function format expl
 % 이 파트를 어떻게 효과적으로 설명해야할지 확신이 안드는 상태
-We define the transform functions as a collection of partial transform
-functions, of which one example is illustrated in
-Figure~\ref{fig:trans:fnexpl}. 
-These partial functions operate only on ASTs that match a specified code
-pattern in the input AST parameter position. 
-Any input ASTs that do not match the pattern remain unmodified. 
-For example, the function in Figure~\ref{fig:trans:fnexpl} matches only {\tt
-import} statements and transforms them accordingly. 
-The function takes the transform context $\smodenv$ as an additional input, and
-its body produces a pair of the output expression and the updated transform
-context. 
-We use compound expressions such as {\tt LET-IN} and {\tt IF-THEN-ELSE} to
-specify different outputs depending on certain conditions. 
-In Figure~\ref{fig:trans:fnexpl}, the function body uses a {\tt LET-IN}
-expression to store the updated transform context by another transform function
-applied to the sub phrase $alias^*$ to $\sigma_1$. 
-Also, it uses an {\tt
-IF-THEN-ELSE} expression to return different results depending on whether the
-{\tt import} statement imports the {\tt tensorflow} module or not.
-
-\begin{figure}[ht!]
-    \centering
-    % org
-    \begin{subfigure}[b]{0.4\textwidth}
-        \begin{lstlisting}[language=Python]
-import tensorflow as tf\end{lstlisting}
-        \caption{Original DL python code}
-        \label{fig:trans:ex01:org}
-    \end{subfigure}
-    ~
-    % hvd
-    \begin{subfigure}[b]{0.56\textwidth}
-        \begin{lstlisting}[language=Python]
-import tensorflow as tf
-import horovod.tensorflow as hvd\end{lstlisting}
-        \caption{Transformed DL python code}
-        \label{fig:trans:ex01:hvd}
-    \end{subfigure}
-    \caption{Example code transformation result}
-    \label{fig:trans:ex01}
-\end{figure}
-
-Figure~\ref{fig:trans:ex01} shows the example code transformation result by the
-partial transform function in Figure~\ref{fig:trans:fnexpl}.
-Because the statement in Figure~\ref{fig:trans:ex01:org} is an import statement
-matched with the input AST pattern of the function, the function is responsible
-for transforming the statement.
-The function first computes the transform context $\smodenvsubs{1}$ that
-includes all the modules and their alias identifiers imported by the statement.
-Next, the function calculates the difference between $\smodenvsubs{1}$ and the
-input transform context $\smodenv$.
-Suppose the difference contains the new entry for the string {\tt "tensor\_flow"}.
-In that case, the transform function returns a statement list containing the
-original statement and a new statement {\tt import horovod.tensorflow as hvd}
-to add the import statement for the {\tt horovod} module after the original
-statement, as shown in Figure~\ref{fig:trans:ex01:hvd}.  
-Otherwise, the function returns a statement list containing only the original
-statement remaining unchanged.
-
+% We define the transform functions as a collection of partial transform
+% functions, of which one example is illustrated in
+% Figure~\ref{fig:trans:fnexpl}. 
+% These partial functions operate only on ASTs that match a specified code
+% pattern in the input AST parameter position. 
+% Any input ASTs that do not match the pattern remain unmodified. 
+% For example, the function in Figure~\ref{fig:trans:fnexpl} matches only {\tt
+% import} statements and transforms them accordingly. 
+% The function takes the transform context $\smodenv$ as an additional input, and
+% its body produces a pair of the output expression and the updated transform
+% context. 
+% We use compound expressions such as {\tt LET-IN} and {\tt IF-THEN-ELSE} to
+% specify different outputs depending on certain conditions. 
+% In Figure~\ref{fig:trans:fnexpl}, the function body uses a {\tt LET-IN}
+% expression to store the updated transform context by another transform function
+% applied to the sub phrase $alias^*$ to $\sigma_1$. 
+% Also, it uses an {\tt
+% IF-THEN-ELSE} expression to return different results depending on whether the
+% {\tt import} statement imports the {\tt tensorflow} module or not.
+%
+% \begin{figure}[ht!]
+%     \centering
+%     % org
+%     \begin{subfigure}[b]{0.4\textwidth}
+%         \begin{lstlisting}[language=Python]
+% import tensorflow as tf\end{lstlisting}
+%         \caption{Original DL python code}
+%         \label{fig:trans:ex01:org}
+%     \end{subfigure}
+%     ~
+%     % hvd
+%     \begin{subfigure}[b]{0.56\textwidth}
+%         \begin{lstlisting}[language=Python]
+% import tensorflow as tf
+% import horovod.tensorflow as hvd\end{lstlisting}
+%         \caption{Transformed DL python code}
+%         \label{fig:trans:ex01:hvd}
+%     \end{subfigure}
+%     \caption{Example code transformation result}
+%     \label{fig:trans:ex01}
+% \end{figure}
+%
+% Figure~\ref{fig:trans:ex01} shows the example code transformation result by the
+% partial transform function in Figure~\ref{fig:trans:fnexpl}.
+% Because the statement in Figure~\ref{fig:trans:ex01:org} is an import statement
+% matched with the input AST pattern of the function, the function is responsible
+% for transforming the statement.
+% The function first computes the transform context $\smodenvsubs{1}$ that
+% includes all the modules and their alias identifiers imported by the statement.
+% Next, the function calculates the difference between $\smodenvsubs{1}$ and the
+% input transform context $\smodenv$.
+% Suppose the difference contains the new entry for the string {\tt "tensor\_flow"}.
+% In that case, the transform function returns a statement list containing the
+% original statement and a new statement {\tt import horovod.tensorflow as hvd}
+% to add the import statement for the {\tt horovod} module after the original
+% statement, as shown in Figure~\ref{fig:trans:ex01:hvd}.  
+% Otherwise, the function returns a statement list containing only the original
+% statement remaining unchanged.
 The following subsection briefly presents essential code transform rules for
 each training API pattern with formal descriptions. 
-We also provide the full transform rules as a companion
+We also provide the full formal transform rules as a companion
 report~\footnote{https://github.com/kaist-plrg/python-analyzer/blob/main/trans/trans.pdf}.
 
 %We describe the transform function as the collection of the partial transform
