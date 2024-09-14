@@ -13,13 +13,23 @@ We evaluate the proposed approach for the following research questions:
 \noindent
 To answer the questions, we implemented an automatic code transformation tool
 and applied the tool to 16 TensorFlow DL models.
-We collected the evaluation target models from five open repositories: 
+We colleced the evaluation target models from five open repositories: 
 Hovorod~\cite{horovodgithub}, TensorFlow Model Garden~\cite{tfmodelgarden},
 TensorFlow Examples by Americ Damien~\cite{tfexamplesdamien},
 CIFAR-10 Example with TensorFlow 2.0~\cite{cifar10github}, and
 TensorFlow 2.x Tutorials~\cite{tf2tutogithub}.
 We excluded two from 18 models in the repositories because one abnormally
 terminates with a runtime error in its execution, and the other duplicates.
+\begin{inred}
+Note that our evaluation targes consists of models written purely in
+TensorFlow, because the scope of our work is to identify and
+transform TensorFlow DL models.
+We excluded state-of-the-art models and real-world models from our targets
+as they depend on external training libraries or non-Python scripts
+in the training process.
+We discuss on this limitation and possible solution
+in Section \ref{sec:conclusion}.
+\end{inred}
 Our tool is written in Scala and is publicly
 available\footnote{https://github.com/kaist-plrg/python-analyzer}.
 
