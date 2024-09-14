@@ -9,6 +9,22 @@
 \subsubsection{Rules for the Session Pattern}
 
 \begin{figure}[ht!]\centering
+
+  \begin{subfigure}{1\textwidth}
+  \scriptsize
+  \begin{lstlisting}[style=mpython]
+trans_S(`{id_r} = {expr_1}({expr_11}, ..., {expr_1n})`, ctx): 
+  if isSubclass(`{expr_1}`, `keras.optimizer.Optimizer):
+    for i in 1...n:
+      if `{expr_1i}` == `learning_rate = {lr}`:
+	    let new_expr = `{id_r} = {expr_1}({expr_11}, .., {expr_1i} * hvd.size(), .., {expr_1n})`
+		let wrap_expr = `{id_r} = hvd.DistributedOptimizer({id_r})`
+		return (new_expr; wrap_expr), ctx["optimizer -> `{id_r}`] 
+  \end{lstlisting}
+  \caption{Transform function for Session pattern}
+  \label{fig:trans:sessiontrans:fn}
+  \end{subfigure}
+
   \begin{subfigure}[t]{0.9\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
@@ -36,19 +52,44 @@ with tf.Session() as sess:
 \end{figure}
 
 \noindent
-Figure \ref{fig:trans:sessiontrans} illustrates the required transformation of
-the Session pattern using two code examples, \ref{fig:trans:sessiontrans:a} the
-original training code and \ref{fig:trans:sessiontrans:b} its distributed
-training version.
-One of the primary transformations involves adjusting the learning rate
-argument in the {\tt Optimizer} constructor call, which is achieved by
-multiplying it by the number of GPUs.
-The learning rate can be passed as the first positional argument in the
-constructor call or as the keyword argument {\tt learning\_rate}.
-The other transformation uses the Horovod-provided {\tt DistributedOptimizer}
-instance instead of the original {\tt Optimizer} instance. 
-To create the {\tt DisributedOptimizer} instance, the original {\tt Optimizer}
-is passed as an argument to its constructor.
+
+\begin{inred}
+Figure~\ref{fig:trans:sessiontrans} illustrates the transform function for
+Session pattern with code examples.
+The transform function described in Figure~\ref{fig:trans:sessiontrans:fn}
+transforms the original code in Figure~\ref{fig:trans:sessiontrans:a} to
+the distributed code in Figure~\ref{fig:trans:sessiontrans:b}
+In the {\tt Optimizer} object's constructor,
+the {\tt learning\_rate} argument is mutiplied by {\tt hvd.size()}.
+Then, the constructed {\tt Optimizer} object
+is wrapped with Horovod API {\tt DistributedOptimizer}.
+
+Given a call assignment statement,
+the transform function initially examines wheter the callee function
+is constructure of the {\tt Optimizer} subclass.
+If true, the {\tt for} loop searches for
+{\tt learning\_rate} argument among the function arguments,
+in order to construct new call assignment statement 
+with the {\tt learning\_rate} argument multiplied by {\tt hvd.size()}.
+The function finally returns the new statement
+concatenated by another assignment statement
+that wraps the {\tt Optimizer} object with {\tt DistributedOptimizer}.
+
+\end{inred}
+
+% Figure \ref{fig:trans:sessiontrans} illustrates the required transformation of
+% the Session pattern using two code examples, \ref{fig:trans:sessiontrans:a} the
+% original training code and \ref{fig:trans:sessiontrans:b} its distributed
+% training version.
+% One of the primary transformations involves adjusting the learning rate
+% argument in the {\tt Optimizer} constructor call, which is achieved by
+% multiplying it by the number of GPUs.
+% The learning rate can be passed as the first positional argument in the
+% constructor call or as the keyword argument {\tt learning\_rate}.
+% The other transformation uses the Horovod-provided {\tt DistributedOptimizer}
+% instance instead of the original {\tt Optimizer} instance. 
+% To create the {\tt DisributedOptimizer} instance, the original {\tt Optimizer}
+% is passed as an argument to its constructor.
 
 %To correctly transform Session pattern training codes into distributed 
 %training codes, the {\tt Optimizer} instance must be modified.
@@ -63,46 +104,46 @@ is passed as an argument to its constructor.
 %The transformation also adds a new statementd that wraps the 
 %{\tt Optimizer} instance by {\tt DistributedOptimizer}.
 
-\begin{figure}[ht!]\footnotesize
-\noindent
-  \begin{tabularx}{\textwidth}{X}
-  \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
-  \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
-  \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
-  {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
-  \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
-  \inden\inden \ktelse \\
-  \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}\\
-  \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
-  {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
-  \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
-
-\end{tabularx}
-  \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
-  \label{fig:trans:sessrule}
-\end{figure}
-
-Figure \ref{fig:trans:sessrule} shows the essential rule for the Session pattern,
-which conducts the two transformations.
-The transform rule matches an assignment statement that stores the result of a
-function call expression into a variable.
-Initially, the rule examines whether the callee function is the constructor of
-either the {\tt Optimizer} class or any of its subclasses.
-The predicate \ktsubtysubs{\smodenv} checks the subclass relation between two
-classes using the class hierarchy analysis result.
-Then, the rule adjusts the learning rate argument of the constructor call. 
-Suppose the learning rate is passed as a keyword argument. 
-In that case, the rule replaces the keyword argument value with the
-multiplication of the original learning rate and the return value of {\tt
-horovod.size()}.
-Otherwise, the rule adjusts the first argument instead.
-Following the adjustment of the learning rate, the rule adds a new statement:
-$id_r\ =\ ${\tt hvd.DistributedOptimizer($id_r$)}. 
-This statement replaces the original optimizer instance with a distributed
-optimizer instance for any subsequent uses.
+ % \begin{figure}[ht!]\footnotesize
+ % \noindent
+ %   \begin{tabularx}{\textwidth}{X}
+ %   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+ %   \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
+ %   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+ %   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+ %   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
+ %   {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
+ %   \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+ % 
+ %   \inden\inden \ktelse \\
+ %   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}\\
+ %   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
+ %   {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
+ %   \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+ % 
+ % \end{tabularx}
+ %   \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
+ %   \label{fig:trans:sessrule}
+ % \end{figure}
+ % 
+ % Figure \ref{fig:trans:sessrule} shows the essential rule for the Session pattern,
+ % which conducts the two transformations.
+ % The transform rule matches an assignment statement that stores the result of a
+ % function call expression into a variable.
+ % Initially, the rule examines whether the callee function is the constructor of
+ % either the {\tt Optimizer} class or any of its subclasses.
+ % The predicate \ktsubtysubs{\smodenv} checks the subclass relation between two
+ % classes using the class hierarchy analysis result.
+ % Then, the rule adjusts the learning rate argument of the constructor call. 
+ % Suppose the learning rate is passed as a keyword argument. 
+ % In that case, the rule replaces the keyword argument value with the
+ % multiplication of the original learning rate and the return value of {\tt
+ % horovod.size()}.
+ % Otherwise, the rule adjusts the first argument instead.
+ % Following the adjustment of the learning rate, the rule adds a new statement:
+ % $id_r\ =\ ${\tt hvd.DistributedOptimizer($id_r$)}. 
+ % This statement replaces the original optimizer instance with a distributed
+ % optimizer instance for any subsequent uses.
 
 %Figure \ref{fig:trans:sessrule} formalizes the Sesison pattern transform 
 %function. The transform function 
