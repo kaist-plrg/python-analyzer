@@ -8,24 +8,26 @@
 
 \subsubsection{Rules for the Session Pattern}
 
-\begin{figure}[ht!]\centering
+\begin{figure}[h!]\centering
 
   \begin{subfigure}{1\textwidth}
   \scriptsize
   \begin{lstlisting}[style=mpython]
-trans_S(`{id_r} = {expr_1}({expr_11}, ..., {expr_1n})`, ctx): 
-  if isSubclass(`{expr_1}`, `keras.optimizer.Optimizer):
+trans_S(`{id_r} = {expr}({a_1}, ..., {a_n})`, ctx): 
+  if isSubclass(`{expr}`, `keras.optimizer.Optimizer):
     for i in 1...n:
-      if `{expr_1i}` == `learning_rate = {lr}`:
-	    let new_expr = `{id_r} = {expr_1}({expr_11}, .., {expr_1i} * hvd.size(), .., {expr_1n})`
-		let wrap_expr = `{id_r} = hvd.DistributedOptimizer({id_r})`
-		return (new_expr; wrap_expr), ctx["optimizer -> `{id_r}`] 
+      if `{a_i}` == `learning_rate = {lr}`:
+	    let new_expr = 
+          `{id_r} = {expr}({a_1}, ..., {a_i}*hvd.size(), ..., {a_n})`
+        let wrap_expr = 
+          `{id_r} = hvd.DistributedOptimizer({id_r})`
+        return (new_expr; wrap_expr), ctx["optimizer"->`{id_r}`] 
   \end{lstlisting}
   \caption{Transform function for Session pattern}
   \label{fig:trans:sessiontrans:fn}
   \end{subfigure}
 
-  \begin{subfigure}[t]{0.9\textwidth}
+  \begin{subfigure}[t]{1\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
 
@@ -36,7 +38,7 @@ with tf.Session() as sess:
     \label{fig:trans:sessiontrans:a}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[t]{0.9\textwidth}
+  \begin{subfigure}[t]{1\textwidth}
     \begin{lstlisting}[style=mpython]
 optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01 * hvd.size())
 optimizer = hvd.DistributedOptimizer(optimizer)
@@ -168,22 +170,31 @@ that wraps the {\tt Optimizer} object with {\tt DistributedOptimizer}.
 %{\tt hvd.DistributedOptimizer}.
 
 \subsubsection{Rules for the MonitoredSession Pattern}
-Figure~\ref{fig:trans:monsesstrans} describes an example transformation of the
-MonitoredSession pattern code.
-The {\tt MonitoredSession} constructor optionally requires a list of {\tt
-SessionRunHook} objects as a keyword argument {\tt hooks}.
-To ensure consistent global variable initialization of all processes in the
-distributed training, the list needs to contain a {\tt
-BroadcastGlobalVariableHook} object for the global variable broadcasting, as
-shown in Figure~\ref{fig:trans:monsesstrans:b}.
-The instance can be created by calling the constructor of the {\tt
-BroadcastGlobalVariableHook} class with the ID of a source process.  
-When starting the training, the hook broadcasts the initial global variable
-parameters of the source to the other processes.\\
 
-\begin{figure}
+\begin{figure}[ht!]
   \centering
-  \begin{subfigure}[t]{0.8\textwidth}
+  \begin{subfigure}{1\textwidth}
+  \begin{lstlisting}[style=mpython]
+trans_S(`with {with_items} : {stmts}`, ctx):
+  let `{with_items_1}`, ctx_1 = trans_W(`{with_items}`, ctx)
+  let `{stmts_1}`, ctx_2 = trans_S(`{stmts}`, ctx_1)
+  return (`with {with_items_1} : {stmts_1}`, ctx_2) 
+
+trans_W(`{e_1}({a_1, ..., a_n}) as {id}`, ctx):
+  if isSubclass(e_1, tf.train.MonitoredSession):
+    for i in 1...n:
+	  if `{a_i}` == `hooks = {e_i}`:
+	    let new_hooks = 
+          `{e_i}.append(hvd.BroadcastGlobalVariableHook(0))`
+        let new_with = 
+          `{e_1}({a_1, ..., hooks={new_hooks}, ..., {a_n})` 
+        return (new_with, ctx["monsess"->`{id}`])
+  \end{lstlisting}
+  \caption{Transform function for MonitoredSession pattern}
+  \label{fig:trans:monsesstrans:fn}
+  \end{subfigure}
+
+  \begin{subfigure}[t]{1\textwidth}
     \begin{lstlisting}[style=mpython]
 with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     while not mon_sess.should_stop():
@@ -192,7 +203,7 @@ with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
     \label{fig:trans:monsesstrans:a}
   \end{subfigure}
   \hspace{5mm}
-  \begin{subfigure}[t]{0.8\textwidth}
+  \begin{subfigure}[t]{1\textwidth}
     \begin{lstlisting}[style=mpython]
 with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVariablesHook(0)) as mon_sess:
     while not mon_sess.should_stop():
@@ -205,63 +216,104 @@ with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVar
 \end{figure}
 
 
-%\newpage
-%To correctly transform the MonitoredSesion pattern code with the Horovod
-%framework, 
-%a hook for the variable broadcasting should be added to the
-%{\tt MonitoredSession} object. 
-%As in figure \ref{fig:trans:monsesstrans}, for example,
-%the transformation appends {\tt BroadcastGlobalVariablesHook} to the
-%{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
-\vspace{-1em}
+\begin{inred}
+Figure~\ref{fig:trans:monsesstrans} illustrates the transform function for
+MonitoredSession pattern with code examples.
+The transform function described in Figure~\ref{fig:trans:monsesstrans:fn}
+transforms the original code in Figure~\ref{fig:trans:monsesstrans:a}
+to the distributed code in Figure~\ref{fig:trans:monsesstrans:b}.
+In the example code, a {\tt with} statement first constructs 
+the {\tt MonitoredTrainingSession} object and binds to a name {\tt mon\_sess}.
+We call this pair of an object and the name a {\it with item}.
+The {\tt MonitoredTrainingSession} object constructor is transformed
+to append the hook {\tt hvd.BroadcastGlobalVariablesHook(0)} in the {\tt hooks}
+argument.
 
-\begin{figure}[ht!]\footnotesize
- \noindent
-  \begin{tabular}{l}
-    %\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)} \\
-    \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
-    \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
-    \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+Figure~\ref{fig:trans:monsesstrans:fn} describes two transform functions.
+The first function {\tt trans\_S} takes a statement AST as an input,
+then aplies {\tt trans\_W} to the with items. 
+The second function {\tt trans\_W} first checks if the given with item  
+constructs the {\tt tf.train.MonitoredSession} subclass object.
+If true, then the function first finds the {\tt hooks} argument
+in the constructor and appends the {\tt hvd.BroadcastGlobalVariablesHook(0)}.
+The function returns the modified with item AST,
+which will be returned to the {\tt trans\_S} function.
+As a result, the {\tt trans\_S} function returns the
+newly modified {\tt with} statement with its body statements
+recursively transformed by {\tt trans\_S}.
+\end{inred}
 
-    \inden ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
-  \end{tabular}\\[2ex]
-
-  \begin{tabular}{l}
-    %\typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)}  \\
-    \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
-                \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
-                \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} {\tt as} \nidsubs{as}}{\smodenv} = \\
-
-    \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} {\tt tensorflow.train.MonitoredSession} ~ \ktthen \\
-    \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
-    \inden\inden\inden(\nexprsubs{1} \sparen{\nexprsubs{11} ... 
-              \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
-    \inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
-    \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} }, \\
-    \inden\inden\inden\inden \smodenv[ \msess $\mapsto$ \nidsubs{as}]) \\
-  \end{tabular}\\\vpar
-\caption{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance}
-  \label{fig:trans:monsessrule}
-\end{figure}
-
-%\vspace{-1em}
-
-Figure \ref{fig:trans:monsessrule} formalizes the transform functions for the
-MonitoredSession pattern.
-The first transform function is responsible for matching {\tt with} statements
-and transforming a list of the {\tt with\_item}, each of which represents a
-variable and an assigned expression. 
-The transform function denoted as \fkwwithitem~in line 2 applies the second
-transform function \fkwithitem~to each {\tt with\_item}.
-As a result, the first transform function returns a new {\tt with} statement
-containing a list of the transformed {\tt with\_item}.
-The second transform function transforms the {\tt with\_item}.
-Among many forms of the {\tt with\_item}, the function matches those that
-assign a function call result to a variable.
-The second line checks whether the callee function of the {\tt with\_item} is a
-constructor of the subclass of the {\tt MonitoredSession} class. 
-If then, the transformation appends a {\tt BroadcastGlobalVariablesHook} object
-to the keyword argument {\tt hooks}.\\
+% Figure~\ref{fig:trans:monsesstrans} describes an example transformation of the
+% MonitoredSession pattern code.
+% The {\tt MonitoredSession} constructor optionally requires a list of {\tt
+% SessionRunHook} objects as a keyword argument {\tt hooks}.
+% To ensure consistent global variable initialization of all processes in the
+% distributed training, the list needs to contain a {\tt
+% BroadcastGlobalVariableHook} object for the global variable broadcasting, as
+% shown in Figure~\ref{fig:trans:monsesstrans:b}.
+% The instance can be created by calling the constructor of the {\tt
+% BroadcastGlobalVariableHook} class with the ID of a source process.  
+% When starting the training, the hook broadcasts the initial global variable
+% parameters of the source to the other processes.\\
+% 
+% 
+% %\newpage
+% %To correctly transform the MonitoredSesion pattern code with the Horovod
+% %framework, 
+% %a hook for the variable broadcasting should be added to the
+% %{\tt MonitoredSession} object. 
+% %As in figure \ref{fig:trans:monsesstrans}, for example,
+% %the transformation appends {\tt BroadcastGlobalVariablesHook} to the
+% %{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
+% \vspace{-1em}
+% 
+% \begin{figure}[ht!]\footnotesize
+%  \noindent
+%   \begin{tabular}{l}
+%     %\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)} \\
+%     \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+%     \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
+%     \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+% 
+%     \inden ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+%   \end{tabular}\\[2ex]
+% 
+%   \begin{tabular}{l}
+%     %\typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)}  \\
+%     \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
+%                 \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+%                 \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} {\tt as} \nidsubs{as}}{\smodenv} = \\
+% 
+%     \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} {\tt tensorflow.train.MonitoredSession} ~ \ktthen \\
+%     \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+%     \inden\inden\inden(\nexprsubs{1} \sparen{\nexprsubs{11} ... 
+%               \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
+%     \inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
+%     \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} }, \\
+%     \inden\inden\inden\inden \smodenv[ \msess $\mapsto$ \nidsubs{as}]) \\
+%   \end{tabular}\\\vpar
+% \caption{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance}
+%   \label{fig:trans:monsessrule}
+% \end{figure}
+% 
+% %\vspace{-1em}
+% 
+% Figure \ref{fig:trans:monsessrule} formalizes the transform functions for the
+% MonitoredSession pattern.
+% The first transform function is responsible for matching {\tt with} statements
+% and transforming a list of the {\tt with\_item}, each of which represents a
+% variable and an assigned expression. 
+% The transform function denoted as \fkwwithitem~in line 2 applies the second
+% transform function \fkwithitem~to each {\tt with\_item}.
+% As a result, the first transform function returns a new {\tt with} statement
+% containing a list of the transformed {\tt with\_item}.
+% The second transform function transforms the {\tt with\_item}.
+% Among many forms of the {\tt with\_item}, the function matches those that
+% assign a function call result to a variable.
+% The second line checks whether the callee function of the {\tt with\_item} is a
+% constructor of the subclass of the {\tt MonitoredSession} class. 
+% If then, the transformation appends a {\tt BroadcastGlobalVariablesHook} object
+% to the keyword argument {\tt hooks}.\\
 
 \subsubsection{Rules for the GradientTape pattern}\label{sec:grad}
 
