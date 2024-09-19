@@ -106,7 +106,7 @@ Horovod~\cite{sergeev2018horovod} is a Python library for distributed training
 of TensorFlow models. 
 \begin{inred}
 The library adopts a model-parallel approach that copies the same instance of
-a DL model for each GPU, and multiple batches of training data is distributed
+a DL model for each GPU and multiple batches of training data are distributed
 across the GPUs.
 \end{inred}
 % The library adopts a model-parallel approach that creates one instance of a DL
@@ -152,7 +152,7 @@ TensorFlow 1.x model example in Figure~\ref{fig:back:tf1}.
 The distributed model has four big differences from the single-GPU model.
 1) It configures GPUs and processes for distributed training.
 \begin{inred}
-Line 4 to 7 creates a Horovod configuration and pins each GPU with
+Lines 4 to 7 create a Horovod configuration and pin each GPU with
 a single dedicated model instance.
 \end{inred}
 % and lines 5 to 7 create the same number of processes with GPUs in the
@@ -162,7 +162,7 @@ a single dedicated model instance.
 2) The distributed model uses the distributed version of the gradient
 descent algorithm.
 \begin{inred}
-Line 23 multiplies the learning rate of optimizer object by {\tt hvd.size()},
+Line 23 multiplies the learning rate of the optimizer object by {\tt hvd.size()},
 and wraps it with the {\tt DistributedOptimizer} API.
 \end{inred}
 % Line 23 creates the same optimizer {\tt tf.train.AdamOptimizer} with the
@@ -305,12 +305,12 @@ TensorFlow 2.x model example in Figure~\ref{fig:back:tf2}.
 \begin{inred}
 There are two main differences in distributing TensorFlow 2.x models compared to
 TensorFlow 1.x models.
-First, the main training loop is eagerly executed in TensorFlow 2.x version;
+First, the main training loop is eagerly executed in the TensorFlow 2.x version;
 thus the Horovod API is changed accordingly.
 For instance, the {\tt DistributedGradientTape} API in line 26
 supports the automatic gradient computation in TensorFlow 2.x.
 Second, the variable broadcasting is explicitly executed at the first training
-epoch as shown in line 31 to 34.
+epoch as shown in lines 31 to 34.
 \end{inred}
 
 % Lines 4 and 5 initialize the Horovod configuration and a boolean flag
