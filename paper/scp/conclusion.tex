@@ -7,9 +7,9 @@ and devised a static analysis technique that identifies the training pattern
 of the given model code.
 Then we defined code transformation rules for each training API pattern
 that parallelize the training process via Horovod library APIs.
-In this end, we implemented a code transformation tool
+To this end, we implemented a code transformation tool
 that takes a single-GPU-based DL model training code,
-identifies its tranining pattern, and apply the corresponding source code
+identifies its training pattern, and applies the corresponding source code
 transformation to output a distributed training code for the same DL model.
 
 We conducted two experiments to evaluate our proposed approach.
@@ -25,18 +25,18 @@ in accordance with the documentation of distributed training libraries to
 parallelize training.
 
 While our work has enabled automatically distributing the training of TensorFlow
-DL models, limitation of our approach can be solved in further studies.
+DL models, the limitation of our approach can be solved in further studies.
 Future work could improve our code transformation rules so that 
 we can correctly transform a larger set of TensorFlow DL models and applications.
 Many state-of-the-art models and real-world DL applications
-depend on external training libraries or non-Python script to train the model.
-In order to correctly transform them to distributed models,
+depend on external training libraries or non-Python scripts to train the model.
+To correctly transform them into distributed models,
 our approach can be extended to identify API patterns of various training libraries
 and transform them into distributed versions.
 We also expect that our code transformation approach can be extended to
 support other deep learning libraries such as PyTorch~\cite{pytorch2019},
 and to other distributed training frameworks such as DeepSpeed~\cite{deepspeed}.
-Finally, in order to correctly transform DL training codes in real-world applications,
+Finally, to correctly transform DL training codes in real-world applications,
 future work can develop a static analysis technique that separates 
 and transforms only the parts related to DL model training from the application code. 
 
