@@ -21,13 +21,13 @@ TensorFlow 2.x Tutorials~\cite{tf2tutogithub}.
 We excluded two from 18 models in the repositories because one abnormally
 terminates with a runtime error in its execution, and the other duplicates.
 \begin{inred}
-Note that our evaluation targes consists of models written purely in
+Note that our evaluation targets consist of models written purely in
 TensorFlow, because the scope of our work is to identify and
 transform TensorFlow DL models.
 We excluded state-of-the-art models and real-world models from our targets
 as they depend on external training libraries or non-Python scripts
 in the training process.
-We discuss on this limitation and possible solution
+We discuss this limitation and possible solution
 in Section \ref{sec:conclusion}.
 \end{inred}
 Our tool is written in Scala and is publicly
@@ -118,7 +118,7 @@ distributed training code by referring to the Horovod documentation~\cite{hvd-do
 \begin{inred}
 Specifically, the first author followed step-by-step instructions in the Horovod documentation
 to convert each evaluation target code into its distributed version.
-Then the second author independently compared them with the codes transformed
+Then the second author independently compared them with the codes that transformed
 by our tool. 
 If two codes are the same except for minor syntactic differences such as
 whitespaces or variable declaration order,
@@ -233,15 +233,15 @@ fails to transform the code correctly.
 % instance.
 \begin{inred}
 We argue that this is an unconventional case as
-other 11 GradientTape models uses the {\tt Model} API to construct the model.
-As we aim to identify API pattern commonly used in TensorFlow DL models,
-we report limitation of our approach, where model codes written in unconventional
+other 11 GradientTape models use the {\tt Model} API to construct the model.
+As we aim to identify API patterns commonly used in TensorFlow DL models,
+we report the limitation of our approach, where model codes are written in unconventional
 API usage cannot be correctly transformed.
 \end{inred}
 
 \begin{inred}
-In conclusion, the result of RQ1 experiment shows that our code transformation
-approach correctly transforms most of TensorFlow DL models.
+In conclusion, the result of the RQ1 experiment shows that our code transformation
+approach correctly transforms most TensorFlow DL models.
 Our tool fails in one case where the code uses the training APIs in
 unconventional way, which is a limitation of our approach.
 \end{inred}
@@ -394,12 +394,12 @@ DCGAN                    & 2389.052& 828.428& $\times$2.88\\
 
 \begin{inred}
 % Table~\ref{fig:eval:traintime} reports the result of the RQ2 experiment.
-The result if the RQ2 experiment show that the distributed training of the 
+The result of the RQ2 experiment shows that the distributed training of the 
 transformed model is, on average, 
 \textbf{2.28 times faster} than that of the original models.
 When the distributed training was faster than the original model,
 the \textbf{performance enhancement ranges from x1.37 to x6.58}.
-We do not report the distributed time of Stacked-LSTM-ColorBot case
+We do not report the distributed time of the Stacked-LSTM-ColorBot case
 because the loss of the first epoch already reached minimal in the experiment.
 We conclude that while distributed training of automatically transformed models
 does not ensure faster training time,
@@ -427,16 +427,16 @@ Figure~\ref{fig:eval:train} illustrates the change of the loss over time
 during the training time.
 The blue and red lines represent the losses of the
 original models and their transformed models, respectively.
-In six out of 13 models, distributed training reaches higher loss compared to
+In six out of 13 models, distributed training reaches a higher loss compared to
 the original model.
 For instance, in the original VGG-CIFAR10 model, we observed that the loss
 gradually decreases during the training process. 
 However, when the same model is transformed into a distributed model,
-the loss doses not meaningfully decrease and remains unchanged, 
+the loss does not meaningfully decrease and remain unchanged, 
 with only minor fluctuations.
 In conclusion, while our approach may improve the training performance by
 automatically distributing them, it does not always ensure that the
-resulting distributed model trains faster or has the same accuracy.
+resulting model trains faster or has the same accuracy.
 \end{inred}
 
 % Interestingly, distributed training does not ensure an acceleration of
@@ -498,7 +498,7 @@ resulting distributed model trains faster or has the same accuracy.
 % Distributed training often requires additional tuning of hyperparameters to
 % achieve positive effects.
 \begin{inred}
-We argue that tuning the training hyperparameters can addiitonally improve
+We argue that tuning the training hyperparameters can additionally improve
 training performance of automatically distributed models.
 \end{inred}
 We conducted \begin{inred}an additional experiment\end{inred} on the VGG-CIFAR10 
@@ -525,15 +525,15 @@ original learning rate but worse than non-distributed training.
 The result of this experiment shows that developers may need to configure
 hyperparameters differently from the original single-GPU-based models to
 obtain the benefits of distributed training.
-To ensure performance improvment in distributed training by our approach,
+To ensure performance improvement in distributed training by our approach,
 a technique that automatically adjusts hyperparameters according to the generated
 training code is required.
 There are several previous works~\cite{pmlr-v33-yogatama14}\cite{autohyper-rl}\cite{autotune}
 on automatically tuning the hyperparameters of specific settings,
 However, there is no known method to automatically optimize the training hyperparameters
 of distributed models generated by our approach.
-We report that in our experiments, the hyparparameters should be adjusted
-by trial-and-error in order to optimize the training performance.
+We report that in our experiments, the hyperparameters should be adjusted
+by trial and error to optimize the training performance.
 Future works can further benefit developers by enabling automatic
 hyperparameter tuning for the distributed models generated by our approach.
 \end{inred}
