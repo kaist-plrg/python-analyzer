@@ -67,11 +67,11 @@ Then, the constructed {\tt Optimizer} object
 is wrapped with Horovod API {\tt DistributedOptimizer}.
 
 Given a call assignment statement,
-the transform function initially examines wheter the callee function
+the transform function initially examines whether the callee function
 is constructure of the {\tt Optimizer} subclass.
 If true, the {\tt for} loop searches for
 {\tt learning\_rate} argument among the function arguments,
-in order to construct new call assignment statement 
+to construct a new call assignment statement 
 with the {\tt learning\_rate} argument multiplied by {\tt hvd.size()}.
 The function finally returns the new statement
 concatenated by another assignment statement
@@ -231,7 +231,7 @@ argument.
 
 Figure~\ref{fig:trans:monsesstrans:fn} describes two transform functions.
 The first function {\tt trans\_S} takes a statement AST as an input,
-then aplies {\tt trans\_W} to the with items. 
+then applies {\tt trans\_W} to the with items. 
 The second function {\tt trans\_W} first checks if the given with item  
 constructs the {\tt tf.train.MonitoredSession} subclass object.
 If true, then the function first finds the {\tt hooks} argument
@@ -396,7 +396,7 @@ After transforming with items and body statements,
 the function checks if the with items define a new {\tt gradient\_tape} item. 
 If true, then the function constructs a statement that wraps the
 {\tt gradient\_tape} item with {\tt hvd.DistributedGradientTape} API.
-Finally, the function returns the new {\tt with} statment
+Finally, the function returns the new {\tt with} statement
 concatenated with the new wrapping statement.
 \end{inred}
 
@@ -434,7 +434,7 @@ if ctx["optimizer"] == `{id_t}` && `{expr}` == `{id_t}.apply_gradients`:
 Figure~\ref{fig:trans:gtapetrans:fn2} describes the transform function responsible
 of the second transformation,
 which transforms a call assignment statement.
-The function first searchs for {\tt optimizer} variable in the context object.
+The function first searches for {\tt optimizer} variable in the context object.
 Then it tests if the input statement calls the {\tt apply\_gradients} method 
 of the {\tt optimizer} variable.
 If true, then the function concatenates the variable broadcast statements
@@ -583,7 +583,7 @@ Figure~\ref{fig:trans:keras} illustrates the transform function for Keras
 pattern with code examples.
 The function transforms the original code in Figure~\ref{fig:trans:keras:a}
 to the distributed code in Figure~\ref{fig:trans:keras:b}.
-The transformation first construct a new list with a
+The transformation first constructs a new list with a
 callback object, {\tt BroadcastGlobalVariablesCallback(0)}.
 Then the callback list is inserted as a new {\tt callback} argument
 of {\tt fit} method.
@@ -597,7 +597,7 @@ the function first constructs a statement that creates a list of
 {\tt BroadcastGlobalVariablesCallback} object and assigns it.
 Then the input call statement is modified to
 add the {\tt callbacks} argument.
-Finally the function returns a concatenation of two statements
+Finally, the function returns a concatenation of two statements
 and an unmodified context object.
 
 \end{inred}

@@ -54,14 +54,14 @@ to subsequent function calls and utilize the information from outside their
 input AST.
 
 Figure \ref{fig:trans:ex01:code} illustrate a pseudocode of an example 
-transform function that transforms an import statement.
+transform function thats transforms an import statement.
 The transform function {\tt trans\_S} gets an input AST and a context object.
 In the pseudocode, we use back-quoted notation {\tt `import \{aliases\}`} 
 to represent a Python AST object;
-brace-surrounded expression represents a child AST.
-Line 2 creates a new context object by calling transformation function
+the brace-surrounded expression represents a child AST.
+Line 2 creates a new context object by calling the transformation function
 on the child AST, {\tt `\{aliases\}`}.
-Then line 3 computes difference between the original context object {\tt ctx}
+Then line 3 computes the difference between the original context object {\tt ctx}
 and the new context object {\tt ctx\_1}.
 If the new context additionally stores {\tt "tensorflow"} entry,
 it means that the import statement imports the TensorFlow library,
