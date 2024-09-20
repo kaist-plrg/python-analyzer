@@ -8,14 +8,13 @@
 	\begin{subfigure}{1\textwidth}
 		\centering
 		%\includegraphics[width=0.8\textwidth]{Fig14.eps}
-		\begin{lstlisting}[language=Python]
+		\begin{lstlisting}[style=mpythonscript]
 trans_S(`import {aliases}`, ctx):
   let ctx_1 = trans_A(`{aliases}`, ctx).context
   if diff(ctx_1, ctx) == ["tensorflow" -> `{id}`]:
     return (`import {aliases}; import horovod.tensorflow as hvd`, ctx_1)
   else:
-    return (`import {aliases}`, ctx_1)
-		\end{lstlisting}
+    return (`import {aliases}`, ctx_1)\end{lstlisting}
 		\caption{Transform function of import statements}
 		\label{fig:trans:ex01:code}
 	\end{subfigure}
@@ -44,31 +43,30 @@ import horovod.tensorflow as hvd\end{lstlisting}
 \noindent
 We formalize the rules for transforming single-GPU models into multi-GPU
 models using pure functions called {\it transform functions}. 
-\begin{inred}
 Transform functions take a Python AST and a {\it context} object as inputs,
 and return a Python AST and a context object as output.
 A context object is a mapping from strings to Python identifier ASTs;
 context objects store and propagate necessary identifiers.
 This enables (pure) transform functions to pass relevant contextual information
-to subsequent function calls and utilize the information from outside their
-input AST.
+to subsequent transform function calls and utilize the information from outside
+their input AST.
 
-Figure \ref{fig:trans:ex01:code} illustrate a pseudocode of an example 
-transform function thats transforms an import statement.
+Figure \ref{fig:trans:ex01:code} illustrate the pseudocode of an example
+transform function that transforms an import statement.
 The transform function {\tt trans\_S} gets an input AST and a context object.
-In the pseudocode, we use back-quoted notation {\tt `import \{aliases\}`} 
-to represent a Python AST object;
+In the pseudocode, we use back-quoted notation {\tt \textasciigrave import
+\{aliases\}\textasciigrave} to represent a Python AST object;
 the brace-surrounded expression represents a child AST.
-Line 2 creates a new context object by calling the transformation function
-on the child AST, {\tt `\{aliases\}`}.
-Then line 3 computes the difference between the original context object {\tt ctx}
+Line 2 creates a new context object by calling the transformation function on
+the child AST, {\tt \textasciigrave\{aliases\}\textasciigrave}.
+Then, line 3 computes the difference between the original context object {\tt ctx}
 and the new context object {\tt ctx\_1}.
-If the new context additionally stores {\tt "tensorflow"} entry,
-it means that the import statement imports the TensorFlow library,
-so the transform function concatenates a new import statement
-{\tt import horovod.tensorflow as hvd} to the input AST and returns it.
-If else, the function returns the same AST, with the new context object.
-\end{inred}
+If the new context additionally stores the {\tt "tensorflow"} entry, it infers
+that the import statement imports the TensorFlow library.
+In this case, the transform function places a new import statement, {\tt import
+horovod.tensorflow as hvd}, right after the TensorFlow import statement and
+returns the modified AST. 
+Otherwise, the function leaves the input AST unchanged.
 
 % These functions take ASTs as input and produce ASTs as output. 
 % In addition, the functions use {\it transform context} objects to incorporate
