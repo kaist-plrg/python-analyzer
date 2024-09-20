@@ -35,16 +35,14 @@ reducing engineers' burdens of understanding the document and modifying models.
 %modifying the training code in according to the library specification and use
 %case.
 
-\begin{inred}
-
 \subsection{Automatically Distributing Deep Learning Models}
 
 Several works proposed techniques for automatically optimizing the
 distributed training of DL models.
-A line of work searches for optimal parallelization plans
-before runtime of the DL model training codes.
-Megatron-LM~\cite{megatron-lm} is one of the earliest works on automatically 
-finding efficient parallelization plans of DNN model training. 
+A line of work searches for optimal parallelization plans before the runtime of
+DL model training codes.
+Megatron-LM~\cite{megatron-lm} is one of the earliest works on automatically
+finding efficient DNN model training parallelization plans.
 The Megatron-LM framework distributes operations inside the layers of 
 transformer networks by adding synchronization primitives.
 Pipedream~\cite{pipedream} is an asynchronous distributed training framework 
@@ -54,40 +52,42 @@ Alpa~\cite{alpa} is an automatic model-parallel training framework that
 organizes different parallelization techniques into a hierarchy 
 and maps them to the hierarchical structure of computing devices. 
 This allows Alpa to optimize plans for both inter-operator parallelization and intra-operator parallelization.
-Lin et al.~\cite{nnscaler} introduce new primitive operators 
-that allow domain experts to compose their own search space, 
-then the proposed framework generates an efficient parallelization plan for the DNN model training.
-AutoDDL~\cite{autoddl} adds new tensor operators to expand the search space for parallelization strategies. 
-The framework uses an analytical performance model with a Coordinate Descent-based search algorithm to optimize the communication cost.
+Lin et al.~\cite{nnscaler} introduce new primitive operators that allow domain
+experts to compose their own search space, and their proposed framework
+generates an efficient parallelization plan for the DNN model training.
+AutoDDL~\cite{autoddl} adds new tensor operators to expand the search space for
+parallelization strategies. 
+The framework uses an analytical performance model with a Coordinate
+Descent-based search algorithm to optimize the communication cost.
 
 Another line of work focuses on optimizing resource usage
 during the training runtime. 
-DAPPLE~\cite{dapple} is a synchronous distributed training framework 
-that combines data and pipeline parallelism for large DNN models, 
-which finds the optimal parallelization plan with a novel parallelization strategy planner 
-and a new runtime scheduling algorithm to reduce memory usage.
-Tiresias~\cite{tiresias} is a GPU cluster manager 
-that efficiently schedules DL training jobs to reduce their job completion times. 
-Because it is difficult to predict when the DL jobs complete, 
-the authors propose two scheduling algorithms tailored to minimize the average job completion times.
+DAPPLE~\cite{dapple} is a synchronous distributed training framework that
+combines data and pipeline parallelism for large DNN models, which finds the
+optimal parallelization plan with a novel parallelization strategy planner and
+a new runtime scheduling algorithm to reduce memory usage.
+Tiresias~\cite{tiresias} is a GPU cluster manager that efficiently schedules DL
+training jobs to reduce their job completion times. 
+Because predicting DL jobs' completion time is challenging,
+the authors propose two scheduling algorithms tailored to minimize the average
+job completion times.
 
-Compared to these works, 
-our work's main technique is to optimize the DL model training by
-automatically transforming single-GPU-based training codes into distributed training codes.
-The aforementioned works require developers to manually write distributed training codes
-according to the proposed framework.
+Compared to these works, our work's primary technique is to boost the DL model
+training by automatically transforming single-GPU-based training codes into
+distributed ones.
+The aforementioned works require developers to write distributed training codes
+according to the proposed framework manually.
 Our work utilizes the Horovod library’s data-parallel distributed training to 
 distribute existing single-GPU-based DL training codes without rewriting them.
-While previous works’ main technique is to distribute low-level, 
-primitive computing operation over multiple GPUs, 
-our main technique is to transform a single-GPU-based DL training code 
+While previous works’ primary technique is to distribute low-level, 
+primitive computing operations over multiple GPUs, 
+our primary technique is to transform a single-GPU-based DL training code 
 to a distributed version at the Python source code level. 
-By reusing the Horovod library and converting the training code at the source code level, 
-we allow non-expert developers to easily distribute the training code without manually rewriting the original training code.
+By reusing the Horovod library and converting the training code at the source
+code level, we allow non-expert developers to distribute the training
+code efficiently without manually rewriting the original training code.
 
 
-
-\end{inred}
 
 %\paragraph{Code transformation.}
 \subsection{Code Transformation}
@@ -130,22 +130,21 @@ transformation rules they define.
 Haryono et al.~\cite{haryono2021mlcatchup} developed MLCatchUp, a code transformation tool
 that enables Python machine learning programs to migrate from deprecated APIs
 to new and stable APIs automatically. 
-\begin{inred}
-In Zhang et al. \cite{python-idiomatic}, the authors develop AST-rewriting 
+In Zhang et al.~\cite{python-idiomatic}, the authors develop AST-rewriting 
 operations to detect non-idiomatic code for each Pythonic idiom and refactor 
 non-idiomatic Python codes into idiomatic codes.
-Rózsa et al. \cite{dont-diy}  introduces a framework 
-which transforms traditional conditional branching into structural pattern-matching 
-without changing the original behavior. 
+Rózsa et al.~\cite{dont-diy} introduce a framework 
+that transforms conditional branches into structural pattern-matching without
+changing the original behavior. 
 This improves the readability and maintainability of codes written in legacy Python.
-Tangent \cite{tangent} is a new library that transforms a subset of Python and NumPy code 
+Tangent~\cite{tangent} is a new library that transforms a subset of Python and NumPy code 
 to perform automatic differentiation on a source code level.
 Compared to these works, our work targets TensorFlow DL models written in
 Python, and provides concrete and correct transformation rules for their
 distributed training.
-To our knowledge, our work is the first work that utilizes the Python code transformation technique to 
-automatically distribute single-GPU-based DL training codes.
-\end{inred}
+To our knowledge, our work is the first to utilize the Python code
+transformation technique to distribute single-GPU-based DL
+training codes automatically.
 
 %There are several other works on application of program transformation
 %in Python and machine learning domain.
