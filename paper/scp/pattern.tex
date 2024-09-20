@@ -55,12 +55,10 @@ model.fit(train_data.take(training_steps))\end{lstlisting}
 
 Our transformation approach needs to apply different transformation rules based
 on the API usage in the TensorFlow model. 
-\begin{inred}
 Figure \ref{fig:pattern:ex01} illustrates two TensorFlow model codes that use
 different APIs to define the training process.
 While both codes train the model similarly, they use different training
 APIs in different patterns.
-\end{inred}
 Inspecting the Horovod documentation and open-source TensorFlow models
 manually, we define \textbf{four categories of training API patterns} that require
 different transformation rules. 
@@ -157,15 +155,13 @@ Section~\ref{sec:ident}.
 % cannot be automatically transformed by our approach.
 
 
-\paragraph{Session Pattern.} 
+\paragraph{Session Pattern} 
 The Session pattern appears in TensorFlow 1.x models that invoke the training
 computation directly via the {\tt Session} class instance.
 Figure~\ref{fig:sessionpattern} illustrates a code example of the Session
 pattern. 
-\begin{inred}
 The pattern creates the {\tt Session} object,
 which provides the {\tt run} method to execute the model computation.
-\end{inred}
 % The {\tt with} statement in line 1 creates an instance of the {\tt Session}
 % class, and the {\tt run} method called in line 3 invokes the training
 % computation on an isolated execution environment of the session instance. 
@@ -192,21 +188,18 @@ with tf.Session() as sess:
 %the identifier categorizes the input model as the Session pattern. 
 
 
-\paragraph{MonitoredSession Pattern.}
+\paragraph{MonitoredSession Pattern}
 % The MonitoredSession is another typical code pattern observed in
 % TensorFlow 1.x models. 
 Figure~\ref{fig:monsesspattern} demonstrates a code example of the
 MonitoredSession pattern.
 This TensorFlow 1.x pattern bears similarities to the Session pattern, 
 wherein the training computation is invoked directly.
-\begin{inred}
-Instead of using the {\tt Session} object,
-the MonitoredSession pattern codes use the {\tt MonitoredSession} object
-that provides the hook methods.
+Instead of using the {\tt Session} object, the MonitoredSession pattern
+codes use the {\tt MonitoredSession} object that provides hook methods.
 For instance, the code in Figure~\ref{fig:monsesspattern}
 uses the {\tt SummarySaverHook} to
 automatically save the model summaries after each training step.
-\end{inred}
 % However, instead of utilizing an instance of the {\tt Session} class, the
 % MonitoredSession pattern leverages an instance of the {\tt
 % MonitoredSession} class that provides hooks to perform some actions
@@ -239,18 +232,16 @@ with MonitoredTrainingSession(hooks=[summary_hook]) as mon_sess:
 %the identifier categorizes the input model as the MonitoredSession pattern. 
 %\vspace{-1em} 
 
-\paragraph{GradientTape Pattern.}
+\paragraph{GradientTape Pattern}
 The GradientTape pattern is a classification for TensorFlow 2.x models that
 utilize the {\tt GradientTape} class instance to initiate training computations
 manually.
 Figure~\ref{fig:tapepattern} demonstrates an example of the
 GradientTape pattern. 
-\begin{inred}
 It creates the {\tt GradientTape} object through a {\tt with} statement.
 The {\tt with} statement body runs the model computation.
-Then the {\tt Optimizer} class instance calls the method {\tt apply\_gradients}
-to update the model parameters.
-\end{inred}
+Then, the {\tt Optimizer} class instance calls the method {\tt
+apply\_gradients} to update the model parameters.
 % Line 4 initiates the {\tt GradientTape} class instance through a {\tt with}
 % statement. 
 % Once creating the {\tt GradientTape} instance, it watches all trainable
@@ -307,16 +298,14 @@ for images, labels in dataset.take(10000):
 %model as the GradientTape pattern.
 
 
-\paragraph{Keras Pattern.}
+\paragraph{Keras Pattern}
 The Keras pattern is another classification for TensorFlow 2.x models that
 utilize the keras library in both model creations and training. 
 Figure~\ref{fig:keraspattern} represents an example of the Keras pattern.
-\begin{inred}
 The pattern defines the {\tt ResNet} class inherited from the {\tt keras.Model}
 and uses it to construct the model object.
-The {\tt fit} method is invoked to automatically train the model with
+The {\tt fit} method is then invoked to automatically train the model with a
 given dataset.
-\end{inred}
 % Line 1 defines the {\tt ResNet} class inherited from the {\tt keras.Model}
 % class. 
 % As described in Section~\ref{sec:cha}, the {\tt keras.Model} class provides a
