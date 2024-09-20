@@ -1,18 +1,8 @@
 \begin{figure}\centering
-    \begin{subfigure}[b]{1\textwidth}
-        \centering
-        \includegraphics[width=0.7\textwidth]{Fig1.eps}
-        \caption{The neural network with a hidden layer and an output layer}
-        \label{fig:back:model}
-    \end{subfigure}
-    
-    \begin{subfigure}[b]{1\textwidth}
-        \lstinputlisting[style=mpython]{tensorflow1_mnist.py}
-        \caption{TensorFlow 1.x model example}
-        \label{fig:back:tf1}
-    \end{subfigure}   
-    \caption{An example neural network and TensorFlow 1.x model example}
-    \label{fig:back:tf1_all}
+    \centering
+    \includegraphics[width=0.7\textwidth]{Fig1.eps}
+    \caption{An example neural network}
+    \label{fig:back:model}
 \end{figure}
 
 % \begin{figure}[ht!]\centering
@@ -159,13 +149,12 @@ input images correctly.
 % \label{fig:back:tf1}
 % \end{figure}
 
-\begin{inred}
-Figure~\ref{fig:back:tf1} is a training code written in TensorFlow 1.x.
-\end{inred}
+Figure~\ref{fig:back:tf1} shows the TensorFlow 1.x training code for the neural
+network. 
 % Figure~\ref{fig:back:tf1} shows a TensorFlow 1.x model for the example neural
 % network with the gradient descent training algorithm.
-First, lines 5 to 14 define the network structure and the operations
-between the layers.
+First, lines 5 to 14 define the network structure and the operations between
+the layers.
 % Lines 5 and 6 first create two placeholder variables, {\tt x} and {\tt y},
 % where {\tt x} is a vector storing the pixel data of an input image, and {\tt y}
 % is a vector storing the answer for the classification of the input image. 
@@ -189,18 +178,16 @@ between the layers.
 % multiplies the hidden layer output with
 % the weight {\tt W\_2}, adds the bias vector {\tt b\_2}, and finally applies the
 % {\tt softmax} activation function.
-\begin{inred}
+%\begin{inred}
 After constructing the neural network, the code defines the training algorithm
 in lines 16 and 17.
-Line 16 defines the categorical cross-entropy loss function,
-and line 17 defines the Adam gradient descent algorithm~\cite{kingma2014adam}.
-Lines 19 to 22 start the main training loop
-by creating a {\tt Session} object and repeatedly executing 
-the training operation {\tt train\_op}.
+Line 16 defines the categorical cross-entropy loss function, and line 17
+defines the Adam gradient descent algorithm~\cite{kingma2014adam}.
+Lines 19 to 22 start the main training loop by creating a {\tt Session} object
+and repeatedly executing the training operation {\tt train\_op}.
 
 
-
-\end{inred}
+%\end{inred}
 
 
 %As shown in the lines 5 to 14, developers must explicitly define
