@@ -101,17 +101,22 @@ Then, we formalize code transformation rules for each training pattern.
 Using the rules, we implement an automated code transformation tool that takes
 a TensorFlow deep learning model written in Python and rewrites it with the
 Horovod APIs for distributed training. 
-\begin{inred}
-By utilizing source-code level transformation, our approach allows developers to
-quickly scale existing DL models to multiple GPUs. 
-\end{inred}
+Through source-code level transformation, our approach enables developers to
+efficiently scale existing DL models to multiple GPUs.
+%\begin{inred}
+%By utilizing source-code level transformation, our approach allows developers to
+%quickly scale existing DL models to multiple GPUs. 
+%\end{inred}
 Our evaluation shows that the tool correctly transforms 15 out of 16
 open-source TensorFlow deep learning models.
-\begin{inred}
-To our knowledge, our work is the first source code transformation technique
-that automatically distributes existing TensorFlow deep learning models
-in source code level.
-\end{inred}
+To the best of our knowledge, our work is the first automatic
+transformation technique for distributing existing TensorFlow deep learning
+models at the source code level.
+%\begin{inred}
+%To our knowledge, our work is the first source code transformation technique
+%that automatically distributes existing TensorFlow deep learning models
+%in source code level.
+%\end{inred}
 We believe that our approach significantly reduces manual efforts to
 parallelize training of existing TensorFlow deep learning models.
 \end{abstract}
