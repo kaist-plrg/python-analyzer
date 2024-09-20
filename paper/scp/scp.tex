@@ -32,12 +32,25 @@
 \usepackage{url}
 \usepackage[T1]{fontenc}
 \lstdefinestyle{mpython}{
+  basicstyle=\footnotesize\ttfamily,
   language=Python,
   upquote=true,
   morekeywords={with,as},
   emphstyle=\color{blue},
   emph={True,False},
   deletekeywords=[2]{compile},
+  morekeywords={let},
+}
+
+\lstdefinestyle{mpythonscript}{
+  basicstyle=\scriptsize\ttfamily,
+  language=Python,
+  upquote=true,
+  morekeywords={with,as},
+  emphstyle=\color{blue},
+  emph={True,False},
+  deletekeywords=[2]{compile},
+  morekeywords={let},
 }
 
 \journal{Science of Computer Programming}
