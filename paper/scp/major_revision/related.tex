@@ -1,0 +1,162 @@
+\section{Related Work}\label{sec:related}
+
+\subsection{Distributed DL frameworks}
+
+%In this work, Horovod library is used to distribute
+%DL training codes.
+Horovod~\cite{sergeev2018horovod} is a popular distributed training library that
+supports multiple DL frameworks such as TensorFlow and PyTorch.
+Besides Horovod, there are several frameworks and libraries for distributed
+training.
+TensorFlowOnSpark~\cite{tfonspark} is a Python library that
+combines TensorFlow with Apache Spark and Hadoop to distribute
+DL tasks on server clusters. 
+DeepSpeed~\cite{deepspeed} is a distributed programming library developed by
+Microsoft, built on top of PyTorch~\cite{pytorch2019}.  
+DeepSpeed supports multiple distributed training methods and features,
+including model and pipeline parallelisms. 
+TensorFlow officially provides a package of APIs, {\tt tf.distribute}, for
+distributed training~\cite{tfdistributed}.
+The package supports multiple implementations of {\tt tf.distribute.Strategy},
+enabling model engineers to perform distributed learning using various
+strategies.
+To train DL models in distributed environments, model engineers have to choose
+a library and manually rewrite the models following the library's documentation.
+Our approach automatically transforms existing DL models into distributed ones,
+reducing engineers' burdens of understanding the document and modifying models.
+
+%% explain that none of dist.DL frameworks automatically transform
+%None of these frameworks support automatic transformation from single-GPU based
+%training to distributed training. 
+%The users have to manually modify existing single-GPU-based models in
+%accordance with the specific frameworks. 
+%In comparison, our work offers an automatic transformation from existing DL
+%model to distributed DL model, which reduces programmer burden of manually
+%modifying the training code in according to the library specification and use
+%case.
+
+\subsection{Automatically Distributing Deep Learning Models}
+
+Several works proposed techniques for automatically optimizing the
+distributed training of DL models.
+A line of work searches for optimal parallelization plans before the runtime of
+DL model training codes.
+Megatron-LM~\cite{megatron-lm} is one of the earliest works on automatically
+finding efficient DNN model training parallelization plans.
+The Megatron-LM framework distributes operations inside the layers of 
+transformer networks by adding synchronization primitives.
+Pipedream~\cite{pipedream} is an asynchronous distributed training framework 
+that improves parallel training throughput by adding pipelining and intra-batch parallelism. 
+PipeDream also minimizes communication costs by partitioning the training computation based on a profiling run on a single GPU.
+Alpa~\cite{alpa} is an automatic model-parallel training framework that 
+organizes different parallelization techniques into a hierarchy 
+and maps them to the hierarchical structure of computing devices. 
+This allows Alpa to optimize plans for both inter-operator parallelization and intra-operator parallelization.
+Lin et al.~\cite{nnscaler} introduce new primitive operators that allow domain
+experts to compose their own search space, and their proposed framework
+generates an efficient parallelization plan for the DNN model training.
+AutoDDL~\cite{autoddl} adds new tensor operators to expand the search space for
+parallelization strategies. 
+The framework uses an analytical performance model with a Coordinate
+Descent-based search algorithm to optimize the communication cost.
+
+Another line of work focuses on optimizing resource usage
+during the training runtime. 
+DAPPLE~\cite{dapple} is a synchronous distributed training framework that
+combines data and pipeline parallelism for large DNN models, which finds the
+optimal parallelization plan with a novel parallelization strategy planner and
+a new runtime scheduling algorithm to reduce memory usage.
+Tiresias~\cite{tiresias} is a GPU cluster manager that efficiently schedules DL
+training jobs to reduce their job completion times. 
+Because predicting DL jobs' completion time is challenging,
+the authors propose two scheduling algorithms tailored to minimize the average
+job completion times.
+
+Compared to these works, our work's primary technique is to boost the DL model
+training by automatically transforming single-GPU-based training codes into
+distributed ones.
+The aforementioned works require developers to write distributed training codes
+according to the proposed framework manually.
+Our work utilizes the Horovod library’s data-parallel distributed training to 
+distribute existing single-GPU-based DL training codes without rewriting them.
+While previous works’ primary technique is to distribute low-level, 
+primitive computing operations over multiple GPUs, 
+our primary technique is to transform a single-GPU-based DL training code 
+to a distributed version at the Python source code level. 
+By reusing the Horovod library and converting the training code at the source
+code level, we allow non-expert developers to distribute the training
+code efficiently without manually rewriting the original training code.
+
+
+
+%\paragraph{Code transformation.}
+\subsection{Code Transformation}
+
+Code transformation is techniques that modify code into a different form.  
+Visser devised a taxonomy~\cite{visser2001survey} that classifies code transformation
+techniques into two types: 
+\textit{translation}, where input and output code are written in different
+languages, and \textit{rephrasing}, where input and output code are written in
+the same language.
+Our approach belongs to \textit{renovation}, one of the subtypes of
+\textit{rephrasing}, which changes the behaviors of input code and generates
+output code in the same language.
+
+%% code transformation common usage - compile and optimization
+%Code transformation, or program transformation,
+%is technique that alters a \textit{source} code
+%into a different \textit{target} code. 
+%Code transformation is used in variety of area, although
+%compilation and optimization is the primary application of
+%the technique.
+%According to Visser\cite{Visser2001}'s taxonomy, 
+%code transformation can be classified into two: \textit{translation},
+%where source and target programs are in differene langauge,
+%and \textit{rephrasing}, where source and target programs are in
+%same language.
+%Our approach for automated distributed training is considered to be
+%rephrasing transformation, considering it changes a Python code
+%into another Python code. 
+%In specific, our approach belongs to \textit{renovation} transformation
+%according to Visser's taxonomy, considering that
+%the transformation alters the behavior of the single-GPU-based
+%training code into the distributed training.
+
+% Code Transformation in Python
+Researchers have proposed several code transformation techniques in Python.
+Loulergue and Philippe~\cite{loulergue2019automatic} devised a framework that optimizes
+PySke programs by automatically rewriting terms in the programs based on
+transformation rules they define.
+Haryono et al.~\cite{haryono2021mlcatchup} developed MLCatchUp, a code transformation tool
+that enables Python machine learning programs to migrate from deprecated APIs
+to new and stable APIs automatically. 
+In Zhang et al.~\cite{python-idiomatic}, the authors develop AST-rewriting 
+operations to detect non-idiomatic code for each Pythonic idiom and refactor 
+non-idiomatic Python codes into idiomatic codes.
+Rózsa et al.~\cite{dont-diy} introduce a framework 
+that transforms conditional branches into structural pattern-matching without
+changing the original behavior. 
+This improves the readability and maintainability of codes written in legacy Python.
+Tangent~\cite{tangent} is a new library that transforms a subset of Python and NumPy code 
+to perform automatic differentiation on a source code level.
+Compared to these works, our work targets TensorFlow DL models written in
+Python, and provides concrete and correct transformation rules for their
+distributed training.
+To our knowledge, our work is the first to utilize the Python code
+transformation technique to distribute single-GPU-based DL
+training codes automatically.
+
+%There are several other works on application of program transformation
+%in Python and machine learning domain.
+%Loulergue and Philippe\cite{Loulergue2020} developed an
+%transformation framework that automatically transforms PySke programs, 
+%the python skeleton library for parallel programming.
+%Haryono et al. \cite{mlcatchup} developed MLCatchUp,
+%a tool that automatically updates deprecated APIs in Python machine learning
+%programs. Reed et al. \cite{torchfx} developed torch.fx,
+%a Python source-to-source transform framework designed to capture
+%program structures in Python DL programs and transform them. 
+%Compared to these works, our work specifically targets
+%TensorFlow DL training codes written in Python,
+%and provide concrete and correct transformation rules rather than
+%only providing the framework.
