@@ -1,0 +1,643 @@
+\subsection{Transformation Rules for API Patterns}
+
+%As mentioned earlier, different API patterns of the codes
+%require different transformation rules to correctly transform them.
+%To apply different transformation rules for different API pattern codes,
+%we defined sets of transform functions each for trainng API patterns.
+%This section explains the transform functions defined for each API patterns.
+
+\subsubsection{Rules for the Session Pattern}
+
+\begin{figure}[h!]\centering
+
+  \begin{subfigure}{1\textwidth}
+  \scriptsize
+  \begin{lstlisting}[style=mpythonscript]
+trans_S(`{id_r} = {expr}({a_1}, ..., {a_n})`, ctx): 
+  if isSubclass(`{expr}`, `keras.optimizer.Optimizer):
+    for i in 1...n:
+      if `{a_i}` == `learning_rate = {lr}`:
+        let new_stmt = 
+          `{id_r} = {expr}({a_1}, ..., {a_i}*hvd.size(), ..., {a_n})`
+        let wrap_stmt = 
+          `{id_r} = hvd.DistributedOptimizer({id_r})`
+        return (new_stmt; wrap_stmt), ctx["optimizer"->`{id_r}`] \end{lstlisting}
+  \caption{Transform function for Session pattern}
+  \label{fig:trans:sessiontrans:fn}
+  \end{subfigure}
+
+  \begin{subfigure}[t]{1\textwidth}
+    \begin{lstlisting}[style=mpython]
+optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01)
+
+with tf.Session() as sess:
+  for step in range(num_epochs): 
+    sess.run(optimizer, feed_dict)\end{lstlisting}
+    \caption{Session pattern example}
+    \label{fig:trans:sessiontrans:a}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{1\textwidth}
+    \begin{lstlisting}[style=mpython]
+optimizer = tf.train.MomentumOptimizer(learning_rate = 0.01 * hvd.size())
+optimizer = hvd.DistributedOptimizer(optimizer)
+
+with tf.Session() as sess:
+  for step in range(num_epochs): 
+    sess.run(optimizer, feed_dict)\end{lstlisting}
+    \caption{Distributed Session pattern example}
+    \label{fig:trans:sessiontrans:b}
+  \end{subfigure}
+  \caption{Example transformation of the Session pattern}
+  \label{fig:trans:sessiontrans}
+\end{figure}
+
+\noindent
+
+Figure~\ref{fig:trans:sessiontrans} illustrates the transform function for the
+Session pattern with code examples.
+The transform function described in Figure~\ref{fig:trans:sessiontrans:fn}
+transforms the original code in Figure~\ref{fig:trans:sessiontrans:a} to
+the distributed code in Figure~\ref{fig:trans:sessiontrans:b}.
+In the {\tt Optimizer} object's constructor,
+the {\tt learning\_rate} argument is multiplied by {\tt hvd.size()}.
+Then, the constructed {\tt Optimizer} object
+is wrapped with the Horovod API, {\tt DistributedOptimizer}.
+
+Given a call assignment statement, the transform function checks whether the
+callee function is the constructor of the {\tt Optimizer}'s subclasses.
+If true, the {\tt for} loop searches for
+the {\tt learning\_rate} argument from the function arguments
+to construct a new call assignment statement 
+with the {\tt learning\_rate} argument multiplied by {\tt hvd.size()}.
+The function finally returns the new statement
+concatenated by another assignment statement
+that wraps the {\tt Optimizer} object with {\tt DistributedOptimizer}.
+
+% Figure \ref{fig:trans:sessiontrans} illustrates the required transformation of
+% the Session pattern using two code examples, \ref{fig:trans:sessiontrans:a} the
+% original training code and \ref{fig:trans:sessiontrans:b} its distributed
+% training version.
+% One of the primary transformations involves adjusting the learning rate
+% argument in the {\tt Optimizer} constructor call, which is achieved by
+% multiplying it by the number of GPUs.
+% The learning rate can be passed as the first positional argument in the
+% constructor call or as the keyword argument {\tt learning\_rate}.
+% The other transformation uses the Horovod-provided {\tt DistributedOptimizer}
+% instance instead of the original {\tt Optimizer} instance. 
+% To create the {\tt DisributedOptimizer} instance, the original {\tt Optimizer}
+% is passed as an argument to its constructor.
+
+%To correctly transform Session pattern training codes into distributed 
+%training codes, the {\tt Optimizer} instance must be modified.
+%Figure \ref{fig:trans:sessiontrans} shows a pair of code examples
+%illustrating the required transformation for Session pattern case.
+%In line 1 of figure \ref{fig:trans:sessiontrans}(b),
+%the learning rate argument is scaled by {\tt hvd.size()}.
+%The learning rate can be specified by keyword argument {\tt learning\_rate}
+%as the figure \ref{fig:trans:sessiontrans},
+%or by the first positional argument.
+%The transform function should be able to transform both of the cases.
+%The transformation also adds a new statementd that wraps the 
+%{\tt Optimizer} instance by {\tt DistributedOptimizer}.
+
+ % \begin{figure}[ht!]\footnotesize
+ % \noindent
+ %   \begin{tabularx}{\textwidth}{X}
+ %   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+ %   \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} ~ {\tt tensorflow.keras.optimizers.Optimizer} ~ \ktthen\\
+ %   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt learning\_rate} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+ %   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i} {\tt * hvd.size()}\\
+ %   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
+ %   {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}],\\
+ %   \inden\inden\inden \smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+ % 
+ %   \inden\inden \ktelse \\
+ %   \inden\inden\inden ([\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} {\tt * hvd.size()}... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \nidsubs{i} \oassign \nexprsubs{2i}\\
+ %   \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}},\ 
+ %   {\tt \nidsubs{r} = hvd.DistributedOptimizer(\nidsubs{r})}], \\
+ %   \inden\inden\inden\smodenv[\optmizer $\mapsto$ \nidsubs{r}])\\
+ % 
+ % \end{tabularx}
+ %   \caption{Session pattern transform function: Optimizer learning rate scaling and wrapping}
+ %   \label{fig:trans:sessrule}
+ % \end{figure}
+ % 
+ % Figure \ref{fig:trans:sessrule} shows the essential rule for the Session pattern,
+ % which conducts the two transformations.
+ % The transform rule matches an assignment statement that stores the result of a
+ % function call expression into a variable.
+ % Initially, the rule examines whether the callee function is the constructor of
+ % either the {\tt Optimizer} class or any of its subclasses.
+ % The predicate \ktsubtysubs{\smodenv} checks the subclass relation between two
+ % classes using the class hierarchy analysis result.
+ % Then, the rule adjusts the learning rate argument of the constructor call. 
+ % Suppose the learning rate is passed as a keyword argument. 
+ % In that case, the rule replaces the keyword argument value with the
+ % multiplication of the original learning rate and the return value of {\tt
+ % horovod.size()}.
+ % Otherwise, the rule adjusts the first argument instead.
+ % Following the adjustment of the learning rate, the rule adds a new statement:
+ % $id_r\ =\ ${\tt hvd.DistributedOptimizer($id_r$)}. 
+ % This statement replaces the original optimizer instance with a distributed
+ % optimizer instance for any subsequent uses.
+
+%Figure \ref{fig:trans:sessrule} formalizes the Sesison pattern transform 
+%function. The transform function 
+%matches assign statements that assign a result of function call expression.
+%If an assign statement is matched, the pattern guard checks if the
+%callee function is the {\tt Optimizer} instance constructor function.
+%The pattern guard uses the subclass predicate \ktsubtysubs{\smodenv}
+%to identify any expression that constructs the subclass of the TensorFlow
+%{\tt Optimizer} class including user-defined classes.
+
+%The third line of the transform function uses a branch to distinguish 
+%whether the {\tt learning\_rate} argument is given as a keyword argument or not. 
+%When the argument is given as a keyword argument,
+%the transform function modifies the corresponding keyword argument expression
+%as shown in the true branch in fourth line.
+%When the argument is not given as a keyword argument,
+%the transform function assumes that the first positional argument
+%is the {\tt learning\_rate} argument and modifies it
+%as shown in the eighth line.
+%In either case, the transform function additionally returns a new
+%assign statement that wraps the {\tt Optimizer} with
+%{\tt hvd.DistributedOptimizer}.
+
+\subsubsection{Rules for the MonitoredSession Pattern}
+
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}{1\textwidth}
+  \begin{lstlisting}[style=mpython]
+trans_S(`with {with_items} : {stmts}`, ctx):
+  let `{with_items_1}`, ctx_1 = trans_W(`{with_items}`, ctx)
+  let `{stmts_1}`, ctx_2 = trans_S(`{stmts}`, ctx_1)
+  return (`with {with_items_1} : {stmts_1}`, ctx_2) 
+
+trans_W(`{e_1}({a_1, ..., a_n}) as {id}`, ctx):
+  if isSubclass(e_1, tf.train.MonitoredSession):
+    for i in 1...n:
+	  if `{a_i}` == `hooks = {e_i}`:
+	    let new_hooks = 
+        `{e_i}.append(hvd.BroadcastGlobalVariableHook(0))`
+      let new_with = 
+        `{e_1}({a_1, ..., hooks={new_hooks}, ..., {a_n})` 
+      return (new_with, ctx["monsess"->`{id}`])\end{lstlisting}
+  \caption{Transform function for MonitoredSession pattern}
+  \label{fig:trans:monsesstrans:fn}
+  \end{subfigure}
+
+  \begin{subfigure}[t]{1\textwidth}
+    \begin{lstlisting}[style=mpython]
+with tf.train.MonitoredTrainingSession(hooks=hooks) as mon_sess:
+  while not mon_sess.should_stop():
+    mon_sess.run()\end{lstlisting}
+    \caption{MonitoredSession pattern example}
+    \label{fig:trans:monsesstrans:a}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{1\textwidth}
+    \begin{lstlisting}[style=mpython]
+with tf.train.MonitoredTrainingSession(hooks=hooks.append(hvd.BroadcastGlobalVariablesHook(0)) as mon_sess:
+  while not mon_sess.should_stop():
+    mon_sess.run()\end{lstlisting}
+    \caption{Distributed MonitoredSession pattern example}
+    \label{fig:trans:monsesstrans:b}
+  \end{subfigure}
+  \caption{Example transformation of the MonitoredSession pattern}
+  \label{fig:trans:monsesstrans}
+\end{figure}
+
+
+Figure~\ref{fig:trans:monsesstrans} illustrates the transform function for the
+MonitoredSession pattern with code examples.
+%The transform function described in Figure~\ref{fig:trans:monsesstrans:fn}
+%transforms the original code in Figure~\ref{fig:trans:monsesstrans:a}
+%to the distributed code in Figure~\ref{fig:trans:monsesstrans:b}.
+In the example code, a {\tt with} statement first constructs the {\tt
+MonitoredTrainingSession} object and binds it to the name {\tt mon\_sess}.
+We refer to the pair of the object and its name appearing in the {\tt with} statement
+as a {\it with item}.
+The {\tt MonitoredTrainingSession} object constructor is transformed to append
+{\tt hvd.BroadcastGlobalVariablesHook(0)} to the end of the {\tt hooks}
+argument.
+
+Figure~\ref{fig:trans:monsesstrans:fn} describes two transform functions. The
+first function, {\tt trans\_S}, takes a {\tt with} statement AST as an input,
+then applies {\tt trans\_W} to its with items. 
+The second function, {\tt trans\_W}, first checks if the given with item  
+constructs the {\tt tf.train.MonitoredSession} subclass object.
+If true, the function finds the {\tt hooks} argument from the constructor call
+and appends the {\tt hvd.BroadcastGlobalVariablesHook(0)}.
+The function returns the modified with item AST to the {\tt trans\_S} function.
+As a result, the {\tt trans\_S} function returns the newly modified {\tt with}
+statement with its body statements recursively transformed by {\tt trans\_S}.
+
+% Figure~\ref{fig:trans:monsesstrans} describes an example transformation of the
+% MonitoredSession pattern code.
+% The {\tt MonitoredSession} constructor optionally requires a list of {\tt
+% SessionRunHook} objects as a keyword argument {\tt hooks}.
+% To ensure consistent global variable initialization of all processes in the
+% distributed training, the list needs to contain a {\tt
+% BroadcastGlobalVariableHook} object for the global variable broadcasting, as
+% shown in Figure~\ref{fig:trans:monsesstrans:b}.
+% The instance can be created by calling the constructor of the {\tt
+% BroadcastGlobalVariableHook} class with the ID of a source process.  
+% When starting the training, the hook broadcasts the initial global variable
+% parameters of the source to the other processes.\\
+% 
+% 
+% %\newpage
+% %To correctly transform the MonitoredSesion pattern code with the Horovod
+% %framework, 
+% %a hook for the variable broadcasting should be added to the
+% %{\tt MonitoredSession} object. 
+% %As in figure \ref{fig:trans:monsesstrans}, for example,
+% %the transformation appends {\tt BroadcastGlobalVariablesHook} to the
+% %{\tt hooks} arguments of the {\tt MonitoredSession} constructor call.
+% \vspace{-1em}
+% 
+% \begin{figure}[ht!]\footnotesize
+%  \noindent
+%   \begin{tabular}{l}
+%     %\typdesc{\fkstmt& : & \dstmt ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dstmt ~ list ~ $\times$ ~ \dmodenv)} \\
+%     \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+%     \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
+%     \inden \ktlet ~ \mul{\nstmt}$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+% 
+%     \inden ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+%   \end{tabular}\\[2ex]
+% 
+%   \begin{tabular}{l}
+%     %\typdesc{\fkwithitem & : & \dwithitem ~ $\rightarrow$ ~ \dmodenv ~ $\rightarrow$ ~ (\dwithitem ~ $\times$ \dmodenv)}  \\
+%     \twithitem{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ 
+%                 \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... 
+%                 \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} {\tt as} \nidsubs{as}}{\smodenv} = \\
+% 
+%     \inden \ktif ~ \nexprsubs{1} \ktsubtysubs{\smodenv} {\tt tensorflow.train.MonitoredSession} ~ \ktthen \\
+%     \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt hooks} ~ \ktwhen ~ 1 $\leq$ i $\leq$ k ~ \ktthen\\
+%     \inden\inden\inden(\nexprsubs{1} \sparen{\nexprsubs{11} ... 
+%               \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} \\
+%     \inden\inden\inden\inden ... \nidsubs{i} \oassign {\tt \nexprsubs{2i}.append(hvd.BroadcastGlobalVariablesHook(0))} \\
+%     \inden\inden\inden\inden ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k} }, \\
+%     \inden\inden\inden\inden \smodenv[ \msess $\mapsto$ \nidsubs{as}]) \\
+%   \end{tabular}\\\vpar
+% \caption{MonitoredSession pattern transform function: Modifying {\tt StopAtStepHook} instance}
+%   \label{fig:trans:monsessrule}
+% \end{figure}
+% 
+% %\vspace{-1em}
+% 
+% Figure \ref{fig:trans:monsessrule} formalizes the transform functions for the
+% MonitoredSession pattern.
+% The first transform function is responsible for matching {\tt with} statements
+% and transforming a list of the {\tt with\_item}, each of which represents a
+% variable and an assigned expression. 
+% The transform function denoted as \fkwwithitem~in line 2 applies the second
+% transform function \fkwithitem~to each {\tt with\_item}.
+% As a result, the first transform function returns a new {\tt with} statement
+% containing a list of the transformed {\tt with\_item}.
+% The second transform function transforms the {\tt with\_item}.
+% Among many forms of the {\tt with\_item}, the function matches those that
+% assign a function call result to a variable.
+% The second line checks whether the callee function of the {\tt with\_item} is a
+% constructor of the subclass of the {\tt MonitoredSession} class. 
+% If then, the transformation appends a {\tt BroadcastGlobalVariablesHook} object
+% to the keyword argument {\tt hooks}.\\
+
+\subsubsection{Rules for the GradientTape pattern}\label{sec:grad}
+
+\begin{figure}[ht!]
+  \centering
+  \begin{subfigure}[t]{\textwidth}
+    \begin{lstlisting}[style=mpython]
+import tensorflow as tf
+
+with tf.GradientTape() as tape:
+  probs = model(images)
+  loss_value = loss(labels, probs)
+
+grads = tape.gradient(loss_value, model.trainable_variables)
+opt.apply_gradients(zip(grads, model.trainable_variables))\end{lstlisting}
+    \caption{GradientTape pattern example}
+    \label{fig:trans:gtapetrans:a}
+  \end{subfigure}
+  \hspace{5mm}
+  \begin{subfigure}[t]{1\textwidth}
+    \begin{lstlisting}[style=mpython]
+import tensorflow as tf
+import horovod.tensorflow as hvd
+hvd_broadcast_done = False
+
+with tf.GradientTape() as tape:
+  probs = model(images)
+  loss_value = loss(labels, probs)
+tape = hvd.DistributedGradientTape(tape)
+grads = tape.gradient(loss_value, model.trainable_variables)
+id_new = zip(grads, model.trainable_variables)
+opt.apply_gradients(id_new)
+
+global hvd_broadcast_done
+if not hvd_broadcast_done:
+  hvd.broadcast_variables([x[1] for x in id_new], root_rank=0,)
+  hvd.broadcast_variables(opt.variables(), root_rank=0,)
+  hvd_broadcast_done = True\end{lstlisting}
+    \caption{Distributed GradientTape pattern example}
+    \label{fig:trans:gtapetrans:b}
+  \end{subfigure}
+  \caption{Example transformation of the GradientTape pattern}
+  \label{fig:trans:gtapetrans}
+\end{figure}
+
+\noindent
+Figure \ref{fig:trans:gtapetrans} illustrates an example GradientTape pattern
+code and its distributed version.  
+There are two main transformations applied in the codes.
+First, the {\tt GradientTape} object defined by the {\tt with} statement is
+wrapped with {\tt hvd.DistributedGradientTape} API.
+The transformation also re-assigns the {\tt grads} variable with the result of
+calling the {\tt gradient} method before using it in the {\tt apply\_gradients}
+method.
+Second, the code for broadcasting variables is appended after the {\tt with}
+statement, as shown in lines 13 to 17 in Figure~\ref{fig:trans:gtapetrans:b}.
+
+\begin{figure}[h!]
+\begin{lstlisting}[style=mpythonscript]
+trans_S(`with {with_items} : {stmts}`, ctx):
+  let `{with_items_1}`, ctx_1 = trans_W(`{with_items}`, ctx)
+  let `{stmts_1}`, ctx_2 = trans_S(`{stmts}`, ctx_1)
+  if diff(ctx_1, ctx) == ["gradient_tape" -> `{id}`]:
+    let wrap_stmt =`{id} = hvd.DistributedGradientTape({id})`
+    return (`with {with_items_1} : {stmts_1}; {wrap_stmt}`, ctx_2)
+  else:
+    return (`with {with_items_1} : {stmts_1}`, ctx2)
+\end{lstlisting}
+\caption{First transform function for GradientTape pattern}
+\label{fig:trans:gtapetrans:fn1}
+\end{figure}
+
+Figure~\ref{fig:trans:gtapetrans:fn1} describes the transform function
+responsible for the first transformation.
+After transforming the with items and body statements, the function checks if
+the with items define a new {\tt gradient\_tape} item. 
+If true, the function constructs a statement that wraps the
+{\tt gradient\_tape} item with the {\tt hvd.DistributedGradientTape} API.
+Finally, the function returns the new {\tt with} statement
+concatenated with the new wrapping statement.
+
+% For the distributed training, the model needs to utilize a {\tt
+% DistributedGradientTape} instance in training instead of the {\tt
+% GradientTape} instance, as shown in lines 8 and 9 in
+% Figure~\ref{fig:trans:gtapetrans:b}.
+% In addition, the model also needs to broadcast trainable global variables from
+% the root process to the others once after applying the gradients.
+% Lines 13 to 17 in Figure~\ref{fig:trans:gtapetrans:b} represent the code that
+% broadcasts the variables depending on the value of {\tt hvd\_broadcast\_done}.
+% Once finishing the broadcasting, the {\tt hvd\_broadcast\_done} is set to {\tt
+% False} to prevent further broadcasting.
+
+\begin{figure}[h!]
+\begin{lstlisting}[style=mpythonscript]
+trans_S(`{id} = {expr}({a_1}, ..., {a_n})`, ctx):
+if ctx["optimizer"] == `{id_t}` && `{expr}` == `{id_t}.apply_gradients`:
+  let id_z = `id_new`
+  let input_stmt = `{id} = {expr}({a_1}, ..., {a_n})` 
+  let broadcast_stmts =
+    `{id} = {expr}({a_1}, ..., {a_n})`;
+     global hvd_broadcast_done;
+     if not hvd_broadcast_done:
+       hvd.broadcast_variables([x[1] for x in {id_z}, root_rank=0)
+       hvd.broadcast_variables({id_t}.variables(), root_rank=0)
+       hvd_broadcast_done = True`
+  return (input_stmt; broadcast_stmts, ctx)
+\end{lstlisting}
+\caption{Second transform function for GradientTape pattern}
+\label{fig:trans:gtapetrans:fn2}
+\end{figure}
+
+Figure~\ref{fig:trans:gtapetrans:fn2} describes the transform function
+responsible for the second transformation, which transforms a call assignment
+statement.
+The function first searches for an {\tt optimizer} variable in the context
+object.
+Then, it checks if the input statement calls the {\tt apply\_gradients} method
+of the {\tt optimizer} variable.
+If true, the function places the code for broadcasting variables right after
+the input statement.
+
+
+% %To correctly transform GradientTape pattern training codes,
+% %the {\tt GradientTape} instance should be modified for distributed training.
+% %As shown in line 8, figure \ref{fig:trans:gtapetrans}(b),
+% %the {\tt GradientTape} instance {\tt tape}
+% %is wrapped by a Horovod library API {\tt DistributedGradientTape}.
+% %In addition to modifying the {\tt GradientTape} instance,
+% %lines 13 to 17 add the variable broadcasting code after the
+% %{\tt apply\_gradients} method call.
+% %Note that the variable {\tt hvd\_broadcast\_done} is initialized as 
+% %{\tt False} at line 3. 
+% %Then line 17 sets the variable to {\tt True}, after the variable broadcasting
+% %is done.
+% %We use the boolean variable {\tt hvd\_broadcast\_done} in GrdientTape pattern
+% %model to ensure that variable broadcasting occurs exactly once.
+% 
+% 
+% \begin{figure}[ht!]\footnotesize
+% %\noindent
+% \begin{tabular}{l}
+%   \tstmt{\kwith ~ \mul{\nwithitem} ~ \kcolon ~ \mul{\nstmt}}{\smodenv} = \\
+%   \inden \ktlet ~ \mul{\nwithitem}$'$, \smodenvsubs{1} \kteq ~ \twwithitem{\mul{\nwithitem}}{\smodenv} \ktin \\
+%   \inden \ktlet ~ \nstmt$'$, \smodenvsubs{2} \kteq ~ \tsstmt{\mul{\nstmt}}{\smodenvsubs{1}} \ktin \\
+%   \inden \ktif ~ \smodenvsubs{1} \envsub ~ \smodenv ~ \kteq ~ [\gtape $\mapsto$ \nid] ~ \ktthen\\
+%   \inden\inden ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$, \nid ~ \oassign {\tt hvd.DistributedGradientTape(\nid)}], \smodenvsubs{2})\\
+%   \inden \ktelse ~ ([\kwith ~ \mul{\nwithitem}$'$ ~ \kcolon ~ \mul{\nstmt}$'$], \smodenvsubs{2})
+% \end{tabular}
+%   \caption{GradientTape pattern transform function: utilizing the {\tt DistributedGradientTape} instance}
+%   \label{fig:trans:gtaperule}
+% \end{figure}
+% 
+% Figure \ref{fig:trans:gtaperule} depicts the transformation for the
+% GradientTape pattern utilizing the {\tt DistributedGradientTape} instance.
+% The transform function matches {\tt with} statements and updates the transform
+% context by transforming the list of {\tt with\_item}.
+% The updated transform context contains a mapping from the string {\tt
+% graident\_tape} to a variable \nid~if the {\tt with\_item} creates a {\tt
+% GradientTape} instance and assigns it to the variable.
+% Then, the function injects a new assignment statement, $\nid ~ \oassign~{\tt
+% hvd.DistributedGradientTape(\nid)}$, right after the {\tt with} statement,
+% which replaces the instance of the variable with a newly created {\tt
+% DistributedGradientTape} instance for further uses in subsequent statements.
+% 
+% 
+% \begin{figure}[ht!]\footnotesize
+% \noindent
+% \begin{tabular}{l}
+%   \tstmt{\nidsubs{r} \oassign \nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+%   \inden \ktif  ~ \smodenv(\optmizer) ~ \kteq ~ \nidsubs{t} ~ \ktand ~ \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{t}.apply\_gradients} ~ \ktthen\\
+%   \inden\inden \ktlet ~ \nidsubs{z} ~ \kteq ~ \newid ~ \ktin \\
+%   \inden\inden ([\nidsubs{z} ~ \oassign ~ \nexprsubs{11},\\
+%   \inden\inden \nidsubs{r} \oassign \nexprsubs{1} \sparen{\nidsubs{z} \nexprsubs{12} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}} ,\\
+%   \inden\inden {\tt global hvd\_braodcast\_done},\\
+%   \inden\inden {\tt if not hvd\_broadcast\_done:} \\ 
+%   \inden\inden\inden [ {\tt hvd.broadcast\_variables([x[1] for x in \nidsubs{z}], root\_rank=0)}, \\
+%   \inden\inden\inden {\tt hvd.broadcast\_variables(\nidsubs{t}.variables(), root\_rank=0)}, \\
+%   \inden\inden\inden {\tt hvd\_broadcast\_done = True} ]\\
+%   \inden\inden ], \smodenv) \\
+% \end{tabular}
+%   \caption{GradientTape pattern transform function: broadcasting trainable global variables}
+%   \label{fig:trans:gtaperule2}
+% \end{figure}
+% 
+% Figure \ref{fig:trans:gtaperule2} formalizes the partial transform function
+% that appends the variable broadcasting code after the 
+% {\tt apply\_gradients} method call.
+% The function matches assignment statements that assign a function call result. 
+% When a variable $id_t$ stores the {\tt Optimizer} instance and the callee
+% function is {\tt $id_t$.apply\_gradients}, the transform function changes the
+% assignment statement and adds the variable broadcasting code.
+% The function injects a new assignment statement that stores the first argument
+% of the function call into a new variable $id_z$.
+% The first argument of the {\tt apply\_gradients} is an iterator of tuples that
+% contain pairs of gradients and trainable variables.
+% After the function call statement, the transform function injects a {\tt
+% global} statement to refer to the global broadcast flag variable {\tt
+% hvd\_broadcast\_done} and call statements guarded by the flag to broadcast
+% trainable variables stored in the tuples and {\tt opt.variables()}. 
+% The function also injects an assignment statement that sets the
+% global broadcast flag to {\tt True}.
+% 
+% %\pagebreak
+% 
+   
+
+
+\subsubsection{Rules for the Keras pattern}
+
+\begin{figure}[ht!]\centering
+
+\begin{subfigure}{1\textwidth}
+\begin{lstlisting}[style=mpythonscript]
+trans_S(`{expr}({a_1}, ..., {a_n})`, ctx):
+  let `{id_m}` = ctx["model"]
+  if `{expr}` == `{id_m}.fit`:
+    let cb_stmt = 
+      `cb = [hvd.callbacks.BroadcastGlobalVariablesCallback(root_rank=0)]`
+    let new_stmt =
+      `{expr}({a_1}, ..., {a_n}, callbacks=cb)`	
+    return (cb_stmt; new_stmt, ctx) 
+\end{lstlisting}
+\caption{Transform function for Keras pattern}
+\label{fig:trans:keras:fn}
+\end{subfigure}
+
+  \begin{subfigure}[t]{1\textwidth}
+  \begin{lstlisting}[style=mpython]
+class ResNet(keras.Model):
+  def __init__(self, block_list):
+    ...
+
+model = ResNet([2, 2, 2])
+
+model.fit(x_train, y_train)\end{lstlisting}
+  \caption{Keras pattern example}
+    \label{fig:trans:keras:a}
+  \end{subfigure}
+  \hspace{3mm}
+  \begin{subfigure}[t]{1\textwidth}
+  \begin{lstlisting}[style=mpython]
+class ResNet(keras.Model):
+  def __init__(self, block_list):
+    ...
+
+model = ResNet([2, 2, 2])
+
+cb=[hvd.callbacks.BroadcastGlobalVariablesCallback(0)]
+model.fit(x_train, y_train, callbacks=cb)
+\end{lstlisting}
+    \caption{Distributed Keras pattern example}
+    \label{fig:trans:keras:b}
+  \end{subfigure}
+  \caption{Example transformation of the Keras Pattern}
+  \label{fig:trans:keras}
+\end{figure}
+
+
+Figure~\ref{fig:trans:keras} illustrates the transform function for the Keras
+pattern with code examples.
+The function transforms the original code in Figure~\ref{fig:trans:keras:a}
+to the distributed code in Figure~\ref{fig:trans:keras:b}.
+The transformation first constructs a new list that contains a callback object,
+{\tt BroadcastGlobalVariablesCallback(0)}.
+Then, the callback list is propagated to the {\tt fit} function as a new {\tt
+callback} argument.
+
+The transform function takes a function call statement as an input.
+The context object contains information about the variable that holds the {\tt
+Model} subclass object.
+Using the information, the function first checks if the callee function is the
+{\tt fit} method of a model object.
+%In this step, we assume that earlier calls of the transformation function
+%stored a {\tt Model} subclass object in the context object.
+If true, the function constructs a statement that creates a list of a {\tt
+BroadcastGlobalVariablesCallback} object and assigns it to a new variable.
+Then, it modifies the input call statement to propagate the list as the keyword
+argument, {\tt callbacks}.
+Finally, the function replaces the input call statement with the sequence of
+two statements.
+
+% \noindent
+% Figure \ref{fig:trans:keras} illustrates an example transformation of the Keras
+% pattern.
+% The Keras pattern code usually defines a subclass of {\tt keras.Model}, such
+% as {\tt ResNet}, constructs a model as an instance of the class, and trains the
+% model by calling its {\tt fit} method.
+% To distribute the model's training with Horovod, the {\tt fit} method needs to
+% take a callback {\tt BroadcastGlobalVariablesCallback} as the keyword argument
+% {\tt callbacks}, shown in Figure~\ref{fig:trans:keras:b}.
+% When training starts, the callback ensures consistent initialization of all
+% processes by broadcasting initial global variable states from a source to the
+% other processes.
+% 
+% \begin{figure}[ht!]\footnotesize
+% \centering
+% \begin{tabular}{l}
+%   \tstmt{\nexprsubs{1} \sparen{\nexprsubs{11} ... \nexprsubs{1n} ~ \op{(\nidsubs{1} \oassign)} \nexprsubs{21} ... \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}}}{\smodenv} = \\
+%   \inden \ktif ~ \nidsubs{m} ~ \kteq ~ \smodenv({\tmodel}) ~ \ktand ~ 
+%           \nexprsubs{1} ~ \kteq ~ {\tt \nidsubs{m}.fit} ~ \ktthen \\
+%   \inden\inden \ktif ~ \nidsubs{i} ~ \kteq ~ {\tt callbacks} ~ \ktwhen ~ 2 $\leq$ i $\leq$ k ~ \ktthen \\
+%   \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
+%   \inden\inden\inden ~ {\tt if hvd.rank() == 0: cb.append(\nexprsubs{2i})}, \\
+%   \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
+%                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
+%                               \nidsubs{i} \oassign {\tt cb} $\cdots$
+%                               \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}{\tt )}\\
+%   \inden\inden\inden ], \smodenv) \\
+%   \inden\inden \ktelse \\
+%   \inden\inden\inden ([{\tt cb = hvd.callbacks.BroadcastGlobalVariablesCallback(root\_rank=0)},\\
+%   \inden\inden\inden ~ {\tt \nexprsubs{1} (\nexprsubs{11} $\cdots$ \nexprsubs{1n}}
+%                               \op{(\nidsubs{1} \oassign)} \nexprsubs{21} $\cdots$
+%                               \op{(\nidsubs{k} \oassign)} \nexprsubs{2k}\\
+%                               \inden\inden\inden$\ \ ${\tt callbacks \oassign cb} {\tt )}],
+%                               \smodenv) \\
+% \end{tabular}
+%   \caption{Keras pattern transform function}
+%   \label{fig:trans:kerasrule}
+% \end{figure}
+% 
+% Figure \ref{fig:trans:kerasrule} formalizes the transform function for the
+% Keras pattern code.
+% The transform function matches function call statements for the {\tt fit}
+% method of model objects by checking whether the receiver object of the {\tt
+% fit} method call is an instance of a subclass of {\tt keras.Model}.
+% Then, if the function call already takes the {\tt callbacks} keyword argument,
+% the transform function changes the function call to three statements. 
+% The first and second statements create a temporary variable {\tt cb} for the
+% later use of the function call in the third statement.
+% Note that the second statement appends the original callbacks to the {\tt cb}
+% variable only when the {\tt hvd.rank()} is zero, which enables the original
+% callbacks to be called only on the one process.
+% If the keyword argument does not exist in the function call, the transform
+% function propagates the callback as the {\tt callbacks} keyword argument, shown
+% in Figure~ \ref{fig:trans:keras:b}.
+

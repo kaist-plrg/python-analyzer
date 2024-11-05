@@ -1,0 +1,100 @@
+\section{Conclusion}\label{sec:conclusion}
+This paper proposes an automated approach to transform TensorFlow DL models
+written in Python to models training on multiple GPUs.
+We categorized TensorFlow DL models by four patterns of training API usage and
+devised a static analysis technique that identifies the training pattern of the
+given model code.
+Then, we defined code transformation rules for each training API pattern, which
+parallelize the training process via Horovod library APIs.
+To this end, we implemented a code transformation tool
+that takes a single-GPU-based DL model training code,
+identifies its training pattern, and applies the corresponding source code
+transformation to output a distributed training code for the model.
+
+We conducted two experiments to evaluate our proposed approach.
+First, we show that our approach correctly transforms 15 out of 16
+open-source TensorFlow LD models.
+Second, we show that our approach efficiently distributes the training process
+so that the transformed models train about 2.28 times faster than the original
+models.
+By an additional experiment,
+we claim that the hyperparameters of transformed models can be tuned to obtain
+better training speeds.
+As a result, we argue that our approach reduces developers' burden in rewriting
+models for distributed training.
+
+We still leave limitations for further studies. 
+Since many state-of-the-art models and real-world DL applications depend on
+external training libraries or non-Python scripts to train the model, we need
+to extend our tool to identify API patterns of various training libraries and
+transform them into distributed versions. 
+We also expect that our code transformation approach can be extended to support
+other deep learning libraries, such as PyTorch~\cite{pytorch2019}, and to other
+distributed training frameworks, such as DeepSpeed~\cite{deepspeed}. 
+Finally, to correctly transform DL training codes embedded in real-world
+applications, future work can develop a static analysis technique that
+identifies only related parts to DL model training from complex multi-lingual
+applications.
+
+The training performance of automatically transformed models could be further
+improved by automatically finding optimal hyperparameters.
+Previous works~\cite{pmlr-v33-yogatama14}\cite{autohyper-rl}\cite{autotune}
+have proposed techniques automated to tune hyperparameters of specific models.
+Incorporating the techniques into the pipeline of our approach, we can further
+improve the distributed training performance in a fully automated way.
+By addressing these future directions, we believe that the DL developer
+community can benefit from a wide range of advantages our code
+transformation approach provides.
+
+
+% We identified four common training patterns for TensorFlow DL models and formal
+% code transformation rules for each pattern to parallelize training via Horovod
+% APIs.
+% Also, we developed a code transformation tool that takes a TensorFlow DL model,
+% identifies its training pattern via static analysis techniques, and rewrites
+% it for distributed training by applying transformation rules of the identified
+% training pattern.
+% The evaluation showed that our approach is practical in correctly transforming
+% 15 out of 16 open-source TensorFlow DL models.
+% %to the same with their handcrafted distributed training versions.
+% We also showed that our approach is effective in that the transformed models
+% train about 2.28 times faster than the original models.
+% We believe that our tool reduces model engineers' burdens in rewriting models
+% in accordance with the documentation of distributed training libraries to
+% parallelize training.
+
+%Our approach classifies TensorFlow DL models into four common training patterns
+%we defined, based on their usage of the TensorFlow APIs.
+%Then, our approach rewrites models with Horovod APIs by applying transformation
+%rules we formally defined for each training pattern.
+
+%By manually inspecting the Horovod document and code examples,
+%we defined \textit{training API patterns} for categorizing TensorFlow
+%training codes by their API usage, and constructed \textit{transformation rules}
+%to distribute the trainig codes of each tranining patterns.
+
+%We implement the transformation in a form of software,
+%which includes class hierarchy analysis and pattern analysis to recognize
+%the correct transformation rule for the given input model
+%and automatically apply the transformation to produce
+%the corresponding distributed model as an output.
+
+%We evaluated the correctness of the transformation tool against
+%16 open-source DL models, which all but one transformations are
+%successful. 
+
+%Evaluating the training performance of the
+%transformed model showed us that none or only minimal amounts of
+%hyperparameter tuning is required for distributed training speedup. 
+
+%We believe that our transformation tool frees the users from heavy burden of
+%rewriting the model code, and allows them to swiftly move from single-GPU-based
+%training to distributed training.
+
+%In future works, we aim to search for methods that can fully automate
+%the deployments of DL models on distributed systems, including
+%automated hyperparameter tunings suited for the distributed system.
+
+\section{Data Availability}
+The datasets generated and/or analyzed during the current study are available in 
+\href{https://github.com/kaist-plrg/python-analyzer}{https://github.com/kaist-plrg/python-analyzer}.
